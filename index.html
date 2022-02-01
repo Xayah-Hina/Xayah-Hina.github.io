@@ -167,7 +167,7 @@ $$</div><p>The Calculus of Variations</p>
 <div class="markdown-them-math-block">$$\begin{array}{ll}
 S(\mathbf{q},\mathbf{\dot{q}}) &amp;= \int_{t_1}^{t_2}L(\mathbf{q},\mathbf{\dot{q}})dt\\
 S(\mathbf{q}+\delta\mathbf{q}, \mathbf{\dot{q}}+\delta\mathbf{\dot{q}}) &amp;= \int_{t_1}^{t_2}L(\mathbf{q}+\delta\mathbf{q}, \mathbf{\dot{q}}+\delta\mathbf{\dot{q}})dt\\
-&amp;\approx \int_{t_1}^{t_2}L(\mathbf{q},\mathbf{\dot{q}})dt + \int_{t_1}^{t_2} \frac{\part L}{\part \mathbf{q}}\delta\mathbf{q} + \frac{\part L}{\part \mathbf{\dot{q}}}\delta\mathbf{\dot{q}} dt
+&amp;\approx \int_{t_1}^{t_2}L(\mathbf{q},\mathbf{\dot{q}})dt + \int_{t_1}^{t_2} \frac{\partial L}{\partial \mathbf{q}}\delta\mathbf{q} + \frac{\partial L}{\partial \mathbf{\dot{q}}}\delta\mathbf{\dot{q}} dt
 \end{array}
 $$</div><p>with (2) &amp; (3)</p>
 <div class="markdown-them-math-block">$$\begin{array}{ll}
@@ -176,11 +176,11 @@ $$</div><p>with (2) &amp; (3)</p>
 \int_{t_1}^{t_2} \frac{\partial L}{\partial \mathbf{q}}\delta\mathbf{q} - \frac{d}{dt}\frac{\partial L}{\partial \mathbf{\dot{q}}}\delta\mathbf{q}dt + \frac{\partial L}{\partial\mathbf{\dot{q}}}\delta \mathbf{q}\big|_{t_0}^{t_1} &amp;= 0
 \end{array}
 $$</div><p>where</p>
-<div class="markdown-them-math-block">$$\frac{\part L}{\part\mathbf{\dot{q}}}\delta \mathbf{q}\big|_{t_0}^{t_1} = 0
+<div class="markdown-them-math-block">$$\frac{\partial L}{\partial\mathbf{\dot{q}}}\delta \mathbf{q}\big|_{t_0}^{t_1} = 0
 $$</div><p>Thus</p>
-<div class="markdown-them-math-block">$$\forall \delta \mathbf q \Rightarrow \int_{t_1}^{t_2} ( \frac{\part L}{\part \mathbf{q}} - \frac{d}{dt}\frac{\part L}{\part \mathbf{\dot{q}}})\delta\mathbf{q}dt = 0 \\
+<div class="markdown-them-math-block">$$\forall \delta \mathbf q \Rightarrow \int_{t_1}^{t_2} ( \frac{\partial L}{\partial \mathbf{q}} - \frac{d}{dt}\frac{\partial L}{\partial \mathbf{\dot{q}}})\delta\mathbf{q}dt = 0 \\
 $$</div><p>Euler-Lagrange Equation</p>
-<div class="markdown-them-math-block">$$\frac{\part L}{\part \mathbf{q}} - \frac{d}{dt}\frac{\part L}{\part \mathbf{\dot{q}}} = 0
+<div class="markdown-them-math-block">$$\frac{\partial L}{\partial \mathbf{q}} - \frac{d}{dt}\frac{\partial L}{\partial \mathbf{\dot{q}}} = 0
 \tag{2}
 $$</div><p>Why do we care?</p>
 <ol>
@@ -198,8 +198,8 @@ $$</div><div class="markdown-them-math-block">$$V = \frac 1 2 k \mathbf x^2
 $$</div><p>Step 4: Lagrangian</p>
 <div class="markdown-them-math-block">$$L = T - V = \frac 1 2 m \mathbf{\dot q} ^ 2 - \frac 1 2 k \mathbf q^2
 $$</div><p>Step 5: Euler-Lagrange Equation</p>
-<div class="markdown-them-math-block">$$\frac {\part L} {\part \mathbf q} = - k\mathbf q , \quad
-\frac {d} {dt} \frac {\part L} {\part \mathbf {\dot q}} = m\mathbf{\ddot q}
+<div class="markdown-them-math-block">$$\frac {\partial L} {\partial \mathbf q} = - k\mathbf q , \quad
+\frac {d} {dt} \frac {\partial L} {\partial \mathbf {\dot q}} = m\mathbf{\ddot q}
 $$</div><div class="markdown-them-math-block">$$m\mathbf{\ddot q} = - k\mathbf q
 \tag 3
 $$</div>
