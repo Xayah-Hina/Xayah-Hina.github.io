@@ -4,8 +4,15 @@
   <meta charset="utf-8">
   
   
-  <title>Xayah</title>
+  <title>CSC417-Lecture-02 | Xayah</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  
+  <meta name="description" content="Time Integration
+How do we solve?
+$$m \mathbf {\ddot q} = - k \mathbf q
+$$More generally
+$$m \mathbf {\ddot q} = f(\mathbf q, \mathbf {\dot q})
+$$The ">
   
   
     <link rel="alternate" href="/atom.xml" title="Xayah" type="application/atom+xml">
@@ -60,9 +67,7 @@
 </header>
 
       <div class="outer">
-        <section id="main">
-  
-    <article id="post-CSC417-Lecture-02" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+        <section id="main"><article id="post-CSC417-Lecture-02" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
     <a href="/2022/02/01/CSC417-Lecture-02/" class="article-date">
   <time class="dt-published" datetime="2022-02-01T15:48:36.000Z" itemprop="datePublished">2022-02-01</time>
@@ -75,8 +80,8 @@
       <header class="article-header">
         
   
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2022/02/01/CSC417-Lecture-02/">CSC417-Lecture-02</a>
+    <h1 class="p-name article-title" itemprop="headline name">
+      CSC417-Lecture-02
     </h1>
   
 
@@ -147,131 +152,24 @@ $$</div>
     </footer>
   </div>
   
-</article>
-
-
-
-
+    
+<nav id="article-nav">
   
-    <article id="post-CSC417-Lecture-01" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
-  <div class="article-meta">
-    <a href="/2022/02/01/CSC417-Lecture-01/" class="article-date">
-  <time class="dt-published" datetime="2022-01-31T18:20:11.000Z" itemprop="datePublished">2022-02-01</time>
-</a>
-    
-  </div>
-  <div class="article-inner">
-    
-    
-      <header class="article-header">
+  
+    <a href="/2022/02/01/CSC417-Lecture-01/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">
         
+          CSC417-Lecture-01
+        
+      </div>
+    </a>
   
-    <h1 itemprop="name">
-      <a class="p-name article-title" href="/2022/02/01/CSC417-Lecture-01/">CSC417-Lecture-01</a>
-    </h1>
-  
+</nav>
 
-      </header>
-    
-    
-    <div class="e-content article-entry" itemprop="articleBody">
-      
-        <h2 id="lagrangian-mechanics">Lagrangian Mechanics</h2>
-<h3 id="newton's-laws of motion">Newton’s Laws of Motion</h3>
-<ol>
-<li>Every object will remain at rest or in uniform motion in a straight line unless compelled to change its state by the action of an external force.</li>
-</ol>
-<p>as</p>
-<ol start="2">
-<li>The force acting on an object is equal to the time rate-of-change of the momentum</li>
-</ol>
-<p>momentum:</p>
-<div class="markdown-them-math-block">$$I = m\mathbf{v}
-$$</div><p>force</p>
-<div class="markdown-them-math-block">$$f = \frac{d}{dt}(m\mathbf{v}) = m\frac{d}{dt}(\mathbf{v})
-$$</div><ol start="3">
-<li>For every action there is an equal and opposite reaction</li>
-</ol>
-<h3 id="variational-mechanics (aka analytical mechanics)">Variational Mechanics (aka. Analytical Mechanics)</h3>
-<p>Kinetic Energy and Potential Energy</p>
-<p>variational principle</p>
-<div class="markdown-them-math-block">$$e(f(t),\dot{f}(t),...) \Rightarrow \mathbb{R}
-$$</div><p>Generalized Coordinates</p>
-<div class="markdown-them-math-block">$$\begin{array}{ll}
-\mathbf{x}(t)&amp;=\mathbf{f}(\mathbf{q}(t)) \\
-\frac{d\mathbf{x}}{dt}(t)&amp;=\frac{d\mathbf{f}}{d\mathbf{q}}\mathbf{\dot{q}(t)}
-\end{array}
-$$</div><p>example</p>
-<div class="markdown-them-math-block">$$\begin{array}{ll}
-\mathbf{x}(t) = R\mathbf{X} + \mathbf{p} \\
-R \in SO_3 \\
-\mathbf{p} \in \mathbb{R^3}
-\end{array}
-$$</div><p>The Lagrangian</p>
-<div class="markdown-them-math-block">$$\mathbf{L = T - V}
-\tag{1}
-$$</div><h3 id="the-principle of least action (gottfried wilhelm leibniz)">The Principle of Least Action (Gottfried Wilhelm Leibniz)</h3>
-<p>Given the start point and the end point, find the path between them by finding a stationary point of the ACTION</p>
-<div class="markdown-them-math-block">$$S(\mathbf{q},\mathbf{\dot{q}}) = \int_{t_1}^{t_2}T(\mathbf{q},\mathbf{\dot{q}})- V(\mathbf{q},\mathbf{\dot{q}})dt
-$$</div><p>perturbation</p>
-<div class="markdown-them-math-block">$$S(\mathbf{q}+\delta\mathbf{q}, \mathbf{\dot{q}}+\delta\mathbf{\dot{q}}) = S(\mathbf{q}, \mathbf{\dot{q}})
-$$</div><p>The Calculus of Variations</p>
-<div class="markdown-them-math-block">$$\begin{array}{ll}
-S(\mathbf{q},\mathbf{\dot{q}}) &amp;= \int_{t_1}^{t_2}L(\mathbf{q},\mathbf{\dot{q}})dt\\
-S(\mathbf{q}+\delta\mathbf{q}, \mathbf{\dot{q}}+\delta\mathbf{\dot{q}}) &amp;= \int_{t_1}^{t_2}L(\mathbf{q}+\delta\mathbf{q}, \mathbf{\dot{q}}+\delta\mathbf{\dot{q}})dt\\
-&amp;\approx \int_{t_1}^{t_2}L(\mathbf{q},\mathbf{\dot{q}})dt + \int_{t_1}^{t_2} \frac{\partial L}{\partial \mathbf{q}}\delta\mathbf{q} + \frac{\partial L}{\partial \mathbf{\dot{q}}}\delta\mathbf{\dot{q}} dt
-\end{array}
-$$</div><p>with (2) &amp; (3)</p>
-<div class="markdown-them-math-block">$$\begin{array}{ll}
-
-\int_{t_1}^{t_2} \frac{\partial L}{\partial \mathbf{q}}\delta\mathbf{q} + \frac{\partial L}{\partial \mathbf{\dot{q}}}\delta\mathbf{\dot{q}} dt &amp;= 0\\
-\int_{t_1}^{t_2} \frac{\partial L}{\partial \mathbf{q}}\delta\mathbf{q} - \frac{d}{dt}\frac{\partial L}{\partial \mathbf{\dot{q}}}\delta\mathbf{q}dt + \frac{\partial L}{\partial\mathbf{\dot{q}}}\delta \mathbf{q}\big|_{t_0}^{t_1} &amp;= 0
-\end{array}
-$$</div><p>where</p>
-<div class="markdown-them-math-block">$$\frac{\partial L}{\partial\mathbf{\dot{q}}}\delta \mathbf{q}\big|_{t_0}^{t_1} = 0
-$$</div><p>Thus</p>
-<div class="markdown-them-math-block">$$\forall \delta \mathbf q \Rightarrow \int_{t_1}^{t_2} ( \frac{\partial L}{\partial \mathbf{q}} - \frac{d}{dt}\frac{\partial L}{\partial \mathbf{\dot{q}}})\delta\mathbf{q}dt = 0 \\
-$$</div><p>Euler-Lagrange Equation</p>
-<div class="markdown-them-math-block">$$\frac{\partial L}{\partial \mathbf{q}} - \frac{d}{dt}\frac{\partial L}{\partial \mathbf{\dot{q}}} = 0
-\tag{2}
-$$</div><p>Why do we care?</p>
-<ol>
-<li>It’s a <u>unifying principle</u>. Can derive equations of motion - Deformable Objects, Fluid, RigidBodies</li>
-</ol>
-<h3 id="example:-mass-spring systems in 1d">Example: Mass-Spring Systems in 1D</h3>
-<p>Step 1: Configurations</p>
-<div class="markdown-them-math-block">$$\mathbf q = \mathbf x(t) \\
-\mathbf {\dot q} = \mathbf v(t)\\
-$$</div><p>Step 2: Kinetic Energy</p>
-<div class="markdown-them-math-block">$$T = \frac 1 2 m \mathbf v^2
-$$</div><p>Step 3: Potential Energy</p>
-<div class="markdown-them-math-block">$$Hooke's Law:W = \int -k\mathbf x \mathbf v dt = \int -k\mathbf x d\mathbf x = -\frac 1 2 k \mathbf x^2 \\
-$$</div><div class="markdown-them-math-block">$$V = \frac 1 2 k \mathbf x^2
-$$</div><p>Step 4: Lagrangian</p>
-<div class="markdown-them-math-block">$$L = T - V = \frac 1 2 m \mathbf{\dot q} ^ 2 - \frac 1 2 k \mathbf q^2
-$$</div><p>Step 5: Euler-Lagrange Equation</p>
-<div class="markdown-them-math-block">$$\frac {\partial L} {\partial \mathbf q} = - k\mathbf q , \quad
-\frac {d} {dt} \frac {\partial L} {\partial \mathbf {\dot q}} = m\mathbf{\ddot q}
-$$</div><div class="markdown-them-math-block">$$m\mathbf{\ddot q} = - k\mathbf q
-\tag 3
-$$</div>
-      
-    </div>
-    <footer class="article-footer">
-      
-      
-      
-  <ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/CSC417/" rel="tag">CSC417</a></li></ul>
-
-    </footer>
-  </div>
   
 </article>
 
-
-
-
-  
 
 
 </section>
