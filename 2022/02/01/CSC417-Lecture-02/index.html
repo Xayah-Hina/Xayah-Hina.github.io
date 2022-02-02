@@ -117,32 +117,38 @@ $$</div><p>Finite Difference</p>
 $$</div><p>we may get</p>
 <div class="markdown-them-math-block">$$\mathbf {y^{t+1}} - \mathbf {y^t} = \Delta t \mathbf A ^ {-1} \mathbf f( \mathbf y^t )
 $$</div><p>aka.</p>
-<div class="markdown-them-math-block">$$\mathbf {\dot q}^{t+1} = \mathbf {\dot q}^t - \Delta t \frac k m \mathbf q^t \\
-\mathbf {q}^{t+1} = \mathbf q^t + \Delta t  \mathbf { \dot q} ^t \\
+<div class="markdown-them-math-block">$$\begin{array}{rl}
+\mathbf {\dot q}^{t+1} &amp;=&amp; \mathbf {\dot q}^t - \Delta t \frac k m \mathbf q^t \\
+\mathbf {q}^{t+1} &amp;=&amp; \mathbf q^t + \Delta t  \mathbf { \dot q} ^t \\
+\end{array}
 $$</div><p>Runge-Kutta</p>
 <div class="markdown-them-math-block">$$\mathbf {y^{t+1}} - \mathbf {y^t} = \Delta t \mathbf A ^ {-1} ( \alpha \mathbf f( \mathbf y^{t+a} ) +  \beta \mathbf f( \mathbf y^{t+b} ) )
 $$</div><p>with <span class="markdown-them-math-inline">$ a = 0, b = 1, \alpha = \beta = \frac 1 2 $</span>, it becomes Heun’s Method</p>
 <div class="markdown-them-math-block">$$\mathbf {y^{t+1}} - \mathbf {y^t} = \frac {\Delta t} 2 \mathbf A ^ {-1} ( \mathbf f(\mathbf y^{t} ) + \mathbf f(  \mathbf y^{t+1} ) )
-$$</div><div class="markdown-them-math-block">$$\kappa_1 = \mathbf A^{-1} \mathbf f( \mathbf y^t ) \\
-\kappa_2 = \mathbf A^{-1} \mathbf f( \mathbf y^t + \Delta t \cdot \kappa_1 ) \\
-\mathbf {y^{t+1}} - \mathbf {y^t} = \frac {\Delta t} 2 \mathbf ( \kappa_1 + \kappa_2 ) \\
+$$</div><div class="markdown-them-math-block">$$\begin{array}{rl}
+\kappa_1 &amp;=&amp; \mathbf A^{-1} \mathbf f( \mathbf y^t ) \\
+\kappa_2 &amp;=&amp; \mathbf A^{-1} \mathbf f( \mathbf y^t + \Delta t \cdot \kappa_1 ) \\
+\mathbf {y^{t+1}} - \mathbf {y^t} &amp;=&amp; \frac {\Delta t} 2 \mathbf ( \kappa_1 + \kappa_2 ) \\
+\end{array}
 $$</div><p>RK4</p>
-<div class="markdown-them-math-block">$$\kappa_1 = \mathbf A^{-1} \mathbf f( \mathbf y^t ) \\
-\kappa_2 = \mathbf A^{-1} \mathbf f( \mathbf y^t + \frac {\Delta t} 2 \cdot \kappa_1 ) \\
-\kappa_3 = \mathbf A^{-1} \mathbf f( \mathbf y^t + \frac {\Delta t} 2 \cdot \kappa_2 ) \\
-\kappa_4 = \mathbf A^{-1} \mathbf f( \mathbf y^t + \Delta t \cdot \kappa_3 ) \\
-\mathbf {y^{t+1}} - \mathbf {y^t} = \frac {\Delta t} 6 (\kappa_1 + 2 \cdot \kappa_2 + 2 \cdot \kappa_3 + \kappa_4)\\
+<div class="markdown-them-math-block">$$\begin{array}{rl}
+\kappa_1 &amp;=&amp; \mathbf A^{-1} \mathbf f( \mathbf y^t ) \\
+\kappa_2 &amp;=&amp; \mathbf A^{-1} \mathbf f( \mathbf y^t + \frac {\Delta t} 2 \cdot \kappa_1 ) \\
+\kappa_3 &amp;=&amp; \mathbf A^{-1} \mathbf f( \mathbf y^t + \frac {\Delta t} 2 \cdot \kappa_2 ) \\
+\kappa_4 &amp;=&amp; \mathbf A^{-1} \mathbf f( \mathbf y^t + \Delta t \cdot \kappa_3 ) \\
+\mathbf {y^{t+1}} - \mathbf {y^t} &amp;=&amp; \frac {\Delta t} 6 (\kappa_1 + 2 \cdot \kappa_2 + 2 \cdot \kappa_3 + \kappa_4)\\
+\end{array}
 $$</div><p>Backward Euler</p>
 <div class="markdown-them-math-block">$$\mathbf {y^{t+1}} - \mathbf {y^t} = \Delta t \mathbf A ^ {-1} \mathbf f( \mathbf y^{t+1} )
 $$</div><p>assume <span class="markdown-them-math-inline">$ \mathbf f( \mathbf y ) $</span> is linear, so <span class="markdown-them-math-inline">$ \mathbf f( \mathbf y^{t+1}) = \mathbf B \mathbf y ^ {t+1} $</span>, therefore</p>
-<div class="markdown-them-math-block">$$\mathbf {y^{t+1}} - \mathbf {y^t} = \Delta t \mathbf A ^ {-1} \mathbf B \mathbf y ^ {t+1} \\
-(\mathbf I - \Delta \mathbf A ^ {-1} \mathbf B) \mathbf y ^ {t + 1} = \mathbf y ^ t
+<div class="markdown-them-math-block">$$\begin{array}{rl}
+\mathbf {y^{t+1}} - \mathbf {y^t} &amp;=&amp; \Delta t \mathbf A ^ {-1} \mathbf B \mathbf y ^ {t+1} \\
+(\mathbf I - \Delta \mathbf A ^ {-1} \mathbf B) \mathbf y ^ {t + 1} &amp;=&amp; \mathbf y ^ t
+\end{array}
 $$</div><p>Symplectic Euler</p>
-<div class="markdown-them-math-block">$$\mathbf {\dot q}^{t+1} = \mathbf {\dot q}^t - \Delta t \frac k m \mathbf q^t \\
-\mathbf {q}^{t+1} = \mathbf q^t + \Delta t  \mathbf { \dot q} ^{t+1} \\
-$$</div><div class="markdown-them-math-block">$$\begin{array}{ll}
-\mathbf{x}(t)&amp;=\mathbf{f}(\mathbf{q}(t)) \\
-\frac{d\mathbf{x}}{dt}(t)&amp;=\frac{d\mathbf{f}}{d\mathbf{q}}\mathbf{\dot{q}(t)}
+<div class="markdown-them-math-block">$$\begin{array}{rl}
+\mathbf {\dot q}^{t+1} &amp;=&amp; \mathbf {\dot q}^t - \Delta t \frac k m \mathbf q^t \\
+\mathbf {q}^{t+1} &amp;=&amp; \mathbf q^t + \Delta t  \mathbf { \dot q} ^{t+1} \\
 \end{array}
 $$</div>
       
