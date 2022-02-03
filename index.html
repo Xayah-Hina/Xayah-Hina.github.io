@@ -64,8 +64,8 @@
   
     <article id="post-CSC417-Lecture-03" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
   <div class="article-meta">
-    <a href="/2022/02/02/CSC417-Lecture-03/" class="article-date">
-  <time class="dt-published" datetime="2022-02-01T18:23:32.000Z" itemprop="datePublished">2022-02-02</time>
+    <a href="/2022/02/03/CSC417-Lecture-03/" class="article-date">
+  <time class="dt-published" datetime="2022-02-02T18:23:32.000Z" itemprop="datePublished">2022-02-03</time>
 </a>
     
   </div>
@@ -76,7 +76,7 @@
         
   
     <h1 itemprop="name">
-      <a class="p-name article-title" href="/2022/02/02/CSC417-Lecture-03/">CSC417-Lecture-03</a>
+      <a class="p-name article-title" href="/2022/02/03/CSC417-Lecture-03/">CSC417-Lecture-03</a>
     </h1>
   
 
@@ -86,7 +86,53 @@
     <div class="e-content article-entry" itemprop="articleBody">
       
         <h2 id="mass-spring-system in 3d">Mass-Spring System in 3D</h2>
-
+<h4 id="mass-spring-system in 3d-1">Mass-Spring System in 3D</h4>
+<p>Configuration</p>
+<ul>
+<li><span class="markdown-them-math-inline">$ \mathbf q = \begin{pmatrix} \mathbf x_1 \\ \mathbf x_2 \end{pmatrix} $</span></li>
+<li><span class="markdown-them-math-inline">$ \mathbf {\dot q} = \begin{pmatrix} \mathbf {\dot x}_1 \\ \mathbf {\dot x}_2 \end{pmatrix} $</span></li>
+</ul>
+<p>Kinetic Energy:</p>
+<div class="markdown-them-math-block">$$T = \frac 1 2 \mathbf {\dot q} ^ T \mathbf M \mathbf {\dot q}
+$$</div><p>where <span class="markdown-them-math-inline">$ \mathbf M = \begin{pmatrix} \mathbf M_0 &amp;&amp; 0 \\ 0 &amp;&amp; \mathbf M_1 \\ \end{pmatrix} $</span></p>
+<p>Potential Energy:</p>
+<div class="markdown-them-math-block">$$V = \frac 1 2 k (l - r)^2
+$$</div><p>where</p>
+<div class="markdown-them-math-block">$$l = \norm {\begin{pmatrix} -I &amp;&amp; I \end{pmatrix} \begin{pmatrix} \mathbf x_1 \\ \mathbf x_2 \end{pmatrix} } = \sqrt {\mathbf {\Delta x}^T \mathbf {\Delta x} } = \sqrt {\mathbf q^T \mathbf B^T \mathbf B \mathbf q }
+$$</div><p>The Lagrangian</p>
+<div class="markdown-them-math-block">$$L = \frac 1 2 \mathbf {\dot q} ^ T \mathbf M \mathbf {\dot q} - \frac 1 2 k (\sqrt {\mathbf q^T \mathbf B^T \mathbf B \mathbf q } - r)^2
+$$</div><p>Euler-Lagrange Equation</p>
+<p>notice that only <span class="markdown-them-math-inline">$ V $</span> is concerned with <span class="markdown-them-math-inline">$ \mathbf q $</span>, the left side is actually the <u>force</u>.</p>
+<div class="markdown-them-math-block">$$\frac{d}{dt}\frac{\partial L}{\partial \mathbf{\dot{q}}} = - \frac{\partial V}{\partial \mathbf{q}}
+$$</div><p>so, there is</p>
+<div class="markdown-them-math-block">$$\mathbf M \mathbf {\ddot q} = - \frac{\partial V}{\partial \mathbf{q}}
+$$</div><h4 id="large-mass-spring system in 3d">Large Mass-Spring System in 3D</h4>
+<p>Configuration</p>
+<ul>
+<li><span class="markdown-them-math-inline">$ \mathbf q = \begin{pmatrix} \mathbf x_1 \\ ... \\ \mathbf x_n \end{pmatrix} $</span></li>
+<li><span class="markdown-them-math-inline">$ \mathbf {\dot q} = \begin{pmatrix} \mathbf {\dot x}_1 \\ ... \\ \mathbf {\dot x}_n \end{pmatrix} $</span></li>
+</ul>
+<p>Kinetic Energy:</p>
+<div class="markdown-them-math-block">$$T = \frac 1 2 \mathbf {\dot q} ^ T \mathbf M \mathbf {\dot q}
+$$</div><p>where <span class="markdown-them-math-inline">$ \mathbf M = \begin{pmatrix} \mathbf M_0 &amp;&amp; \cdots &amp;&amp; 0 \\ \vdots &amp;&amp; \ddots &amp;&amp; \vdots \\ 0 &amp;&amp; \cdots &amp;&amp; \mathbf M_n \end{pmatrix} \in \mathbb R^{3n \times 3n}$</span></p>
+<p>Potential Energy:</p>
+<div class="markdown-them-math-block">$$V = \sum_{j=0}^{m-1}V_j(\mathbf x_A , \mathbf x_B) = \sum_{j=0}^{m-1}V_j(\mathbf E_j \mathbf q)
+$$</div><p>The Lagrangian</p>
+<div class="markdown-them-math-block">$$L = \frac 1 2 \mathbf {\dot q} ^ T \mathbf M \mathbf {\dot q} - \frac 1 2 k (\sqrt {\mathbf q^T \mathbf B^T \mathbf B \mathbf q } - r)^2
+$$</div><p>Euler-Lagrange Equation</p>
+<div class="markdown-them-math-block">$$\mathbf M \mathbf {\ddot q} = - \frac{\partial V}{\partial \mathbf{q}} \\
+- \frac{\partial V}{\partial \mathbf q } = - \frac{\partial}{\partial \mathbf{q}} \sum_{j=0}^{m-1}V_j(\mathbf E_j \mathbf q) = - \sum_{j=0}^{m-1} \frac{\partial}{\partial \mathbf q } V_j(\mathbf E_j \mathbf q) = - \sum_{j=0}^{m-1} \mathbf E_j^T \frac{\partial}{\partial \mathbf q_j}  V_j (\mathbf q_j) = \sum_{j=0}^{m-1} \mathbf E_j^T \mathbf f_j (\mathbf q_j)
+$$</div><p>therefore</p>
+<div class="markdown-them-math-block">$$\mathbf M \mathbf {\ddot q} = \sum_{j=0}^{m-1} \mathbf E_j^T \mathbf f_j (\mathbf q_j)
+$$</div><p>Linearly-Implicit Time Integration</p>
+<div class="markdown-them-math-block">$$\mathbf M \mathbf {\dot q}^{t+1} = \mathbf M \mathbf {\dot q}^t + \Delta t \mathbf f( 
+\mathbf q^{t+1}) \\
+\mathbf q^{t+1} = \mathbf q^t + \Delta t \mathbf {\dot q}^{t+1} \\
+$$</div><p>do approximation</p>
+<div class="markdown-them-math-block">$$\mathbf M \mathbf {\dot q}^{t+1} = \mathbf M \mathbf {\dot q}^t + \Delta t \mathbf f( 
+\mathbf q^{t+1}) = \mathbf M \mathbf {\dot q}^t + \Delta t \mathbf f( \mathbf q^t + \Delta t \mathbf {\dot q}^{t+1}) = \mathbf M \mathbf {\dot q}^t + \Delta t \mathbf f( \mathbf q^t) + \Delta t^2 \frac {\partial {\mathbf f} } {\partial {\mathbf q}} \mathbf {\dot q}^{t+1} \\
+K = \frac {\partial {\mathbf f} } {\partial {\mathbf q}} = \sum_{j=0}^{m-1} [\mathbf E_j^T (-\frac {\partial^2 V_j} {\partial \mathbf q_j^2}) \mathbf E_j] \\
+$$</div>
       
     </div>
     <footer class="article-footer">
@@ -229,7 +275,7 @@ $$</div>
     <div class="e-content article-entry" itemprop="articleBody">
       
         <h2 id="lagrangian-mechanics">Lagrangian Mechanics</h2>
-<h3 id="newton's-laws of motion">Newton’s Laws of Motion</h3>
+<h4 id="newton's-laws of motion">Newton’s Laws of Motion</h4>
 <ol>
 <li>Every object will remain at rest or in uniform motion in a straight line unless compelled to change its state by the action of an external force.</li>
 </ol>
@@ -244,7 +290,7 @@ $$</div><p>force</p>
 $$</div><ol start="3">
 <li>For every action there is an equal and opposite reaction</li>
 </ol>
-<h3 id="variational-mechanics (aka analytical mechanics)">Variational Mechanics (aka. Analytical Mechanics)</h3>
+<h4 id="variational-mechanics (aka analytical mechanics)">Variational Mechanics (aka. Analytical Mechanics)</h4>
 <p>Kinetic Energy and Potential Energy</p>
 <p>variational principle</p>
 <div class="markdown-them-math-block">$$e(f(t),\dot{f}(t),...) \Rightarrow \mathbb{R}
@@ -262,7 +308,7 @@ R \in SO_3 \\
 $$</div><p>The Lagrangian</p>
 <div class="markdown-them-math-block">$$\mathbf{L = T - V}
 \tag{1}
-$$</div><h3 id="the-principle of least action (gottfried wilhelm leibniz)">The Principle of Least Action (Gottfried Wilhelm Leibniz)</h3>
+$$</div><h4 id="the-principle of least action (gottfried wilhelm leibniz)">The Principle of Least Action (Gottfried Wilhelm Leibniz)</h4>
 <p>Given the start point and the end point, find the path between them by finding a stationary point of the ACTION</p>
 <div class="markdown-them-math-block">$$S(\mathbf{q},\mathbf{\dot{q}}) = \int_{t_1}^{t_2}T(\mathbf{q},\mathbf{\dot{q}})- V(\mathbf{q},\mathbf{\dot{q}})dt
 $$</div><p>perturbation</p>
@@ -290,7 +336,7 @@ $$</div><p>Why do we care?</p>
 <ol>
 <li>It’s a <u>unifying principle</u>. Can derive equations of motion - Deformable Objects, Fluid, RigidBodies</li>
 </ol>
-<h3 id="example:-mass-spring systems in 1d">Example: Mass-Spring Systems in 1D</h3>
+<h4 id="example:-mass-spring systems in 1d">Example: Mass-Spring Systems in 1D</h4>
 <p>Step 1: Configurations</p>
 <div class="markdown-them-math-block">$$\mathbf q = \mathbf x(t) \\
 \mathbf {\dot q} = \mathbf v(t)\\
