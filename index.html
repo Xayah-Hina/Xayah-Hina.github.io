@@ -131,8 +131,16 @@ $$</div><p>Linearly-Implicit Time Integration</p>
 $$</div><p>do approximation</p>
 <div class="markdown-them-math-block">$$\mathbf M \mathbf {\dot q}^{t+1} = \mathbf M \mathbf {\dot q}^t + \Delta t \mathbf f( 
 \mathbf q^{t+1}) = \mathbf M \mathbf {\dot q}^t + \Delta t \mathbf f( \mathbf q^t + \Delta t \mathbf {\dot q}^{t+1}) = \mathbf M \mathbf {\dot q}^t + \Delta t \mathbf f( \mathbf q^t) + \Delta t^2 \frac {\partial {\mathbf f} } {\partial {\mathbf q}} \mathbf {\dot q}^{t+1} \\
-K = \frac {\partial {\mathbf f} } {\partial {\mathbf q}} = \sum_{j=0}^{m-1} [\mathbf E_j^T (-\frac {\partial^2 V_j} {\partial \mathbf q_j^2}) \mathbf E_j] \\
-$$</div>
+\mathbf K = \frac {\partial {\mathbf f} } {\partial {\mathbf q}} = \sum_{j=0}^{m-1} [\mathbf E_j^T (-\frac {\partial^2 V_j} {\partial \mathbf q_j^2}) \mathbf E_j] \\
+(\mathbf M - \Delta t^2 \mathbf K) \mathbf {\dot q}^{t+1} = \mathbf M \mathbf {\dot q}^t + \Delta t \mathbf f( 
+\mathbf q^t)
+$$</div><h4 id="with-fixed boundary conditions">with Fixed Boundary Conditions</h4>
+<p>Configuration</p>
+<ul>
+<li><span class="markdown-them-math-inline">$ \mathbf q = \begin{pmatrix} \mathbf x_1 \\ ... \\ \mathbf x_n \end{pmatrix} $</span></li>
+<li><span class="markdown-them-math-inline">$ \mathbf {\dot q} = \begin{pmatrix} \mathbf {\dot x}_1 \\ ... \\ \mathbf {\dot x}_n \end{pmatrix} $</span></li>
+</ul>
+
       
     </div>
     <footer class="article-footer">
@@ -226,7 +234,7 @@ $$</div><p>Backward Euler</p>
 $$</div><p>assume <span class="markdown-them-math-inline">$ \mathbf f( \mathbf y ) $</span> is linear, so <span class="markdown-them-math-inline">$ \mathbf f( \mathbf y^{t+1}) = \mathbf B \mathbf y ^ {t+1} $</span>, therefore</p>
 <div class="markdown-them-math-block">$$\begin{array}{rl}
 \mathbf {y^{t+1}} - \mathbf {y^t} &amp;=&amp; \Delta t \mathbf A ^ {-1} \mathbf B \mathbf y ^ {t+1} \\
-(\mathbf I - \Delta \mathbf A ^ {-1} \mathbf B) \mathbf y ^ {t + 1} &amp;=&amp; \mathbf y ^ t
+(\mathbf I - \Delta t \mathbf A ^ {-1} \mathbf B) \mathbf y ^ {t + 1} &amp;=&amp; \mathbf y ^ t
 \end{array}
 $$</div><p>Symplectic Euler</p>
 <div class="markdown-them-math-block">$$\begin{array}{rl}

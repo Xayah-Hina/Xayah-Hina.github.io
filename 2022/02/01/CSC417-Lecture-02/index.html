@@ -143,7 +143,7 @@ $$</div><p>Backward Euler</p>
 $$</div><p>assume <span class="markdown-them-math-inline">$ \mathbf f( \mathbf y ) $</span> is linear, so <span class="markdown-them-math-inline">$ \mathbf f( \mathbf y^{t+1}) = \mathbf B \mathbf y ^ {t+1} $</span>, therefore</p>
 <div class="markdown-them-math-block">$$\begin{array}{rl}
 \mathbf {y^{t+1}} - \mathbf {y^t} &amp;=&amp; \Delta t \mathbf A ^ {-1} \mathbf B \mathbf y ^ {t+1} \\
-(\mathbf I - \Delta \mathbf A ^ {-1} \mathbf B) \mathbf y ^ {t + 1} &amp;=&amp; \mathbf y ^ t
+(\mathbf I - \Delta t \mathbf A ^ {-1} \mathbf B) \mathbf y ^ {t + 1} &amp;=&amp; \mathbf y ^ t
 \end{array}
 $$</div><p>Symplectic Euler</p>
 <div class="markdown-them-math-block">$$\begin{array}{rl}
