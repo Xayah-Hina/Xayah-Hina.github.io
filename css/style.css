@@ -595,6 +595,7 @@ a.article-title:hover {
   width: 100%;
   border-collapse: collapse;
   border-spacing: 0;
+  text-align: left;
 }
 .article-entry th {
   font-weight: bold;
@@ -675,7 +676,6 @@ a.article-title:hover {
 }
 .article-entry code {
   word-break: break-all;
-  text-align: left;
 }
 .article-entry .katex {
   font-size: 1em;
