@@ -9,8 +9,9 @@
   
   <meta name="description" content="Learn $\LaTeX$ in 30 minutes
 Learn LaTeX in 30 minutes
-$ \LaTeX $
-">
+Writing your first piece of LATEX
+1\documentclass&amp;#123;article&amp;#125;
+The first line of code dec">
   
   
     <link rel="alternate" href="/atom.xml" title="Xayah" type="application/atom+xml">
@@ -90,7 +91,16 @@ $ \LaTeX $
       
         <h2 id="learn-$\latex$ in 30 minutes">Learn <span class="markdown-them-math-inline">$\LaTeX$</span> in 30 minutes</h2>
 <p><a target="_blank" rel="noopener" href="https://www.overleaf.com/learn/latex/Learn_LaTeX_in_30_minutes">Learn LaTeX in 30 minutes</a></p>
-<p><span class="markdown-them-math-inline">$ \LaTeX $</span></p>
+<h3 id="writing-your first piece of latex">Writing your first piece of LATEX</h3>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">\documentclass&#123;article&#125;</span><br></pre></td></tr></table></figure>
+<p>The first line of code declares the type of document, known as the <em>class</em>. The class controls the overall appearance of the document. Different types of documents will require different classes i.e. a CV/resume will require a different class than a scientific paper. In this case, the class is <strong><code>article</code></strong>, the simplest and most common LATEX class. Other types of documents you may be working on may require different classes such as <strong>book</strong> or <strong>report</strong>.</p>
+<h3 id="the-preamble of a document">The preamble of a document</h3>
+<p>In the previous example the text was entered after the <strong><code>\begin&#123;document&#125;</code></strong> command. Everything in your **<code>.tex</code>**file <em>before</em> this point is called the <strong>preamble</strong>. In the preamble you define the type of document you are writing, the language you are writing in, the <em>packages</em> you would like to use (more on this later) and several other elements.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">\documentclass[12pt, letterpaper]&#123;article&#125;</span><br></pre></td></tr></table></figure>
+<p>As said before, this defines the type of document. Some additional parameters included in the square brackets can be passed to the command. These parameters must be comma-separated. In the example, the extra parameters set the font size (<strong><code>12pt</code></strong>) and the paper size (<strong><code>letterpaper</code></strong>). Of course other font sizes (<strong><code>9pt</code></strong>, <strong><code>11pt</code></strong>, <strong><code>12pt</code></strong>) can be used, but if none is specified, the default size is <strong><code>10pt</code></strong>. As for the paper size other possible values are <strong><code>a4paper</code></strong> and <strong><code>legalpaper</code></strong>; see the article about <a target="_blank" rel="noopener" href="https://www.overleaf.com/learn/latex/Page_size_and_margins">Page size and margins</a> for more details about this.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">\usepackage[utf8]&#123;inputenc&#125;</span><br></pre></td></tr></table></figure>
+<p>This is the encoding for the document. It can be omitted or changed to another encoding but utf-8 is recommended. Unless you specifically need another encoding, or if you are unsure about it, add this line to the preamble.</p>
+<h3 id="adding-a title, author and date">Adding a title, author and date</h3>
 
       
     </div>
