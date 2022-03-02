@@ -120,6 +120,20 @@ The first line of code dec">
 <p>The <strong><code>\includegraphics&#123;universe&#125;</code></strong> command is the one that actually included the image in the document. Here <em>universe</em> is the name of the file containing the image without the extension, then <em>universe.PNG</em> becomes <em>universe</em>. The file name of the image should not contain white spaces nor multiple dots.</p>
 <p>Note: <em>The file extension is allowed to be included, but it’s a good idea to omit it. If the file extension is omitted it will prompt LaTeX to search for all the supported formats. It is also usually recommended to use lowercase letters for the file extension when uploading image files.</em></p>
 <h3 id="captions,-labels and references">Captions, labels and references</h3>
+<p>There are three important commands in the example:</p>
+<ul>
+<li>
+<p><strong><code>\caption&#123;a nice plot&#125;</code></strong>: As you may expect this command sets the caption for the figure. If you create a list of figures this caption will be used there. You can place it above or below the figure.</p>
+</li>
+<li>
+<p><strong><code>\label&#123;fig:mesh1&#125;</code></strong>: If you need to refer the image within your document, set a label with this command. The label will number the image, and combined with the next command will allow you to reference it.</p>
+</li>
+<li>
+<p><strong><code>\ref&#123;fig:mesh1&#125;</code></strong>: This code will be substituted by the number corresponding to the referenced figure.</p>
+</li>
+</ul>
+<p>When placing images in a LATEX document, we should always put them inside a <strong><code>figure</code></strong> environment or similar so that LATEX will position the image in a way that fits in with the rest of your text.</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">\begin&#123;figure&#125;[h]</span><br><span class="line">    \centering</span><br><span class="line">    \includegraphics[width=0.25\textwidth]&#123;mesh&#125;</span><br><span class="line">    \caption&#123;a nice plot&#125;</span><br><span class="line">    \label&#123;fig:mesh1&#125;</span><br><span class="line">\end&#123;figure&#125;</span><br><span class="line"></span><br><span class="line">As you can see in the figure \ref&#123;fig:mesh1&#125;, the </span><br><span class="line">function grows near 0. Also, in the page \pageref&#123;fig:mesh1&#125; </span><br><span class="line">is the same example.</span><br></pre></td></tr></table></figure>
 
       
     </div>
