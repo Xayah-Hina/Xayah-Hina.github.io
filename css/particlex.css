@@ -376,7 +376,7 @@ pre .copycode {
 #home-head .home-info .loop:nth-child(1) {
     border-radius: 38% 62% 63% 37%/41% 44% 56% 59%;
     background: #fff;
-    opacity: 0.3;
+    opacity: 0.1;
     -webkit-transform: rotate(30deg);
     -moz-transform: rotate(30deg);
     -o-transform: rotate(30deg);
@@ -390,7 +390,7 @@ pre .copycode {
 #home-head .home-info .loop:nth-child(2) {
     border-radius: 38% 62% 63% 37%/41% 44% 56% 59%;
     background: #fff;
-    opacity: 0.45;
+    opacity: 0.2;
     -webkit-transform: rotate(60deg);
     -moz-transform: rotate(60deg);
     -o-transform: rotate(60deg);
@@ -403,7 +403,7 @@ pre .copycode {
 }
 #home-head .home-info .loop:nth-child(3) {
     border-radius: 38% 62% 63% 37%/41% 44% 56% 59%;
-    opacity: 0.3;
+    opacity: 0.1;
     background: #fff;
     -webkit-transform: rotate(90deg);
     -moz-transform: rotate(90deg);
@@ -417,7 +417,7 @@ pre .copycode {
 }
 #home-head .home-info .loop:nth-child(4) {
     border-radius: 38% 62% 63% 37%/41% 44% 56% 59%;
-    opacity: 0.45;
+    opacity: 0.2;
     background: #fff;
     -webkit-transform: rotate(120deg);
     -moz-transform: rotate(120deg);
