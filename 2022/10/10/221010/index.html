@@ -1,0 +1,526 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+        <title>旧事重提：启蒙与世界重建 | Xayah Music TV</title>
+        <meta name="author" content="Xayah">
+        <meta name="description" content="">
+        <meta name="keywords" content="">
+        <link rel="icon" href="https://github.com/Xayah-Hina/HinaPE-Resource/blob/ffbbf9e3f35afc4d6b560ba5e3128e28b63a6ac9/image-bed/20220107191314_7f0c8.jpg?raw=true">
+        <script src="https://cdn.staticfile.org/instant.page/5.1.0/instantpage.min.js" type="module"></script>
+        <script src="https://cdn.staticfile.org/font-awesome/6.2.0/js/all.min.js"></script>
+        
+        <link rel="stylesheet" href="/css/fonts.min.css">
+        <link rel="stylesheet" href="/css/particlex.css">
+        
+        <script src="https://cdn.staticfile.org/vue/3.2.33/vue.global.prod.min.js"></script>
+        <script src="https://cdn.staticfile.org/animejs/3.2.1/anime.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js" ></script>
+        <script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js" ></script>
+    <meta name="generator" content="Hexo 6.3.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+    <body>
+        <div id="loading" style="height:100vh;width:100vw;position:fixed;display:flex;z-index:200;justify-content:space-between;background:#fff;transition:opacity 0.3s ease-out"><div style="position:fixed;height:100vh;width:100vw;display:flex;justify-content:center;align-items:center"><div id="loadcontent" style="width:50vmin;height:50vmin;padding:50px;border-radius:50%;display:flex;justify-content:center;align-items:center;border:solid 10px #a3ddfb;text-align:center"><div><h2>Welcome to Xayah Music TV</h2><p style="word-break:keep-all">In solitude, where we are least alone.</p><div><img alt="loading" src="/loading.gif"></div></div></div></div></div>
+        <div id="layout">
+            <i data-fa-symbol="calendar-solid" class="fa-solid fa-calendar fa-fw"></i>
+            <i data-fa-symbol="bookmark-solid" class="fa-solid fa-bookmark fa-fw"></i>
+            <i data-fa-symbol="tags-solid" class="fa-solid fa-tags fa-fw"></i>
+            <transition name="into">
+                <div v-show="show_page" style="display: -not-none">
+                    <div id="menu_show">
+                         
+<nav id="menu">
+    <div class="desktop-menu">
+        <a href="/">
+            <span class="title">Xayah Music TV</span>
+        </a>
+        
+        <a href="/">
+            <i class="fa-solid fa-house fa-fw"></i>
+            <span>&ensp;home</span>
+        </a>
+        
+        <a href="/about">
+            <i class="fa-solid fa-id-card fa-fw"></i>
+            <span>&ensp;about</span>
+        </a>
+        
+        <a href="/archives">
+            <i class="fa-solid fa-box-archive fa-fw"></i>
+            <span>&ensp;archives</span>
+        </a>
+        
+        <a href="/categories">
+            <i class="fa-solid fa-bookmark fa-fw"></i>
+            <span>&ensp;categories</span>
+        </a>
+        
+        <a href="/tags">
+            <i class="fa-solid fa-tags fa-fw"></i>
+            <span>&ensp;tags</span>
+        </a>
+        
+    </div>
+    <div :class="'phone-menu ' + menu_show" id="phone-menu">
+        <div class="curtain" @click="menu_show = !menu_show" v-show="menu_show"></div>
+        <div :class="'title'" @click="menu_show = !menu_show">
+            <i class="fa-solid fa-bars fa-fw"></i>
+            <span>&emsp;Xayah Music TV</span>
+        </div>
+        <transition name="slide">
+        <div class="items" v-show="menu_show">
+            
+            <a href="/">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-house fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">home</div>
+                </div>
+            </a>
+            
+            <a href="/about">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-id-card fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">about</div>
+                </div>
+            </a>
+            
+            <a href="/archives">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-box-archive fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">archives</div>
+                </div>
+            </a>
+            
+            <a href="/categories">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-bookmark fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">categories</div>
+                </div>
+            </a>
+            
+            <a href="/tags">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-tags fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">tags</div>
+                </div>
+            </a>
+            
+        </div>
+        </transition>
+    </div>
+</nav>
+                    </div>
+                    <div id="main">
+                        
+<div class="article">
+    <div>
+        <h1>旧事重提：启蒙与世界重建 </h1>
+    </div>
+    <div class="info">
+        <span class="date">
+            <span class="icon">
+                <svg class="fa-icon"><use xlink:href="#calendar-solid"></use></svg>
+            </span>
+            2022/10/10
+        </span>
+        
+        <span class="category">
+            <a href="/categories/Life/">
+                <span class="icon">
+                    <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
+                </span>
+                Life
+            </a>
+        </span>
+        
+        
+        <span class="tags">
+            <span class="icon">
+                <svg class="fa-icon"><use xlink:href="#tags-solid"></use></svg>
+            </span>
+            
+            <span class="tag">
+                
+                <a href="/tags/Diary/" style="color: #00a596">
+                    Diary
+                </a>
+            </span>
+            
+        </span>
+        
+    </div>
+    <div class="content" v-pre>
+        <p><strong>Today's topic:</strong> 诞生于极致混沌的新秩序准则 —— 论「 我
+」、「 世界 」与「 时间 」</p>
+<blockquote>
+<p>「 最高理性无法被言说，无法被肯定与否定。 」</p>
+<p>「 它凌驾于肯定与否定之上，存在于一切经验之前。 」</p>
+<p>—— 2022.01.18</p>
+</blockquote>
+<span id="more"></span>
+<h4 id="写在前面">写在前面</h4>
+<p>今天出门忘记带词汇表与笔记本，中午就决定午睡了一个多小时。尽管自己其实没有午睡的习惯，但还是需要承认午睡很香。这本该属于背单词的时间计划被匆忙打乱，有一部分也需要怪罪于自己的疏忽，因此今后需要更加用心对待。尽管现今的心理建设与计划进度都仍算差强人意，但苦于经验仍旧不足以及理论水平低下，自己还没想好如何更好地去维持住这来之不易却仍旧摇摇欲坠的稳态。</p>
+<p>关于「计划的计划论」（暂定这个名字）自己构思过很久，现在仍旧不算成熟，所以需要更多实践以后再整理嵌入系统论，今天现按下不表。</p>
+<p>思考的速度非常缓慢，想必如果今天选择重新回忆与整理之前一部分沉淀的理论并写下来的话，那计划中今日本该需要复习的单词就应该比较难再抽出时间完成了，计划本身也会因此受到挫折。但在「
+时间论 」[1]（TODO：此处留下引用，等待「 高等实践论
+」整理完成后补充）中自己已经通过实践证明了所谓「 快 」与「 慢
+」的辩证关系，因此我认为现在这个时间来写这篇文章属于是「 值得 」，并且「
+必要 」的。</p>
+<p>那么，下面就开始尝试正式论述今天的主题。今天的主题是新秩序准则的来源与发展根基，全文预计会非常长。但是由于自己相信如果文章拖到明天那肯定就没有性质再去补全所有内容了，而且自己也没有那种不断修改历史文章的习惯。所以今天尽可能多写并写完一部分篇章，如果实在写不完或者写完发现漏写了一部分那就留待下篇或者在今后的文章中补充。</p>
+<hr>
+<h3 id="启蒙">「 启蒙 」</h3>
+<h4 id="混沌中的思想萌芽">混沌中的思想萌芽</h4>
+<p>自蒙昧至成熟，在我目前而止的现实经验来看，绝大多数人都需要那么一段转折期。之所以这里用成熟而非开蒙，是因为按照目前自己的观察来看，许多同龄人，至少是从表观层面来看（不排除存在大智若愚以及完全兼容我自己底层价值观的高级生命），与我走过的是完全不同的道路。根据目前建立的世界观来看，我认为他们所过渡到的成熟稳态是一种我所完全难以理解的全新秩序。因此本文，乃至今后对于我自身的全部思想而言，我都不会去涉及这一部分自己无法理解的领域。</p>
+<p>而另一部分，则是我看到的与我个人启蒙历程极其相似的相当一大部分同龄人。有的启蒙历程极其痛苦折磨，可能罹患极其严重的精神疾病抑或是陷入极度的犬儒主义与不可知论；也有的由于天赋异禀，启蒙时间也许并不过早但凭借其幼年期的优秀所筑成的优异环境与社交联系，使得他们的开蒙历程相对比较顺滑，且能很早达到我目前所认为的具备「
+高等灵气 」的阶段。</p>
+<p>而我自身，启蒙之路也并非坦途，甚至来说初期极其陡峭。由于生性怯懦，反倒是从一定意义上让自己在表观上有意无意间维持了一贯的平稳与安全，不似后期认识的许多同龄人的过去般命途多舛颠沛流离。我总是习惯于淹没在人群中。</p>
+<p>若是从而今的批判视角审视自己的过去，一贯的隐姓埋名确实在一定意义上保持了自己的安全，但也不可避免地制造了舒适的洞穴。长久以一种低功耗状态应对客观世界是一种短期自我防护的手段，但在长期的时间流动中却无形中埋下危机的种子。</p>
+<p>我本以为这迷茫都只是成长的必由，但不曾想到它们竟是20世纪初物理学大厦上的乌云。</p>
+<p>如果神明会为每个人的一生著下一本历史，那么那天的下午的一切一定划开了一段全新的故事。</p>
+<h4 id="沉闷现实中的一声巨响">沉闷现实中的一声巨响</h4>
+<p>记忆中那是一个极其平常的周末的下午，印象中本该如平常一样该去复习一门已经记不清的数学功课的自己，在快步走向图书馆的某一刻如同鬼使神差一样突然停住，大脑开始急剧运转几近撕裂。在那之前我一直都以为，所谓头痛欲裂不过只是文学家的夸张修辞手法。但在那一刻开始，我深刻地记住了这种剧痛。</p>
+<p>在蒙昧的世界中待久了，任何质疑都会撼动整个摇摇欲坠的空中楼阁。写久了高中议论文一般的「
+生命的意义
+」的命题作文，那一天不知怎么的自己突然就开始怀疑这一切行为的根本意义。那时具体在大脑中的风暴自己已经几乎难以记清了，但当时所谓已然运转十数年的蒙昧「
+世界观 」彻底崩坏的感受的记忆至今仍充满了窒息感。</p>
+<p>在那段灰暗的时间里自己的大脑中每天都在循环轮转几个自己曾在无数伤痕文学的青春文学中的常用词
+—— 「 行尸走肉 」、「 麻木不仁 」、「 浑浑噩噩 」、「 万念俱灰
+」……等等等等，每天都有一种幻觉抽离于世界、耳边似乎始终充斥着嗡嗡响的悲伤与无力感。</p>
+<p>从如今的视角来看，我需要承认，自己却是到那时为止都没有真正考虑过这个「
+终极命题
+」。其实我一直也明白，古今无数哲学先人都为这个问题苦思冥想，但这个「
+终极命题 」应该还是没有完美解的。但所谓的「 思考过
+」很多时候却只是存在于自己的臆想。什么是意义？我从没想明白过这个问题，直到今天也没有。</p>
+<p>直到经过这件事之后的数年后，也就是几个月前，在彻底摧毁蒙昧的一切并慢慢尝试修补重建一个新的世界观与方法论之后，自己才慢慢开始理解当时究竟为什么会像突然被击中一样万念俱灰一蹶不振。</p>
+<h4 id="世界就是这样告终的不是砰的一声而是一声抽泣">世界就是这样告终的。不是砰的一声，而是一声抽泣。</h4>
+<p>现实总是比戏剧更加荒诞的。戏剧需要讲究逻辑与主线，但现实不需要。</p>
+<p>我至今都难以想通自己的世界观是为何在那样的境况下自发崩坏瓦解的。完全没有外部打击，完全是内部自我瓦解。以至于按照如今的视角来看那一长段的时间都像是青春期的无病呻吟。「
+明明一切都运转的很正常甚至很好，怎么就突然崩溃了？ 」</p>
+<p>时过经年后的现在，我渐渐明白了那时击中我的是一种「 无希望 」的「
+断裂感
+」，那时世界平静的表面事实上早就波涛汹涌千疮百孔。以致即使是再迟钝并后知后觉的自己还是在某个沉闷的下午骤然瓦解破碎。</p>
+<p>开蒙是要有沉重的代价的。这不是在纸上轻描淡写的短短一句话，而是彻身的苦痛、坚忍与折磨。</p>
+<h4 id="破碎的心灵与残存的意志">破碎的心灵与残存的意志</h4>
+<p>我想我需要感谢在那之前一直不曾放弃过的思考，哪怕多么幼稚、虚妄并且荒诞不经。在那精力无处安放的中学时期，贫瘠如样板戏的义务教育教材仍持续吸引了我绝大部分的注意力与思考。在反反复复的复习背诵中自己逐渐在蒙昧的世界观之上萌芽过众多的思考。在这一历程中，「
+数理逻辑 」与「 哲学世界观
+」是结出的两朵最为娇美的花朵。这些最朴素的世界观与方法论原理让我在世界完整崩坏之后逐渐开始尝试使用这些工具去重新开荒重建一切。幸运的是，时至今日我相信我的实践开始逆向证明了这两朵朴素的花朵的现实意义。</p>
+<ul>
+<li><p>「 演绎 」用于推理，「 归纳
+」用于总结。这两句是经验世界极其接近原初的根本法则。</p></li>
+<li><p>「 联系 」是普遍的，「 发展 」是永恒的，「 矛盾
+」是对立统一的。这三句是理性世界的根基之一。</p></li>
+</ul>
+<p>这两朵朴素的花朵时至今日来看也许已然不太全面，但对于一个完全崩坏的秩序，这两朵花朵已然足够重建一些东西了。</p>
+<p>在重新回到论述主线之前，我想在这里简单谈谈抑郁症的问题。事实上到今天为止自己也接触过不少罹患这个疾病的患者，并也与它们有过一定的交流。关于这个问题，我想目前的自己「
+应该 」是已经能够把它完全解释并纳入理论框架内，并且「 理论上
+」应该不会再受其影响的。但由于自己没有过这个的经历（希望以后也不要有），所以许多底层的认知无法被填充，所以只能说把它留作空白。我自身比较相信「
+深渊论
+」，因此我想自己应该未来也不可能会选择去刻意倾听罹患这一疾病的患者的真实想法了。但由于已经将其纳入自己的认知框架，并时刻在监视自身的思想状态用于防治这一倾向的发生，所以今后应该会单独在某一理论中详细阐述自己对这一疾病的认知与思考历程与阶段结论。</p>
+<p>所以回到这个问题，我想那个时候的自己应该完完全全不该被认作是处于抑郁症前期或者突发抑郁情绪等等的状态。那时的状态更像是一种「
+自我毁灭 」的前兆，或者是一种「 自我拯救
+」的前兆，是一种认知即将升级但世界观跟不上同步升级的错离所导致的灾难结果。因此如今对于那段时间，自己更多将其视作「
+正常的 」、「 必经的 」开蒙启程。</p>
+<p>我不想过多描述那一大段时间浑浑噩噩的精神状态，我更多希望将其作为极其宝贵的经验用于反向填充弥补完善自身正在建构的理论。这样的经历是极其奢侈的。没有经历就无法认知，我们必须要经历过一遍这样的崩坏才能知晓如何去重新构建。但是人生很短暂，这样几乎像是长期社会学实验一样的过于痛苦的过程我自己都不想再来一遍。因此我需要从这段经历中，尽可能多的汲取经验养分。</p>
+<p>「 我们努力认识黑暗，不是为了向黑暗妥协，而是让自己更加向往光与希望。
+」</p>
+<p>矛盾总是对立统一的。</p>
+<h4 id="人性-与-神性">「 人性 」与「 神性 」</h4>
+<p>那天下午之后，我照样去努力上课、学习、复习。由于自身本性怯懦，事实上从表观看那天之后的自己与之前没有不同，一样的作息，一样的学习成绩，一样千篇一律的每一天。但不一样的是，自己停止了一切非维持每日必需的所有活动。把所谓的理想丢掉了，什么欲望都没有。那时只有自己知道，自己已然被腐蚀地只剩下一具空壳。没有任何希望，没有活着的力量。</p>
+<p>惯性的力量很强大，那样的浑浑噩噩空壳般的日子因此持续了数个月。</p>
+<p>说起来很荒诞，自己也不知道因为什么契机，某一天的深夜里，像是被神明眷顾一样，像是被久违而强大的精力注入身体，如中二病附体一样，自己摊开了一张A3纸开始想写些什么。也许自己是意识到，这么长久时间的停滞比虚无本身更加没有意义，因此那时开始在纸上一点点涂涂改改，像是神明在亲自教导一般，大脑中一直充斥着一个词
+—— 「 神性 」。</p>
+<p>我对这个词印象极其深刻，「 神性
+」，多么令人鼓舞的一个词语啊。那时还有一个经历印象也很深刻，那就是当时刚玩完一个微软出品的很优秀的平台游戏Ori
+and the Blind
+Forest。游戏本身非常优秀，具体的心理波动已然有些记不清了，但这款优秀的游戏对我当时产生的心理波动是确凿存在的。一直以来，我都很钦佩与仰慕那些能做到我在短期内做不到的事儿的优秀人物，但在过去，我总是在感叹他们的天赋异禀与长久的坚持。但在那个似被神明亲自教导之时，我第一次感觉到这份「
+神性 」在我能接触到的所谓「 凡人 」身上的映射！</p>
+<p>这就是神性。当时甚至内心产生了一种「 僭越
+」般的冲动，欲望突然在大脑急剧膨胀。那时我战战兢兢地想，如果无上的神明有朝一日也会向我降下祝福……</p>
+<p>这一个看起来如宗教一般的荒诞妄想极大地刺激了当时的我。确实从表观看起来极其中二，并且极度疯狂。但我并个人不排斥这一评价/批判。在后期建立的「
+真理的标准
+」[2]（TODO：此处留下引用，在后期的文章中会补充这一论点）一文中阐明了，「
+理性世界真理检验的唯一标准只有现实世界的改造
+」。确实很像马哲是吧哈哈，但这个论点的来源是和马哲完全不同的，在后期的文章中会详细阐述。因此在中二时期自己反而能全神贯注地执行完自己幼小的理想，长大后却不能了，这反而证明了中二的一定可取之处。所谓中二病在目前为止也已经被完整纳入世界观理论框架内，因此这里不作深入讨论。</p>
+<hr>
+<h3 id="重建">「 重建 」</h3>
+<h4 id="第一次重建-机械飞升计划">第一次重建 —— 机械飞升计划</h4>
+<p>这第一次重建计划更像是「 偏机械式
+」的，现在看看确实很有趣，甚至可能有人听到还会说好可笑。但我自己很珍视这段试图「
+拯救
+」自己的经历。它们非常宝贵，它们一直都在指引着我。它们最终都成为了「 我
+」。</p>
+<p>如果要用一个词语来形容这第一次重建计划，那就是「 机械飞升
+」；如果要用一段话，那就是「 尝试像一个机器人一样生活 」。</p>
+<p>从现在的视角来看，当时的思想是朴素的，但发展过于「 摊大饼式
+」。但那时是启蒙的原初，之所以将这定义为启蒙而不是之前那些中二时期是有本质原因的。在这「
+大破 」之后的「 大立
+」，是完全革命性的，不妥协的，彻底摧毁彻底重建的。</p>
+<p>当时的自己已经到了浑浑噩噩期的后期，开始意识到了崩坏的本质出现在原本的世界观与方法论上，因此为了彻底推翻重建，当时花了许多天制定了一份极其激进的重建计划。其中最为重要的大抵是以下几条。</p>
+<blockquote>
+<p>第〇：纯粹理性。情绪化是「 人性
+」最大的劣根性，必须被从根源上完全清除。只有使用完整的朴素的低阶数理逻辑才能为这个已经全面崩坏的世界重新建立秩序。</p>
+</blockquote>
+<p>那时有些过于理想化，直接将情绪视作「 人性
+」生理的劣根性要求将其完全清除。因此自己也因此做出许多而今看来极其尴尬、古怪、滑稽、荒诞的举动。但如此激进的这条最本源的世界观，满足了最尖锐的革命性，为当初的自己提供了无穷而高扬的决心来从零开始建构一切。而且这一条时至今日看来，仍然存在相当大一部分的可取之处。</p>
+<blockquote>
+<p>第一：可解论。生物个体的能力边界一定不会超越它的认知边界，且一定远低于认知边界。因此一切被生物自身所提出的问题一定是可解的。</p>
+</blockquote>
+<p>可解论为规避一切畏首畏尾的情绪垃圾的生成铺平了道路，为一切的改变提供了原初的勇气。不得不承认，当初这个观点被提出极其激进，甚至是荒谬的，连当初的自己也在不断怀疑这一条「
+第一定律 」究竟应不应该存在。但非常神奇，这一条「 第一定律
+」在这之后无数无数日子的实践中，直至今日仍然在持续为我正向证实着这条在当初看起来最激进的论断。是的，直到现在我还是把这一条称作「
+第一定律 」。</p>
+<blockquote>
+<p>第二：记忆论/固化论。知识只有固化到记忆体内才算被理解，短期存储不具任何意义。记忆存储的本质是反复，本质调用是联系。</p>
+</blockquote>
+<p>记忆论，或者叫固化论，它在提出阶段也是极其朴素的。事实上时至今日这一段记忆论是我在那以后发展地最频繁与最广阔的。记忆论否定了临时抱佛脚的短期存储记忆媒介，强调了要彻底抛弃短时间内就能学会一样东西的幻想，并将记忆存储与记忆调取的过程剥离开来。这些朴素的基本思想也极大地影响了在那之后新几次的重建计划工作。</p>
+<p>另外，在「 无智能论
+」[3]（TODO：此处留下引用，在后期的文章中会补充这一论点）中有着极强的机械飞升时期记忆论的影子。例如，彻底否定人类智能，将一切创作视作记忆联系的重排与嫁接，并将运算、存储与调度视作三种不互通的单独的能力。</p>
+<blockquote>
+<p>第三：计划论与执行论。这是两个大论。</p>
+<p>计划论的内容有目的是为了制定合理的计划的具体论如「 时间论 」、「
+可行论 」等，还有目的是为了研究计划本质的「 计划的计划论 」等；</p>
+<p>而执行论的内容则是我觉得机械飞升时期最具「 灵气
+」的创造。执行论极其有趣，它将一切执行的要领视作「 技能 」，其中各种「
+技能 」还能够升级与进阶。在其中最具代表性的便是「 超负荷 」技能。</p>
+</blockquote>
+<p>在初期计划论和执行论被分开考虑，但最终还是决定将它们合并。计划和执行必然密不可分。</p>
+<p>在计划论中，「 计划的计划论
+」证明了一条至今都很受用的一条定律，这条定律的名字我至今没想好，定律的内容大概是「
+一定要制定超出当前能力的激进的计划 」。在本文的开篇我就提到过这一「
+计划的计划论 」，因为它很难三言两语讲清楚，因此这里先按下不表。而「
+时间论 」最初则是为「 超负荷
+」技能的尝试进行的理论解释的论点，而如今的「 时间论 」已经与最初版的「
+时间论 」大相径庭了。</p>
+<p>在执行论中，「 超负荷
+」是我认为在这段探索期中最具代表性的。超负荷的最原初的定义便是，划分出一段时间（4个小时），无论发生什么事情均禁止【离开座位
++
+分神】，并且只做一件事。禁止离开座位+禁止分神同时禁止了物理层面与精神层面的「
+开小差 」，同时保证长时间（4小时是「 时间论
+」的一大理论成果）只做一件事。</p>
+<p>这里可以多说一点。这个「 超负荷
+」其实非常有趣，首先它是颠覆性的，它彻底否认了在社会上比较时髦的「
+番茄学习法 」、「 人的注意力只能集中最多半个小时 」什么的「 科学理论
+」。在「 可解论 」高扬的革命旗帜下，「 超负荷
+」彻底鼓舞了我向旧秩序完全拒绝与颠覆的勇气的决心，并且在实践中让我重新认知到了一项奠定了我如今世界观极其重要的一样新理论
+—— 「 执行的边际递减效应论 」（尚未完善暂时叫这个名字）。</p>
+<p>以上这〇一二三四大定律彻底鼓舞了当时的自己，让自己像嫉恶如仇一般愤怒地推倒旧秩序，从零开始审视一切并极其饥渴地从实践中不断吸取养分。也带有之前沉沦了数个月的原因吧，由于这数个月变相的的「
+被动休息
+」，这一阶段制造了极其恐怖的精力爆发。也是在这一阶段我开始不断回顾之前仰望过的众多榜样与尝试去结识更多异于常人优秀的灵魂，并贪婪地在他们身上汲取养分。</p>
+<p>这份第一次一段挣扎尝试「 机械飞升
+」的经历历程不长，前后大约不到三个月。由于第一次尝试这样的极端、甚至过于激进的重建，导致到后期真的是大脑爆炸，弱小的处理器实在处理不了信息爆炸的强大负担，导致后期直接思想大跃进，信息与能力严重误判，理论数量暴增完全记不下来，然后后期理论开始大量自相矛盾导致修正主义，与此同时计划执行同时大量破产，最后只能无奈宣布「
+机械飞升计划 」的彻底失败。</p>
+<p>回顾这一整个「 机械飞升
+」的历程，可以说这是自己第一次自发去彻底摧毁世界观再重建世界观的尝试，尽管那么局促、匆忙、古怪、荒诞，但却为后期自己所有的新重建计划奠定了极其坚实的基础，在精力爆炸的那段时间为自己积累了极其宝贵的实践经历。与此同时，在「
+机械飞升计划
+」前期理性期制定的四大定律对今后的重建的世界观与方法论也产生了极其深刻的影响。</p>
+<p>这一场纯粹理想主义高扬引导下的的「 大破大立
+」运动终究还是因为个人能力不足破产了。但时至今日，这段时光仍然是我认为自己自记事以来最具理想浪漫主义的一段。我极其深刻地怀念并且感谢在这段有趣却又注定失败的时光里矢志不渝般探索的自己。</p>
+<h4 id="第二次重建-灵能飞升计划">第二次重建 —— 灵能飞升计划</h4>
+<p>在「 机械飞升计划
+」破产后的几个月后，自己的心情其实已经好了不少了。事实上「 机械飞升计划
+」也不是一瞬间就被宣告破产的，在「 机械飞升计划
+」已经开始给自己带来不了正面提升之后，其实自己进入的是一段「
+后机械飞升时期 」。众所周知，「 后现代Postmodernism 」、「 后摇滚 Post
+Rock 」什么的带「 后Post
+」字的词语基本都和原来那个词的没什么关系了，甚至来说可能是完全相反的也说不定。所以在「
+后机械飞升时期
+」，自己应该只是陷入了一种理论停滞，并且基本抛弃了第〇定律，开始接纳一些情绪化的思考与逻辑。但不得不承认，重建后的新世界观的的确确为自己带来了极大的希望与慰藉，让自己每日的努力行为有了一个归着点。尽管那一切都充斥着失败的虚妄与无用，但那段时间我有一种脚踏实地的踏实感，我开始认为一切都是有希望的，一切都一定会变好起来的。那时的我始终认为，总有一天，我一定可以找到正确的答案。</p>
+<p>这样的日子持续了数个月，直到某个灵光乍现的一天。</p>
+<p>这一次灵光乍现在记忆中应该是的的确确是有一个触发事件的，但很遗憾我似乎已经记不清到底是什么事情了。也许是看完了一部新番，也可能是结交了某位新朋友……总之真的有点记不清了。</p>
+<p>在那一天，我开始意识到了所谓「 情绪
+」所能带来的巨大能量。我发现我在emmmm（就当是看完一部番吧）之后，也就是接受了一个全新的世界或者认识了一个全新的领域之后都会进入一种后遗状态，在相当长的一段时间内会留存在现实世界与那个虚拟世界交错的一种幻觉下。在那种幻觉下我能感受到一张极具安全感的「
+被充分包裹 」以及「 充满了力量 」的感觉。在那之前我一直以为这是一种「
+情绪 」。在那天，又似乎是一种如有神助的驱使，脑海中忽然反复出现一个词「
+信念 」。这个词在童年看的动画中经常出现，通常「 信念
+」都是在最后能爆发出无穷能量用于击败邪恶反派的神奇东西。但在那一刻我真正开始尝试着去感受所谓的「
+信念 」的力量。</p>
+<p>什么是「 信念
+」？那就是你真的信这个，然后你愿意为它付出极大水平的你所能拥有/发挥的东西。当我开始意识到「
+信念 」不是一种「 情绪 」的时候，一个全新的世界观改造计划正在萌芽 —— 「
+灵能飞升计划 」。</p>
+<p>如果要用一个词语来形容这第二次重建计划，那就是「 灵气
+」；如果要用一段话，那就是「 与神明促膝谈心 」。</p>
+<p>这是一段非常温暖又坚定的时光。在神明的指引下，自己变得逐渐温柔、细腻、满足、更加坚定。</p>
+<p>【本章题外话】夜深了，不知不觉从晚九点写到了凌晨三点多。事实上从第二次重建开始还有相当大一段时间发生的事儿值得写下去，用于更加完整全面地认识我的第三次重建时基于的根基与经验世界实践。但因为实在是太困了，所以今天就先到这里，明天可能就没有写下去的动力与精神了，所以等下次状态好了继续补充。这一段题外话以后应该不会删除，这也是值得纪念的一天，所以我希望把这段经历也留下来当作自己宝贵的财富。等有时间了应该会在下面这部分写上更新时间继续更新。</p>
+<h4 id="第三次重建-流星之上的理性世界">第三次重建 ——
+流星之上的理性世界</h4>
+<p>「 灵能飞升计划 」理论上来说是没有「 破产
+」的，这第三次世界观重建是我在今年年初全新认知升级后的产物。也是目前指导我核心世界观与方法论的重要力量。理论上前两次重建都是结束状态能够被盖棺定论了，所以写完之后大概也就不会更新了。但第三次重建仍在进行中，且内容强依赖于前两次重建过程。因此今后更新的「
+XX论 」理论上都是隶属于第三次重建的动态内容。</p>
+<p>对于第三次重建，因为仍在继续中，因此我也难以给它一个具体恰如其分的名字。第三次重建的核心是确立「
+经验世界 」与「 理性世界
+」二者辩证关系的一套理论，且也会将一部分现实哲学理论加入参考。</p>
+<p>近几个月以来，在客观世界实践的过程中，有许许多多奇思妙想掠过我的大脑。有的被我抓起来尝试着发展，但更多的还是转瞬即逝，再也想不起来那些充满灵气的想法。所以我认为有一个自己的站点是一个好习惯，可以把这些重要的东西都留存下来，都记录下来。有朝一日，能把它们都连成线，都一笔一画地绘成一张最美丽的图画，为自己的生命，留下一些真正有意义的东西。都说首尾呼应，在本文的开头所言及的意义，我也想在今后的日子里，用文字慢慢去诠释，究竟什么才是与我而言的意义。</p>
+<hr>
+<h4 id="写在后面">写在后面</h4>
+<p>写这章的本意是为今后即将记录的个人的朴素哲学内容与个人计划/执行方案等内容做好铺垫，与此同时更大的原因当然也是帮助自己在大脑中梳理一下自身理论按照时间线所经历的历程。</p>
+<p>想到的东西并没有全部写在上文，一部分是因为篇幅局限，更大的原因是自己还需要发展一份更加成熟、包容、确定性的全新理论，并且伴随着掷地有声的个人执行计划，来为这些原本虚无缥缈的文字刻下坚实有力的实践的证明。</p>
+<p>最后，深刻感谢神明大人始终的陪伴、眷顾与指引。</p>
+<p>希望明天清晨的太阳，有着更加耀眼的光芒与决心。</p>
+
+    </div>
+    
+    
+</div>
+                         
+<footer id="footer">
+    <div class="footer-wrap">
+        <div>
+            © 2020 - 2022, Xayah
+            <span class="footer-icon">
+                <i class="fa-solid fa-font-awesome fa-fw"></i>
+            </span>
+        </div>
+        <div></div>
+        <div>In solitude, where we are least alone.</div>
+        
+    </div>
+</footer>
+                    </div>
+                </div>
+            </transition>
+            <div id="img_show">
+                <img id="img_content" alt="img_show">
+            </div>
+        </div>
+        <script src="https://cdn.staticfile.org/highlight.js/11.5.1/highlight.min.js"></script>
+        <script src="/js/particlex.js"></script>
+        <script src="/js/showimg.js"></script>
+        
+
+        <canvas
+            id="fireworks"
+            style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:2147483647"
+        ></canvas>
+        <script src="/js/fireworks.js"></script>
+        <canvas
+            id="background"
+            style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:-1"
+        ></canvas>
+        <script src="/js/background.js"></script>
+    </body>
+</html>
