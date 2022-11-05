@@ -1,0 +1,484 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+        <title>音乐真是个美好的东西。音乐一直都在拯救我。 | Xayah Music TV</title>
+        <meta name="author" content="Xayah">
+        <meta name="description" content="">
+        <meta name="keywords" content="">
+        <link rel="icon" href="https://github.com/Xayah-Hina/HinaPE-Resource/blob/ffbbf9e3f35afc4d6b560ba5e3128e28b63a6ac9/image-bed/20220107191314_7f0c8.jpg?raw=true">
+        <script src="https://cdn.staticfile.org/instant.page/5.1.0/instantpage.min.js" type="module"></script>
+        <script src="https://cdn.staticfile.org/font-awesome/6.2.0/js/all.min.js"></script>
+        
+        <link rel="stylesheet" href="/css/fonts.min.css">
+        <link rel="stylesheet" href="/css/particlex.css">
+        
+        <script src="https://cdn.staticfile.org/vue/3.2.33/vue.global.prod.min.js"></script>
+        <script src="https://cdn.staticfile.org/animejs/3.2.1/anime.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js" ></script>
+        <script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js" ></script>
+    <meta name="generator" content="Hexo 6.3.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+    <body>
+        <div id="loading" style="height:100vh;width:100vw;position:fixed;display:flex;z-index:200;justify-content:space-between;background:#fff;transition:opacity 0.3s ease-out"><div style="position:fixed;height:100vh;width:100vw;display:flex;justify-content:center;align-items:center"><div id="loadcontent" style="width:50vmin;height:50vmin;padding:50px;border-radius:50%;display:flex;justify-content:center;align-items:center;border:solid 10px #a3ddfb;text-align:center"><div><h2>Welcome to Xayah Music TV</h2><p style="word-break:keep-all">In solitude, where we are least alone.</p><div><img alt="loading" src="/loading.gif"></div></div></div></div></div>
+        <div id="layout">
+            <i data-fa-symbol="calendar-solid" class="fa-solid fa-calendar fa-fw"></i>
+            <i data-fa-symbol="bookmark-solid" class="fa-solid fa-bookmark fa-fw"></i>
+            <i data-fa-symbol="tags-solid" class="fa-solid fa-tags fa-fw"></i>
+            <transition name="into">
+                <div v-show="show_page" style="display: -not-none">
+                    <div id="menu_show">
+                         
+<nav id="menu">
+    <div class="desktop-menu">
+        <a href="/">
+            <span class="title">Xayah Music TV</span>
+        </a>
+        
+        <a href="/">
+            <i class="fa-solid fa-house fa-fw"></i>
+            <span>&ensp;home</span>
+        </a>
+        
+        <a href="/about">
+            <i class="fa-solid fa-id-card fa-fw"></i>
+            <span>&ensp;about</span>
+        </a>
+        
+        <a href="/archives">
+            <i class="fa-solid fa-box-archive fa-fw"></i>
+            <span>&ensp;archives</span>
+        </a>
+        
+        <a href="/categories">
+            <i class="fa-solid fa-bookmark fa-fw"></i>
+            <span>&ensp;categories</span>
+        </a>
+        
+        <a href="/tags">
+            <i class="fa-solid fa-tags fa-fw"></i>
+            <span>&ensp;tags</span>
+        </a>
+        
+    </div>
+    <div :class="'phone-menu ' + menu_show" id="phone-menu">
+        <div class="curtain" @click="menu_show = !menu_show" v-show="menu_show"></div>
+        <div :class="'title'" @click="menu_show = !menu_show">
+            <i class="fa-solid fa-bars fa-fw"></i>
+            <span>&emsp;Xayah Music TV</span>
+        </div>
+        <transition name="slide">
+        <div class="items" v-show="menu_show">
+            
+            <a href="/">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-house fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">home</div>
+                </div>
+            </a>
+            
+            <a href="/about">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-id-card fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">about</div>
+                </div>
+            </a>
+            
+            <a href="/archives">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-box-archive fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">archives</div>
+                </div>
+            </a>
+            
+            <a href="/categories">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-bookmark fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">categories</div>
+                </div>
+            </a>
+            
+            <a href="/tags">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-tags fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">tags</div>
+                </div>
+            </a>
+            
+        </div>
+        </transition>
+    </div>
+</nav>
+                    </div>
+                    <div id="main">
+                        
+<div class="article">
+    <div>
+        <h1>音乐真是个美好的东西。音乐一直都在拯救我。 </h1>
+    </div>
+    <div class="info">
+        <span class="date">
+            <span class="icon">
+                <svg class="fa-icon"><use xlink:href="#calendar-solid"></use></svg>
+            </span>
+            2022/10/9
+        </span>
+        
+        <span class="category">
+            <a href="/categories/Music/">
+                <span class="icon">
+                    <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
+                </span>
+                Music
+            </a>
+        </span>
+        
+        
+        <span class="tags">
+            <span class="icon">
+                <svg class="fa-icon"><use xlink:href="#tags-solid"></use></svg>
+            </span>
+            
+            <span class="tag">
+                
+                <a href="/tags/VOCALOID/" style="color: #ff7d73">
+                    VOCALOID
+                </a>
+            </span>
+            
+        </span>
+        
+    </div>
+    <div class="content" v-pre>
+        <p><strong>Today's topic:</strong> 支持音乐播放器，谈一谈ODD&amp;ENDS -
+ryo。</p>
+<blockquote>
+<p>「 但请相信，我一定可以成为你的力量 」</p>
+<p>「 所以请让我为你歌唱吧 」</p>
+<p>「 对，说出就只属于你自己的语言 」</p>
+</blockquote>
+<span id="more"></span>
+<h4 id="写在前面">写在前面</h4>
+<p><meting-js server="netease" type="song" id="825298"></meting-js></p>
+<p>本来下意识想写些歌曲介绍、作曲分析之类的内容的。但忽然意识到，在这里写文字的初衷是写些给自己看的，于是想想，还是多写些当下个人感受吧。</p>
+<p>今天花了一点时间让站点支持了外联播放器，目前看来有两个主要的问题还没想过怎么解决。</p>
+<ul>
+<li>第一个是版权问题。外链播放器无法播放有版权的歌曲。尽管日V+曲由于一些原因大部分都是可以直接播放的，但是涉及到一些比较热门的歌手的热门曲十有八九都是无法外链播放的，这一点暂时还没想好怎么办。</li>
+<li>第二个是本地音频资源的问题。考虑这个站点存在记录作曲经验的需求，因而可能需要在本地存储众多短小的音频资源。但只是5M大小的首页背景图就占据了极大的Loading时间，大量本地音频真的感觉不太现实。</li>
+</ul>
+<p>上面这两个问题考虑过建立私有云来在线存储，但我还是感觉，如果把心思过多放在技术升级上有些偏离初衷了。所以还是决定在今后漫长的时间里慢慢考虑吧。</p>
+<p>时间流逝地真快啊，我好想留住这些短暂而珍贵的记忆……</p>
+<h4 id="对不起啊不知不觉就忘记你了">「 对不起啊，不知不觉就忘记你了
+」</h4>
+<p>ryo，VOCALOID
+P主、或者说现在他有一个更为出名的名字——「supercell」。从初音ミク刚刚发布的2007年开始他便在ニコニコ陆续创作众多由初音ミク演唱的作品，凭借明快的曲风与清晰的调教，ryo的许多作品都大受欢迎并成为了VOCALOID传说曲与VOCALOID神话曲。</p>
+<p>但后来，ryo被唱片公司招揽，成立了supercell与Egoist组合开始为真人编曲，写出了众多如「
+君の知らない物語
+」的名曲，在现实世界中被大受欢迎，也渐渐的不再使用初音ミク创作VOCALOID曲。之后在现实世界沉浮许多年，可以说是功成名就，但背后也伴随着许多批评。</p>
+<p>当他渐渐迷失方向失去创作灵感之后，回忆起过去那个懵懂的自己与最初创作的感动时，他打开了那个自己曾经最熟悉的程序界面，在那一刻他意识到自己一直珍视的东西被当初当作垃圾抛弃了。</p>
+<p>2012年8月14日，时隔多年他重新投稿了新原创VOCALOID曲ODDS&amp;ENDS。仍然是轻快又带有悲伤的曲风，诉说着他这几年的心路历程。</p>
+<blockquote>
+<p style="color: #39c5bb;">
+いつだって君は嗤われ者だ　やることなすことツイてなくて
+</p>
+<p>一直以来，你都是那个被嘲笑的人，无论做什么事都无法顺利完成。</p>
+<p style="color: #39c5bb;">
+挙句に雨に降られ　お気にの傘は風で飛んでって　そこのノラはご苦労様と　足を踏んづけてった
+</p>
+<p>最终陷入雨中，喜欢的伞被风吹跑。路人一边说一句辛苦了，一边一脚踏过去。</p>
+<p style="color: #39c5bb;">
+いつもどおり君は嫌われ者だ　なんにもせずとも遠ざけられて
+</p>
+<p>一直以来，你都是那个被讨厌的人，什么都不做也会被排挤在外。</p>
+<p style="color: #39c5bb;">
+努力をしてみるけど　その理由なんて「なんとなく?」で　君は途方にくれて悲しんでた
+</p>
+<p>尽管试过努力去融入人群，但得到的理由竟然是「不知不觉就忘记你了」，你感到悲伤但也无计可施。</p>
+</blockquote>
+<p>许多VOCALOID
+P主都是最初都如歌词中所写一样，一直以来都是被嘲笑与讨厌的人，然后在创作中感受到灵魂的自由。这让人很容易联想到诸如ハチP（米津玄師）与wowakaP（現実逃避P）等众多名P主的经历。都说写得好的歌一定歌词就能够激起听者的共鸣，我深以为然。</p>
+<h4 id="那么就让我为你歌唱吧">「 那么，就让我为你歌唱吧 」</h4>
+<p>有一首歌叫做インドア系ならトラックメイカー，内向系的都是作曲家。一个个在现实生活中不受欢迎饱受嘲笑排挤的孩子回到家，忽然听到一个机械而温暖的声音轻声安慰道
+——</p>
+<blockquote>
+<p style="color: #39c5bb;">
+ならあたしの声を使えばいいよ
+</p>
+<p>那么，就让我为你歌唱吧！</p>
+<p style="color: #39c5bb;">
+人によっては理解不能で
+</p>
+<p>就算对于他们而言无法理解</p>
+<p style="color: #39c5bb;">
+なんて耳障りひどい声だって　言われるけど
+</p>
+<p>就算被说是「 如此刺耳又难听的声音 」</p>
+<p style="color: #39c5bb;">
+きっと君の力になれる
+</p>
+<p>但请相信，我一定可以成为你的力量</p>
+</blockquote>
+<p>如同天寒地冻下抱团取暖的两个羸弱的灵魂。此刻，终于找到了理解自己的人。</p>
+<p>「 目一杯に大声を上げる 」</p>
+<hr>
+<h4 id="机械的声音我已经受够了">「 机械的声音我已经受够了 」</h4>
+<blockquote>
+<p style="color: #39c5bb;">
+いつからか君は人気者だ　たくさんの人に持て囃され　あたしも鼻が高い
+</p>
+<p>不知不觉你已经变得很有人气，开始受到许多人的吹捧，我也由衷地为你高兴。</p>
+<p style="color: #39c5bb;">
+でもいつからか君は変わった　冷たくなって　だけど寂しそうだった
+</p>
+<p>但不知道什么时候你变了，变得那么冷漠，却又看起来这么孤独</p>
+</blockquote>
+<p>顺着副歌结束直接进入的主歌部分总是让人有一种时过境迁的感觉。歌曲中的作者慢慢变得有人气起来，但也承受了许多因名气所带来的苦恼与痛苦。</p>
+<p>终于，如同许多文学作品中常出现的剧情一样，背后的窃窃私语让他再也无法抑制住自己。</p>
+<blockquote>
+<p style="color: #39c5bb;">
+「もう機械の声なんてたくさんだ　僕は僕自身なんだよ」って　ついに君は抑えきれなくなって
+</p>
+<p>「 机械的声音我已经受够了！我是我自己啊！
+」终于你再也无法抑制自己</p>
+<p style="color: #39c5bb;">
+あたしを嫌った
+</p>
+<p>并开始讨厌我。</p>
+<p style="color: #39c5bb;">
+君の後ろで誰かが言う　虎の威を借るキツネの癖に!
+</p>
+<p>你听见有人在背后说：「 你不过只是在狐假虎威罢了 」。</p>
+<p style="color: #39c5bb;">
+ねえ　君は一人で泣いてたんだね
+</p>
+<p>我想你一定也一个人哭泣过吧。</p>
+</blockquote>
+<p>「 是啊，你只不过是在狐假虎威罢了。 」</p>
+<p>这句话是如此地伤人。</p>
+<h4 id="我知道的你比任何人都要温柔">「 我知道的，你比任何人都要温柔
+」</h4>
+<blockquote>
+<p style="color: #39c5bb;">
+聴こえる？ この声
+</p>
+<p>听得见吗？ 我的声音</p>
+<p style="color: #39c5bb;">
+あたしがその誹謗をかき消すから
+</p>
+<p>我一定会把那些诽谤全部清除掉的。</p>
+<p style="color: #39c5bb;">
+わかってる　本当は
+</p>
+<p>我知道的。</p>
+<p style="color: #39c5bb;">
+君が誰より優しいってことを
+</p>
+<p>你比任何人都要温柔。</p>
+</blockquote>
+<p>为什么曾经我们无话不说，现在却一句话都说不出来。</p>
+<p>啊，我明白了，也许这一切都是一场梦吧？</p>
+<p>一场永远都无法醒来，与你相遇的一场梦。</p>
+<h4 id="僕は無力だ">「 僕は無力だ 」</h4>
+<h2 style="color: #CCC;">
+<strike>我好无力。连区区一个垃圾，也没有办法拯救……</strike>
+</h2>
+<hr>
+<h4 id="没有关系的让我再为你的世界涂上色彩">「
+没有关系的，让我再为你的世界涂上色彩 」</h4>
+<blockquote>
+<p style="color: #39c5bb;">
+その時世界は途端にその色を大きく変える
+</p>
+<p>就在那时，灰暗的世界一瞬间充满了色彩。</p>
+<p style="color: #39c5bb;">
+悲しみ　喜び　全てを一人とひとつは知った
+</p>
+<p>所有的悲伤与喜悦，全都能够被一个人所理解。</p>
+<p style="color: #39c5bb;">
+言葉は歌になりこの世界を
+</p>
+<p>想说的话化作了歌声</p>
+<p style="color: #39c5bb;">
+再び駆け巡る　君のために
+</p>
+<p>再一次在这个世界上回响，只为了你一个人。</p>
+</blockquote>
+<p>没有关系的，我会理解你的。</p>
+<p>没有关系的，我会在这里听你倾诉的。</p>
+<p>没有关系的，把你的悲伤和喜悦都告诉我吧。</p>
+<p>无论发生什么</p>
+<p>我都会一直在这里。</p>
+<p>为你的世界再次涂上色彩。</p>
+<hr>
+<h4 id="写在后面">写在后面</h4>
+<p>在当年ryo投稿这首原创曲之后也是鼓舞了众多V+的P主，极具感染力的叙事性歌词让无数P主在歌声中不由潸然泪下。我总是相信，喜欢V+的大家都是相似的。</p>
+<p>ODDS&amp;ENDS距离初投稿已经过去了十个年头了，这十年发生了太多的悲伤和喜悦，许多连我自己都快记不清了。但我相信有一个人一定在默默替我记着，一直以来总是在背后默默地支持我，为我取得的成绩由衷的感到高兴，并一直鼓励我要更加勇敢地努力向前。</p>
+<p>「 音乐真是个美好的东西。 」</p>
+<p>「 音乐一直都在拯救我。 」</p>
+
+    </div>
+    
+    
+</div>
+                         
+<footer id="footer">
+    <div class="footer-wrap">
+        <div>
+            © 2020 - 2022, Xayah
+            <span class="footer-icon">
+                <i class="fa-solid fa-font-awesome fa-fw"></i>
+            </span>
+        </div>
+        <div></div>
+        <div>In solitude, where we are least alone.</div>
+        
+    </div>
+</footer>
+                    </div>
+                </div>
+            </transition>
+            <div id="img_show">
+                <img id="img_content" alt="img_show">
+            </div>
+        </div>
+        <script src="https://cdn.staticfile.org/highlight.js/11.5.1/highlight.min.js"></script>
+        <script src="/js/particlex.js"></script>
+        <script src="/js/showimg.js"></script>
+        
+
+        <canvas
+            id="fireworks"
+            style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:2147483647"
+        ></canvas>
+        <script src="/js/fireworks.js"></script>
+        <canvas
+            id="background"
+            style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:-1"
+        ></canvas>
+        <script src="/js/background.js"></script>
+    </body>
+</html>

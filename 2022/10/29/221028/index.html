@@ -1,0 +1,358 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0">
+        <title>什么是付出生命的勇气？ | Xayah Music TV</title>
+        <meta name="author" content="Xayah">
+        <meta name="description" content="">
+        <meta name="keywords" content="">
+        <link rel="icon" href="https://github.com/Xayah-Hina/HinaPE-Resource/blob/ffbbf9e3f35afc4d6b560ba5e3128e28b63a6ac9/image-bed/20220107191314_7f0c8.jpg?raw=true">
+        <script src="https://cdn.staticfile.org/instant.page/5.1.0/instantpage.min.js" type="module"></script>
+        <script src="https://cdn.staticfile.org/font-awesome/6.2.0/js/all.min.js"></script>
+        
+        <link rel="stylesheet" href="/css/fonts.min.css">
+        <link rel="stylesheet" href="/css/particlex.css">
+        
+        <script src="https://cdn.staticfile.org/vue/3.2.33/vue.global.prod.min.js"></script>
+        <script src="https://cdn.staticfile.org/animejs/3.2.1/anime.min.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js" ></script>
+        <script src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js" ></script>
+    <meta name="generator" content="Hexo 6.3.0"><style>mjx-container[jax="SVG"] {
+  direction: ltr;
+}
+
+mjx-container[jax="SVG"] > svg {
+  overflow: visible;
+}
+
+mjx-container[jax="SVG"][display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}
+
+mjx-container[jax="SVG"][justify="left"] {
+  text-align: left;
+}
+
+mjx-container[jax="SVG"][justify="right"] {
+  text-align: right;
+}
+
+g[data-mml-node="merror"] > g {
+  fill: red;
+  stroke: red;
+}
+
+g[data-mml-node="merror"] > rect[data-background] {
+  fill: yellow;
+  stroke: none;
+}
+
+g[data-mml-node="mtable"] > line[data-line] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > rect[data-frame] {
+  stroke-width: 70px;
+  fill: none;
+}
+
+g[data-mml-node="mtable"] > .mjx-dashed {
+  stroke-dasharray: 140;
+}
+
+g[data-mml-node="mtable"] > .mjx-dotted {
+  stroke-linecap: round;
+  stroke-dasharray: 0,140;
+}
+
+g[data-mml-node="mtable"] > svg {
+  overflow: visible;
+}
+
+[jax="SVG"] mjx-tool {
+  display: inline-block;
+  position: relative;
+  width: 0;
+  height: 0;
+}
+
+[jax="SVG"] mjx-tool > mjx-tip {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+mjx-tool > mjx-tip {
+  display: inline-block;
+  padding: .2em;
+  border: 1px solid #888;
+  font-size: 70%;
+  background-color: #F8F8F8;
+  color: black;
+  box-shadow: 2px 2px 5px #AAAAAA;
+}
+
+g[data-mml-node="maction"][data-toggle] {
+  cursor: pointer;
+}
+
+mjx-status {
+  display: block;
+  position: fixed;
+  left: 1em;
+  bottom: 1em;
+  min-width: 25%;
+  padding: .2em .4em;
+  border: 1px solid #888;
+  font-size: 90%;
+  background-color: #F8F8F8;
+  color: black;
+}
+
+foreignObject[data-mjx-xml] {
+  font-family: initial;
+  line-height: normal;
+  overflow: visible;
+}
+
+.MathJax path {
+  stroke-width: 3;
+}
+
+mjx-container[display="true"] {
+  overflow: auto hidden;
+}
+
+mjx-container[display="true"] + br {
+  display: none;
+}
+</style></head>
+    <body>
+        <div id="loading" style="height:100vh;width:100vw;position:fixed;display:flex;z-index:200;justify-content:space-between;background:#fff;transition:opacity 0.3s ease-out"><div style="position:fixed;height:100vh;width:100vw;display:flex;justify-content:center;align-items:center"><div id="loadcontent" style="width:50vmin;height:50vmin;padding:50px;border-radius:50%;display:flex;justify-content:center;align-items:center;border:solid 10px #a3ddfb;text-align:center"><div><h2>Welcome to Xayah Music TV</h2><p style="word-break:keep-all">In solitude, where we are least alone.</p><div><img alt="loading" src="/loading.gif"></div></div></div></div></div>
+        <div id="layout">
+            <i data-fa-symbol="calendar-solid" class="fa-solid fa-calendar fa-fw"></i>
+            <i data-fa-symbol="bookmark-solid" class="fa-solid fa-bookmark fa-fw"></i>
+            <i data-fa-symbol="tags-solid" class="fa-solid fa-tags fa-fw"></i>
+            <transition name="into">
+                <div v-show="show_page" style="display: -not-none">
+                    <div id="menu_show">
+                         
+<nav id="menu">
+    <div class="desktop-menu">
+        <a href="/">
+            <span class="title">Xayah Music TV</span>
+        </a>
+        
+        <a href="/">
+            <i class="fa-solid fa-house fa-fw"></i>
+            <span>&ensp;home</span>
+        </a>
+        
+        <a href="/about">
+            <i class="fa-solid fa-id-card fa-fw"></i>
+            <span>&ensp;about</span>
+        </a>
+        
+        <a href="/archives">
+            <i class="fa-solid fa-box-archive fa-fw"></i>
+            <span>&ensp;archives</span>
+        </a>
+        
+        <a href="/categories">
+            <i class="fa-solid fa-bookmark fa-fw"></i>
+            <span>&ensp;categories</span>
+        </a>
+        
+        <a href="/tags">
+            <i class="fa-solid fa-tags fa-fw"></i>
+            <span>&ensp;tags</span>
+        </a>
+        
+    </div>
+    <div :class="'phone-menu ' + menu_show" id="phone-menu">
+        <div class="curtain" @click="menu_show = !menu_show" v-show="menu_show"></div>
+        <div :class="'title'" @click="menu_show = !menu_show">
+            <i class="fa-solid fa-bars fa-fw"></i>
+            <span>&emsp;Xayah Music TV</span>
+        </div>
+        <transition name="slide">
+        <div class="items" v-show="menu_show">
+            
+            <a href="/">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-house fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">home</div>
+                </div>
+            </a>
+            
+            <a href="/about">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-id-card fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">about</div>
+                </div>
+            </a>
+            
+            <a href="/archives">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-box-archive fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">archives</div>
+                </div>
+            </a>
+            
+            <a href="/categories">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-bookmark fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">categories</div>
+                </div>
+            </a>
+            
+            <a href="/tags">
+                <div class="item">
+                    <div style="min-width: 20px; max-width: 50px; width: 10%">
+                        <i class="fa-solid fa-tags fa-fw"></i>
+                    </div>
+                    <div style="min-width: 100px; max-width: 150%; width: 20%">tags</div>
+                </div>
+            </a>
+            
+        </div>
+        </transition>
+    </div>
+</nav>
+                    </div>
+                    <div id="main">
+                        
+<div class="article">
+    <div>
+        <h1>什么是付出生命的勇气？ </h1>
+    </div>
+    <div class="info">
+        <span class="date">
+            <span class="icon">
+                <svg class="fa-icon"><use xlink:href="#calendar-solid"></use></svg>
+            </span>
+            2022/10/29
+        </span>
+        
+        <span class="category">
+            <a href="/categories/Life/">
+                <span class="icon">
+                    <svg class="fa-icon"><use xlink:href="#bookmark-solid"></use></svg>
+                </span>
+                Life
+            </a>
+        </span>
+        
+        
+        <span class="tags">
+            <span class="icon">
+                <svg class="fa-icon"><use xlink:href="#tags-solid"></use></svg>
+            </span>
+            
+            <span class="tag">
+                
+                <a href="/tags/Soliloquy/" style="color: #ff7d73">
+                    Soliloquy
+                </a>
+            </span>
+            
+        </span>
+        
+    </div>
+    <div class="content" v-pre>
+        <p><strong>Today's topic:</strong> 万分之一的光芒</p>
+<blockquote>
+<p>「 也希望有一天， 」</p>
+<p>「 这沉闷时间里千百万次温柔的坚忍与炽热的决心， 」</p>
+<p>「 能最终换取神明片刻的注视， 」</p>
+<p>「 而赐予我这万分之一的光芒。 」</p>
+</blockquote>
+<span id="more"></span>
+<h4 id="理想-与-生命">「 理想 」与「 生命 」</h4>
+<p>不喑世事的那些日子里，时常听见一些听上去就非常给人力量的语言。</p>
+<p>其中有一句，印象非常深刻。</p>
+<p>大意是：主人公为了某个理想，付出了夜以继日焚膏继晷的努力。<strong>用一生去诠释某样东西</strong>。</p>
+<p>在平凡沉闷的少年时代，自己大抵只是把这些当作所谓的作文素材积累，草草地将其理解成夸张的修辞手法了吧。</p>
+<p>那时世界总是新奇的，太多东西没有了解过，没有尝试过。</p>
+<p>因此也从不明白一些沉重字眼背后意味的东西。</p>
+<p>前些日某个时刻忽然似乎理解了这样的话，在大脑中时不时反映出来。</p>
+<p>随对世界理解渐深，也开始慢慢建构出自身的世界观哲学。相比以前的充斥着新奇与懊丧的探索，而今的世界倒是增加了众多确定性。</p>
+<p>这样做，大概率就会得到这样的结果。一切都在大致的意料之内，似乎也再不能带给人突如其来的欣喜或悲恸。</p>
+<p>在这样的背景下，时间本身自然就是体感最明显的事物了。</p>
+<p>也难免，近来总觉得时光如梭。</p>
+<p>说起来，还真是。小时候写作文总爱写时光如梭，如今倒真是时光如梭了。</p>
+<p>也正因此，时间似乎就成了生命的筹码了。</p>
+<p>我向神明交付这一段生命，祈求换取一份理想的碎片。</p>
+<p>一日，又一日。</p>
+<p>时光终究会把人冲刷得温柔而细腻。</p>
+<p>我终于开始明白这样的话。</p>
+<p>我终于开始意识到，很多看似唯美的话背后的代价。</p>
+<p>不过，</p>
+<p>我想我愿意，</p>
+<p>我接受神明赐予我的一切。</p>
+<p>我会接受我的命运，</p>
+<p>甘之如饴。</p>
+<p>每个清晨初升起的太阳，</p>
+<p>都让我觉得，</p>
+<p>活着真好。</p>
+<p>也希望有一天，</p>
+<p>这沉闷时间里千百万次温柔的坚忍与炽热的决心，</p>
+<p>能最终换取神明片刻的注视，</p>
+<p>而赐予我这万分之一的光芒。</p>
+
+    </div>
+    
+    
+</div>
+                         
+<footer id="footer">
+    <div class="footer-wrap">
+        <div>
+            © 2020 - 2022, Xayah
+            <span class="footer-icon">
+                <i class="fa-solid fa-font-awesome fa-fw"></i>
+            </span>
+        </div>
+        <div></div>
+        <div>In solitude, where we are least alone.</div>
+        
+    </div>
+</footer>
+                    </div>
+                </div>
+            </transition>
+            <div id="img_show">
+                <img id="img_content" alt="img_show">
+            </div>
+        </div>
+        <script src="https://cdn.staticfile.org/highlight.js/11.5.1/highlight.min.js"></script>
+        <script src="/js/particlex.js"></script>
+        <script src="/js/showimg.js"></script>
+        
+
+        <canvas
+            id="fireworks"
+            style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:2147483647"
+        ></canvas>
+        <script src="/js/fireworks.js"></script>
+        <canvas
+            id="background"
+            style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:-1"
+        ></canvas>
+        <script src="/js/background.js"></script>
+    </body>
+</html>
