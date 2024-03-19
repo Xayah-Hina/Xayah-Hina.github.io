@@ -1,0 +1,161 @@
+# ParticleX Configuration
+# https://github.com/theme-particlex/hexo-theme-particlex
+
+# Avatar image
+avatar: /images/avatar.jpg
+
+# Home page background image
+background:
+    - /images/background.png
+
+# Loading image
+loading: /images/loading.gif
+
+# Optional colors for category and tag
+colors:
+    - "#ffa2c4"
+    - "#00bcd4"
+    - "#03a9f4"
+    - "#00a596"
+    - "#ff7d73"
+
+# ParticleX theme icon is adopts the Font Awesome 6
+# https://fontawesome.com
+
+# Main menu navigation
+menu:
+    Home:
+        name: house
+        theme: solid
+        link: /
+    Publications:
+        name: book
+        theme: solid
+        link: /publications
+    Archives:
+        name: box-archive
+        theme: solid
+        link: /archives
+    About:
+        name: id-card
+        theme: solid
+        link: /about
+
+# Side info card
+card:
+    enable: true
+    description: |
+        Ph.D student in Computer Graphics
+    iconLinks:
+        - name: github
+          theme: brands
+          link: https://github.com/Xayah-Hina
+        - name: twitter
+          theme: brands
+          link: https://twitter.com/XayahHina
+        - name: envelope
+          theme: solid
+          link: mailto:ycxiang14sep@gmail.com
+    friendLinks:
+
+# Footer info
+footer:
+    since: 2020
+    # Customize the server domain name ICP
+    ICP:
+        enable: false
+        code:
+        link:
+
+# Polyfill
+# https://polyfill.io
+polyfill:
+    enable: true
+    features:
+        - default
+
+# Highlight.js
+# https://highlightjs.org
+highlight:
+    enable: true
+    style: github
+
+# KaTeX math rendering
+math:
+    enable: true
+
+# Image preview
+preview:
+    enable: true
+
+# Article encryption
+crypto:
+    enable: false
+
+# Search
+search:
+    enable: true
+
+# Giscus
+# https://github.com/giscus/giscus
+giscus:
+    enable: false
+    src: https://giscus.app/client.js
+    repo:
+    repoID:
+    category:
+    categoryID:
+    mapping: pathname
+    strict: 0
+    reactionsEnabled: 1
+    emitMetadata: 0
+    inputPosition: bottom
+    theme: preferred_color_scheme
+    lang:
+
+# Gitalk
+# https://github.com/gitalk/gitalk
+gitalk:
+    enable: false
+    clientID: # Default ClientID
+    clientSecret: # Default ClientSecret
+    repo: # The name of repository of store comments
+    owner: # GitHub repo owner
+    admin: # GitHub repo owner and collaborators, only these guys can initialize github issues
+    language: # en, zh-CN, zh-TW, es-ES, fr, ru, de, pl and ko are currently available
+    proxy: # CORS proxy
+
+# Waline
+# https://github.com/walinejs/waline
+waline:
+    enable: false
+    serverURL: # Waline server address url, you should set this to your own link
+    locale: # Locale: https://waline.js.org/guide/client/i18n.html#locale-option
+    commentCount: true # If false, comment count will only be displayed in post page, not in home page
+    pageview: false # Pageviews count, Note: You should not enable both `waline.pageview` and `leancloud_visitors`
+    emoji: # Custom emoji
+        - https://unpkg.com/@waline/emojis@1.2.0/weibo
+        - https://unpkg.com/@waline/emojis@1.2.0/alus
+        - https://unpkg.com/@waline/emojis@1.2.0/bilibili
+        - https://unpkg.com/@waline/emojis@1.2.0/qq
+        - https://unpkg.com/@waline/emojis@1.2.0/tieba
+        - https://unpkg.com/@waline/emojis@1.2.0/tw-emoji
+    meta: # Comment information, valid meta are nick, mail and link
+        - nick
+        - mail
+        - link
+    requiredMeta: # Set required meta field, e.g.: [nick] | [nick, mail]
+        - nick
+    lang: # Language, available values: en-US, zh-CN, zh-TW, pt-BR, ru-RU, jp-JP
+    wordLimit: 0 # Word limit, no limit when setting to 0
+    login: enable # Whether enable login, can choose from 'enable', 'disable' and 'force'
+    pageSize: 10 # Comment per page
+
+# Twikoo
+# https://github.com/imaegoo/twikoo
+twikoo:
+    enable: true
+    envID:
+    region:
+    path: location.pathname
+    lang:
