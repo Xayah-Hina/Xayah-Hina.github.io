@@ -105,3 +105,14 @@ deploy:
   repo: https://github.com/Xayah-Hina/Xayah-Hina.github.io
   branch: page
 
+pandoc:
+    extra:
+        - no-highlight:
+    extensions:
+        - +abbreviations
+        - +autolink_bare_uris
+        - +emoji
+        - +hard_line_breaks
+        - -implicit_figures
+        - +mark
+        - +short_subsuperscripts
