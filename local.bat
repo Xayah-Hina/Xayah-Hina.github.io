@@ -1,1 +1,1 @@
-hexo clean && hexo s && pause
+hexo clean && hexo g && hexo s && pause
