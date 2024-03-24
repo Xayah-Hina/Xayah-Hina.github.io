@@ -7,7 +7,7 @@
     if (is_archive()) type = "archives";
     let title = config.title;
     if (is_home()) title = config.title;
-    if (is_post() || is_page()) title = page.title + " | " + config.title;
+    if (is_post() || is_page()) title = config.title;
     if (is_category()) title = "Categories: " + page.category + " | " + config.title;
     if (is_tag()) title = "Tags: " + page.tag + " | " + config.title;
     if (is_archive()) title = "Archives | " + config.title;
