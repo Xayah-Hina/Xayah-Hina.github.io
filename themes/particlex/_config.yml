@@ -45,7 +45,7 @@ menu:
 card:
     enable: true
     description: |
-        Ph.D student in Computer Graphics
+        Master student in Computer Graphics
     iconLinks:
         - name: github
           theme: brands
