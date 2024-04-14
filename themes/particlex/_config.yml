@@ -45,7 +45,11 @@ menu:
 card:
     enable: true
     description: |
+<<<<<<< HEAD
         Master student in Computer Graphics
+=======
+        Ph.D student in Computer Graphics
+>>>>>>> ee0bf555465a27fc4564094e7c1f8b9a3df1a3e5
     iconLinks:
         - name: github
           theme: brands

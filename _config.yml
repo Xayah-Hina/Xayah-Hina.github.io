@@ -105,6 +105,7 @@ deploy:
   repo: https://github.com/Xayah-Hina/Xayah-Hina.github.io
   branch: page
 
+<<<<<<< HEAD
 pandoc:
     extra:
         - no-highlight:
@@ -116,3 +117,5 @@ pandoc:
         - -implicit_figures
         - +mark
         - +short_subsuperscripts
+=======
+>>>>>>> ee0bf555465a27fc4564094e7c1f8b9a3df1a3e5
