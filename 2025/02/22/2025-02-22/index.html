@@ -3,7 +3,7 @@
 <html lang="jp">
 <head>
     <meta charset="utf-8" />
-    <title>Archives | Xayah Music TV</title>
+    <title>Xayah Music TV</title>
     <meta name="author" content="Xayah" />
     <meta name="description" content="Welcome to Xayah Music TV" />
     <meta name="keywords" content="Xayah, Music, TV, Xayah Music TV, Xayah Music, Xayah TV, Xayah Blog, Xayah Music TV Blog, Xayah Music Blog, Xayah TV Blog, Xayah Music TV Blog" />
@@ -39,7 +39,11 @@
 
 
 
-<script src="/js/lib/search.js"></script>
+
+
+
+
+<script src="https://s4.zstatic.net/ajax/libs/twikoo/1.6.31/twikoo.all.min.js"></script>
 
 
 
@@ -137,122 +141,49 @@
 </transition>
 
         <div id="main" :class="loading ? 'into-enter-from': 'into-enter-active'">
+            <div class="article">
+    <div>
+        <h1>Sat Feb 22 2025 09:00:00 GMT+0900 (日本标准时间)</h1>
+    </div>
+    <div class="info">
+        <span class="date">
+            <span class="icon">
+                <i class="fa-solid fa-calendar fa-fw"></i>
+            </span>
+            2025/2/22
+        </span>
+        
+        
+        <span class="tags">
+            <span class="icon">
+                <i class="fa-solid fa-tags fa-fw"></i>
+            </span>
             
-<div id="archives">
-    
-    <input id="search-bar" class="input" placeholder="Serach" v-model="rawSearch" />
-    
-    <div id="timeline-wrap" ref="timeline">
-        
-        <div class="timeline" data-title="落入这场大雨">
-            <div class="timeline-tail"></div>
-            <div class="timeline-content">
-                <div class="item-time">2024/3/24</div>
-                <a href="/2024/03/24/2024-03-24/">
-                    <h3>落入这场大雨</h3>
-                </a>
-                <div class="info">
-                    
-                    
-                    <span class="tags">
-                        <span class="icon">
-                            <i class="fa-solid fa-tags fa-fw"></i>
-                        </span>
-                        
-                        
-                        <span class="tag">
-                            
-                            <a href="/tags/daily/" style="color: #ffa2c4">daily</a>
-                        </span>
-                        
-                    </span>
-                    
-                </div>
-            </div>
-        </div>
-        
-        <div class="timeline" data-title="落入这场大雨（二）">
-            <div class="timeline-tail"></div>
-            <div class="timeline-content">
-                <div class="item-time">2024/3/26</div>
-                <a href="/2024/03/26/2024-03-26/">
-                    <h3>落入这场大雨（二）</h3>
-                </a>
-                <div class="info">
-                    
-                    
-                    <span class="tags">
-                        <span class="icon">
-                            <i class="fa-solid fa-tags fa-fw"></i>
-                        </span>
-                        
-                        
-                        <span class="tag">
-                            
-                            <a href="/tags/daily/" style="color: #03a9f4">daily</a>
-                        </span>
-                        
-                    </span>
-                    
-                </div>
-            </div>
-        </div>
-        
-        <div class="timeline" data-title="苦涩如歌（一）">
-            <div class="timeline-tail"></div>
-            <div class="timeline-content">
-                <div class="item-time">2024/4/16</div>
-                <a href="/2024/04/16/2024-04-16/">
-                    <h3>苦涩如歌（一）</h3>
-                </a>
-                <div class="info">
-                    
-                    
-                    <span class="tags">
-                        <span class="icon">
-                            <i class="fa-solid fa-tags fa-fw"></i>
-                        </span>
-                        
-                        
-                        <span class="tag">
-                            
-                            <a href="/tags/daily/" style="color: #00bcd4">daily</a>
-                        </span>
-                        
-                    </span>
-                    
-                </div>
-            </div>
-        </div>
-        
-        <div class="timeline" data-title="satfeb22202509:00:00gmt+0900(日本标准时间)">
-            <div class="timeline-tail"></div>
-            <div class="timeline-content">
-                <div class="item-time">2025/2/22</div>
-                <a href="/2025/02/22/2025-02-22/">
-                    <h3>Sat Feb 22 2025 09:00:00 GMT+0900 (日本标准时间)</h3>
-                </a>
-                <div class="info">
-                    
-                    
-                    <span class="tags">
-                        <span class="icon">
-                            <i class="fa-solid fa-tags fa-fw"></i>
-                        </span>
-                        
-                        
-                        <span class="tag">
-                            
-                            <a href="/tags/daily/" style="color: #00a596">daily</a>
-                        </span>
-                        
-                    </span>
-                    
-                </div>
-            </div>
-        </div>
+            
+            <span class="tag">
+                
+                <a href="/tags/daily/" style="color: #ffa2c4">daily</a>
+            </span>
+            
+        </span>
         
     </div>
+    
+    <div class="content" v-pre>
+        <p>测试</p>
+
+    </div>
+    
+    
+    
+    
+    
+    
+    <div id="comment">
+        <div id="twikoo-container"></div>
+    </div>
+    
+    
 </div>
 
             <footer id="footer">
@@ -283,6 +214,22 @@
     <canvas id="background" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: -1"></canvas>
     <script src="/js/background.min.js"></script>
     <script src="/js/main.js"></script>
+    
+    
+
+
+
+<script>
+    twikoo.init({
+        el: "#twikoo-container",
+        envId: "",
+        region: "",
+        path: location.pathname,
+        lang: "",
+    })
+</script>
+
+
     
 </body>
 </html>
