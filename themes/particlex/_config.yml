@@ -45,8 +45,11 @@ menu:
 card:
     enable: true
     description: |
-        Master student in Computer Graphics
+        Master student in Computer Graphics @Hokudai
     iconLinks:
+        - name: house
+          theme: solid
+          link: https://i.xayah.me
         - name: github
           theme: brands
           link: https://github.com/Xayah-Hina
