@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+<html lang="jp">
+<head>
+    <meta charset="utf-8" />
+    <title>Xayah Music TV</title>
+    <meta name="author" content="Xiang Yangcheng" />
+    <meta name="description" content="Welcome to Xayah Music TV" />
+    <meta name="keywords" content="Xayah, Music, TV, Xayah Music TV, Xayah Music, Xayah TV, Xayah Blog, Xayah Music TV Blog, Xayah Music Blog, Xayah TV Blog, Xayah Music TV Blog" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <link rel="icon" href="/images/avatar.jpg" />
+    <link rel="preconnect" href="https://s4.zstatic.net" />
+<script src="https://s4.zstatic.net/ajax/libs/vue/3.3.7/vue.global.prod.min.js"></script>
+<link rel="stylesheet" href="https://s4.zstatic.net/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+<link rel="preconnect" href="https://fonts.loli.net" />
+<link rel="preconnect" href="https://gstatic.loli.net" crossorigin />
+<link rel="stylesheet" href="https://fonts.loli.net/css2?family=Fira+Code:wght@400;500;600;700&family=Lexend:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;600;700;800;900&display=swap" />
+<script> const mixins = {}; </script>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+
+
+<script src="https://s4.zstatic.net/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://s4.zstatic.net/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+<link
+    rel="stylesheet"
+    href="https://s4.zstatic.net/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
+/>
+<script src="/js/lib/highlight.js"></script>
+
+
+<script src="https://s4.zstatic.net/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://s4.zstatic.net/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="https://s4.zstatic.net/ajax/libs/KaTeX/0.16.9/katex.min.css" />
+<script src="/js/lib/math.js"></script>
+
+
+<script src="/js/lib/preview.js"></script>
+
+
+
+
+
+
+
+<script src="https://s4.zstatic.net/ajax/libs/twikoo/1.6.31/twikoo.all.min.js"></script>
+
+
+
+<link rel="stylesheet" href="/css/main.css" />
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<body>
+    <div id="layout">
+        <transition name="fade">
+            <div id="loading" v-show="loading">
+                <div id="loading-circle">
+                    <h2>" LOADING... "</h2>
+                    <p>In solitude, where we are least alone.</p>
+                    <img src="/images/loading.gif" />
+                </div>
+            </div>
+        </transition>
+        
+        
+        <div id="main" :class="loading ? 'into-enter-from': 'into-enter-active'">
+            <div id="home-posts-wrap" true ref="homePostsWrap">
+                <div id="home-posts">
+                    <div class="post">
+                        <div>
+                            <h1>Xiang Yangcheng</h1>
+                        </div>
+                        <div class="info">
+                            <span class="date"><span class="icon"><i class="fa-solid fa-calendar fa-fw"></i></span>2025/3/1 </span>
+                        </div>
+                        <div class="content">
+                            <p>I'm a first year master student at <a target="_blank" rel="noopener" href="https://www.ist.hokudai.ac.jp/labo/ime/">Laboratory of Information Media Environment</a> at Hokkaido University, fortunately advised by Prof. <a target="_blank" rel="noopener" href="https://imelab.sakura.ne.jp/doba/index.html">Yoshinori Dobashi</a>. Before that, I received my B.S. degree from <a target="_blank" rel="noopener" href="https://it.bjfu.edu.cn/">the School of Information Science &amp; Technology, Beijing Forestry University</a>.</p>
+
+                            <p>Currently, my reserch interests center in physics-based animation, mainly in Fluid Simulation and High Performance Computing. In my spare time, I'm an amateur VOCALOID producer.</p>
+                          
+                            <p>You may reach me at ycxiang14sep@gmail.com</p>
+                        </div>
+                    </div>
+                    <!-- 
+
+ -->
+                    <!-- <div class="page-current">
+    
+    <a class="page-num" href="/">
+        <i class="fa-solid fa-caret-left fa-fw"></i>
+    </a>
+    <a class="page-num" href="/">1</a>
+    <span class="page-omit">...</span>
+    
+    <span class="current"></span>
+    
+    
+    
+    
+</div>
+ --> 
+                </div>
+                
+                <div id="home-card">
+                    <div id="card-style">
+    <div id="card-div">
+        <div class="avatar">
+            <img src="/images/avatar.jpg" alt="avatar" />
+        </div>
+        <div class="name">Xiang Yangcheng</div>
+        <div class="description">
+            <p>Master student in Computer Graphics <span class="citation"
+data-cites="Hokudai">@Hokudai</span></p>
+
+        </div>
+        
+        <div class="icon-links">
+            
+            <span class="icon-link">
+                <a href="https://i.xayah.me">
+                    <i
+                        class="fa-solid fa-house fa-fw"
+                    ></i>
+                </a>
+            </span>
+            
+            <span class="icon-link">
+                <a target="_blank" rel="noopener" href="https://github.com/Xayah-Hina">
+                    <i
+                        class="fa-brands fa-github fa-fw"
+                    ></i>
+                </a>
+            </span>
+            
+            <span class="icon-link">
+                <a target="_blank" rel="noopener" href="https://twitter.com/XayahHina">
+                    <i
+                        class="fa-brands fa-twitter fa-fw"
+                    ></i>
+                </a>
+            </span>
+            
+            <span class="icon-link">
+                <a href="mailto:ycxiang14sep@gmail.com">
+                    <i
+                        class="fa-solid fa-envelope fa-fw"
+                    ></i>
+                </a>
+            </span>
+            
+        </div>
+        
+        
+    </div>
+</div>
+
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        
+        <transition name="fade">
+            <div id="preview" ref="preview" v-show="previewShow">
+                <img id="preview-content" ref="previewContent" />
+            </div>
+        </transition>
+        
+    </div>
+    <canvas id="fireworks" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 32767"></canvas>
+    <script src="https://s4.zstatic.net/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="/js/fireworks.min.js"></script>
+    <canvas id="background" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: -1"></canvas>
+    <script src="/js/background.min.js"></script>
+    <script src="/js/main.js"></script>
+    
+    
+
+
+
+<script>
+    twikoo.init({
+        el: "#twikoo-container",
+        envId: "",
+        region: "",
+        path: location.pathname,
+        lang: "",
+    })
+</script>
+
+
+    
+</body>
+</html>
