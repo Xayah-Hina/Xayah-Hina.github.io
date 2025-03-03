@@ -36,10 +36,10 @@ menu:
         name: box-archive
         theme: solid
         link: /archives
-    About:
+    Profilo:
         name: id-card
         theme: solid
-        link: /about
+        link: /profilo
 
 # Side info card
 card:

@@ -11,6 +11,9 @@
     if (is_category()) title = "Categories: " + page.category + " | " + config.title;
     if (is_tag()) title = "Tags: " + page.tag + " | " + config.title;
     if (is_archive()) title = "Archives | " + config.title;
+
+    let is_profilo = 0
+    if (is_current("profilo")) is_profilo = 1
 %>
 <!DOCTYPE html>
 <html lang="<%- config.language %>">
@@ -29,17 +32,55 @@
         <transition name="fade">
             <div id="loading" v-show="loading">
                 <div id="loading-circle">
-                    <h2>“ LOADING ”</h2>
+                    <h2>" LOADING... "</h2>
                     <p>In solitude, where we are least alone.</p>
                     <img src="<%- url_for(theme.loading) %>" />
                 </div>
             </div>
         </transition>
+        <% if (is_profilo === 1) { %>
+        <% if (theme.card.enable) { %>
+        <div id="main" :class="loading ? 'into-enter-from': 'into-enter-active'">
+            <div id="home-posts-wrap" <%- theme.card.enable || 'class="home-posts-wrap-no-card"' %> ref="homePostsWrap">
+                <div id="home-posts">
+                    <div class="post">
+                        <h1>Xiang Yangcheng</h1>
+                        Liangwang Ruan 薗ǉ�
+I'm currently a fourth-year Ph.D student from School of Computer Science, Peking University, advised by Prof. Baoquan Chen. I also got my Bachelor's degree in Computer Science from Peking University in 2021. I'm interested in developing new simulation techniques for all kinds of nature phenomena including fluids, solids, clothes and their interactions.
+ ruanliangwang@pku.edu.cn Resume Blog
+Publications
+
+MiNNIE: a Mixed Multigrid Method for Real-time Simulation of Nonlinear Near-Incompressible Elastics
+Liangwang Ruan , Bin Wang, Tiantian Liu, Baoquan Chen, December 2024 In SIGGRAPH Asia
+
+A Vortex Particle-on-Mesh Method for Soap Film Simulation
+Ningxiao Tao, Liangwang Ruan , Yitong Deng, Bo Zhu, Bin Wang, Baoquan Chen, August 2024 In SIGGRAPH
+
+Position-based Surface Tension Flow
+Jingrui Xing*, Liangwang Ruan* , Bin Wang, Bo Zhu, Baoquan Chen (* for joint first authors), November 2022 In SIGGRAPH Asia
+
+Solid-Fluid Interaction with Surface-Tension-Dominant Contact
+Liangwang Ruan* , Jinyuan Liu*, Bo Zhu, Shinjiro Sueda, Bin Wang, Baoquan Chen (* for joint first authors), August 2021 In SIGGRAPH
+
+                    </div>
+                    <!-- <%- partial("posts") %> -->
+                    <!-- <%- partial("current") %> --> 
+                </div>
+                <% if (theme.card.enable) { %>
+                <div id="home-card">
+                    <%- partial("card") %>
+                </div>
+                <% } %>
+            </div>
+        </div>
+        <% } %>
+        <% } else { %>
         <%- partial("menu") %>
         <div id="main" :class="loading ? 'into-enter-from': 'into-enter-active'">
             <%- partial(type) %>
             <%- partial("footer") %>
         </div>
+        <% } %>
         <% if (theme.preview.enable) { %>
         <transition name="fade">
             <div id="preview" ref="preview" v-show="previewShow">
