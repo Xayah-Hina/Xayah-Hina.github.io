@@ -1,0 +1,256 @@
+
+<!DOCTYPE html>
+<html lang="jp">
+<head>
+    <meta charset="utf-8" />
+    <title>Xayah Music TV</title>
+    <meta name="author" content="Xiang Yangcheng" />
+    <meta name="description" content="Welcome to Xayah Music TV" />
+    <meta name="keywords" content="Xayah, Music, TV, Xayah Music TV, Xayah Music, Xayah TV, Xayah Blog, Xayah Music TV Blog, Xayah Music Blog, Xayah TV Blog, Xayah Music TV Blog" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <link rel="icon" href="/images/avatar.jpg" />
+    <link rel="preconnect" href="https://s4.zstatic.net" />
+<script src="https://s4.zstatic.net/ajax/libs/vue/3.3.7/vue.global.prod.min.js"></script>
+<link rel="stylesheet" href="https://s4.zstatic.net/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+<link rel="preconnect" href="https://fonts.loli.net" />
+<link rel="preconnect" href="https://gstatic.loli.net" crossorigin />
+<link rel="stylesheet" href="https://fonts.loli.net/css2?family=Fira+Code:wght@400;500;600;700&family=Lexend:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;600;700;800;900&display=swap" />
+<script> const mixins = {}; </script>
+
+<script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+
+
+<script src="https://s4.zstatic.net/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://s4.zstatic.net/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+<link
+    rel="stylesheet"
+    href="https://s4.zstatic.net/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
+/>
+<script src="/js/lib/highlight.js"></script>
+
+
+<script src="https://s4.zstatic.net/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://s4.zstatic.net/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="https://s4.zstatic.net/ajax/libs/KaTeX/0.16.9/katex.min.css" />
+<script src="/js/lib/math.js"></script>
+
+
+<script src="/js/lib/preview.js"></script>
+
+
+
+
+
+
+
+<script src="https://s4.zstatic.net/ajax/libs/twikoo/1.6.31/twikoo.all.min.js"></script>
+
+
+
+<link rel="stylesheet" href="/css/main.css" />
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+<body>
+    <div id="layout">
+        <transition name="fade">
+            <div id="loading" v-show="loading">
+                <div id="loading-circle">
+                    <h2>" LOADING... "</h2>
+                    <p>In solitude, where we are least alone.</p>
+                    <img src="/images/loading.gif" />
+                </div>
+            </div>
+        </transition>
+        
+        <div id="menu" :class="{ hidden: hiddenMenu, 'menu-color': menuColor}">
+    <nav id="desktop-menu">
+        <a class="title" href="/">
+            <span>XAYAH MUSIC TV</span>
+        </a>
+        
+        <a href="/">
+            <i class="fa-solid fa-house fa-fw"></i>
+            <span>&ensp;Home</span>
+        </a>
+        
+        <a href="/publications">
+            <i class="fa-solid fa-book fa-fw"></i>
+            <span>&ensp;Publications</span>
+        </a>
+        
+        <a href="/archives">
+            <i class="fa-solid fa-box-archive fa-fw"></i>
+            <span>&ensp;Archives</span>
+        </a>
+        
+        <a href="/profilo">
+            <i class="fa-solid fa-id-card fa-fw"></i>
+            <span>&ensp;Profilo</span>
+        </a>
+        
+    </nav>
+    <nav id="mobile-menu">
+        <div class="title" @click="showMenuItems = !showMenuItems">
+            <i class="fa-solid fa-bars fa-fw"></i>
+            <span>&emsp;XAYAH MUSIC TV</span>
+        </div>
+        <transition name="slide">
+            <div class="items" v-show="showMenuItems">
+                
+                <a href="/">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-house fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Home</div>
+                    </div>
+                </a>
+                
+                <a href="/publications">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-book fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Publications</div>
+                    </div>
+                </a>
+                
+                <a href="/archives">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-box-archive fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Archives</div>
+                    </div>
+                </a>
+                
+                <a href="/profilo">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-id-card fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Profilo</div>
+                    </div>
+                </a>
+                
+            </div>
+        </transition>
+    </nav>
+</div>
+<transition name="fade">
+    <div id="menu-curtain" @click="showMenuItems = !showMenuItems" v-show="showMenuItems"></div>
+</transition>
+
+        <div id="main" :class="loading ? 'into-enter-from': 'into-enter-active'">
+            <div class="article">
+    <div>
+        <h1>落入这场大雨</h1>
+    </div>
+    <div class="info">
+        <span class="date">
+            <span class="icon">
+                <i class="fa-solid fa-calendar fa-fw"></i>
+            </span>
+            2024/3/24
+        </span>
+        
+        
+        <span class="tags">
+            <span class="icon">
+                <i class="fa-solid fa-tags fa-fw"></i>
+            </span>
+            
+            
+            <span class="tag">
+                
+                <a href="/tags/daily/" style="color: #00bcd4">daily</a>
+            </span>
+            
+        </span>
+        
+    </div>
+    
+    <div class="content" v-pre>
+        <blockquote>
+<p>"我们要有最朴素的生活，与最遥远的梦想。"</p>
+</blockquote>
+<h2 id="写在前面">写在前面</h2>
+<p>新主页搭建完成差不多四天了，还没想好怎么写第一篇文章。当然，旧主页上还有不少几年前写的东西，由于年久失修，源码文件都放在另一台电脑里，以后想起来了再想办法搬过来吧。</p>
+<p>去年来札幌以来一直想着重启一下这个博客。考虑到日子又重新过成了摇摇欲坠的如履薄冰的状态，时间总是在指缝间倏忽间就溜走了，因而想着每天或者定期花点时间躲到这个小小角落，好好整理一下思绪，回顾一下目前的状态，然后好好规划下一阶段该怎么继续前进。</p>
+<p>至于为什么是这里，而不是日记本、本地的notion抑或是Twitter呢？其实两年前我就考虑过这个问题，当时写在旧主页上的某一篇的开头。但这次翻新想了想还是决定把<a
+href="https://i.xayah.me/">i.xayah.me</a>这个域名覆写了，导致旧主页上的内容暂时都找不到了。回到上面那个问题，我也尝试过写在日记本中，或者写在本地notion中。日记本的话，一个是不方便保存，另一个也是太重了。想起本科毕业前那段时间喜欢把一些天马行空的东西写在一本本的A4开的本子里，但毕业后的搬家以及远渡重洋来留学，随身携带这些本子已然不现实，因此只好作罢；另一个重要原因也是，纸笔写作确实效率低，而且还得时刻注意要把字写好，不然实在影响心情。那么notion呢？notion可以云端存储，更有强大的链接功能，曾经也尝试过一段时间，但终究还是觉得不适合当作日记。不知为何，我始终觉得notion有点过于面面俱到，而失了一分定制的精致感。至于Twitter，确实是个记录思绪和生活的好媒介，但注定写不了中长篇幅的碎碎念。</p>
+<p>所以，不管怎样，我终于还是回来了。带着那些年少的浅薄无知的伤春悲秋。就像《远镇》中离家数月后十七岁的“我”，终于把巨大的背囊甩在地上。</p>
+<hr />
+<h2 id="时间与我">时间与我</h2>
+<p>想来离家以来也已有七年多了。都说七年之痒，七年，时间真是世间最过残忍的东西了。而今年岁渐长，愈是在这世间继续走，愈是深味这时光如梭。想来这曾未喑世事之时最爱写于笔下的陈词，而今竟如此真切。欲说还休，却道天凉好个秋。近来《我与地坛》那段书评竟大火了起来，现在再读更有了切身体会。</p>
+<blockquote>
+<p><em>“我非常喜欢的一个东西，是一个人十三四岁的夏天，在路上捡到一支真枪。因为年少无知，天不怕地不怕，他扣下扳机。没有人死，也没有人受伤。他认为自己开了空枪。后来他三十岁或者更老，走在路上听到背后有隐隐的风声。他停下来转过身去，子弹正中眉心。”</em></p>
+</blockquote>
+<p>时间，这世间一切难题，一切烦恼忧郁，一切悲喜炎凉，归根究底，总能归于时间的问题。时间总能解决一切问题；时间本身，也总是最大的问题根源。自读修士开始，自高中阶段便一直难以摆脱的ADHD似乎再次复发了。自离开北京朝十晚七的规律工作作息后，我渐渐发觉自己在失去对时间的掌控能力。自去年年底起，自己愈发喜欢向夜晚借时间。曾经的我总是以为，夜晚的时间是无限的，没有什么问题是一整个夜晚解决不了的。可是近来连续失控的计划总是在时刻提醒我，向夜晚借时间就像罪恶的毒瘾，是万万不可沾染的。人体不总是可以透支的机器，每一个欠下的睡眠时间，终究要第二天白天补；而第二天，总是有新的工作与计划。焚膏继晷，终究是难以为继的。时至今日唯一令我有所庆幸的是，24岁的身体还算足够折腾，暂时还没有break
+down。年轻真好啊，可是你不会永远年轻。时间是时刻高悬在每个人头顶的达摩克里斯之剑，一秒一秒流失后终有一天它会落下，审判一切。</p>
+<p>事实上，我总是对每一天的自己不满意。我始终期待着有朝一日神明能够最终告诉我那个我一直追求的东西：究竟什么才是这个世界的最终答案？我又是否能够最终找到那个真正的自己？</p>
+<p>前几日看到清华大学的几位大二本科生发的图形学课设，大为震惊。有时真的会怀疑，自己苦心做出的结果，其实只是他人一个学期甚至还不到的时间便可完成的内容，甚至完成度更高。再次回想自己大二那年的一切，更觉羞赧。但我始终是不怎么相信所谓天才二字便概括完这些巨佬的言辞的，拉马努金般的真正天才固然存在，但更多的人我相信，依靠的是更加先进的方法论与世界观。因而我时常反忖，他们究竟是如何做到的。</p>
+<p>一路走来或多或少认识了诸多优秀的前辈后辈，总觉得ta们之间总是有些极其相似的点，而那些点是我自己一直以来所匮乏的。过去我总是认为，那个东西叫做“灵气”。有的人天生就是站在聚光灯下的，ta一出场，你总是相信ta能给你耳目一新的演出。而我，总是愿意做ta们忠实的模仿者，仿佛日复一日学着ta们的习惯，终有一天也能得到神明的注视，将这“灵气”赐予如此沉闷平凡的自己。可是，多遗憾啊，这么多年来，我始终没能学到真意。</p>
+
+    </div>
+    
+    
+    
+    
+    
+    
+    <div id="comment">
+        <div id="twikoo-container"></div>
+    </div>
+    
+    
+</div>
+
+            <footer id="footer">
+    <div id="footer-wrap">
+        <div>
+            &copy;
+            2020 - 2025 Xayah Music TV
+            <span id="footer-icon">
+                <i class="fa-solid fa-font-awesome fa-fw"></i>
+            </span>
+            &commat;Xiang Yangcheng
+        </div>
+    </div>
+</footer>
+
+        </div>
+        
+        
+        <transition name="fade">
+            <div id="preview" ref="preview" v-show="previewShow">
+                <img id="preview-content" ref="previewContent" />
+            </div>
+        </transition>
+        
+    </div>
+    <canvas id="fireworks" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 32767"></canvas>
+    <script src="https://s4.zstatic.net/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="/js/fireworks.min.js"></script>
+    <canvas id="background" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: -1"></canvas>
+    <script src="/js/background.min.js"></script>
+    <script src="/js/main.js"></script>
+    
+    
+
+
+
+<script>
+    twikoo.init({
+        el: "#twikoo-container",
+        envId: "",
+        region: "",
+        path: location.pathname,
+        lang: "",
+    })
+</script>
+
+
+    
+</body>
+</html>
