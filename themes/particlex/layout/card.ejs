@@ -20,7 +20,48 @@
             <% }); %>
         </div>
         <% } %>
-        <% if (theme.card.friendLinks) { %>
+
+        <% if (theme.card.educations) { %>
+        <div class="friend-links">
+            <span class="icon-link" style="font-weight: bold; font-size: 1.2em;">
+                <a><i class="fa-solid fa-graduation-cap fa-fw"></i> Education</a>
+            </span>
+            <% Object.entries(theme.card.educations).forEach(([key, value]) => { %>
+            <span class="icon-link">
+                <a href="<%- url_for(value.link) %>">
+                    <!-- <i
+                        class="fa-<%- value.theme %> fa-<%- value.name %> fa-fw"
+                    ></i> -->
+                    <%= value.display_name %>
+                    <!-- |
+                    <%= value.date %> -->
+                </a>
+            </span>
+            <% }); %>
+        </div>
+        <% } %>
+
+        <% if (theme.card.experience) { %>
+        <div class="friend-links">
+            <span class="icon-link" style="font-weight: bold; font-size: 1.2em;">
+                <a><i class="fa-solid fa-building fa-fw"></i> Experience</a>
+            </span>
+            <% Object.entries(theme.card.experience).forEach(([key, value]) => { %>
+            <span class="icon-link">
+                <a href="<%- url_for(value.link) %>">
+                    <!-- <i
+                        class="fa-<%- value.theme %> fa-<%- value.name %> fa-fw"
+                    ></i> -->
+                    <%= value.display_name %>
+                    <!-- |
+                    <%= value.date %> -->
+                </a>
+            </span>
+            <% }); %>
+        </div>
+        <% } %>
+        
+        <!-- <% if (theme.card.friendLinks) { %>
         <div class="friend-links">
             <% Object.entries(theme.card.friendLinks).forEach(([key, value]) => { %>
             <div class="friend-link">
@@ -28,6 +69,6 @@
             </div>
             <% }); %>
         </div>
-        <% } %>
+        <% } %> -->
     </div>
 </div>

@@ -59,7 +59,34 @@ card:
         - name: envelope
           theme: solid
           link: mailto:ycxiang14sep@gmail.com
-    friendLinks:
+    educations:
+        - name: graduation-cap
+          theme: solid
+          link: https://www.ist.hokudai.ac.jp/
+          display_name: Hokkaido University
+          date: 2023 - 2025
+        - name: graduation-cap
+          theme: solid
+          link: https://it.bjfu.edu.cn/
+          display_name: Beijing Forestry University
+          date: 2017 - 2021
+    experience:
+        - name: building
+          theme: solid
+          link: https://www.tencentgames.com/
+          display_name: Tencent Games
+          date: 2021-2023
+        - name: building
+          theme: solid
+          link: https://www.perfectworld.com/
+          display_name: Perfect World Games
+          date: 2021-2023
+    # friendLinks:
+    #     - name: graduation-cap
+    #       theme: solid
+    #       link: https://www.ist.hokudai.ac.jp/
+    #       display_name: Hokkaido University
+    #       date: 2017 - 2021
 
 # Footer info
 footer:
