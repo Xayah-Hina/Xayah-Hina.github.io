@@ -3,7 +3,7 @@
 <html lang="jp">
 <head>
     <meta charset="utf-8" />
-    <title>Archives | Xayah Music TV</title>
+    <title>Xayah Music TV</title>
     <meta name="author" content="Xiang Yangcheng" />
     <meta name="description" content="Welcome to Xayah Music TV" />
     <meta name="keywords" content="Xayah, Music, TV, Xayah Music TV, Xayah Music, Xayah TV, Xayah Blog, Xayah Music TV Blog, Xayah Music Blog, Xayah TV Blog, Xayah Music TV Blog" />
@@ -39,7 +39,11 @@
 
 
 
-<script src="/js/lib/search.js"></script>
+
+
+
+
+<script src="https://s4.zstatic.net/ajax/libs/twikoo/1.6.31/twikoo.all.min.js"></script>
 
 
 
@@ -153,97 +157,80 @@
 
         <div id="main" :class="loading ? 'into-enter-from': 'into-enter-active'">
             
-                
-<div id="archives">
-    
-    <input id="search-bar" class="input" placeholder="Serach" v-model="rawSearch" />
-    
-    <div id="timeline-wrap" ref="timeline">
-        
-        <div class="timeline" data-title="落入这场大雨">
-            <div class="timeline-tail"></div>
-            <div class="timeline-content">
-                <div class="item-time">2024/3/24</div>
-                <a href="/2024/03/24/2024-03-24/">
-                    <h3>落入这场大雨</h3>
-                </a>
-                <div class="info">
+                <div class="article">
                     
-                    
-                    <span class="tags">
-                        <span class="icon">
-                            <i class="fa-solid fa-tags fa-fw"></i>
-                        </span>
-                        
-                        
-                        <span class="tag">
-                            
-                            <a href="/tags/daily/" style="color: #ff7d73">daily</a>
-                        </span>
-                        
-                    </span>
-                    
-                </div>
-            </div>
-        </div>
-        
-        <div class="timeline" data-title="落入这场大雨（二）">
-            <div class="timeline-tail"></div>
-            <div class="timeline-content">
-                <div class="item-time">2024/3/26</div>
-                <a href="/2024/03/26/2024-03-26/">
-                    <h3>落入这场大雨（二）</h3>
-                </a>
-                <div class="info">
-                    
-                    
-                    <span class="tags">
-                        <span class="icon">
-                            <i class="fa-solid fa-tags fa-fw"></i>
-                        </span>
-                        
-                        
-                        <span class="tag">
-                            
-                            <a href="/tags/daily/" style="color: #ff7d73">daily</a>
-                        </span>
-                        
-                    </span>
-                    
-                </div>
-            </div>
-        </div>
-        
-        <div class="timeline" data-title="苦涩如歌（一）">
-            <div class="timeline-tail"></div>
-            <div class="timeline-content">
-                <div class="item-time">2024/4/16</div>
-                <a href="/2024/04/16/2024-04-16/">
-                    <h3>苦涩如歌（一）</h3>
-                </a>
-                <div class="info">
-                    
-                    
-                    <span class="tags">
-                        <span class="icon">
-                            <i class="fa-solid fa-tags fa-fw"></i>
-                        </span>
-                        
-                        
-                        <span class="tag">
-                            
-                            <a href="/tags/daily/" style="color: #ffa2c4">daily</a>
-                        </span>
-                        
-                    </span>
-                    
-                </div>
-            </div>
-        </div>
-        
+<!-- Publications -->
+<div style="font-size: 1.3em; margin-top: 3em;">
+    <div>
+        <h1>Publications</h1>
     </div>
-</div>
+    <div style="display: flex; align-items: flex-start; margin-bottom: 2rem;">
+        <div style="margin-right: 1rem;">
+            <img src="/images/EPINF2025-2.png" alt="Top Image" style="display: block; width: 10em; height: 8em; margin-bottom: 0.5rem;">
+        </div>
+        <div>
+            <p style="margin: 0; font-size: 0.9em; font-weight: bold;">EPINF - Efficient Physics Informed Dynamic Neural Fluid Fields Reconstruction
+                From Sparse Videos 
+                <a href="#" 
+                style="display: inline-block; background-color: #fa8072; color: #fff; text-decoration: none; 
+                        padding: 0.1rem 0.3rem; border-radius: 4px; margin-right: 0.5rem; font-size: 0.73em;">
+                <i class="fa-brands fa-github fa-fw"></i> Paper
+                </a>
+                <a href="#" 
+                style="display: inline-block; background-color: #39c5bb; color: #fff; text-decoration: none; 
+                        padding: 0.1rem 0.3rem; border-radius: 4px; margin-right: 0.5rem; font-size: 0.73em;">
+                Project Page
+                </a>
+                <a target="_blank" rel="noopener" href="https://github.com/Xayah-Hina/EPINF-Smoke" 
+                style="display: inline-block; background-color: #2196F3; color: #fff; text-decoration: none; 
+                        padding: 0.1rem 0.3rem; border-radius: 4px; margin-right: 0.5rem; font-size: 0.73em;">
+                <i class="fa-brands fa-github fa-fw"></i> Code
+                </a>
+            </p>
+            <p style="margin: 0; font-size: 0.73em;">
+                - <strong>Yangcheng Xiang</strong> and Yoshinori Dobashi.
+            </p><p style="margin: 0; margin-left: 0.1em; font-size: 0.73em;"> <span style="font-weight: bold;">Keywords: </span> Physics-Informed Deep Learning, Fluid Reconstruction, Fluid Dynamics, NeRF  </p>
+            <p style="margin: 0; font-size: 0.73em; color: #777; font-style: italic;">
+                Technical Group on Artistic Image Technology (AIT 2025)
+            </p>
+        </div>
+    </div>
 
+    <div style="display: flex; align-items: flex-start; margin-bottom: 2rem;">
+        <div style="margin-right: 1rem;">
+            <img src="/images/thunderscapes2025.png" alt="Top Image" style="display: block; width: 10em; height: 8em; margin-bottom: 0.5rem;">
+        </div>
+        <div>
+            <p style="margin: 0; font-size: 0.9em; font-weight: bold;">Thunderscapes: Simulating the Dynamics of Mesoscale Convective System
+                <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2412.00703" 
+                style="display: inline-block; background-color: #fa8072; color: #fff; text-decoration: none; 
+                        padding: 0.1rem 0.3rem; border-radius: 4px; margin-right: 0.5rem; font-size: 0.73em;">
+                <i class="fa-brands fa-github fa-fw"></i> Paper
+                </a>
+                <span style="
+                display: inline-block; 
+                background-color: #787878; 
+                color: #fff; 
+                padding: 0.1rem 0.3rem; 
+                border-radius: 4px; 
+                margin-left: 0.5rem; font-size: 0.73em;">
+                <i class="fa-brands fa-github fa-fw"></i> 
+                Code (release soon)
+                </span>
+            </p>
+            <p style="margin: 0; font-size: 0.73em;">
+                - Tianchen Hao, Jinxian Pan, <strong>Yangcheng Xiang</strong>, Xiangda Shen, Xinsheng Li and Yanci Zhang
+            </p>
+            <p style="margin: 0; margin-left: 0.1em; font-size: 0.73em;"> <span style="font-weight: bold;">Keywords: </span> Thunderstorm Modeling and Simulation, Cloud Dynamics </p>
+            <p style="margin: 0; margin-left: 0.1em; font-size: 0.73em;"> <span style="font-weight: bold;">Main Contributions: </span> Implement the core Fluid Solver of Cloud Dynamics in Houdini </p>
+            <p style="margin: 0; font-size: 0.73em; color: #777; font-style: italic;">
+                Proceedings of the ACM on Computer Graphics and Interactive Techniques 7 (2025)
+            </p>
+        </div>
+    </div>
+</div> <!-- Publications -->
+    
+                </div>
             
             <footer id="footer">
     <div id="footer-wrap">
@@ -274,6 +261,22 @@
     <canvas id="background" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: -1"></canvas>
     <script src="/js/background.min.js"></script>
     <script src="/js/main.js"></script>
+    
+    
+
+
+
+<script>
+    twikoo.init({
+        el: "#twikoo-container",
+        envId: "",
+        region: "",
+        path: location.pathname,
+        lang: "",
+    })
+</script>
+
+
     
 </body>
 </html>
