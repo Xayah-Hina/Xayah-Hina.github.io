@@ -62,144 +62,102 @@
             </div>
         </transition>
         
+        <div id="menu" :class="{ hidden: hiddenMenu, 'menu-color': menuColor}">
+    <nav id="desktop-menu">
+        <a class="title" href="/">
+            <span>XAYAH MUSIC TV</span>
+        </a>
         
-        <div id="main" :class="loading ? 'into-enter-from': 'into-enter-active'">
-            <div id="home-posts-wrap" true ref="homePostsWrap">
-                <div id="home-posts">
-
-                    <!-- Profilo -->
-                    <div style="font-size: 1.3em;">
-                        <div>
-                            <h1>Xiang Yangcheng</h1>
+        <a href="/">
+            <i class="fa-solid fa-house fa-fw"></i>
+            <span>&ensp;Home</span>
+        </a>
+        
+        <a href="/publications">
+            <i class="fa-solid fa-book fa-fw"></i>
+            <span>&ensp;Publications</span>
+        </a>
+        
+        <a href="/projects">
+            <i class="fa-solid fa-layer-group fa-fw"></i>
+            <span>&ensp;Projects</span>
+        </a>
+        
+        <a href="/archives">
+            <i class="fa-solid fa-box-archive fa-fw"></i>
+            <span>&ensp;Archives</span>
+        </a>
+        
+        <a href="/profilo">
+            <i class="fa-solid fa-id-card fa-fw"></i>
+            <span>&ensp;Profilo</span>
+        </a>
+        
+    </nav>
+    <nav id="mobile-menu">
+        <div class="title" @click="showMenuItems = !showMenuItems">
+            <i class="fa-solid fa-bars fa-fw"></i>
+            <span>&emsp;XAYAH MUSIC TV</span>
+        </div>
+        <transition name="slide">
+            <div class="items" v-show="showMenuItems">
+                
+                <a href="/">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-house fa-fw"></i>
                         </div>
-                        <div class="info">
-                            <span class="date"><span class="icon"><i class="fa-solid fa-calendar fa-fw"></i></span>2025/3/4 </span>
-                        </div>
-                        <div class="content">
-                            <p>
-                                Hi~ there👋
-                            </p>
-                            <p>
-                                I'm a 2nd year master student at <a target="_blank" rel="noopener" href="https://www.ist.hokudai.ac.jp/labo/ime/">Laboratory of Information Media Environment</a> of Hokkaido University, majoring in Phyiscs-based Simulation, fortunately advised by Prof. <a target="_blank" rel="noopener" href="https://imelab.sakura.ne.jp/doba/index.html">Yoshinori Dobashi</a>.
-                                I'm now also working as a research intern at  <a target="_blank" rel="noopener" href="https://ieg.tencent.com/">IEG, Tencent Games</a>, fortunately adviced by <a target="_blank" rel="noopener" href="https://lwkobe.github.io">Wei Li</a>, working on Physics-based Deep Learning.
-                                Before that, I received my B.S. degree from <a target="_blank" rel="noopener" href="https://it.bjfu.edu.cn/">the School of Information Science &amp; Technology, Beijing Forestry University</a> in 2021, majoring in Computer Graphics.
-                                I worked as a Game Physics Engine R&D at <a target="_blank" rel="noopener" href="https://www.tencentgames.com/">Tencent Games</a> and <a target="_blank" rel="noopener" href="https://www.perfectworld.com/">Perfect World Games</a> from 2021 ~ 2023.
-                            </p>
-                            <!-- <p>Currently, my reserch interests center in physics-based animation, mainly in Fluid Simulation and High Performance Computing. </p> -->
-
-
-
-                            <p>
-                                I'm a BIG Computer Graphics enthusiast, especially in <span style="font-weight: bold;">Differentiable Physics-based Simulation</span> and <span style="font-weight: bold;">Physics Informed Neural Networks (PINNs)</span>. 
-                                I focus on methods that combine traditional differentiable simulation with deep learning. 
-                                My research aim is to 
-                                <span style="text-decoration: underline; font-style: italic;">realistically reproduce beautiful natural phenomena on computer screens by applying computer graphics techniques</span>.
-                                In my spare time, I'm also an amateur VOCALOID music producer, mainly using <a target="_blank" rel="noopener" href="https://ec.crypton.co.jp/pages/prod/virtualsinger/mikunt">Hatsune Miku</a>.
-                            </p>
-
-                            <blockquote>
-                                <p>
-                                    Currently, my research interests center in:
-                                    <ul>
-                                        <li>Physics-based Deep Learning</li>
-                                        <li>Differentiable Fluid/Cloth Simulation</li>
-                                        <li>Physics Informed Complex Scene Recognition</li>
-                                    </ul>
-                                </p>
-                            </blockquote>
-
-                            <strong style="color: #990000; text-decoration: underline;">
-                                Now, I'm applying for a PhD position in physics-based simulation.
-                            </strong>
-                            
-                            <p>
-                                <span class="icon-link"> Feel free to <i class="fa-solid fa-download fa-fw"></i><a target="_blank" rel="noopener" href="/files/xayah-cv-ac.pdf">Download my résumé</a> or reach me out at <i class="fa-solid fa-envelope fa-fw"></i><a target="_blank" rel="noopener" href="mailto:ycxiang14sep@gmail.com">ycxiang14sep@gmail.com</a>  </span>
-                            </p>
-
-                            <p style="display: flex; align-items: center;">
-                                <img src="/images/Hokkaido_University_logo.svg" style="height: 3em;">
-                                <img src="/images/bfu.png" style="height: 3em;">
-                                <img src="/images/tencent.png" style="height: 3em;">
-                                <img src="/images/perfect-world.png" style="height: 3em;">
-                            </p>
-                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Home</div>
                     </div>
+                </a>
+                
+                <a href="/publications">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-book fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Publications</div>
+                    </div>
+                </a>
+                
+                <a href="/projects">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-layer-group fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Projects</div>
+                    </div>
+                </a>
+                
+                <a href="/archives">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-box-archive fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Archives</div>
+                    </div>
+                </a>
+                
+                <a href="/profilo">
+                    <div class="item">
+                        <div style="min-width: 20px; max-width: 50px; width: 10%">
+                            <i class="fa-solid fa-id-card fa-fw"></i>
+                        </div>
+                        <div style="min-width: 100px; max-width: 150%; width: 20%">Profilo</div>
+                    </div>
+                </a>
+                
+            </div>
+        </transition>
+    </nav>
+</div>
+<transition name="fade">
+    <div id="menu-curtain" @click="showMenuItems = !showMenuItems" v-show="showMenuItems"></div>
+</transition>
 
-                    <!-- Publications -->
-                    
-<!-- Publications -->
-<div style="font-size: 1.3em; margin-top: 3em;">
-    <div>
-        <h1>Publications</h1>
-    </div>
-    <div style="display: flex; align-items: flex-start; margin-bottom: 2rem;">
-        <div style="margin-right: 1rem;">
-            <img src="/images/EPINF2025-2.png" alt="Top Image" style="display: block; width: 10em; height: 8em; margin-bottom: 0.5rem;">
-        </div>
-        <div>
-            <p style="margin: 0; font-size: 0.9em; font-weight: bold;">EPINF - Efficient Physics Informed Dynamic Neural Fluid Fields Reconstruction
-                From Sparse Videos 
-                <a href="#" 
-                style="display: inline-block; background-color: #fa8072; color: #fff; text-decoration: none; 
-                        padding: 0.1rem 0.3rem; border-radius: 4px; margin-right: 0.5rem; font-size: 0.73em;">
-                <i class="fa-brands fa-github fa-fw"></i> Paper
-                </a>
-                <a href="#" 
-                style="display: inline-block; background-color: #39c5bb; color: #fff; text-decoration: none; 
-                        padding: 0.1rem 0.3rem; border-radius: 4px; margin-right: 0.5rem; font-size: 0.73em;">
-                Project Page
-                </a>
-                <a target="_blank" rel="noopener" href="https://github.com/Xayah-Hina/EPINF-Smoke" 
-                style="display: inline-block; background-color: #2196F3; color: #fff; text-decoration: none; 
-                        padding: 0.1rem 0.3rem; border-radius: 4px; margin-right: 0.5rem; font-size: 0.73em;">
-                <i class="fa-brands fa-github fa-fw"></i> Code
-                </a>
-            </p>
-            <p style="margin: 0; font-size: 0.73em;">
-                - <strong>Yangcheng Xiang</strong> and Yoshinori Dobashi.
-            </p><p style="margin: 0; margin-left: 0.1em; font-size: 0.73em;"> <span style="font-weight: bold;">Keywords: </span> Physics-Informed Deep Learning, Fluid Reconstruction, Fluid Dynamics, NeRF  </p>
-            <p style="margin: 0; font-size: 0.73em; color: #777; font-style: italic;">
-                Technical Group on Artistic Image Technology (AIT 2025)
-            </p>
-        </div>
-    </div>
-
-    <div style="display: flex; align-items: flex-start; margin-bottom: 2rem;">
-        <div style="margin-right: 1rem;">
-            <img src="/images/thunderscapes2025.png" alt="Top Image" style="display: block; width: 10em; height: 8em; margin-bottom: 0.5rem;">
-        </div>
-        <div>
-            <p style="margin: 0; font-size: 0.9em; font-weight: bold;">Thunderscapes: Simulating the Dynamics of Mesoscale Convective System
-                <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2412.00703" 
-                style="display: inline-block; background-color: #fa8072; color: #fff; text-decoration: none; 
-                        padding: 0.1rem 0.3rem; border-radius: 4px; margin-right: 0.5rem; font-size: 0.73em;">
-                <i class="fa-brands fa-github fa-fw"></i> Paper
-                </a>
-                <span style="
-                display: inline-block; 
-                background-color: #787878; 
-                color: #fff; 
-                padding: 0.1rem 0.3rem; 
-                border-radius: 4px; 
-                margin-left: 0.5rem; font-size: 0.73em;">
-                <i class="fa-brands fa-github fa-fw"></i> 
-                Code (release soon)
-                </span>
-            </p>
-            <p style="margin: 0; font-size: 0.73em;">
-                - Tianchen Hao, Jinxian Pan, <strong>Yangcheng Xiang</strong>, Xiangda Shen, Xinsheng Li and Yanci Zhang
-            </p>
-            <p style="margin: 0; margin-left: 0.1em; font-size: 0.73em;"> <span style="font-weight: bold;">Keywords: </span> Thunderstorm Modeling and Simulation, Cloud Dynamics </p>
-            <p style="margin: 0; margin-left: 0.1em; font-size: 0.73em;"> <span style="font-weight: bold;">Main Contributions: </span> Implement the core Fluid Solver of Cloud Dynamics in Houdini </p>
-            <p style="margin: 0; font-size: 0.73em; color: #777; font-style: italic;">
-                Proceedings of the ACM on Computer Graphics and Interactive Techniques 7 (2025)
-            </p>
-        </div>
-    </div>
-</div> <!-- Publications -->
-    
-                    
-                    <!-- Selected Projects -->
+        <div id="main" :class="loading ? 'into-enter-from': 'into-enter-active'">
+            
+                <div class="article">
                     <div style="font-size: 1.3em; margin-top: 4em;">
     <div>
         <h1>Selected Projects</h1>
@@ -562,155 +520,8 @@
     </div>
 
 </div> <!-- Selected Projects -->
-
-                    <!-- Skills -->
-                    <div style="font-size: 1.3em; margin-top: 4em;">
-                        <div>
-                            <h1>Skills</h1>
-                        </div>
-                        <div class="content">
-                            <p>
-                                I'm experienced at developing simulation application using <span style="font-weight: bold;">C++/Cmake/CUDA</span>, and developing cross-platform rendering application using <span style="font-weight: bold;">OpenGL/Vulkan</span>.
-                                For Learning/Optimization application, I'm experienced at <span style="font-weight: bold;">PyTorch</span> and <span style="font-weight: bold;">PyTorch-Cpp</span>
-                                Besides, I'm also familiar with <span style="font-weight: bold;">Rust</span> and <span style="font-weight: bold;">Vulkan</span>.
-                            </p>
-                            <p>
-                                Now, I'm also experienced at <a target="_blank" rel="noopener" href="https://www.sidefx.com/docs/hdk/_h_d_k__intro.html"><span style="font-weight: bold;">Houdini C++ HDK</span></a> developing for fast prototyping of a new idea.
-                                With Houdini HDK, I can quickly write high performce codes without considering annoying visualization codes or geometry processing codes provided by <a target="_blank" rel="noopener" href="https://www.sidefx.com/"><span style="font-weight: bold;">Houdini</span></a>, and I can therefore focus on implementing the core part of my idea.
-                            </p>
-                            <p>
-                                For Game Engine development, I'm experienced at Unreal Engine 5, especially at Chaos Cloth Engine Dev.
-                            </p>
-                            <p>
-                                For music production, I'm using <a target="_blank" rel="noopener" href="https://www.apple.com/logic-pro/"><span style="font-weight: bold;">Logic Pro X</span></a> and <a target="_blank" rel="noopener" href="https://ec.crypton.co.jp/pages/prod/virtualsinger/mikuv4x"><span style="font-weight: bold;">Hatsune Miku V4X</span></a>. For music scorewriter, I like <a target="_blank" rel="noopener" href="https://musescore.org/"><span style="font-weight: bold;">Musescore</span></a>.
-                            </p>
-                        </div>
-                    </div> <!-- Skills -->
-                    
                 </div>
-                
-                
-                    <div id="home-card">
-                        <div id="card-style">
-    <div id="card-div">
-        <div class="avatar">
-            <img src="/images/avatar.jpg" alt="avatar" />
-        </div>
-        <div class="name">Xiang Yangcheng</div>
-        <div class="description">
-            <p>Master student in Computer Graphics <span class="citation"
-data-cites="Hokudai">@Hokudai</span></p>
-
-        </div>
-        
-        <div class="icon-links">
             
-            <span class="icon-link">
-                <a href="https://i.xayah.me">
-                    <i
-                        class="fa-solid fa-house fa-fw"
-                    ></i>
-                </a>
-            </span>
-            
-            <span class="icon-link">
-                <a target="_blank" rel="noopener" href="https://github.com/Xayah-Hina">
-                    <i
-                        class="fa-brands fa-github fa-fw"
-                    ></i>
-                </a>
-            </span>
-            
-            <span class="icon-link">
-                <a target="_blank" rel="noopener" href="https://twitter.com/XayahHina">
-                    <i
-                        class="fa-brands fa-twitter fa-fw"
-                    ></i>
-                </a>
-            </span>
-            
-            <span class="icon-link">
-                <a href="mailto:ycxiang14sep@gmail.com">
-                    <i
-                        class="fa-solid fa-envelope fa-fw"
-                    ></i>
-                </a>
-            </span>
-            
-        </div>
-        
-
-        
-        <div class="friend-links">
-            <span class="icon-link" style="font-weight: bold; font-size: 1.2em;">
-                <a><i class="fa-solid fa-graduation-cap fa-fw"></i> Education</a>
-            </span>
-            
-            <span class="icon-link">
-                <a target="_blank" rel="noopener" href="https://www.ist.hokudai.ac.jp/">
-                    <!-- <i
-                        class="fa-solid fa-graduation-cap fa-fw"
-                    ></i> -->
-                    Hokkaido University
-                    <!-- |
-                    2023 - 2025 -->
-                </a>
-            </span>
-            
-            <span class="icon-link">
-                <a target="_blank" rel="noopener" href="https://it.bjfu.edu.cn/">
-                    <!-- <i
-                        class="fa-solid fa-graduation-cap fa-fw"
-                    ></i> -->
-                    Beijing Forestry University
-                    <!-- |
-                    2017 - 2021 -->
-                </a>
-            </span>
-            
-        </div>
-        
-
-        
-        <div class="friend-links">
-            <span class="icon-link" style="font-weight: bold; font-size: 1.2em;">
-                <a><i class="fa-solid fa-building fa-fw"></i> Experience</a>
-            </span>
-            
-            <span class="icon-link">
-                <a target="_blank" rel="noopener" href="https://www.tencentgames.com/">
-                    <!-- <i
-                        class="fa-solid fa-building fa-fw"
-                    ></i> -->
-                    Tencent Games
-                    <!-- |
-                    2021-2023 -->
-                </a>
-            </span>
-            
-            <span class="icon-link">
-                <a target="_blank" rel="noopener" href="https://www.perfectworld.com/">
-                    <!-- <i
-                        class="fa-solid fa-building fa-fw"
-                    ></i> -->
-                    Perfect World Games
-                    <!-- |
-                    2021-2023 -->
-                </a>
-            </span>
-            
-        </div>
-        
-        
-        <!--  -->
-    </div>
-</div>
-
-                    </div>
-                
-
-            </div>
-                
             <footer id="footer">
     <div id="footer-wrap">
         <div>
@@ -725,7 +536,6 @@ data-cites="Hokudai">@Hokudai</span></p>
 </footer>
 
         </div>
-        
         
         
         <transition name="fade">
