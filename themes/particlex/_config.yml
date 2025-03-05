@@ -32,6 +32,10 @@ menu:
         name: book
         theme: solid
         link: /publications
+    Projects:
+        name: layer-group
+        theme: solid
+        link: /projects
     Archives:
         name: box-archive
         theme: solid

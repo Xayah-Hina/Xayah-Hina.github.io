@@ -17,6 +17,9 @@
 
     let is_publications = 0
     if (is_current("publications")) is_publications = 1
+
+    let is_projects = 0
+    if (is_current("projects")) is_projects = 1
 %>
 <!DOCTYPE html>
 <html lang="<%- config.language %>">
@@ -154,6 +157,10 @@
             <% if (is_publications === 1) { %>
                 <div class="article">
                     <%- partial("publications") %>
+                </div>
+            <% } else if (is_projects === 1) { %>
+                <div class="article">
+                    <%- partial("projects") %>
                 </div>
             <% } else { %>
                 <%- partial(type) %>
