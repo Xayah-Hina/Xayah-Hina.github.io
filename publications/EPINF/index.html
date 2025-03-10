@@ -146,7 +146,16 @@
         <h2 class="title is-3">Abstract</h2>
         <div class="content has-text-justified">
           <p>
-            Efficiently inferring the latent physical properties of fluids from sparse 2D videos remains a significant challenge, particularly in scenarios with complex lighting conditions and occlusions. This work aims to reconstruct the neural density field and velocity field of fluids from sparse video inputs by incorporating known physical priors to achieve realistic fluid reconstructions. We propose an acceleration framework that utilizes a preprocessed density field to speed up the inference of latent physical fields. First, we introduce a preprocessed coarse density field and Dynamic Occupancy Grid to reduce the computational cost of Density Transport and the Navier-Stokes equations. Then, we incorporate inter-frames differences as supervision to accelerate the inference of the velocity field for long term stability. Finally, we employ image-supervised vorticity confinement to compensate for the loss of vortex structures during the reconstruction process. Our approach achieves physically accurate fluid reconstructions while significantly improving training efficiency, unlocking new possibilities for fluid re-simulation, editing, future prediction, and neural dynamic scene synthesis.
+            Efficiently inferring the latent physical properties of fluids from sparse 2D videos remains a significant challenge, 
+particularly in scenarios with complex lighting conditions and occlusions. This work aims to reconstruct realistic neural density 
+and velocity fields of fluids from sparse video inputs and achieve rapid training by leveraging known physical priors of fluid 
+dynamics and preprocessed spatial information. Specifically, we introduce a preprocessing step to the traditional physics
+informed neural reconstruction pipeline to reduce the scale of the inference problem associated with the density transport and 
+divergence-free losses. To address the turbulent nature of fluid velocity and maintain long-term consistency between the 
+reconstructed density and velocity fields, we design an inter-frame difference loss and an image-supervised vorticity confinement 
+term to ensure visual consistency with the turbulent details present in the supervision video. Our approach achieves physically 
+realistic fluid reconstruction results while significantly improving training efficiency, opening up new possibilities for faster 
+fluid re-simulation, editing, future prediction, and neural dynamic scene synthesis. 
           </p>
         </div>
       </div>
