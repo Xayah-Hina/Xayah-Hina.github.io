@@ -5,7 +5,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![Предварительный просмотр Mizuki](../README.png)
+![Предварительный просмотр Mizuki](../README.webp)
 
 Современный, многофункциональный шаблон статического блога с продвинутыми возможностями и красивым дизайном, созданный с помощью [Astro](https://astro.build).
 

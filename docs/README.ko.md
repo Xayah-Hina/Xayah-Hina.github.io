@@ -5,7 +5,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![Mizuki 미리보기](../README.png)
+![Mizuki 미리보기](../README.webp)
 
 [Astro](https://astro.build)로 구축된 고급 기능과 아름다운 디자인을 갖춘 현대적이고 기능이 풍부한 정적 블로그 템플릿입니다.
 

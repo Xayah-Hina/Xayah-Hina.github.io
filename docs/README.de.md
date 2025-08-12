@@ -5,7 +5,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![Mizuki Vorschau](../README.png)
+![Mizuki Vorschau](../README.webp)
 
 Eine moderne, funktionsreiche statische Blog-Vorlage mit erweiterten Funktionen und schönem Design, erstellt mit [Astro](https://astro.build).
 

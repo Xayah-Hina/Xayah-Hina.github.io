@@ -5,7 +5,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![Mizuki プレビュー](../README.png)
+![Mizuki プレビュー](../README.webp)
 
 [Astro](https://astro.build)で構築された、高度な機能と美しいデザインを備えたモダンで機能豊富な静的ブログテンプレートです。
 
