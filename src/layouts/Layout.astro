@@ -402,18 +402,29 @@ function showBanner() {
 			banner.classList.remove('opacity-0', 'scale-105');
 		}
 
-		// Handle mobile single image banner
+		// Handle mobile single image banner - 优化移动端显示
 		const mobileBanner = document.querySelector('.block.lg\\:hidden[alt="Banner image of the blog"]');
 		if (mobileBanner && !document.getElementById('banner-carousel')) {
 			// 确保移动端单张图片正确显示
 			mobileBanner.classList.add('opacity-100');
 			mobileBanner.classList.remove('opacity-0');
+			
+			// 移动端图片加载优化
+			if (mobileBanner.complete) {
+				mobileBanner.style.transform = 'scale(1.05)';
+			} else {
+				mobileBanner.addEventListener('load', () => {
+					mobileBanner.style.transform = 'scale(1.05)';
+				});
+			}
 		}
 
-		// Handle carousel banner - 延迟初始化
+		// Handle carousel banner - 延迟初始化，移动端优化
 		const carousel = document.getElementById('banner-carousel');
 		if (carousel) {
-			setTimeout(() => initCarousel(), 100);
+			// 移动端减少延迟，提升响应速度
+			const delay = window.innerWidth <= 1023 ? 50 : 100;
+			setTimeout(() => initCarousel(), delay);
 		}
 	});
 }
@@ -424,6 +435,42 @@ function initCarousel() {
 	if (carouselItems.length > 1) {
 		let currentIndex = 0;
 		const interval = siteConfig.banner.carousel?.interval || 6;
+		let carouselInterval;
+		let isPaused = false;
+
+		// 移动端触摸手势支持
+		let startX = 0;
+		let startY = 0;
+		let isSwiping = false;
+		const carousel = document.getElementById('banner-carousel');
+
+		// 切换图片的函数
+		function switchToSlide(index) {
+			// 隐藏当前图片
+			const currentItem = carouselItems[currentIndex];
+			const currentMobileImg = currentItem.querySelector('.block.lg\\:hidden');
+			
+			currentItem.classList.remove('opacity-100', 'scale-100');
+			currentItem.classList.add('opacity-0', 'scale-110');
+			if (currentMobileImg) {
+				currentMobileImg.classList.remove('opacity-100');
+				currentMobileImg.classList.add('opacity-0');
+			}
+
+			// 更新索引
+			currentIndex = index;
+			
+			// 显示新图片
+			const nextItem = carouselItems[currentIndex];
+			const nextMobileImg = nextItem.querySelector('.block.lg\\:hidden');
+			
+			nextItem.classList.add('opacity-100', 'scale-100');
+			nextItem.classList.remove('opacity-0', 'scale-110');
+			if (nextMobileImg) {
+				nextMobileImg.classList.add('opacity-100');
+				nextMobileImg.classList.remove('opacity-0');
+			}
+		}
 
 		// 初始化：显示第一张图片
 		carouselItems.forEach((item, index) => {
@@ -449,33 +496,90 @@ function initCarousel() {
 			}
 		});
 
-		// 开始轮播
-		setInterval(() => {
-			// 隐藏当前图片
-			const currentItem = carouselItems[currentIndex];
-			const currentMobileImg = currentItem.querySelector('.block.lg\\:hidden');
-			
-			currentItem.classList.remove('opacity-100', 'scale-100');
-			currentItem.classList.add('opacity-0', 'scale-110');
-			if (currentMobileImg) {
-				currentMobileImg.classList.remove('opacity-100');
-				currentMobileImg.classList.add('opacity-0');
-			}
+		// 移动端触摸事件
+		if (carousel && 'ontouchstart' in window) {
+			carousel.addEventListener('touchstart', (e) => {
+				startX = e.touches[0].clientX;
+				startY = e.touches[0].clientY;
+				isSwiping = false;
+				isPaused = true;
+				clearInterval(carouselInterval);
+			}, { passive: true });
 
-			// 切换到下一张图片
-			currentIndex = (currentIndex + 1) % carouselItems.length;
-			
-			// 显示下一张图片
-			const nextItem = carouselItems[currentIndex];
-			const nextMobileImg = nextItem.querySelector('.block.lg\\:hidden');
-			
-			nextItem.classList.add('opacity-100', 'scale-100');
-			nextItem.classList.remove('opacity-0', 'scale-110');
-			if (nextMobileImg) {
-				nextMobileImg.classList.add('opacity-100');
-				nextMobileImg.classList.remove('opacity-0');
-			}
-		}, interval * 1000);
+			carousel.addEventListener('touchmove', (e) => {
+				if (!startX || !startY) return;
+				
+				const diffX = Math.abs(e.touches[0].clientX - startX);
+				const diffY = Math.abs(e.touches[0].clientY - startY);
+				
+				// 判断是否为水平滑动
+				if (diffX > diffY && diffX > 30) {
+					isSwiping = true;
+					e.preventDefault();
+				}
+			}, { passive: false });
+
+			carousel.addEventListener('touchend', (e) => {
+				if (!startX || !startY || !isSwiping) {
+					isPaused = false;
+					startCarousel();
+					return;
+				}
+				
+				const endX = e.changedTouches[0].clientX;
+				const diffX = startX - endX;
+				
+				// 滑动距离超过50px才切换
+				if (Math.abs(diffX) > 50) {
+					if (diffX > 0) {
+						// 向左滑动，显示下一张
+						const nextIndex = (currentIndex + 1) % carouselItems.length;
+						switchToSlide(nextIndex);
+					} else {
+						// 向右滑动，显示上一张
+						const prevIndex = (currentIndex - 1 + carouselItems.length) % carouselItems.length;
+						switchToSlide(prevIndex);
+					}
+				}
+				
+				startX = 0;
+				startY = 0;
+				isSwiping = false;
+				isPaused = false;
+				
+				// 重新开始自动轮播
+				setTimeout(() => {
+					if (!isPaused) startCarousel();
+				}, 2000);
+			}, { passive: true });
+		}
+
+		// 开始轮播的函数
+		function startCarousel() {
+			clearInterval(carouselInterval);
+			carouselInterval = setInterval(() => {
+				if (!isPaused) {
+					const nextIndex = (currentIndex + 1) % carouselItems.length;
+					switchToSlide(nextIndex);
+				}
+			}, interval * 1000);
+		}
+
+		// 鼠标悬停暂停（桌面端）
+		if (carousel) {
+			carousel.addEventListener('mouseenter', () => {
+				isPaused = true;
+				clearInterval(carouselInterval);
+			});
+
+			carousel.addEventListener('mouseleave', () => {
+				isPaused = false;
+				startCarousel();
+			});
+		}
+
+		// 开始自动轮播
+		startCarousel();
 	}
 }
 
@@ -605,6 +709,29 @@ const setup = () => {
 				bannerTextOverlay.classList.remove('hidden')
 			} else {
 				bannerTextOverlay.classList.add('hidden')
+			}
+		}
+
+		// Control mobile banner visibility based on page with improved staging animation
+		const bannerWrapper = document.getElementById('banner-wrapper')
+		const mainContentWrapper = document.querySelector('.absolute.w-full.z-30')
+		
+		if (bannerWrapper && mainContentWrapper) {
+			if (isHomePage) {
+				// 首页：延迟移除隐藏类，让banner和内容优雅地出现
+				setTimeout(() => {
+					bannerWrapper.classList.remove('mobile-hide-banner')
+				}, 100)
+				setTimeout(() => {
+					mainContentWrapper.classList.remove('mobile-main-no-banner')
+				}, 150)
+			} else {
+				// 非首页：分阶段隐藏，先隐藏banner，再移动内容
+				bannerWrapper.classList.add('mobile-hide-banner')
+				// 延迟移动内容，让banner先完全消失
+				setTimeout(() => {
+					mainContentWrapper.classList.add('mobile-main-no-banner')
+				}, 100)
 			}
 		}
 

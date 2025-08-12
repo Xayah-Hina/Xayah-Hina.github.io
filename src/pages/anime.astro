@@ -2,15 +2,21 @@
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { Image } from "astro:assets";
 
-// 追番数据
+// 导入anime图片
+import lklsImg from "../assets/anime/lkls.webp";
+import rynhImg from "../assets/anime/rynh.webp";
+import laxImg from "../assets/anime/laxxx.webp";
+import tz1Img from "../assets/anime/tz1.webp";
+
 // 追番数据
 const animeList = [
 	{
 		title: "Lycoris Recoil",
 		status: "completed",
 		rating: 9.8,
-		cover: "/src/assets/anime/lkls.webp",
+		cover: lklsImg,
 		description: "Girls' gunfight, flaws cannot hide its virtues.",
 		episodes: "12 episodes",
 		year: "2013-2023",
@@ -20,7 +26,7 @@ const animeList = [
 		title: "Wakaba Girl",
 		status: "watching",
 		rating: 9.5,
-		cover: "/src/assets/anime/rynh.webp",
+		cover: rynhImg,
 		description: "The daily life of girls, sweet and healing.",
 		episodes: "12 episodes",
 		year: "2019-2023",
@@ -30,7 +36,7 @@ const animeList = [
 		title: "Asteroid in Love",
 		status: "watching",
 		rating: 9.2,
-		cover: "/src/assets/anime/laxxx.webp",
+		cover: laxImg,
 		description: "Girls encounter stars, pure love and healing.",
 		episodes: "24 episodes",
 		year: "2020-2024",
@@ -40,7 +46,7 @@ const animeList = [
 		title: "Gochuumon wa Usagi Desu ka??",
 		status: "completed",
 		rating: 9.0,
-		cover: "/src/assets/anime/tz1.webp",
+		cover: tz1Img,
 		description: "A warm-hearted daily life of a group of girls.",
 		episodes: "12 episodes",
 		year: "2022-2023",
@@ -96,19 +102,14 @@ function getStatusText(status: string): string {
 						<div class="card-base p-4 hover:shadow-lg transition-shadow">
 							<div class="flex items-start gap-3">
 								<a href={anime.link} target="_blank" rel="noopener noreferrer" class="w-16 h-20 rounded flex-shrink-0 overflow-hidden hover:opacity-80 transition-opacity cursor-pointer">
-									<img 
+									<Image 
 										src={anime.cover} 
 										alt={anime.title}
 										class="w-full h-full object-cover"
 										loading="lazy"
-										onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+										width={64}
+										height={80}
 									/>
-									<div class="w-full h-full bg-[var(--btn-regular-bg)] rounded flex items-center justify-center hover:bg-[var(--btn-card-bg-hover)] transition-colors" style="display: none;">
-										<svg class="w-8 h-8 text-50" fill="currentColor" viewBox="0 0 20 20">
-											<path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-											<path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/>
-										</svg>
-									</div>
 								</a>
 								<div class="flex-1">
 									<h3 class="font-bold text-lg mb-2 text-90">{anime.title}</h3>

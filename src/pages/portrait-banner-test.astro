@@ -1,0 +1,258 @@
+---
+import Layout from '../layouts/Layout.astro';
+import MainGridLayout from '../layouts/MainGridLayout.astro';
+import { siteConfig } from '../config';
+---
+
+<Layout title="手机竖屏Banner测试">
+	<MainGridLayout>
+		<div class="portrait-test-info">
+			<h1>📱 手机竖屏Banner优化测试</h1>
+			<p>请在手机竖屏模式下查看此页面，测试以下竖屏专用优化功能：</p>
+			
+			<div class="test-sections">
+				<div class="optimization-item">
+					<h3>🎯 竖屏比例优化</h3>
+					<ul>
+						<li><strong>黄金比例</strong>：9:16 竖屏黄金比例设计</li>
+						<li><strong>高度优化</strong>：竖屏模式下banner占85vh高度</li>
+						<li><strong>最小高度</strong>：确保小屏设备banner最小500px高度</li>
+						<li><strong>图片定位</strong>：重点显示图片上部30%区域</li>
+					</ul>
+				</div>
+				
+				<div class="optimization-item">
+					<h3>📐 横竖屏自适应</h3>
+					<ul>
+						<li><strong>竖屏模式</strong>：85vh高度，增强文字背景</li>
+						<li><strong>横屏模式</strong>：95vh高度，最大化显示</li>
+						<li><strong>智能切换</strong>：根据设备方向自动调整</li>
+						<li><strong>平滑过渡</strong>：方向切换时的流畅动画</li>
+					</ul>
+				</div>
+				
+				<div class="optimization-item">
+					<h3>🎨 视觉效果优化</h3>
+					<ul>
+						<li><strong>文字背景</strong>：竖屏模式下增强渐变背景</li>
+						<li><strong>阴影效果</strong>：增强文字阴影提高可读性</li>
+						<li><strong>圆角设计</strong>：底部圆角增加现代感</li>
+						<li><strong>阴影效果</strong>：轻微阴影增加层次感</li>
+					</ul>
+				</div>
+				
+				<div class="optimization-item">
+					<h3>🌊 波浪效果适配</h3>
+					<ul>
+						<li><strong>竖屏高度</strong>：10vh高度，最小80px</li>
+						<li><strong>横屏高度</strong>：8vh高度，最小60px</li>
+						<li><strong>完整显示</strong>：确保波浪效果完全可见</li>
+						<li><strong>层级优化</strong>：正确的z-index层级管理</li>
+					</ul>
+				</div>
+				
+				<div class="optimization-item">
+					<h3>⚡ 性能优化</h3>
+					<ul>
+						<li><strong>硬件加速</strong>：GPU渲染优化</li>
+						<li><strong>3D变换</strong>：perspective和transform-style优化</li>
+						<li><strong>触摸滚动</strong>：-webkit-overflow-scrolling优化</li>
+						<li><strong>平滑过渡</strong>：cubic-bezier缓动函数</li>
+					</ul>
+				</div>
+				
+				<div class="optimization-item">
+					<h3>📏 尺寸适配</h3>
+					<ul>
+						<li><strong>小屏手机</strong>：320px-480px 专用优化</li>
+						<li><strong>大屏手机</strong>：481px-640px 专用优化</li>
+						<li><strong>文字大小</strong>：根据屏幕尺寸智能调整</li>
+						<li><strong>间距优化</strong>：竖屏模式下的最佳间距</li>
+					</ul>
+				</div>
+			</div>
+			
+			<div class="test-instructions">
+				<h3>🧪 测试说明</h3>
+				<ol>
+					<li>在手机上打开此页面，或使用浏览器开发者工具的设备模拟</li>
+					<li>切换竖屏和横屏模式，观察banner的自适应变化</li>
+					<li>测试不同屏幕尺寸下的显示效果</li>
+					<li>检查文字可读性和波浪效果的完整性</li>
+					<li>验证触摸滚动的流畅性</li>
+				</ol>
+			</div>
+			
+			<div class="technical-details">
+				<h3>🔧 技术实现</h3>
+				<ul>
+					<li><strong>媒体查询</strong>：基于orientation的精确适配</li>
+					<li><strong>CSS Grid</strong>：灵活的布局系统</li>
+					<li><strong>Flexbox</strong>：文字对齐和居中</li>
+					<li><strong>CSS变换</strong>：硬件加速的性能优化</li>
+					<li><strong>响应式设计</strong>：移动优先的设计理念</li>
+				</ul>
+			</div>
+		</div>
+	</MainGridLayout>
+</Layout>
+
+<style>
+	.portrait-test-info {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 2rem;
+		font-family: system-ui, -apple-system, sans-serif;
+	}
+
+	.portrait-test-info h1 {
+		color: var(--text-color-primary);
+		font-size: 2.5rem;
+		margin-bottom: 1rem;
+		text-align: center;
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+
+	.portrait-test-info > p {
+		color: var(--text-color-secondary);
+		font-size: 1.1rem;
+		line-height: 1.6;
+		margin-bottom: 2rem;
+		text-align: center;
+	}
+
+	.test-sections {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		gap: 1.5rem;
+		margin-bottom: 2rem;
+	}
+
+	.optimization-item {
+		background: var(--card-bg);
+		border: 1px solid var(--border-color);
+		border-radius: 12px;
+		padding: 1.5rem;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		transition: transform 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.optimization-item:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+	}
+
+	.optimization-item h3 {
+		color: var(--text-color-primary);
+		font-size: 1.3rem;
+		margin-bottom: 1rem;
+		border-bottom: 2px solid var(--accent-color);
+		padding-bottom: 0.5rem;
+	}
+
+	.optimization-item ul, .optimization-item ol {
+		padding-left: 1.5rem;
+		margin-bottom: 0;
+	}
+
+	.optimization-item li {
+		color: var(--text-color-secondary);
+		line-height: 1.6;
+		margin-bottom: 0.5rem;
+	}
+
+	.optimization-item strong {
+		color: var(--text-color-primary);
+		font-weight: 600;
+	}
+
+	.test-instructions, .technical-details {
+		background: var(--card-bg);
+		border: 1px solid var(--border-color);
+		border-radius: 12px;
+		padding: 1.5rem;
+		margin-bottom: 1.5rem;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	}
+
+	.test-instructions h3, .technical-details h3 {
+		color: var(--text-color-primary);
+		font-size: 1.3rem;
+		margin-bottom: 1rem;
+		border-bottom: 2px solid var(--accent-color);
+		padding-bottom: 0.5rem;
+	}
+
+	.test-instructions ol, .technical-details ul {
+		padding-left: 1.5rem;
+	}
+
+	.test-instructions li, .technical-details li {
+		color: var(--text-color-secondary);
+		line-height: 1.6;
+		margin-bottom: 0.5rem;
+	}
+
+	.technical-details strong {
+		color: var(--text-color-primary);
+		font-weight: 600;
+	}
+
+	/* 移动端优化 */
+	@media (max-width: 768px) {
+		.portrait-test-info {
+			padding: 1rem;
+		}
+
+		.portrait-test-info h1 {
+			font-size: 2rem;
+		}
+
+		.test-sections {
+			grid-template-columns: 1fr;
+			gap: 1rem;
+		}
+
+		.optimization-item {
+			padding: 1rem;
+		}
+
+		.optimization-item h3 {
+			font-size: 1.1rem;
+		}
+	}
+
+	/* 竖屏模式特殊优化 */
+	@media (max-width: 640px) and (orientation: portrait) {
+		.portrait-test-info {
+			padding: 0.75rem;
+		}
+
+		.portrait-test-info h1 {
+			font-size: 1.8rem;
+			margin-bottom: 0.75rem;
+		}
+
+		.portrait-test-info > p {
+			font-size: 1rem;
+			margin-bottom: 1.5rem;
+		}
+
+		.optimization-item {
+			padding: 0.75rem;
+		}
+
+		.optimization-item h3 {
+			font-size: 1rem;
+			margin-bottom: 0.75rem;
+		}
+
+		.optimization-item li {
+			font-size: 0.9rem;
+			margin-bottom: 0.25rem;
+		}
+	}
+</style>
