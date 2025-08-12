@@ -824,14 +824,14 @@ Reference-style image syntax looks like this: `![Alt text][id]`
 
 Code:
 
-    [img id]: url/to/image  "Optional title attribute"
+    [img id]: https://s2.loli.net/2024/08/20/5fszgXeOxmL3Wdv.webp  "Optional title attribute"
     ![Alt text][img id]
 
 Preview:
 
 ---
 
-[img id]: url/to/image "Optional title attribute"
+[img id]: https://s2.loli.net/2024/08/20/5fszgXeOxmL3Wdv.webp "Optional title attribute"
 
 ![Alt text][img id]
 
