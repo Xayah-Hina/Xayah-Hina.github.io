@@ -1,15 +1,4 @@
 # 关于本站
-这是一个使用**Astro**框架构建的网站，使用 [Fuwari](https://github.com/saicaca/fuwari) 主题。
+使用**Astro**框架构建的网站，使用 [Mizuki](https://github.com/matsuzaka-yuki/mizuki) 主题。
 
-::github{repo="saicaca/fuwari"}
-
-# 关于我
-
-我是一个即将进入大学的学生，对技术和二次元文化充满热情。我的个人QQ交流群：887633876
-
-## 我的兴趣
-
-- **二次元文化**：我喜欢动漫、漫画和相关的亚文化内容，沉浸在丰富多彩的二次元世界中。
-- **技术探索**：我对编程、网站开发和其他技术话题有浓厚兴趣，喜欢学习新的技术知识并动手实践。
-
-在这个博客中，我会分享一些关于二次元文化的见解以及技术学习的心得体会。欢迎关注我的内容！
+::github{repo="matsuzaka-yuki/Mizuki"}
