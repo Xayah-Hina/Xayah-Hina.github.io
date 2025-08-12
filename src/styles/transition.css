@@ -1,0 +1,53 @@
+/* Page transition animations with Swup */
+html.is-changing .transition-swup-fade {
+    @apply transition-all duration-200
+}
+html.is-animating .transition-swup-fade {
+    @apply opacity-0 translate-y-4
+}
+
+/* Fade-in animations for components */
+@keyframes fade-in-up {
+    0% {
+        transform: translateY(2rem);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Main components - 减少动画延迟提升性能 */
+.onload-animation {
+    opacity: 0;
+    animation: 150ms fade-in-up;
+    animation-fill-mode: forwards;
+}
+#navbar {
+    animation-delay: 0ms
+}
+#sidebar {
+    animation-delay: 0ms
+}
+#swup-container {
+    outline: none;
+}
+#content-wrapper {
+    animation-delay: 0ms;
+}
+.footer {
+    animation-delay: 0ms;
+}
+#banner-credit {
+    animation-delay: 0ms;
+}
+
+/* Post content - 简化动画延迟 */
+#post-container :nth-child(1) { animation-delay: 0ms }
+#post-container :nth-child(2) { animation-delay: 0ms }
+#post-container :nth-child(3) { animation-delay: 0ms }
+#post-container :nth-child(4) { animation-delay: 0ms }
+#post-container :nth-child(5) { animation-delay: 0ms }
+#post-container :nth-child(6) { animation-delay: 0ms }
+

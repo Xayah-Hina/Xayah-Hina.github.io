@@ -1,0 +1,57 @@
+enum I18nKey {
+	home = "home",
+	about = "about",
+	archive = "archive",
+	search = "search",
+
+	tags = "tags",
+	categories = "categories",
+	recentPosts = "recentPosts",
+
+	comments = "comments",
+
+	untitled = "untitled",
+	uncategorized = "uncategorized",
+	noTags = "noTags",
+
+	wordCount = "wordCount",
+	wordsCount = "wordsCount",
+	minuteCount = "minuteCount",
+	minutesCount = "minutesCount",
+	postCount = "postCount",
+	postsCount = "postsCount",
+
+	themeColor = "themeColor",
+
+	lightMode = "lightMode",
+	darkMode = "darkMode",
+	systemMode = "systemMode",
+
+	more = "more",
+
+	author = "author",
+	publishedAt = "publishedAt",
+	license = "license",
+	friends = 'friends',
+	anime = 'anime',
+	diary = 'diary',
+
+	// 追番统计
+	animeTotal = 'animeTotal',
+	animeWatching = 'animeWatching',
+	animeCompleted = 'animeCompleted',
+	animeStatusWatching = 'animeStatusWatching',
+	animeStatusCompleted = 'animeStatusCompleted',
+
+	// 短文页面
+	diarySubtitle = 'diarySubtitle',
+	diaryCount = 'diaryCount',
+	diaryImage = 'diaryImage',
+	diaryReply = 'diaryReply',
+	diaryTips = 'diaryTips',
+	diaryMinutesAgo = 'diaryMinutesAgo',
+	diaryHoursAgo = 'diaryHoursAgo',
+	diaryDaysAgo = 'diaryDaysAgo',
+}
+
+export default I18nKey;

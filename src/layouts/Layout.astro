@@ -1,0 +1,777 @@
+---
+// 只加载最常用的字体权重，减少加载时间
+import "@fontsource/roboto/400.css";
+import "@fontsource/roboto/700.css";
+
+import ConfigCarrier from "@components/ConfigCarrier.astro";
+import { profileConfig, siteConfig } from "@/config";
+import {
+	AUTO_MODE,
+	BANNER_HEIGHT,
+	BANNER_HEIGHT_EXTEND,
+	BANNER_HEIGHT_HOME,
+	DARK_MODE,
+	DEFAULT_THEME,
+	LIGHT_MODE,
+	PAGE_WIDTH,
+} from "../constants/constants";
+import { defaultFavicons } from "../constants/icon";
+import type { Favicon } from "../types/config";
+import { pathsEqual, url } from "../utils/url-utils";
+import "katex/dist/katex.css";
+
+interface Props {
+	title?: string;
+	banner?: string;
+	description?: string;
+	lang?: string;
+	setOGTypeArticle?: boolean;
+}
+
+let { title, banner, description, lang, setOGTypeArticle } = Astro.props;
+
+// apply a class to the body element to decide the height of the banner, only used for initial page load
+// Swup can update the body for each page visit, but it's after the page transition, causing a delay for banner height change
+// so use Swup hooks instead to change the height immediately when a link is clicked
+const isHomePage = pathsEqual(Astro.url.pathname, url("/"));
+
+// defines global css variables
+// why doing this in Layout instead of GlobalStyles: https://github.com/withastro/astro/issues/6728#issuecomment-1502203757
+const configHue = siteConfig.themeColor.hue;
+if (!banner || typeof banner !== "string" || banner.trim() === "") {
+	banner = siteConfig.banner.src;
+}
+
+// TODO don't use post cover as banner for now
+banner = siteConfig.banner.src;
+
+const enableBanner = siteConfig.banner.enable;
+
+let pageTitle: string;
+if (title) {
+	pageTitle = `${title} - ${siteConfig.title}`;
+} else {
+	pageTitle = `${siteConfig.title} - ${siteConfig.subtitle}`;
+}
+
+const favicons: Favicon[] =
+	siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
+
+// const siteLang = siteConfig.lang.replace('_', '-')
+if (!lang) {
+	lang = `${siteConfig.lang}`;
+}
+const siteLang = lang.replace("_", "-");
+
+const bannerOffsetByPosition = {
+	top: `${BANNER_HEIGHT_EXTEND}vh`,
+	center: `${BANNER_HEIGHT_EXTEND / 2}vh`,
+	bottom: "0",
+};
+const bannerOffset =
+	bannerOffsetByPosition[siteConfig.banner.position || "center"];
+---
+
+<!DOCTYPE html>
+<html lang={siteLang} class="bg-[var(--page-bg)] transition text-[14px] md:text-[16px]"
+	  data-overlayscrollbars-initialize
+>
+	<head>
+
+		<title>{pageTitle}</title>
+
+		<meta charset="UTF-8" />
+		<meta name="description" content={description || pageTitle}>
+		<meta name="author" content={profileConfig.name}>
+
+		<meta property="og:site_name" content={siteConfig.title}>
+		<meta property="og:url" content={Astro.url}>
+		<meta property="og:title" content={pageTitle}>
+		<meta property="og:description" content={description || pageTitle}>
+		{setOGTypeArticle ? (
+        <meta property="og:type" content="article" />
+        ) : (
+        <meta property="og:type" content="website" />
+        )}
+
+		<meta name="twitter:card" content="summary_large_image">
+		<meta property="twitter:url" content={Astro.url}>
+		<meta name="twitter:title" content={pageTitle}>
+		<meta name="twitter:description" content={description || pageTitle}>
+
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		{favicons.map(favicon => (
+			<link rel="icon"
+				  href={favicon.src.startsWith('/') ? url(favicon.src) : favicon.src}
+				  sizes={favicon.sizes}
+				  media={favicon.theme && `(prefers-color-scheme: ${favicon.theme})`}
+			/>
+		))}
+
+		<!-- Set the theme before the page is rendered to avoid a flash -->
+		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, AUTO_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>
+			// Load the theme from local storage
+			const theme = localStorage.getItem('theme') || DEFAULT_THEME;
+			switch (theme) {
+				case LIGHT_MODE:
+					document.documentElement.classList.remove('dark');
+					break
+				case DARK_MODE:
+					document.documentElement.classList.add('dark');
+					break
+				case AUTO_MODE:
+					if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+						document.documentElement.classList.add('dark');
+					} else {
+						document.documentElement.classList.remove('dark');
+					}
+			}
+
+			// Load the hue from local storage
+			const hue = localStorage.getItem('hue') || configHue;
+			document.documentElement.style.setProperty('--hue', hue);
+
+			// calculate the --banner-height-extend, which needs to be a multiple of 4 to avoid blurry text
+			let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
+			offset = offset - offset % 4;
+			document.documentElement.style.setProperty('--banner-height-extend', `${offset}px`);
+		</script>
+		<style define:vars={{
+			configHue,
+			'page-width': `${PAGE_WIDTH}rem`,
+		}}></style>  <!-- defines global css variables. This will be applied to <html> <body> and some other elements idk why -->
+
+
+		<slot name="head"></slot>
+
+		<link rel="alternate" type="application/rss+xml" title={profileConfig.name} href={`${Astro.site}rss.xml`}/>
+
+
+
+	</head>
+	<body class=" min-h-screen transition " class:list={[{"lg:is-home": isHomePage, "enable-banner": enableBanner}]}
+		  data-overlayscrollbars-initialize
+	>
+		<ConfigCarrier></ConfigCarrier>
+		<slot />
+
+		<!-- increase the page height during page transition to prevent the scrolling animation from jumping -->
+		<div id="page-height-extend" class="hidden h-[300vh]"></div>
+
+		<!-- Translate.js integration - lazy loading -->
+		{siteConfig.translate?.enable && (
+			<script>
+				// 懒加载translate.js，只有在需要时才加载
+				window.loadTranslateScript = function() {
+					if (window.translate || document.getElementById('translate-script')) {
+						return Promise.resolve();
+					}
+					
+					return new Promise((resolve, reject) => {
+						const script = document.createElement('script');
+						script.src = '/translate.js';
+						script.id = 'translate-script';
+						script.async = true;
+						script.onload = () => {
+							if (typeof window.translate !== 'undefined') {
+								resolve();
+							} else {
+								reject(new Error('translate.js loaded but window.translate not available'));
+							}
+						};
+						script.onerror = reject;
+						document.head.appendChild(script);
+					});
+				};
+			</script>
+		)}
+	</body>
+</html>
+
+<style is:global define:vars={{
+	bannerOffset,
+	'banner-height-home': `${BANNER_HEIGHT_HOME}vh`,
+	'banner-height': `${BANNER_HEIGHT}vh`,
+}}>
+@tailwind components;
+@layer components {
+	.enable-banner.is-home #banner-wrapper {
+		@apply h-[var(--banner-height-home)] translate-y-[var(--banner-height-extend)]
+	}
+	.enable-banner #banner-wrapper {
+		@apply h-[var(--banner-height-home)]
+	}
+
+	.enable-banner.is-home #banner {
+		@apply h-[var(--banner-height-home)] translate-y-0
+	}
+	.enable-banner #banner {
+		@apply h-[var(--banner-height-home)] translate-y-[var(--bannerOffset)]
+	}
+	.enable-banner.is-home #main-grid {
+		@apply translate-y-[var(--banner-height-extend)];
+	}
+	.enable-banner #top-row {
+		@apply h-[calc(var(--banner-height-home)_-_4.5rem)] transition-all duration-300
+	}
+	.enable-banner.is-home #sidebar-sticky {
+		@apply top-[calc(1rem_-_var(--banner-height-extend))]
+	}
+	.navbar-hidden {
+		@apply opacity-0 -translate-y-16
+	}
+	
+	/* Water waves animation */
+	.waves > .parallax use {
+		animation: wave 25s cubic-bezier(0.5, 0.5, 0.45, 0.5) infinite;
+	}
+
+	@keyframes wave {
+		0% {
+			transform: translate3d(-90px, 0, 0);
+		}
+		100% {
+			transform: translate3d(85px, 0, 0);
+		}
+	}
+}
+</style>
+
+<script>
+import 'overlayscrollbars/overlayscrollbars.css';
+import {
+	OverlayScrollbars,
+	// ScrollbarsHidingPlugin,
+	// SizeObserverPlugin,
+	// ClickScrollPlugin
+} from 'overlayscrollbars';
+import {getHue, getStoredTheme, setHue, setTheme} from "../utils/setting-utils";
+import {pathsEqual, url} from "../utils/url-utils";
+import {
+	BANNER_HEIGHT,
+	BANNER_HEIGHT_HOME,
+	BANNER_HEIGHT_EXTEND,
+	MAIN_PANEL_OVERLAPS_BANNER_HEIGHT
+} from "../constants/constants";
+import { siteConfig } from '../config';
+
+/* Preload fonts */
+// (async function() {
+// 	try {
+// 		await Promise.all([
+// 			document.fonts.load("400 1em Roboto"),
+// 			document.fonts.load("700 1em Roboto"),
+// 		]);
+// 		document.body.classList.remove("hidden");
+// 	} catch (error) {
+// 		console.log("Failed to load fonts:", error);
+// 	}
+// })();
+
+/* TODO This is a temporary solution for style flicker issue when the transition is activated */
+/* issue link: https://github.com/withastro/astro/issues/8711, the solution get from here too */
+/* update: fixed in Astro 3.2.4 */
+/*
+function disableAnimation() {
+	const css = document.createElement('style')
+	css.appendChild(
+		document.createTextNode(
+			`*{
+              -webkit-transition:none!important;
+              -moz-transition:none!important;
+              -o-transition:none!important;
+              -ms-transition:none!important;
+              transition:none!important
+              }`
+		)
+	)
+	document.head.appendChild(css)
+
+	return () => {
+		// Force restyle
+		;(() => window.getComputedStyle(document.body))()
+
+		// Wait for next tick before removing
+		setTimeout(() => {
+			document.head.removeChild(css)
+		}, 1)
+	}
+}
+*/
+
+const bannerEnabled = !!document.getElementById('banner-wrapper')
+
+function setClickOutsideToClose(panel: string, ignores: string[]) {
+	document.addEventListener("click", event => {
+		let panelDom = document.getElementById(panel);
+		let tDom = event.target;
+		if (!(tDom instanceof Node)) return;		// Ensure the event target is an HTML Node
+		for (let ig of ignores) {
+			let ie = document.getElementById(ig)
+			if (ie == tDom || (ie?.contains(tDom))) {
+				return;
+			}
+		}
+		panelDom!.classList.add("float-panel-closed");
+	});
+}
+setClickOutsideToClose("display-setting", ["display-setting", "display-settings-switch"])
+setClickOutsideToClose("nav-menu-panel", ["nav-menu-panel", "nav-menu-switch"])
+setClickOutsideToClose("search-panel", ["search-panel", "search-bar", "search-switch"])
+
+
+function loadTheme() {
+	const theme = getStoredTheme()
+	setTheme(theme)
+}
+
+function loadHue() {
+	setHue(getHue())
+}
+
+function initCustomScrollbar() {
+	// 延迟初始化滚动条以提升性能
+	requestIdleCallback(() => {
+		const bodyElement = document.querySelector('body');
+		if (!bodyElement) return;
+		
+		// 简化配置以提升性能
+		OverlayScrollbars(
+			{
+				target: bodyElement,
+				cancel: {
+					nativeScrollbarsOverlaid: true,
+				}
+			}, {
+			scrollbars: {
+				theme: 'scrollbar-base scrollbar-auto py-1',
+				autoHide: 'move',
+				autoHideDelay: 800,
+				autoHideSuspend: false,
+			},
+		});
+
+		// 懒加载katex滚动条
+		const katexElements = document.querySelectorAll('.katex-display') as NodeListOf<HTMLElement>;
+		if (katexElements.length === 0) return;
+
+		const katexObserver = new IntersectionObserver((entries, observer) => {
+			entries.forEach(entry => {
+				if (entry.isIntersecting) {
+					const element = entry.target as HTMLElement;
+					if (!element.parentNode || element.hasAttribute('data-scrollbar-initialized')) return;
+
+					const container = document.createElement('div');
+					container.className = 'katex-display-container';
+					element.parentNode.insertBefore(container, element);
+					container.appendChild(element);
+
+					OverlayScrollbars(container, {
+						scrollbars: {
+							theme: 'scrollbar-base scrollbar-auto',
+							autoHide: 'leave',
+							autoHideDelay: 800,
+						}
+					});
+
+					element.setAttribute('data-scrollbar-initialized', 'true');
+					observer.unobserve(entry.target);
+				}
+			});
+		}, {
+			root: null,
+			rootMargin: '200px',
+			threshold: 0.1
+		});
+
+		katexElements.forEach(element => {
+			katexObserver.observe(element);
+		});
+	});
+}
+
+function showBanner() {
+	if (!siteConfig.banner.enable) return;
+
+	// 使用requestAnimationFrame优化DOM操作
+	requestAnimationFrame(() => {
+		// Handle single image banner (desktop)
+		const banner = document.getElementById('banner');
+		if (banner) {
+			banner.classList.remove('opacity-0', 'scale-105');
+		}
+
+		// Handle mobile single image banner
+		const mobileBanner = document.querySelector('.block.lg\\:hidden[alt="Banner image of the blog"]');
+		if (mobileBanner && !document.getElementById('banner-carousel')) {
+			// 确保移动端单张图片正确显示
+			mobileBanner.classList.add('opacity-100');
+			mobileBanner.classList.remove('opacity-0');
+		}
+
+		// Handle carousel banner - 延迟初始化
+		const carousel = document.getElementById('banner-carousel');
+		if (carousel) {
+			setTimeout(() => initCarousel(), 100);
+		}
+	});
+}
+
+function initCarousel() {
+	const carouselItems = document.querySelectorAll('.carousel-item');
+	
+	if (carouselItems.length > 1) {
+		let currentIndex = 0;
+		const interval = siteConfig.banner.carousel?.interval || 6;
+
+		// 初始化：显示第一张图片
+		carouselItems.forEach((item, index) => {
+			const desktopImg = item.querySelector('.hidden.lg\\:block');
+			const mobileImg = item.querySelector('.block.lg\\:hidden');
+			
+			if (index === 0) {
+				// 显示第一张图片
+				item.classList.add('opacity-100', 'scale-100');
+				item.classList.remove('opacity-0', 'scale-110');
+				if (mobileImg) {
+					mobileImg.classList.add('opacity-100');
+					mobileImg.classList.remove('opacity-0');
+				}
+			} else {
+				// 隐藏其他图片
+				item.classList.add('opacity-0', 'scale-110');
+				item.classList.remove('opacity-100', 'scale-100');
+				if (mobileImg) {
+					mobileImg.classList.add('opacity-0');
+					mobileImg.classList.remove('opacity-100');
+				}
+			}
+		});
+
+		// 开始轮播
+		setInterval(() => {
+			// 隐藏当前图片
+			const currentItem = carouselItems[currentIndex];
+			const currentMobileImg = currentItem.querySelector('.block.lg\\:hidden');
+			
+			currentItem.classList.remove('opacity-100', 'scale-100');
+			currentItem.classList.add('opacity-0', 'scale-110');
+			if (currentMobileImg) {
+				currentMobileImg.classList.remove('opacity-100');
+				currentMobileImg.classList.add('opacity-0');
+			}
+
+			// 切换到下一张图片
+			currentIndex = (currentIndex + 1) % carouselItems.length;
+			
+			// 显示下一张图片
+			const nextItem = carouselItems[currentIndex];
+			const nextMobileImg = nextItem.querySelector('.block.lg\\:hidden');
+			
+			nextItem.classList.add('opacity-100', 'scale-100');
+			nextItem.classList.remove('opacity-0', 'scale-110');
+			if (nextMobileImg) {
+				nextMobileImg.classList.add('opacity-100');
+				nextMobileImg.classList.remove('opacity-0');
+			}
+		}, interval * 1000);
+	}
+}
+
+function initTranslate() {
+	if (!siteConfig.translate?.enable || typeof window.translate === 'undefined') return;
+	
+	// 配置translate.js
+	if (siteConfig.translate.service) {
+		window.translate.service.use(siteConfig.translate.service);
+	}
+	
+	if (siteConfig.translate.defaultLanguage) {
+		window.translate.language.setLocal(siteConfig.translate.defaultLanguage);
+	}
+	
+	if (siteConfig.translate.autoDiscriminate) {
+		window.translate.setAutoDiscriminateLocalLanguage();
+	}
+	
+	// 设置忽略的类名和标签
+	if (siteConfig.translate.ignoreClasses) {
+		siteConfig.translate.ignoreClasses.forEach(className => {
+			window.translate.ignore.class.push(className);
+		});
+	}
+	
+	if (siteConfig.translate.ignoreTags) {
+		siteConfig.translate.ignoreTags.forEach(tagName => {
+			window.translate.ignore.tag.push(tagName);
+		});
+	}
+	
+	// 不显示默认的select选择框
+	if (siteConfig.translate.showSelectTag === false) {
+		window.translate.selectLanguageTag.show = false;
+	}
+	
+	// 禁用自动保存翻译状态到localStorage
+	window.translate.storage.set = function() {
+		// 空函数，阻止保存状态
+	};
+	
+	// 启动翻译监听
+	window.translate.listener.start();
+	
+	// 执行翻译初始化
+	window.translate.execute();
+}
+
+// 懒加载并初始化翻译功能
+async function loadAndInitTranslate() {
+	if (!siteConfig.translate?.enable) return;
+	
+	try {
+		await window.loadTranslateScript();
+		initTranslate();
+	} catch (error) {
+		console.error('Failed to load translate.js:', error);
+	}
+}
+
+function init() {
+	// disableAnimation()()		// TODO
+	loadTheme();
+	loadHue();
+	initCustomScrollbar();
+	showBanner();
+	
+	// 翻译功能改为懒加载，不在页面初始化时加载
+}
+
+/* Load settings when entering the site */
+init();
+
+const setup = () => {
+	// TODO: temp solution to change the height of the banner
+/*
+	window.swup.hooks.on('animation:out:start', () => {
+		const path = window.location.pathname
+		const body = document.querySelector('body')
+		if (path[path.length - 1] === '/' && !body.classList.contains('is-home')) {
+			body.classList.add('is-home')
+		} else if (path[path.length - 1] !== '/' && body.classList.contains('is-home')) {
+			body.classList.remove('is-home')
+		}
+	})
+*/
+	window.swup.hooks.on('link:click', () => {
+		// Remove the delay for the first time page load
+		document.documentElement.style.setProperty('--content-delay', '0ms')
+
+		// 简化navbar处理逻辑
+		if (bannerEnabled) {
+			const navbar = document.getElementById('navbar-wrapper')
+			if (navbar && document.body.classList.contains('lg:is-home')) {
+				const threshold = window.innerHeight * (BANNER_HEIGHT / 100) - 88
+				if (document.documentElement.scrollTop >= threshold) {
+					navbar.classList.add('navbar-hidden')
+				}
+			}
+		}
+	})
+	window.swup.hooks.on('content:replace', () => {
+		initCustomScrollbar();
+		// 页面内容替换后重新执行翻译（仅在翻译已加载时）
+		setTimeout(() => {
+			if (siteConfig.translate?.enable && typeof window.translate !== 'undefined') {
+				window.translate.execute();
+			}
+		}, 100);
+	})
+	window.swup.hooks.on('visit:start', (visit: {to: {url: string}}) => {
+		// change banner height immediately when a link is clicked
+		const bodyElement = document.querySelector('body')
+		const isHomePage = pathsEqual(visit.to.url, url('/'))
+		
+		if (isHomePage) {
+			bodyElement!.classList.add('lg:is-home');
+		} else {
+			bodyElement!.classList.remove('lg:is-home');
+		}
+
+		// Control banner text visibility based on page
+		const bannerTextOverlay = document.querySelector('.banner-text-overlay')
+		if (bannerTextOverlay) {
+			if (isHomePage) {
+				bannerTextOverlay.classList.remove('hidden')
+			} else {
+				bannerTextOverlay.classList.add('hidden')
+			}
+		}
+
+		// increase the page height during page transition to prevent the scrolling animation from jumping
+		const heightExtend = document.getElementById('page-height-extend')
+		if (heightExtend) {
+			heightExtend.classList.remove('hidden')
+		}
+
+		// Hide the TOC while scrolling back to top
+		let toc = document.getElementById('toc-wrapper');
+		if (toc) {
+			toc.classList.add('toc-not-ready')
+		}
+	});
+	window.swup.hooks.on('page:view', () => {
+		// hide the temp high element when the transition is done
+		const heightExtend = document.getElementById('page-height-extend')
+		if (heightExtend) {
+			heightExtend.classList.remove('hidden')
+		}
+	});
+	window.swup.hooks.on('visit:end', (_visit: {to: {url: string}}) => {
+		setTimeout(() => {
+			const heightExtend = document.getElementById('page-height-extend')
+			if (heightExtend) {
+				heightExtend.classList.add('hidden')
+			}
+
+            // Just make the transition looks better
+            const toc = document.getElementById('toc-wrapper');
+            if (toc) {
+                toc.classList.remove('toc-not-ready')
+            }
+        }, 200)
+	});
+}
+if (window?.swup?.hooks) {
+	setup()
+} else {
+	document.addEventListener('swup:enable', setup)
+}
+
+let backToTopBtn = document.getElementById('back-to-top-btn');
+let toc = document.getElementById('toc-wrapper');
+let navbar = document.getElementById('navbar-wrapper')
+
+// 节流函数
+function throttle(func: Function, limit: number) {
+	let inThrottle: boolean;
+	return function(this: any) {
+		const args = arguments;
+		const context = this;
+		if (!inThrottle) {
+			func.apply(context, args);
+			inThrottle = true;
+			setTimeout(() => inThrottle = false, limit);
+		}
+	}
+}
+
+function scrollFunction() {
+	const scrollTop = document.documentElement.scrollTop;
+	const bannerHeight = window.innerHeight * (BANNER_HEIGHT / 100);
+
+	// 批量处理DOM操作
+	requestAnimationFrame(() => {
+		if (backToTopBtn) {
+			if (scrollTop > bannerHeight) {
+				backToTopBtn.classList.remove('hide')
+			} else {
+				backToTopBtn.classList.add('hide')
+			}
+		}
+
+		if (bannerEnabled && toc) {
+			if (scrollTop > bannerHeight) {
+				toc.classList.remove('toc-hide')
+			} else {
+				toc.classList.add('toc-hide')
+			}
+		}
+
+		if (bannerEnabled && navbar) {
+			const isHome = document.body.classList.contains('lg:is-home') && window.innerWidth >= 1024;
+			const currentBannerHeight = isHome ? BANNER_HEIGHT_HOME : BANNER_HEIGHT;
+			const threshold = window.innerHeight * (currentBannerHeight / 100) - 88;
+			
+			if (scrollTop >= threshold) {
+				navbar.classList.add('navbar-hidden')
+			} else {
+				navbar.classList.remove('navbar-hidden')
+			}
+		}
+	});
+}
+
+// 使用节流优化滚动性能
+window.onscroll = throttle(scrollFunction, 16); // 约60fps
+
+window.onresize = () => {
+	// calculate the --banner-height-extend, which needs to be a multiple of 4 to avoid blurry text
+	let offset = Math.floor(window.innerHeight * (BANNER_HEIGHT_EXTEND / 100));
+	offset = offset - offset % 4;
+	document.documentElement.style.setProperty('--banner-height-extend', `${offset}px`);
+}
+
+</script>
+
+<script>
+import PhotoSwipeLightbox from "photoswipe/lightbox"
+import "photoswipe/style.css"
+
+let lightbox: PhotoSwipeLightbox
+let pswp = import("photoswipe")
+
+function createPhotoSwipe() {
+	lightbox = new PhotoSwipeLightbox({
+		gallery: ".custom-md img, #post-cover img, .moment-images img",
+		pswpModule: () => pswp,
+		closeSVG: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M480-424 284-228q-11 11-28 11t-28-11q-11-11-11-28t11-28l196-196-196-196q-11-11-11-28t11-28q11-11 28-11t28 11l196 196 196-196q11-11 28-11t28 11q11 11 11 28t-11 28L536-480l196 196q11 11 11 28t-11 28q-11 11-28 11t-28-11L480-424Z"/></svg>',
+		zoomSVG: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M340-540h-40q-17 0-28.5-11.5T260-580q0-17 11.5-28.5T300-620h40v-40q0-17 11.5-28.5T380-700q17 0 28.5 11.5T420-660v40h40q17 0 28.5 11.5T500-580q0 17-11.5 28.5T460-540h-40v40q0 17-11.5 28.5T380-460q-17 0-28.5-11.5T340-500v-40Zm40 220q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l224 224q11 11 11 28t-11 28q-11 11-28 11t-28-11L532-372q-30 24-69 38t-83 14Zm0-80q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>',
+		padding: { top: 20, bottom: 20, left: 20, right: 20 },
+		wheelToZoom: true,
+		arrowPrev: false,
+		arrowNext: false,
+		imageClickAction: 'close',
+		tapAction: 'close',
+		doubleTapAction: 'zoom',
+	})
+
+	lightbox.addFilter("domItemData", (itemData, element) => {
+		if (element instanceof HTMLImageElement) {
+			itemData.src = element.src
+
+			itemData.w = Number(element.naturalWidth || window.innerWidth)
+			itemData.h = Number(element.naturalHeight || window.innerHeight)
+
+			itemData.msrc = element.src
+		}
+
+		return itemData
+	})
+
+	lightbox.init()
+}
+
+const setup = () => {
+	if (!lightbox) {
+		createPhotoSwipe()
+	}
+	window.swup.hooks.on("page:view", () => {
+		createPhotoSwipe()
+	})
+
+	window.swup.hooks.on(
+		"content:replace",
+		() => {
+			lightbox?.destroy?.()
+		},
+		{ before: true },
+	)
+}
+
+if (window.swup) {
+	setup()
+} else {
+	document.addEventListener("swup:enable", setup)
+}
+</script>

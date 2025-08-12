@@ -1,0 +1,338 @@
+---
+import BackToTop from "@components/control/BackToTop.astro";
+import Footer from "@components/Footer.astro";
+import Navbar from "@components/Navbar.astro";
+import SideBar from "@components/widget/SideBar.astro";
+import type { MarkdownHeading } from "astro";
+import { Icon } from "astro-icon/components";
+import ImageWrapper from "../components/misc/ImageWrapper.astro";
+import TOC from "../components/widget/TOC.astro";
+import TypewriterText from "../components/TypewriterText.astro";
+import { siteConfig } from "../config";
+import {
+	BANNER_HEIGHT,
+	BANNER_HEIGHT_EXTEND,
+	MAIN_PANEL_OVERLAPS_BANNER_HEIGHT,
+} from "../constants/constants";
+import Layout from "./Layout.astro";
+
+interface Props {
+	title?: string;
+	banner?: string;
+	description?: string;
+	lang?: string;
+	setOGTypeArticle?: boolean;
+	headings?: MarkdownHeading[];
+}
+
+const {
+	title,
+	banner,
+	description,
+	lang,
+	setOGTypeArticle,
+	headings = [],
+} = Astro.props;
+const hasBannerCredit =
+	siteConfig.banner.enable && siteConfig.banner.credit.enable;
+const hasBannerLink = !!siteConfig.banner.credit.url;
+
+// 检查是否为首页
+const isHomePage = Astro.url.pathname === "/" || Astro.url.pathname === "";
+const showHomeText = siteConfig.banner.homeText?.enable && isHomePage;
+
+const mainPanelTop = siteConfig.banner.enable
+	? `calc(${BANNER_HEIGHT}vh - ${MAIN_PANEL_OVERLAPS_BANNER_HEIGHT}rem)`
+	: "5.5rem";
+---
+
+<Layout title={title} banner={banner} description={description} lang={lang} setOGTypeArticle={setOGTypeArticle}>
+
+<!-- Navbar -->
+<slot slot="head" name="head"></slot>
+<div id="top-row" class="z-50 pointer-events-none relative transition-all duration-700 max-w-[var(--page-width)] px-0 md:px-4 mx-auto" class:list={[""]}>
+    <div id="navbar-wrapper" class="pointer-events-auto sticky top-0 transition-all">
+        <Navbar></Navbar>
+    </div>
+</div>
+
+<!-- Banner -->
+{siteConfig.banner.enable && <div id="banner-wrapper" class={`absolute z-10 w-full transition duration-700 overflow-hidden`} style={`top: -${BANNER_HEIGHT_EXTEND}vh`}>
+    {Array.isArray(siteConfig.banner.src) && siteConfig.banner.src.length > 1 ? (
+        <!-- Carousel mode for multiple images -->
+        <div id="banner-carousel" class="relative h-full w-full">
+            <ul class="carousel-list h-full w-full">
+                {siteConfig.banner.src.map((src, index) => (
+                    <li class={`carousel-item absolute inset-0 transition-all duration-1000 ${index === 0 ? 'opacity-100 scale-100' : 'opacity-0 scale-110'}`}>
+                        <!-- Mobile: use ImageWrapper for consistent image handling -->
+                        <ImageWrapper 
+                            alt={`Banner image ${index + 1}`} 
+                            class:list={["block lg:hidden object-cover h-full w-full transition-opacity duration-1000", index === 0 ? 'opacity-100' : 'opacity-0']}
+                            src={src} 
+                            position={siteConfig.banner.position}
+                        />
+                        <!-- Desktop: use ImageWrapper -->
+                        <ImageWrapper 
+                            alt={`Banner image ${index + 1}`} 
+                            class:list={["hidden lg:block object-cover h-full w-full transition-transform duration-1000 ease-out"]}
+                            src={src} 
+                            position={siteConfig.banner.position}
+                        />
+                    </li>
+                ))}
+            </ul>
+        </div>
+    ) : (
+        <!-- Single image mode -->
+            <div class="relative h-full w-full">
+                <!-- Mobile: use ImageWrapper for consistent image handling -->
+                <ImageWrapper 
+                    alt="Banner image of the blog" 
+                    class:list={["block lg:hidden object-cover h-full w-full transition-opacity duration-700 opacity-100"]}
+                    src={Array.isArray(siteConfig.banner.src) ? siteConfig.banner.src[0] : siteConfig.banner.src} 
+                    position={siteConfig.banner.position}
+                />
+                <!-- Desktop: use ImageWrapper -->
+                <ImageWrapper 
+                    id="banner" 
+                    alt="Banner image of the blog" 
+                    class:list={["hidden lg:block object-cover h-full transition duration-700 opacity-0 scale-105"]}
+                    src={Array.isArray(siteConfig.banner.src) ? siteConfig.banner.src[0] : siteConfig.banner.src} 
+                    position={siteConfig.banner.position}
+                />
+            </div>
+    )}
+    
+    <!-- Home page text overlay -->
+    {siteConfig.banner.homeText?.enable && (
+        <div class={`banner-text-overlay absolute inset-0 z-20 flex items-center justify-center lg:items-center md:items-end sm:items-end ${!showHomeText ? 'hidden' : ''}`}>
+            <div class="w-4/5 lg:w-3/4 text-center mb-0 lg:mb-0 md:mb-16 sm:mb-20">
+                <div class="flex flex-col">
+                    {siteConfig.banner.homeText?.title && (
+                        <h1 class="banner-title text-6xl lg:text-8xl font-bold text-white drop-shadow-lg mb-2 lg:mb-4">
+                            {siteConfig.banner.homeText.title}
+                        </h1>
+                    )}
+                    {siteConfig.banner.homeText?.subtitle && (
+                        <h2 class="banner-subtitle text-xl lg:text-3xl text-white/90 drop-shadow-md">
+                            {siteConfig.banner.homeText.typewriter?.enable ? (
+                                <TypewriterText 
+                                    text={siteConfig.banner.homeText.subtitle}
+                                    speed={siteConfig.banner.homeText.typewriter.speed}
+                                    deleteSpeed={siteConfig.banner.homeText.typewriter.deleteSpeed}
+                                    pauseTime={siteConfig.banner.homeText.typewriter.pauseTime}
+                                />
+                            ) : (
+                                Array.isArray(siteConfig.banner.homeText.subtitle) 
+                                    ? siteConfig.banner.homeText.subtitle[0] 
+                                    : siteConfig.banner.homeText.subtitle
+                            )}
+                        </h2>
+                    )}
+                </div>
+            </div>
+        </div>
+    )}
+    
+    <!-- Water waves effect -->
+    <div class="waves absolute -bottom-[1px] h-[10vh] max-h-[9.375rem] min-h-[3.125rem] w-full md:h-[15vh]" id="header-waves">
+        <svg
+            class="waves"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            viewBox="0 24 150 28"
+            preserveAspectRatio="none"
+            shape-rendering="auto"
+        >
+            <defs>
+                <path
+                    id="gentle-wave"
+                    d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z"
+                >
+                </path>
+            </defs>
+            <g class="parallax">
+                <use
+                    xlink:href="#gentle-wave"
+                    x="48"
+                    y="0"
+                    class="opacity-25 fill-[var(--page-bg)]"
+                    style="animation-delay: -2s; animation-duration: 7s;"
+                ></use>
+                <use
+                    xlink:href="#gentle-wave"
+                    x="48"
+                    y="3"
+                    class="opacity-50 fill-[var(--page-bg)]"
+                    style="animation-delay: -3s; animation-duration: 10s;"
+                ></use>
+                <use
+                    xlink:href="#gentle-wave"
+                    x="48"
+                    y="5"
+                    class="opacity-75 fill-[var(--page-bg)]"
+                    style="animation-delay: -4s; animation-duration: 13s;"
+                ></use>
+                <use
+                    xlink:href="#gentle-wave"
+                    x="48"
+                    y="7"
+                    class="fill-[var(--page-bg)]"
+                    style="animation-delay: -5s; animation-duration: 20s;"
+                ></use>
+            </g>
+        </svg>
+    </div>
+</div>}
+
+<!-- Main content -->
+<div class="absolute w-full z-30 pointer-events-none" style={`top: ${mainPanelTop}`}>
+    <!-- The pointer-events-none here prevent blocking the click event of the TOC -->
+    <div class="relative max-w-[var(--page-width)] mx-auto pointer-events-auto">
+        <div id="main-grid" class="transition duration-700 w-full left-0 right-0 grid grid-cols-[17.5rem_auto] grid-rows-[auto_1fr_auto] lg:grid-rows-[auto]
+    mx-auto gap-4 px-0 md:px-4"
+        >
+            <!-- Banner image credit -->
+            {hasBannerCredit && <a href={siteConfig.banner.credit.url} id="banner-credit" target="_blank" rel="noopener" aria-label="Visit image source"
+                                   class:list={["group onload-animation transition-all absolute flex justify-center items-center rounded-full " +
+                                   "px-3 right-4 -top-[3.25rem] bg-black/60 hover:bg-black/70 h-9", {"hover:pr-9 active:bg-black/80": hasBannerLink}]}
+            >
+                <Icon class="text-white/75 text-[1.25rem] mr-1" name="material-symbols:copyright-outline-rounded" ></Icon>
+                <div class="text-white/75 text-xs">{siteConfig.banner.credit.text}</div>
+                <Icon class:list={["transition absolute text-[oklch(0.75_0.14_var(--hue))] right-4 text-[0.75rem] opacity-0",
+                    {"group-hover:opacity-100": hasBannerLink}]}
+                      name="fa6-solid:arrow-up-right-from-square">
+                </Icon>
+            </a>}
+
+
+            <SideBar class="mb-4 row-start-2 row-end-3 col-span-2 lg:row-start-1 lg:row-end-2 lg:col-span-1 lg:max-w-[17.5rem] onload-animation" headings={headings}></SideBar>
+
+            <main id="swup-container" class="transition-swup-fade col-span-2 lg:col-span-1 overflow-hidden">
+                <div id="content-wrapper" class="onload-animation">
+                    <!-- the overflow-hidden here prevent long text break the layout-->
+                    <!-- make id different from windows.swup global property -->
+                    <slot></slot>
+                    <div class="footer col-span-2 onload-animation hidden lg:block">
+                        <Footer></Footer>
+                    </div>
+                </div>
+            </main>
+
+            <div class="footer col-span-2 onload-animation block lg:hidden">
+                <Footer></Footer>
+            </div>
+        </div>
+
+        <BackToTop></BackToTop>
+    </div>
+</div>
+
+<!-- The things that should be under the banner, only the TOC for now -->
+<div class="absolute w-full z-0 hidden 2xl:block">
+    <div class="relative max-w-[var(--page-width)] mx-auto">
+        <!-- TOC component -->
+        {siteConfig.toc.enable && <div id="toc-wrapper" class:list={["hidden lg:block transition absolute top-0 -right-[var(--toc-width)] w-[var(--toc-width)] items-center",
+            {"toc-hide": siteConfig.banner.enable}]}
+        >
+            <div id="toc-inner-wrapper" class="fixed top-14 w-[var(--toc-width)] h-[calc(100vh_-_20rem)] overflow-y-scroll overflow-x-hidden hide-scrollbar">
+                <div id="toc" class="w-full h-full transition-swup-fade ">
+                    <div class="h-8 w-full"></div>
+                    <TOC headings={headings}></TOC>
+                    <div class="h-8 w-full"></div>
+                </div>
+            </div>
+        </div>}
+
+        <!-- #toc needs to exist for Swup to work normally -->
+        {!siteConfig.toc.enable && <div id="toc"></div>}
+    </div>
+</div>
+</Layout>
+
+<style>
+/* Banner text styles */
+.banner-title {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    animation: fadeInUp 1s ease-out;
+}
+
+.banner-subtitle {
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+    animation: fadeInUp 1s ease-out 0.3s both;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+/* 移动端横幅文本定位调整 
+   适配屏幕宽度小于等于640px的设备（典型手机屏幕） */
+@media (max-width: 640px) {
+    /* 调整横幅文本覆盖层的对齐方式为底部对齐 */
+    .banner-text-overlay {
+        align-items: flex-end !important;
+        padding-bottom: 10rem !important; /* 增加底部内边距，使内容向上移动 */
+    }
+    
+    /* 给文本容器添加底部外边距，使其远离底部边缘 */
+    .banner-text-overlay > div {
+        margin-bottom: 4rem !important;
+    }
+    
+    /* 调整横幅标题字体大小，设置行高为1.1以优化可读性 */
+    .banner-title {
+        font-size: 3rem !important;
+        line-height: 1.1;
+    }
+    
+    /* 调整横幅副标题字体大小，设置行高为1.4以优化可读性 */
+    .banner-subtitle {
+        font-size: 1.125rem !important;
+        line-height: 1.4;
+    }
+}
+
+/* 平板设备横幅文本定位调整 
+   适配屏幕宽度在641px到1023px之间的设备（典型平板屏幕） */
+@media (min-width: 641px) and (max-width: 1023px) {
+    /* 调整横幅文本覆盖层的对齐方式为底部对齐 */
+    .banner-text-overlay {
+        align-items: flex-end !important;
+    }
+    
+    /* 给文本容器添加底部外边距（比移动端小），使其远离底部边缘 */
+    .banner-text-overlay > div {
+        margin-bottom: 4rem !important;
+    }
+    
+    /* 调整横幅标题字体大小（比移动端大），设置行高为1.1以优化可读性 */
+    .banner-title {
+        font-size: 4rem !important;
+        line-height: 1.1;
+    }
+    
+    /* 调整横幅副标题字体大小（比移动端大），设置行高为1.4以优化可读性 */
+    .banner-subtitle {
+        font-size: 1.5rem !important;
+        line-height: 1.4;
+    }
+}
+
+/* Desktop keeps centered */
+@media (min-width: 1024px) {
+    .banner-text-overlay {
+        align-items: center !important;
+    }
+    
+    .banner-text-overlay > div {
+        margin-bottom: 0 !important;
+    }
+}
+</style>
