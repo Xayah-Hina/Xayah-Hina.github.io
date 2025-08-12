@@ -2,6 +2,7 @@
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
+import ImageWrapper from "../components/misc/ImageWrapper.astro";
 
 // 示例即刻短文数据
 const moments = [
@@ -9,7 +10,7 @@ const moments = [
 		id: 1,
 		content: "Share some nice/beautiful/gorgeous wallpapers。",
 		date: "2025-01-15T10:30:00Z",
-		images: ["/src/assets/images/1.webp", "/src/assets/images/banner.webp"],
+		images: ["assets/images/1.webp", "assets/images/banner.webp"],
 	},
 ];
 
@@ -63,20 +64,18 @@ function formatTime(dateString: string): string {
 									<p class="moment-text text-sm md:text-base text-90 leading-relaxed mb-3">{moment.content}</p>
 									
 									{moment.images && moment.images.length > 0 && (
-						<div class="moment-images grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
-							{moment.images.map((image, index) => (
-								<div class="image-item relative rounded-md overflow-hidden aspect-square cursor-pointer hover:scale-105 transition-transform" key={index}>
-									<img 
-										src={image} 
-										alt={i18n(I18nKey.diaryImage)}
-										class="w-full h-full object-cover"
-										loading="lazy"
-										onerror="this.style.display='none'"
-									/>
-								</div>
-							))}
+				<div class="moment-images grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+					{moment.images.map((image, index) => (
+						<div class="image-item relative rounded-md overflow-hidden aspect-square cursor-pointer hover:scale-105 transition-transform" key={index}>
+							<ImageWrapper 
+								src={image} 
+								alt={i18n(I18nKey.diaryImage)}
+								class="w-full h-full object-cover"
+							/>
 						</div>
-					)}
+					))}
+				</div>
+			)}
 								</div>
 								
 								<hr class="moment-divider border-t border-[var(--line-divider)] my-3" />

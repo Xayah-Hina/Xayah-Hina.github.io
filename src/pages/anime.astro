@@ -2,13 +2,7 @@
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
-import { Image } from "astro:assets";
-
-// 导入anime图片
-import lklsImg from "../assets/anime/lkls.webp";
-import rynhImg from "../assets/anime/rynh.webp";
-import laxImg from "../assets/anime/laxxx.webp";
-import tz1Img from "../assets/anime/tz1.webp";
+import ImageWrapper from "../components/misc/ImageWrapper.astro";
 
 // 追番数据
 const animeList = [
@@ -16,7 +10,7 @@ const animeList = [
 		title: "Lycoris Recoil",
 		status: "completed",
 		rating: 9.8,
-		cover: lklsImg,
+		cover: "assets/anime/lkls.webp",
 		description: "Girls' gunfight, flaws cannot hide its virtues.",
 		episodes: "12 episodes",
 		year: "2013-2023",
@@ -26,7 +20,7 @@ const animeList = [
 		title: "Wakaba Girl",
 		status: "watching",
 		rating: 9.5,
-		cover: rynhImg,
+		cover: "assets/anime/rynh.webp",
 		description: "The daily life of girls, sweet and healing.",
 		episodes: "12 episodes",
 		year: "2019-2023",
@@ -36,7 +30,7 @@ const animeList = [
 		title: "Asteroid in Love",
 		status: "watching",
 		rating: 9.2,
-		cover: laxImg,
+		cover: "assets/anime/laxxx.webp",
 		description: "Girls encounter stars, pure love and healing.",
 		episodes: "24 episodes",
 		year: "2020-2024",
@@ -46,7 +40,7 @@ const animeList = [
 		title: "Gochuumon wa Usagi Desu ka??",
 		status: "completed",
 		rating: 9.0,
-		cover: tz1Img,
+		cover: "assets/anime/tz1.webp",
 		description: "A warm-hearted daily life of a group of girls.",
 		episodes: "12 episodes",
 		year: "2022-2023",
@@ -102,13 +96,10 @@ function getStatusText(status: string): string {
 						<div class="card-base p-4 hover:shadow-lg transition-shadow">
 							<div class="flex items-start gap-3">
 								<a href={anime.link} target="_blank" rel="noopener noreferrer" class="w-16 h-20 rounded flex-shrink-0 overflow-hidden hover:opacity-80 transition-opacity cursor-pointer">
-									<Image 
+									<ImageWrapper 
 										src={anime.cover} 
 										alt={anime.title}
-										class="w-full h-full object-cover"
-										loading="lazy"
-										width={64}
-										height={80}
+										class="w-16 h-20 rounded"
 									/>
 								</a>
 								<div class="flex-1">
