@@ -794,6 +794,12 @@ const setup = () => {
 		if (heightExtend) {
 			heightExtend.classList.remove('hidden')
 		}
+		
+		// 确保页面滚动到顶部，特别是移动端banner关闭时
+		window.scrollTo({
+			top: 0,
+			behavior: 'instant'
+		});
 	});
 	window.swup.hooks.on('visit:end', (_visit: {to: {url: string}}) => {
 		setTimeout(() => {
