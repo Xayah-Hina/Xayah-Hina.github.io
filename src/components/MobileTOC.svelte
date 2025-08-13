@@ -205,7 +205,7 @@
 
 	{#if isHomePage}
 		{#if postItems.length === 0}
-			<div class="text-center py-8 text-[var(--text-color-50)]">
+			<div class="text-center py-8 text-black/50 dark:text-white/50">
 				<Icon icon="material-symbols:article-outline" class="text-2xl mb-2" />
 				<p>暂无文章</p>
 			</div>
@@ -231,7 +231,7 @@
 		{/if}
 	{:else}
 		{#if tocItems.length === 0}
-			<div class="text-center py-8 text-[var(--text-color-50)]">
+			<div class="text-center py-8 text-black/50 dark:text-white/50">
 				<Icon icon="material-symbols:article-outline" class="text-2xl mb-2" />
 				<p>当前页面没有目录</p>
 			</div>
@@ -282,9 +282,13 @@
 		border: none;
 		background: transparent;
 		cursor: pointer;
-		color: var(--text-color-75);
+		color: rgba(0, 0, 0, 0.75);
 		font-size: 0.9rem;
 		line-height: 1.4;
+	}
+
+	:global(.dark) .toc-item {
+		color: rgba(255, 255, 255, 0.75);
 	}
 
 	.toc-item:hover {
@@ -325,7 +329,12 @@
 	.toc-item.level-6 {
 		padding-left: 44px;
 		font-size: 0.75rem;
-		color: var(--text-color-50);
+		color: rgba(0, 0, 0, 0.5);
+	}
+
+	:global(.dark) .toc-item.level-5,
+	:global(.dark) .toc-item.level-6 {
+		color: rgba(255, 255, 255, 0.5);
 	}
 
 	.toc-item.level-1.active {
@@ -379,7 +388,7 @@
 	.post-title {
 		font-size: 0.9rem;
 		font-weight: 600;
-		color: var(--text-color-75);
+		color: rgba(0, 0, 0, 0.75);
 		margin-bottom: 4px;
 		line-height: 1.4;
 		overflow: hidden;
@@ -387,12 +396,20 @@
 		white-space: nowrap;
 	}
 
+	:global(.dark) .post-title {
+		color: rgba(255, 255, 255, 0.75);
+	}
+
 	.post-category {
 		font-size: 0.75rem;
-		color: var(--text-color-50);
+		color: rgba(0, 0, 0, 0.5);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	:global(.dark) .post-category {
+		color: rgba(255, 255, 255, 0.5);
 	}
 
 	:global(.pinned-icon) {
@@ -409,7 +426,11 @@
 	}
 
 	.post-item:hover .post-category {
-		color: var(--text-color-75);
+		color: rgba(0, 0, 0, 0.75);
+	}
+
+	:global(.dark) .post-item:hover .post-category {
+		color: rgba(255, 255, 255, 0.75);
 	}
 
 	/* 滚动条样式 */
