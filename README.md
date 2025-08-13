@@ -21,6 +21,25 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 [**Español**](./docs/README.es.md) /
 [**Русский**](./docs/README.ru.md)
 
+## 🆕 What's New in v2.7
+
+### 🎠 Carousel Optimization
+- **Enhanced Banner Carousel:** Improved carousel logic for better performance and smoother transitions
+- **Mobile-Desktop Sync:** Unified carousel behavior across all devices while maintaining separate image paths
+- **Bug Fixes:** Resolved issues with carousel stopping after cycling through all images
+
+### 📱 Mobile Table of Contents
+- **Mobile TOC Component:** Added dedicated table of contents functionality for mobile devices
+- **Improved Navigation:** Better content navigation experience on smaller screens
+- **Responsive Design:** Seamless integration with existing responsive layout
+
+### ✨ Animation Enhancements
+- **Smooth Transitions:** Optimized page transitions and component animations
+- **Performance Improvements:** Reduced animation overhead for better user experience
+- **Visual Polish:** Enhanced visual feedback and interaction animations
+
+---
+
 ## ✨ Features
 
 ### 🎨 Design & UI

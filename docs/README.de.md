@@ -16,6 +16,25 @@ Eine moderne, funktionsreiche statische Blog-Vorlage mit erweiterten Funktionen 
 [**English**](../README.md) /
 [**Deutsch**](./README.de.md)
 
+## 🆕 Neues in v2.7
+
+### 🎠 Karussell-Optimierung
+- **Verbessertes Banner-Karussell:** Verbesserte Karussell-Logik für bessere Leistung und flüssigere Übergänge
+- **Mobile-Desktop-Synchronisation:** Einheitliches Karussell-Verhalten auf allen Geräten bei Beibehaltung separater Bildpfade
+- **Fehlerbehebungen:** Lösung des Problems, bei dem das Karussell nach dem Durchlaufen aller Bilder stoppte
+
+### 📱 Mobile Inhaltsverzeichnis
+- **Mobile Inhaltsverzeichnis-Komponente:** Hinzufügung einer dedizierten Inhaltsverzeichnis-Funktionalität für mobile Geräte
+- **Verbesserte Navigation:** Bessere Inhaltsnavigation auf kleinen Bildschirmen
+- **Responsives Design:** Nahtlose Integration mit dem bestehenden responsiven Layout
+
+### ✨ Animations-Verbesserungen
+- **Flüssige Übergänge:** Optimierung von Seitenübergängen und Komponenten-Animationen
+- **Leistungsverbesserungen:** Reduzierung des Animations-Overheads für bessere Benutzererfahrung
+- **Visuelle Verbesserungen:** Verbesserung von visuellem Feedback und Interaktions-Animationen
+
+---
+
 ## ✨ Funktionen
 
 ### 🎨 Design & Benutzeroberfläche

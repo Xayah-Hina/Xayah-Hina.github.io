@@ -1,9 +1,13 @@
-import type { AstroIntegration } from "@swup/astro";
-
 declare global {
+	interface HTMLElementTagNameMap {
+		'table-of-contents': HTMLElement & {
+			init?: () => void;
+		};
+	}
+	
 	interface Window {
-		// type from '@swup/astro' is incorrect
-		swup: AstroIntegration;
+		// Define swup type directly since @swup/astro doesn't export AstroIntegration
+		swup: any;
 		pagefind: {
 			search: (query: string) => Promise<{
 				results: Array<{
@@ -11,6 +15,30 @@ declare global {
 				}>;
 			}>;
 		};
+		translate?: {
+			service: {
+				use: (service: string) => void;
+			};
+			language: {
+				setLocal: (language: string) => void;
+			};
+			setAutoDiscriminateLocalLanguage: () => void;
+			ignore: {
+				class: string[];
+				tag: string[];
+			};
+			selectLanguageTag: {
+				show: boolean;
+			};
+			storage: {
+				set: () => void;
+			};
+			listener: {
+				start: () => void;
+			};
+			execute: () => void;
+		};
+		mobileTOCInit?: () => void;
 	}
 }
 

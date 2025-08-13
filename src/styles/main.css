@@ -1,5 +1,10 @@
 @tailwind components;
 
+/* 确保平滑滚动 */
+html {
+    scroll-behavior: smooth;
+}
+
 @layer components {
     .card-base {
         @apply rounded-[var(--radius-large)] overflow-hidden bg-[var(--card-bg)] transition;

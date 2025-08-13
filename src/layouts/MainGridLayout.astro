@@ -1,10 +1,10 @@
 ---
+import type { MarkdownHeading } from "astro";
+import { Icon } from "astro-icon/components";
 import BackToTop from "@components/control/BackToTop.astro";
 import Footer from "@components/Footer.astro";
 import Navbar from "@components/Navbar.astro";
 import SideBar from "@components/widget/SideBar.astro";
-import type { MarkdownHeading } from "astro";
-import { Icon } from "astro-icon/components";
 import ImageWrapper from "../components/misc/ImageWrapper.astro";
 import TOC from "../components/widget/TOC.astro";
 import TypewriterText from "../components/TypewriterText.astro";
@@ -24,6 +24,28 @@ interface Props {
 	setOGTypeArticle?: boolean;
 	headings?: MarkdownHeading[];
 }
+
+// 类型守卫函数
+const isBannerSrcObject = (src: string | string[] | { desktop?: string | string[]; mobile?: string | string[] }): src is { desktop?: string | string[]; mobile?: string | string[] } => {
+	return typeof src === 'object' && src !== null && !Array.isArray(src) && (src.desktop || src.mobile);
+};
+
+// 获取banner图片的辅助函数
+const getBannerImages = () => {
+	if (isBannerSrcObject(siteConfig.banner.src)) {
+		return {
+			desktop: siteConfig.banner.src.desktop || siteConfig.banner.src.mobile || '',
+			mobile: siteConfig.banner.src.mobile || siteConfig.banner.src.desktop || ''
+		};
+	}
+	// 如果是字符串或字符串数组，同时用于桌面端和移动端
+	return {
+		desktop: siteConfig.banner.src,
+		mobile: siteConfig.banner.src
+	};
+};
+
+const bannerImages = getBannerImages();
 
 const {
 	title,
@@ -62,46 +84,67 @@ const mobileNonHomeMainTop = !isHomePage ? "5.5rem" : mainPanelTop;
 
 <!-- Banner -->
 {siteConfig.banner.enable && <div id="banner-wrapper" class={`absolute z-10 w-full transition duration-700 overflow-hidden ${mobileNonHomeBannerClass}`} style={`top: -${BANNER_HEIGHT_EXTEND}vh`}>
-    {Array.isArray(siteConfig.banner.src) && siteConfig.banner.src.length > 1 ? (
+    {(bannerImages.desktop && Array.isArray(bannerImages.desktop) && bannerImages.desktop.length > 1) || (bannerImages.mobile && Array.isArray(bannerImages.mobile) && bannerImages.mobile.length > 1) ? (
         <!-- Carousel mode for multiple images -->
         <div id="banner-carousel" class="relative h-full w-full">
             <ul class="carousel-list h-full w-full">
-                {siteConfig.banner.src.map((src, index) => (
-                    <li class={`carousel-item absolute inset-0 transition-all duration-1000 ${index === 0 ? 'opacity-100 scale-100' : 'opacity-0 scale-110'}`}>
-                        <!-- Mobile: use ImageWrapper for consistent image handling -->
-                        <ImageWrapper 
-                            alt={`Banner image ${index + 1}`} 
-                            class:list={["block lg:hidden object-cover h-full w-full transition-opacity duration-1000", index === 0 ? 'opacity-100' : 'opacity-0']}
-                            src={src} 
-                            position={siteConfig.banner.position}
-                        />
-                        <!-- Desktop: use ImageWrapper -->
-                        <ImageWrapper 
-                            alt={`Banner image ${index + 1}`} 
-                            class:list={["hidden lg:block object-cover h-full w-full transition-transform duration-1000 ease-out"]}
-                            src={src} 
-                            position={siteConfig.banner.position}
-                        />
-                    </li>
-                ))}
+                {Math.max(
+                    Array.isArray(bannerImages.desktop) ? bannerImages.desktop.length : 0,
+                    Array.isArray(bannerImages.mobile) ? bannerImages.mobile.length : 0
+                ) && Array.from({ length: Math.max(
+                    Array.isArray(bannerImages.desktop) ? bannerImages.desktop.length : 0,
+                    Array.isArray(bannerImages.mobile) ? bannerImages.mobile.length : 0
+                ) }).map((_, index) => {
+                    // 确保至少有一个平台有对应索引的图片
+                    const hasDesktopImage = Array.isArray(bannerImages.desktop) && bannerImages.desktop[index];
+                    const hasMobileImage = Array.isArray(bannerImages.mobile) && bannerImages.mobile[index];
+                    
+                    // 如果两个平台都没有对应索引的图片，跳过这个轮播项
+                    if (!hasDesktopImage && !hasMobileImage) {
+                        return null;
+                    }
+                    
+                    return (
+                        <li class={`carousel-item absolute inset-0 transition-all duration-500 ${index === 0 ? 'opacity-100 scale-100' : 'opacity-0 scale-110'}`}>
+                            <!-- Mobile: use mobile-specific images with same logic as desktop -->
+                            {hasMobileImage && (
+                                <ImageWrapper 
+                                    alt={`Mobile banner image ${index + 1}`} 
+                                    class:list={["block lg:hidden object-cover h-full w-full transition-transform duration-500 ease-out"]}
+                                    src={bannerImages.mobile[index]} 
+                                    position={siteConfig.banner.position}
+                                />
+                            )}
+                            <!-- Desktop: use desktop-specific images -->
+                            {hasDesktopImage && (
+                                <ImageWrapper 
+                                    alt={`Desktop banner image ${index + 1}`} 
+                                    class:list={["hidden lg:block object-cover h-full w-full transition-transform duration-500 ease-out"]}
+                                    src={bannerImages.desktop[index]} 
+                                    position={siteConfig.banner.position}
+                                />
+                            )}
+                        </li>
+                    );
+                }).filter(Boolean)}
             </ul>
         </div>
     ) : (
         <!-- Single image mode -->
             <div class="relative h-full w-full">
-                <!-- Mobile: use ImageWrapper for consistent image handling -->
+                <!-- Mobile: use mobile-specific image with same logic as desktop -->
                 <ImageWrapper 
-                    alt="Banner image of the blog" 
-                    class:list={["block lg:hidden object-cover h-full w-full transition-opacity duration-700 opacity-100"]}
-                    src={Array.isArray(siteConfig.banner.src) ? siteConfig.banner.src[0] : siteConfig.banner.src} 
+                    alt="Mobile banner image of the blog" 
+                    class:list={["block lg:hidden object-cover h-full w-full transition duration-700 opacity-0 scale-105"]}
+                    src={(Array.isArray(bannerImages.mobile) ? bannerImages.mobile[0] : bannerImages.mobile) || (Array.isArray(bannerImages.desktop) ? bannerImages.desktop[0] : bannerImages.desktop) || ''} 
                     position={siteConfig.banner.position}
                 />
-                <!-- Desktop: use ImageWrapper -->
+                <!-- Desktop: use desktop-specific image -->
                 <ImageWrapper 
                     id="banner" 
-                    alt="Banner image of the blog" 
+                    alt="Desktop banner image of the blog" 
                     class:list={["hidden lg:block object-cover h-full transition duration-700 opacity-0 scale-105"]}
-                    src={Array.isArray(siteConfig.banner.src) ? siteConfig.banner.src[0] : siteConfig.banner.src} 
+                    src={(Array.isArray(bannerImages.desktop) ? bannerImages.desktop[0] : bannerImages.desktop) || (Array.isArray(bannerImages.mobile) ? bannerImages.mobile[0] : bannerImages.mobile) || ''} 
                     position={siteConfig.banner.position}
                 />
             </div>
@@ -233,7 +276,7 @@ const mobileNonHomeMainTop = !isHomePage ? "5.5rem" : mainPanelTop;
 </div>
 
 <!-- The things that should be under the banner, only the TOC for now -->
-<div class="absolute w-full z-0 hidden 2xl:block">
+<div class="absolute w-full z-0 hidden xl:block">
     <div class="relative max-w-[var(--page-width)] mx-auto">
         <!-- TOC component -->
         {siteConfig.toc.enable && <div id="toc-wrapper" class:list={["hidden lg:block transition absolute top-0 -right-[var(--toc-width)] w-[var(--toc-width)] items-center",
@@ -461,7 +504,7 @@ const mobileNonHomeMainTop = !isHomePage ? "5.5rem" : mainPanelTop;
     
     /* 桌面端轮播图片过渡优化 - 与移动端保持一致 */
     .carousel-item {
-        transition: all 1s ease-out !important; /* 包含opacity和transform的过渡 */
+        transition: all 0.5s ease-out !important; /* 优化过渡时间，避免与轮播间隔冲突 */
         transform-origin: center center !important; /* 确保缩放从中心开始 */
     }
     
@@ -496,7 +539,7 @@ const mobileNonHomeMainTop = !isHomePage ? "5.5rem" : mainPanelTop;
     .carousel-item img,
     #banner img {
         object-position: center center !important; /* 确保图片居中显示 */
-        transition: transform 1s ease-out !important; /* 与电脑端保持一致的过渡时间 */
+        transition: transform 0.5s ease-out !important; /* 优化过渡时间，避免与轮播间隔冲突 */
     }
     
     /* 轮播图片过渡优化 - 与电脑端保持一致 */

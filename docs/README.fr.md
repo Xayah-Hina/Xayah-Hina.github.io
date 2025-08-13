@@ -16,6 +16,25 @@ Un modèle de blog statique moderne et riche en fonctionnalités avec des foncti
 [**English**](../README.md) /
 [**Français**](./README.fr.md)
 
+## 🆕 Nouveautés de la v2.7
+
+### 🎠 Optimisation du Carrousel
+- **Carrousel de bannière amélioré :** Amélioration de la logique du carrousel pour de meilleures performances et des transitions plus fluides
+- **Synchronisation mobile-bureau :** Comportement unifié du carrousel sur tous les appareils tout en maintenant des chemins d'images séparés
+- **Corrections de bugs :** Résolution du problème où le carrousel s'arrêtait après avoir parcouru toutes les images
+
+### 📱 Table des Matières Mobile
+- **Composant de table des matières mobile :** Ajout d'une fonctionnalité de table des matières dédiée aux appareils mobiles
+- **Navigation améliorée :** Meilleure expérience de navigation du contenu sur les petits écrans
+- **Design responsive :** Intégration transparente avec la mise en page responsive existante
+
+### ✨ Améliorations d'Animation
+- **Transitions fluides :** Optimisation des transitions de page et des animations de composants
+- **Améliorations de performance :** Réduction de la surcharge d'animation pour une meilleure expérience utilisateur
+- **Amélioration visuelle :** Amélioration du retour visuel et des animations d'interaction
+
+---
+
 ## ✨ Fonctionnalités
 
 ### 🎨 Design & Interface

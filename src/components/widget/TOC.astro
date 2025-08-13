@@ -16,7 +16,8 @@ for (const heading of headings) {
 }
 
 const className = Astro.props.class;
-const isPostsRoute = Astro.url.pathname.startsWith(url("/posts/"));
+// 修复路由判断逻辑，确保在文章页面能正确显示TOC
+const isPostsRoute = Astro.url.pathname.includes("/posts/") || headings.length > 0;
 
 const removeTailingHash = (text: string) => {
 	let lastIndexOfHash = text.lastIndexOf("#");
@@ -31,33 +32,9 @@ let heading1Count = 1;
 
 const maxLevel = siteConfig.toc.depth;
 ---
-{isPostsRoute &&
-<table-of-contents class:list={[className, "group"]}>
-    {headings.filter((heading) => heading.depth < minDepth + maxLevel).map((heading) =>
-            <a href={`#${heading.slug}`} class="px-2 flex gap-2 relative transition w-full min-h-9 rounded-xl
-        hover:bg-[var(--toc-btn-hover)] active:bg-[var(--toc-btn-active)] py-2
-    ">
-                <div class:list={["transition w-5 h-5 shrink-0 rounded-lg text-xs flex items-center justify-center font-bold",
-                    {
-                        "bg-[var(--toc-badge-bg)] text-[var(--btn-content)]": heading.depth == minDepth,
-                        "ml-4": heading.depth == minDepth + 1,
-                        "ml-8": heading.depth == minDepth + 2,
-                    }
-                ]}
-                >
-                    {heading.depth == minDepth && heading1Count++}
-                    {heading.depth == minDepth + 1 && <div class="transition w-2 h-2 rounded-[0.1875rem] bg-[var(--toc-badge-bg)]"></div>}
-                    {heading.depth == minDepth + 2 && <div class="transition w-1.5 h-1.5 rounded-sm bg-black/5 dark:bg-white/10"></div>}
-                </div>
-                <div class:list={["transition text-sm", {
-                    "text-50": heading.depth == minDepth || heading.depth == minDepth + 1,
-                    "text-30": heading.depth == minDepth + 2,
-                }]}>{removeTailingHash(heading.text)}</div>
-            </a>
-    )}
-    <div id="active-indicator" style="opacity: 0" class:list={[{'hidden': headings.length == 0}, "-z-10 absolute bg-[var(--toc-btn-hover)] left-0 right-0 rounded-xl transition-all " +
-        "group-hover:bg-transparent border-2 border-[var(--toc-btn-hover)] group-hover:border-[var(--toc-btn-active)] border-dashed"]}></div>
-</table-of-contents>}
+<table-of-contents class:list={[className, "group"]} id="toc">
+    <!-- TOC内容将由JavaScript动态生成 -->
+</table-of-contents>
 
 <script>
 class TableOfContents extends HTMLElement {
@@ -186,7 +163,39 @@ class TableOfContents extends HTMLElement {
             .find((element) => element instanceof HTMLAnchorElement);
 
         if (anchor) {
+            event.preventDefault(); // 阻止默认的锚点跳转
+            
             const id = decodeURIComponent(anchor.hash?.substring(1));
+            const targetElement = document.getElementById(id);
+            
+            if (targetElement) {
+                // 计算目标位置
+                const targetTop = targetElement.getBoundingClientRect().top + window.pageYOffset - 80; // 80px偏移量
+                
+                // 检查是否使用了OverlayScrollbars
+                const bodyElement = document.querySelector('body');
+                const osInstance = bodyElement && (bodyElement as any).osInstance;
+                
+                if (osInstance && osInstance.elements) {
+                    // 如果使用了OverlayScrollbars，使用其API进行平滑滚动
+                    try {
+                        const { viewport } = osInstance.elements();
+                        if (viewport && viewport.scrollTo) {
+                            viewport.scrollTo({ top: targetTop, behavior: 'smooth' });
+                        } else {
+                            // 降级到原生滚动
+                            window.scrollTo({ top: targetTop, behavior: 'smooth' });
+                        }
+                    } catch (error) {
+                        // 如果OverlayScrollbars API调用失败，降级到原生滚动
+                        window.scrollTo({ top: targetTop, behavior: 'smooth' });
+                    }
+                } else {
+                    // 使用原生滚动
+                    window.scrollTo({ top: targetTop, behavior: 'smooth' });
+                }
+            }
+            
             const idx = this.headingIdxMap.get(id);
             if (idx !== undefined) {
                 this.anchorNavTarget = this.headings[idx];
@@ -202,22 +211,23 @@ class TableOfContents extends HTMLElement {
 
     connectedCallback() {
         // wait for the onload animation to finish, which makes the `getBoundingClientRect` return correct values
-        const element = document.querySelector('.prose');
+        const element = document.querySelector('.custom-md') || document.querySelector('.prose') || document.querySelector('.markdown-content');
         if (element) {
             element.addEventListener('animationend', () => {
                 this.init();
             }, { once: true });
         } else {
-            console.debug('Animation element not found');
+            // 如果没有找到动画元素，直接初始化
+            console.debug('Animation element not found, initializing directly');
+            setTimeout(() => this.init(), 100);
         }
     };
 
     init() {
-        this.tocEl = document.getElementById(
-            "toc-inner-wrapper"
-        );
+        // 重新生成TOC内容
+        this.regenerateTOC();
 
-        if (!this.tocEl) return;
+        this.tocEl = this;
 
         this.tocEl.addEventListener("click", this.handleAnchorClick, {
             capture: true,
@@ -226,7 +236,7 @@ class TableOfContents extends HTMLElement {
         this.activeIndicator = document.getElementById("active-indicator");
 
         this.tocEntries = Array.from(
-            document.querySelectorAll<HTMLAnchorElement>("#toc a[href^='#']")
+            this.querySelectorAll<HTMLAnchorElement>("a[href^='#']")
         );
 
         if (this.tocEntries.length === 0) return;
@@ -252,6 +262,57 @@ class TableOfContents extends HTMLElement {
         this.fallback();
         this.update();
     };
+
+    regenerateTOC() {
+        // 检查是否为文章页面
+        const isPostPage = window.location.pathname.includes('/posts/') || 
+                          document.querySelector('.custom-md, .markdown-content') !== null;
+        
+        if (!isPostPage) {
+            // 如果不是文章页面，隐藏TOC
+            this.innerHTML = '';
+            return;
+        }
+
+        // 从当前页面重新获取标题
+        const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'))
+            .filter(h => h.id) // 只包含有id的标题
+            .map(h => ({
+                depth: parseInt(h.tagName.substring(1)),
+                slug: h.id,
+                text: h.textContent || ''
+            }));
+        
+        // 如果没有标题，清空TOC
+        if (headings.length === 0) {
+            this.innerHTML = '';
+            return;
+        }
+
+        // 重新生成TOC HTML
+        const minDepth = Math.min(...headings.map(h => h.depth));
+        const maxLevel = 3; // siteConfig.toc.depth
+        let heading1Count = 1;
+        
+        const tocHTML = headings
+            .filter(heading => heading.depth < minDepth + maxLevel)
+            .map(heading => {
+                const depthClass = heading.depth === minDepth ? '' : 
+                    heading.depth === minDepth + 1 ? 'ml-4' : 'ml-8';
+                const badgeContent = heading.depth === minDepth ? (heading1Count++) :
+                    heading.depth === minDepth + 1 ? '<div class="transition w-2 h-2 rounded-[0.1875rem] bg-[var(--toc-badge-bg)]"></div>' :
+                    '<div class="transition w-1.5 h-1.5 rounded-sm bg-black/5 dark:bg-white/10"></div>';
+                
+                return `<a href="#${heading.slug}" class="px-2 flex gap-2 relative transition w-full min-h-9 rounded-xl hover:bg-[var(--toc-btn-hover)] active:bg-[var(--toc-btn-active)] py-2">
+                    <div class="transition w-5 h-5 shrink-0 rounded-lg text-xs flex items-center justify-center font-bold ${depthClass} ${heading.depth === minDepth ? 'bg-[var(--toc-badge-bg)] text-[var(--btn-content)]' : ''}">
+                        ${badgeContent}
+                    </div>
+                    <div class="transition text-sm ${heading.depth <= minDepth + 1 ? 'text-50' : 'text-30'}">${heading.text}</div>
+                </a>`;
+            }).join('');
+        
+        this.innerHTML = tocHTML + '<div id="active-indicator" style="opacity: 0" class="-z-10 absolute bg-[var(--toc-btn-hover)] left-0 right-0 rounded-xl transition-all group-hover:bg-transparent border-2 border-[var(--toc-btn-hover)] group-hover:border-[var(--toc-btn-active)] border-dashed"></div>';
+    }
 
     disconnectedCallback() {
         this.sections.forEach((section) =>

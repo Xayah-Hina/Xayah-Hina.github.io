@@ -35,22 +35,32 @@ export const siteConfig: SiteConfig = {
 		enable: true, // Temporarily disable banner to improve loading speed
 
 		// Support single image or image array, carousel is automatically enabled when array length > 1
-		src: [
-			"assets/banner/1-banner.webp",
-			"assets/banner/2-banner.webp",
-			"assets/banner/3-banner.webp",
-			"assets/banner/4-banner.webp",
-			"assets/banner/5-banner.webp",
-			"assets/banner/6-banner.webp",
-			"assets/banner/7-banner.webp",
-		], // Use local banner images
+		src: {
+			desktop: [
+				"assets/desktop-banner/1.webp",
+				"assets/desktop-banner/2.webp",
+				"assets/desktop-banner/3.webp",
+				"assets/desktop-banner/4.webp",
+				"assets/desktop-banner/5.webp",
+				"assets/desktop-banner/6.webp",
+				"assets/desktop-banner/7.webp",
+			], // Desktop banner images
+			mobile: [
+				"assets/mobile-banner/1.webp",
+				"assets/mobile-banner/2.webp",
+				"assets/mobile-banner/3.webp",
+				"assets/mobile-banner/4.webp",
+				"assets/mobile-banner/5.webp",
+				"assets/mobile-banner/6.webp",
+			], // Mobile banner images
+		}, // Use local banner images
 
 		position: "center", // Equivalent to object-position, only supports 'top', 'center', 'bottom'. Default is 'center'
 
 		carousel: {
-			enable: true, // Please do not modify this parameter to False. When the image is only one, the carousel will be automatically closed
+			enable: true, // When true: enable carousel for multiple images. When false: randomly display one image from the array
 
-			interval: 1, // Carousel interval time (milliseconds)
+			interval: 1.5, // Carousel interval time (seconds) - 增加间隔时间，改善轮播体验
 		},
 
 		homeText: {

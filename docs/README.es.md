@@ -16,6 +16,25 @@ Una plantilla de blog estático moderna y rica en características con funcional
 [**English**](../README.md) /
 [**Español**](./README.es.md)
 
+## 🆕 Novedades en v2.7
+
+### 🎠 Optimización del Carrusel
+- **Carrusel de banner mejorado:** Lógica de carrusel mejorada para mejor rendimiento y transiciones más suaves
+- **Sincronización móvil-escritorio:** Comportamiento unificado del carrusel en todos los dispositivos manteniendo rutas de imagen separadas
+- **Corrección de errores:** Resolución del problema donde el carrusel se detenía después de recorrer todas las imágenes
+
+### 📱 Tabla de Contenidos Móvil
+- **Componente de tabla de contenidos móvil:** Agregada funcionalidad dedicada de tabla de contenidos para dispositivos móviles
+- **Navegación mejorada:** Mejor experiencia de navegación de contenido en pantallas pequeñas
+- **Diseño responsivo:** Integración perfecta con el diseño responsivo existente
+
+### ✨ Mejoras de Animación
+- **Transiciones suaves:** Optimización de transiciones de página y animaciones de componentes
+- **Mejoras de rendimiento:** Reducción de la sobrecarga de animación para mejor experiencia de usuario
+- **Mejora visual:** Mejora del feedback visual y animaciones de interacción
+
+---
+
 ## ✨ Características
 
 ### 🎨 Diseño e Interfaz
