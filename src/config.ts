@@ -52,6 +52,7 @@ export const siteConfig: SiteConfig = {
 				"assets/mobile-banner/4.webp",
 				"assets/mobile-banner/5.webp",
 				"assets/mobile-banner/6.webp",
+				"assets/mobile-banner/7.webp",
 			], // Mobile banner images
 		}, // Use local banner images
 
