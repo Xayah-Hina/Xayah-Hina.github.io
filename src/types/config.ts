@@ -109,6 +109,7 @@ export type LicenseConfig = {
 // 评论配置
 
 export type CommentConfig = {
+	enable: boolean; // 是否启用评论功能
 	twikoo?: TwikooConfig;
 };
 

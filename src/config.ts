@@ -61,7 +61,7 @@ export const siteConfig: SiteConfig = {
 		carousel: {
 			enable: true, // When true: enable carousel for multiple images. When false: randomly display one image from the array
 
-			interval: 1.5, // Carousel interval time (seconds) - 增加间隔时间，改善轮播体验
+			interval: 1, // Carousel interval time (seconds)
 		},
 
 		homeText: {
@@ -157,7 +157,8 @@ export const expressiveCodeConfig: ExpressiveCodeConfig = {
 };
 
 export const commentConfig: CommentConfig = {
+	enable: false, // Enable the comment function. When it is set to false, the comment component will not be displayed in the article area.
 	twikoo: {
-		envId: "URL ID",
+		envId: "https://app.twikoo.js.org",
 	},
 };

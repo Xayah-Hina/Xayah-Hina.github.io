@@ -39,7 +39,7 @@ async function changeLanguage(languageCode: string) {
 			await window.loadTranslateScript();
 		}
 		
-		if (typeof window.translate !== 'undefined') {
+		if (typeof window.translate !== 'undefined' && window.translate.language && typeof window.translate.language.getLocal === 'function') {
 			// 检查是否选择的是简体中文，且当前本地语言也是简体中文
 			const localLang = window.translate.language.getLocal();
 			
@@ -49,17 +49,20 @@ async function changeLanguage(languageCode: string) {
 					window.translate.reset();
 				}
 				// 强制设置允许翻译本地语种
-				window.translate.language.translateLocal = true;
+				if (window.translate.language) {
+					window.translate.language.translateLocal = true;
+				}
 			}
 			
 			// 设置目标语言并执行翻译
 			window.translate.to = languageCode;
-			window.translate.execute();
-			
-			// 更新语言选择框的显示
-			if (window.translate.selectLanguageTag && window.translate.selectLanguageTag.select) {
-				window.translate.selectLanguageTag.select.value = languageCode;
+			if (typeof window.translate.execute === 'function') {
+				window.translate.execute();
 			}
+			
+			// 由于我们隐藏了默认的select选择框，不需要更新select.value
+		} else {
+			console.warn('translate.js is not fully loaded or language API is not available');
 		}
 		
 		// 更新当前语言状态
@@ -98,9 +101,7 @@ onMount(() => {
 	// 如果翻译功能已加载，设置默认语言
 	if (typeof window.translate !== 'undefined') {
 		window.translate.to = defaultTranslateLanguage;
-		if (window.translate.selectLanguageTag && window.translate.selectLanguageTag.select) {
-			window.translate.selectLanguageTag.select.value = defaultTranslateLanguage;
-		}
+		// 由于我们隐藏了默认的select选择框，不需要设置select.value
 	}
 });
 
