@@ -80,7 +80,7 @@ Eine moderne, funktionsreiche statische Blog-Vorlage mit erweiterten Funktionen 
 
 1. **Repository klonen:**
    ```bash
-   git clone https://github.com/your-username/mizuki.git
+   git clone https://github.com/matsuzaka-yuki/mizuki.git
    cd mizuki
    ```
 

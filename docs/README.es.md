@@ -80,7 +80,7 @@ Una plantilla de blog estático moderna y rica en características con funcional
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone https://github.com/your-username/mizuki.git
+   git clone https://github.com/matsuzaka-yuki/mizuki.git
    cd mizuki
    ```
 

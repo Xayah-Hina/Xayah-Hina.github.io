@@ -85,7 +85,7 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/your-username/mizuki.git
+   git clone https://github.com/matsuzaka-yuki/mizuki.git
    cd mizuki
    ```
 

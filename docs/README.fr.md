@@ -80,7 +80,7 @@ Un modèle de blog statique moderne et riche en fonctionnalités avec des foncti
 
 1. **Cloner le dépôt :**
    ```bash
-   git clone https://github.com/your-username/mizuki.git
+   git clone https://github.com/matsuzaka-yuki/mizuki.git
    cd mizuki
    ```
 

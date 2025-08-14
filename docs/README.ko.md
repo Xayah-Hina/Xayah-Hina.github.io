@@ -80,7 +80,7 @@
 
 1. **저장소 복제:**
    ```bash
-   git clone https://github.com/your-username/mizuki.git
+   git clone https://github.com/matsuzaka-yuki/mizuki.git
    cd mizuki
    ```
 

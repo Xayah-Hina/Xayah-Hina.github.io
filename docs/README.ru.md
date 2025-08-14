@@ -80,7 +80,7 @@
 
 1. **Клонировать репозиторий:**
    ```bash
-   git clone https://github.com/your-username/mizuki.git
+   git clone https://github.com/matsuzaka-yuki/mizuki.git
    cd mizuki
    ```
 
