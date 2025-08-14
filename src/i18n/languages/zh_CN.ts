@@ -55,4 +55,10 @@ export const zh_CN: Translation = {
 	[Key.diaryMinutesAgo]: "分钟前",
 	[Key.diaryHoursAgo]: "小时前",
 	[Key.diaryDaysAgo]: "天前",
+
+	// 404页面
+	[Key.notFound]: "404",
+	[Key.notFoundTitle]: "页面未找到",
+	[Key.notFoundDescription]: "抱歉，您访问的页面不存在或已被移动。",
+	[Key.backToHome]: "返回首页",
 };

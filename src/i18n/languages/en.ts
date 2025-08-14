@@ -57,4 +57,10 @@ export const en: Translation = {
 	[Key.diaryMinutesAgo]: "minutes ago",
 	[Key.diaryHoursAgo]: "hours ago",
 	[Key.diaryDaysAgo]: "days ago",
+
+	// 404页面
+	[Key.notFound]: "404",
+	[Key.notFoundTitle]: "Page Not Found",
+	[Key.notFoundDescription]: "Sorry, the page you are looking for doesn't exist or has been moved.",
+	[Key.backToHome]: "Back to Home",
 };

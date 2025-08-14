@@ -55,4 +55,10 @@ export const th: Translation = {
 	[Key.diaryMinutesAgo]: "นาทีที่แล้ว",
 	[Key.diaryHoursAgo]: "ชั่วโมงที่แล้ว",
 	[Key.diaryDaysAgo]: "วันที่แล้ว",
+
+	// หน้า 404
+	[Key.notFound]: "404",
+	[Key.notFoundTitle]: "ไม่พบหน้าที่ต้องการ",
+	[Key.notFoundDescription]: "ขออภัย หน้าที่คุณกำลังมองหาไม่มีอยู่หรือถูกย้ายแล้ว",
+	[Key.backToHome]: "กลับสู่หน้าแรก",
 };

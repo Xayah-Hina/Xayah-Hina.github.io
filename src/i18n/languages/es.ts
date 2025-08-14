@@ -55,4 +55,10 @@ export const es: Translation = {
 	[Key.diaryMinutesAgo]: "minutos atrás",
 	[Key.diaryHoursAgo]: "horas atrás",
 	[Key.diaryDaysAgo]: "días atrás",
+
+	// Página 404
+	[Key.notFound]: "404",
+	[Key.notFoundTitle]: "Página no encontrada",
+	[Key.notFoundDescription]: "Lo sentimos, la página que buscas no existe o ha sido movida.",
+	[Key.backToHome]: "Volver al inicio",
 };

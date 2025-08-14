@@ -55,4 +55,10 @@ export const vi: Translation = {
 	[Key.diaryMinutesAgo]: "phút trước",
 	[Key.diaryHoursAgo]: "giờ trước",
 	[Key.diaryDaysAgo]: "ngày trước",
+
+	// Trang 404
+	[Key.notFound]: "404",
+	[Key.notFoundTitle]: "Không tìm thấy trang",
+	[Key.notFoundDescription]: "Xin lỗi, trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.",
+	[Key.backToHome]: "Về trang chủ",
 };

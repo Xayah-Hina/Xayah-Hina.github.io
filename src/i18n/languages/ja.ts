@@ -57,4 +57,10 @@ export const ja: Translation = {
 	[Key.diaryMinutesAgo]: "分前",
 	[Key.diaryHoursAgo]: "時間前",
 	[Key.diaryDaysAgo]: "日前",
+
+	// 404ページ
+	[Key.notFound]: "404",
+	[Key.notFoundTitle]: "ページが見つかりません",
+	[Key.notFoundDescription]: "申し訳ございませんが、お探しのページは存在しないか移動されました。",
+	[Key.backToHome]: "ホームに戻る",
 };

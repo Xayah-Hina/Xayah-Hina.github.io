@@ -55,4 +55,10 @@ export const tr: Translation = {
 	[Key.diaryMinutesAgo]: "dakika önce",
 	[Key.diaryHoursAgo]: "saat önce",
 	[Key.diaryDaysAgo]: "gün önce",
+
+	// 404 Sayfası
+	[Key.notFound]: "404",
+	[Key.notFoundTitle]: "Sayfa Bulunamadı",
+	[Key.notFoundDescription]: "Üzgünüz, aradığınız sayfa mevcut değil veya taşınmış.",
+	[Key.backToHome]: "Anasayfaya Dön",
 };

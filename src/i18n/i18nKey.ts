@@ -54,6 +54,12 @@ enum I18nKey {
 	diaryMinutesAgo = 'diaryMinutesAgo',
 	diaryHoursAgo = 'diaryHoursAgo',
 	diaryDaysAgo = 'diaryDaysAgo',
+
+	// 404页面
+	notFound = 'notFound',
+	notFoundTitle = 'notFoundTitle',
+	notFoundDescription = 'notFoundDescription',
+	backToHome = 'backToHome',
 }
 
 export default I18nKey;
