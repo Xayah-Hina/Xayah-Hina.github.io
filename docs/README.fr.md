@@ -16,7 +16,7 @@ Un modèle de blog statique moderne et riche en fonctionnalités avec des foncti
 [**English**](../README.md) /
 [**Français**](./README.fr.md)
 
-## 🆕 Nouveautés de la v2.7
+## 🆕 Nouveautés de la v2.8
 
 ### 🎠 Optimisation du Carrousel
 - **Carrousel de bannière amélioré :** Amélioration de la logique du carrousel pour de meilleures performances et des transitions plus fluides
@@ -32,6 +32,13 @@ Un modèle de blog statique moderne et riche en fonctionnalités avec des foncti
 - **Transitions fluides :** Optimisation des transitions de page et des animations de composants
 - **Améliorations de performance :** Réduction de la surcharge d'animation pour une meilleure expérience utilisateur
 - **Amélioration visuelle :** Amélioration du retour visuel et des animations d'interaction
+
+### 📢 Fonction d'Annonce
+- **Barre d'Annonce Configurable :** Ajout d'une barre d'annonce personnalisable avec des options pour le titre, le contenu, l'icône, le type et la fonction de fermeture.
+- **Positionnement Flexible :** Prend en charge le positionnement du bouton de fermeture en bas à droite de la barre d'annonce.
+
+### 💬 Optimisation Twikoo
+- **Optimisation de l'affichage et des performances :** Amélioration de la vitesse de chargement et de la réactivité du système de commentaires Twikoo.
 
 ---
 

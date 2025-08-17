@@ -31,10 +31,13 @@ export type SiteConfig = {
 	};
 	banner: {
 		enable: boolean;
-		src: string | string[] | {
-			desktop?: string | string[];
-			mobile?: string | string[];
-		}; // 支持单个图片、图片数组或分别设置桌面端和移动端图片
+		src:
+			| string
+			| string[]
+			| {
+					desktop?: string | string[];
+					mobile?: string | string[];
+			  }; // 支持单个图片、图片数组或分别设置桌面端和移动端图片
 		position?: "top" | "center" | "bottom";
 		carousel?: {
 			enable: boolean; // 是否启用轮播
@@ -142,4 +145,18 @@ export type BlogPostData = {
 
 export type ExpressiveCodeConfig = {
 	theme: string;
+};
+
+export type AnnouncementConfig = {
+	enable: boolean; // 是否启用公告栏功能
+	title?: string; // 公告栏标题
+	content: string; // 公告栏内容
+	icon?: string; // 公告栏图标
+	type?: "info" | "warning" | "success" | "error"; // 公告类型
+	closable?: boolean; // 是否可关闭
+	link?: {
+		text: string; // 链接文字
+		url: string; // 链接地址
+		external?: boolean; // 是否外部链接
+	};
 };

@@ -13,7 +13,57 @@ const config = {
 ---
 
 <div id="tcomment"></div>
-<script is:inline src="https://cdn.staticfile.org/twikoo/1.6.44/twikoo.all.min.js"></script>
+<script is:inline src="/assets/js/twikoo.all.min.js"></script>
 <script is:inline define:vars={{ config }}>
-  twikoo.init(config)
+  // 初始化 Twikoo 的函数
+  function initTwikooWithRetry() {
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    function initTwikoo() {
+      if (typeof twikoo !== 'undefined') {
+        // 清空现有评论容器
+        const commentEl = document.getElementById('tcomment');
+        if (commentEl) {
+          commentEl.innerHTML = '';
+        }
+        
+        // 初始化 Twikoo
+        twikoo.init(config);
+      } else if (retryCount < maxRetries) {
+        retryCount++;
+        console.log(`Twikoo 加载重试 ${retryCount}/${maxRetries}...`);
+        setTimeout(initTwikoo, 500); // 500ms 后重试
+      } else {
+        console.error('Twikoo 加载失败，请刷新页面重试');
+      }
+    }
+    
+    initTwikoo();
+  }
+  
+  // 页面首次加载时初始化
+  document.addEventListener('DOMContentLoaded', initTwikooWithRetry);
+  
+  // 监听 Swup 页面切换事件，在内容替换后重新初始化 Twikoo
+  if (window.swup) {
+    window.swup.hooks.on('content:replace', function() {
+      // 延迟执行以确保 DOM 已完全更新
+      setTimeout(function() {
+        // 检查当前页面是否为文章页面（通过检查评论容器是否存在）
+        if (document.getElementById('tcomment')) {
+          console.log('Swup 页面切换后重新初始化 Twikoo');
+          initTwikooWithRetry();
+        }
+      }, 200);
+    });
+  }
+  
+  // 监听自定义事件，在页面完全加载后重新初始化 Twikoo
+  document.addEventListener('mizuki:page:loaded', function() {
+    console.log('Mizuki 页面加载完成事件触发，重新初始化 Twikoo');
+    if (document.getElementById('tcomment')) {
+      initTwikooWithRetry();
+    }
+  });
 </script>

@@ -13,6 +13,10 @@ export const ja: Translation = {
 	[Key.postList]: "記事一覧",
 	[Key.tableOfContents]: "目次",
 
+	// 公告栏
+	[Key.announcement]: "お知らせ",
+	[Key.announcementClose]: "閉じる",
+
 	[Key.comments]: "コメント",
 
 	[Key.untitled]: "タイトルなし",

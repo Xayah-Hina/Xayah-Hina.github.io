@@ -21,7 +21,7 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 [**Español**](./docs/README.es.md) /
 [**Русский**](./docs/README.ru.md)
 
-## 🆕 What's New in v2.7
+## 🆕 What's New in v2.8
 
 ### 🎠 Carousel Optimization
 - **Enhanced Banner Carousel:** Improved carousel logic for better performance and smoother transitions
@@ -37,6 +37,11 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 - **Smooth Transitions:** Optimized page transitions and component animations
 - **Performance Improvements:** Reduced animation overhead for better user experience
 - **Visual Polish:** Enhanced visual feedback and interaction animations
+
+### 📢 Announcement Feature
+- **Configurable Announcement Bar:** Added a customizable announcement bar with options for title, content, icon, type, and closable functionality.
+- **Flexible Positioning:** Supports positioning the close button at the bottom-right of the announcement bar.
+- Twikoo 评论系统显示和性能优化
 
 ---
 
@@ -85,7 +90,7 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/matsuzaka-yuki/mizuki.git
+   git clone https://github.com/your-username/mizuki.git
    cd mizuki
    ```
 
@@ -274,3 +279,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 ⭐ If you find this project helpful, please consider giving it a star!
+

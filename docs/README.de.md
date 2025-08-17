@@ -16,7 +16,7 @@ Eine moderne, funktionsreiche statische Blog-Vorlage mit erweiterten Funktionen 
 [**English**](../README.md) /
 [**Deutsch**](./README.de.md)
 
-## 🆕 Neues in v2.7
+## 🆕 Neues in v2.8
 
 ### 🎠 Karussell-Optimierung
 - **Verbessertes Banner-Karussell:** Verbesserte Karussell-Logik für bessere Leistung und flüssigere Übergänge
@@ -32,6 +32,13 @@ Eine moderne, funktionsreiche statische Blog-Vorlage mit erweiterten Funktionen 
 - **Flüssige Übergänge:** Optimierung von Seitenübergängen und Komponenten-Animationen
 - **Leistungsverbesserungen:** Reduzierung des Animations-Overheads für bessere Benutzererfahrung
 - **Visuelle Verbesserungen:** Verbesserung von visuellem Feedback und Interaktions-Animationen
+
+### 📢 Ankündigungsfunktion
+- **Konfigurierbare Ankündigungsleiste:** Eine anpassbare Ankündigungsleiste mit Optionen für Titel, Inhalt, Symbol, Typ und Schließfunktion wurde hinzugefügt.
+- **Flexible Positionierung:** Unterstützt die Positionierung der Schließen-Schaltfläche unten rechts in der Ankündigungsleiste.
+
+### 💬 Twikoo Kommentar System
+- **Anzeige- und Leistungsoptimierung:** Verbesserte Darstellung und Leistung des Twikoo-Kommentarsystems.
 
 ---
 

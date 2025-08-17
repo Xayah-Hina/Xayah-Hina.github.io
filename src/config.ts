@@ -1,4 +1,5 @@
 import type {
+	AnnouncementConfig,
 	CommentConfig,
 	ExpressiveCodeConfig,
 	LicenseConfig,
@@ -104,9 +105,6 @@ export const siteConfig: SiteConfig = {
 	],
 };
 
-
-
-
 export const navBarConfig: NavBarConfig = {
 	links: [
 		LinkPreset.Home,
@@ -162,6 +160,19 @@ export const expressiveCodeConfig: ExpressiveCodeConfig = {
 export const commentConfig: CommentConfig = {
 	enable: false, // Enable the comment function. When it is set to false, the comment component will not be displayed in the article area.
 	twikoo: {
-		envId: "https://app.twikoo.js.org",
+		envId: "https://twikoo.vercel.app",
+	},
+};
+
+export const announcementConfig: AnnouncementConfig = {
+	enable: true, // Enable announcement feature
+	title: "Announcement", // Announcement title
+	content: "Welcome to my blog! This is a sample announcement.", // Announcement content
+	closable: true, // Allow users to close the announcement
+	link: {
+		enable: true, // Show link button
+		text: "Learn More", // Link text
+		url: "/about/", // Link URL
+		external: true, // Internal link
 	},
 };

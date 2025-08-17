@@ -16,7 +16,7 @@ Una plantilla de blog estático moderna y rica en características con funcional
 [**English**](../README.md) /
 [**Español**](./README.es.md)
 
-## 🆕 Novedades en v2.7
+## 🆕 Novedades en v2.8
 
 ### 🎠 Optimización del Carrusel
 - **Carrusel de banner mejorado:** Lógica de carrusel mejorada para mejor rendimiento y transiciones más suaves
@@ -32,6 +32,13 @@ Una plantilla de blog estático moderna y rica en características con funcional
 - **Transiciones suaves:** Optimización de transiciones de página y animaciones de componentes
 - **Mejoras de rendimiento:** Reducción de la sobrecarga de animación para mejor experiencia de usuario
 - **Mejora visual:** Mejora del feedback visual y animaciones de interacción
+
+### 📢 Función de Anuncio
+- **Barra de Anuncios Configurable:** Se agregó una barra de anuncios personalizable con opciones para título, contenido, icono, tipo y funcionalidad de cierre.
+- **Posicionamiento Flexible:** Permite posicionar el botón de cierre en la parte inferior derecha de la barra de anuncios.
+
+### 💬 Optimización de Comentarios Twikoo
+- **Optimización de visualización y rendimiento:** Mejoras en el sistema de comentarios Twikoo para una visualización más eficiente y un mejor rendimiento.
 
 ---
 

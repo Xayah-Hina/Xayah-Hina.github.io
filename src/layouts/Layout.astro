@@ -800,6 +800,15 @@ const setup = () => {
 			top: 0,
 			behavior: 'instant'
 		});
+		
+		// 检查当前页面是否为文章页面，如果是则触发自定义事件用于初始化评论系统
+		setTimeout(() => {
+			if (document.getElementById('tcomment')) {
+				// 触发自定义事件，通知评论系统页面已完全加载
+				const pageLoadedEvent = new CustomEvent('mizuki:page:loaded');
+				document.dispatchEvent(pageLoadedEvent);
+			}
+		}, 300);
 	});
 	window.swup.hooks.on('visit:end', (_visit: {to: {url: string}}) => {
 		setTimeout(() => {

@@ -10,6 +10,10 @@ enum I18nKey {
 	postList = "postList",
 	tableOfContents = "tableOfContents",
 
+	// 公告栏
+	announcement = "announcement",
+	announcementClose = "announcementClose",
+
 	comments = "comments",
 
 	untitled = "untitled",

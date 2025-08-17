@@ -13,6 +13,10 @@ export const en: Translation = {
 	[Key.postList]: "Post List",
 	[Key.tableOfContents]: "Table of Contents",
 
+	// 公告栏
+	[Key.announcement]: "Announcement",
+	[Key.announcementClose]: "Close",
+
 	[Key.comments]: "Comments",
 
 	[Key.untitled]: "Untitled",
