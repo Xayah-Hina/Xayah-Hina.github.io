@@ -15,6 +15,22 @@ const config = {
 <div id="tcomment"></div>
 <script is:inline src="/assets/js/twikoo.all.min.js"></script>
 <script is:inline define:vars={{ config }}>
+  // 获取当前页面路径的函数
+  function getCurrentPath() {
+    const pathname = window.location.pathname;
+    // 移除末尾的斜杠（如果存在）
+    return pathname.endsWith('/') && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
+  }
+  
+  // 动态创建配置对象的函数
+  function createTwikooConfig() {
+    return {
+      ...config,
+      path: getCurrentPath(),
+      el: '#tcomment'
+    };
+  }
+  
   // 初始化 Twikoo 的函数
   function initTwikooWithRetry() {
     let retryCount = 0;
@@ -28,8 +44,10 @@ const config = {
           commentEl.innerHTML = '';
         }
         
-        // 初始化 Twikoo
-        twikoo.init(config);
+        // 使用动态配置初始化 Twikoo
+        const dynamicConfig = createTwikooConfig();
+        console.log('Twikoo 初始化配置:', dynamicConfig);
+        twikoo.init(dynamicConfig);
       } else if (retryCount < maxRetries) {
         retryCount++;
         console.log(`Twikoo 加载重试 ${retryCount}/${maxRetries}...`);
@@ -46,23 +64,47 @@ const config = {
   document.addEventListener('DOMContentLoaded', initTwikooWithRetry);
   
   // 监听 Swup 页面切换事件，在内容替换后重新初始化 Twikoo
-  if (window.swup) {
-    window.swup.hooks.on('content:replace', function() {
-      // 延迟执行以确保 DOM 已完全更新
-      setTimeout(function() {
-        // 检查当前页面是否为文章页面（通过检查评论容器是否存在）
-        if (document.getElementById('tcomment')) {
-          console.log('Swup 页面切换后重新初始化 Twikoo');
-          initTwikooWithRetry();
+  function setupSwupHooks() {
+    if (window.swup && window.swup.hooks) {
+      // 在页面内容替换后重新初始化
+      window.swup.hooks.on('content:replace', function() {
+        // 延迟执行以确保 DOM 已完全更新
+        setTimeout(function() {
+          const commentEl = document.getElementById('tcomment');
+          if (commentEl) {
+            console.log('Swup 页面切换后重新初始化 Twikoo，当前路径:', getCurrentPath());
+            initTwikooWithRetry();
+          }
+        }, 200);
+      });
+      
+      // 在页面访问开始时清理旧的评论数据
+      window.swup.hooks.on('visit:start', function() {
+        const commentEl = document.getElementById('tcomment');
+        if (commentEl) {
+          commentEl.innerHTML = '';
+          console.log('页面切换开始，清理评论容器');
         }
-      }, 200);
-    });
+      });
+    }
+  }
+  
+  // 设置 Swup 钩子
+  if (window.swup) {
+    setupSwupHooks();
+  } else {
+    document.addEventListener('swup:enable', setupSwupHooks);
   }
   
   // 监听自定义事件，在页面完全加载后重新初始化 Twikoo
-  document.addEventListener('mizuki:page:loaded', function() {
-    console.log('Mizuki 页面加载完成事件触发，重新初始化 Twikoo');
-    if (document.getElementById('tcomment')) {
+  document.addEventListener('mizuki:page:loaded', function(event) {
+    const eventDetail = event.detail || {};
+    console.log('Mizuki 页面加载完成事件触发，路径:', eventDetail.path, '时间戳:', eventDetail.timestamp);
+    
+    const commentEl = document.getElementById('tcomment');
+    if (commentEl) {
+      // 确保在自定义事件触发时也使用最新的路径
+      console.log('通过自定义事件重新初始化 Twikoo，当前路径:', getCurrentPath());
       initTwikooWithRetry();
     }
   });
