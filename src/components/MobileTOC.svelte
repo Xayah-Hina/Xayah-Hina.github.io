@@ -3,12 +3,14 @@
 	import Icon from '@iconify/svelte';
 	import { i18n } from '../i18n/translation';
 	import I18nKey from '../i18n/i18nKey';
+	import { navigateToPage } from '../utils/navigation-utils';
 
 	let tocItems: Array<{id: string, text: string, level: number}> = [];
 	let postItems: Array<{title: string, url: string, category?: string, pinned?: boolean}> = [];
 	let activeId = '';
 	let observer: IntersectionObserver;
 	let isHomePage = false;
+	let swupReady = false;
 
 	const togglePanel = () => {
 		const panel = document.getElementById('mobile-toc-panel');
@@ -94,8 +96,8 @@
 		// 关闭面板
 		setPanelVisibility(false);
 		
-		// 导航到文章页面
-		window.location.href = url;
+		// 使用统一的导航工具函数，实现无刷新跳转
+		navigateToPage(url);
 	};
 
 	const updateActiveHeading = () => {
@@ -144,8 +146,37 @@
 		});
 	};
 
+	const checkSwupAvailability = () => {
+		if (typeof window !== 'undefined') {
+			// 检查Swup是否已加载
+			swupReady = !!(window as any).swup;
+			
+			// 如果Swup还未加载，监听其加载事件
+			if (!swupReady) {
+				const checkSwup = () => {
+					if ((window as any).swup) {
+						swupReady = true;
+						document.removeEventListener('swup:enable', checkSwup);
+					}
+				};
+				
+				// 监听Swup启用事件
+				document.addEventListener('swup:enable', checkSwup);
+				
+				// 设置超时检查
+				setTimeout(() => {
+					if ((window as any).swup) {
+						swupReady = true;
+						document.removeEventListener('swup:enable', checkSwup);
+					}
+				}, 1000);
+			}
+		}
+	};
+
 	const init = () => {
 		checkIsHomePage();
+		checkSwupAvailability();
 		if (isHomePage) {
 			generatePostList();
 		} else {
