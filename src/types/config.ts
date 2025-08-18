@@ -160,3 +160,7 @@ export type AnnouncementConfig = {
 		external?: boolean; // 是否外部链接
 	};
 };
+
+export type MusicPlayerConfig = {
+	enable: boolean; // 是否启用音乐播放器功能
+};

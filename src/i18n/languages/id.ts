@@ -61,4 +61,7 @@ export const id: Translation = {
 	[Key.notFoundTitle]: "Halaman Tidak Ditemukan",
 	[Key.notFoundDescription]: "Maaf, halaman yang Anda cari tidak ada atau telah dipindahkan.",
 	[Key.backToHome]: "Kembali ke Beranda",
+
+	// Pemutar Musik
+	[Key.playlist]: "Daftar Putar",
 };

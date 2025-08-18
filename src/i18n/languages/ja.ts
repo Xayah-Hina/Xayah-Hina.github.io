@@ -67,4 +67,7 @@ export const ja: Translation = {
 	[Key.notFoundTitle]: "ページが見つかりません",
 	[Key.notFoundDescription]: "申し訳ございませんが、お探しのページは存在しないか移動されました。",
 	[Key.backToHome]: "ホームに戻る",
+
+	// 音楽プレーヤー
+	[Key.playlist]: "プレイリスト",
 };

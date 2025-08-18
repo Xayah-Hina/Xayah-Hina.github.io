@@ -66,4 +66,7 @@ export const zh_CN: Translation = {
 	[Key.notFoundTitle]: "页面未找到",
 	[Key.notFoundDescription]: "抱歉，您访问的页面不存在或已被移动。",
 	[Key.backToHome]: "返回首页",
+
+	// 音乐播放器
+	[Key.playlist]: "播放列表",
 };

@@ -16,7 +16,13 @@ Un modèle de blog statique moderne et riche en fonctionnalités avec des foncti
 [**English**](../README.md) /
 [**Français**](./README.fr.md)
 
-## 🆕 Nouveautés de la v2.8
+## 🆕 Nouveautés de la v2.9
+
+### 🎵 Améliorations du Lecteur de Musique
+- **Adaptation des couleurs en mode sombre :** Correction du problème de couleur du texte dans la liste de lecture en mode sombre pour améliorer la lisibilité
+- **Couleurs de thème dynamiques :** Les titres de chansons et noms d'artistes sélectionnés s'adaptent appropriément aux couleurs du thème
+- **Support d'internationalisation :** Ajout du support multilingue pour l'interface de la liste de lecture
+- **Améliorations d'accessibilité :** Amélioration du contraste des couleurs et du retour visuel pour une meilleure expérience utilisateur
 
 ### 🎠 Optimisation du Carrousel
 - **Carrousel de bannière amélioré :** Amélioration de la logique du carrousel pour de meilleures performances et des transitions plus fluides

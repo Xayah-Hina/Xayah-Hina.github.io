@@ -16,7 +16,13 @@ Eine moderne, funktionsreiche statische Blog-Vorlage mit erweiterten Funktionen 
 [**English**](../README.md) /
 [**Deutsch**](./README.de.md)
 
-## 🆕 Neues in v2.8
+## 🆕 Neues in v2.9
+
+### 🎵 Musik-Player-Verbesserungen
+- **Dunkelmodus-Farbanpassung:** Behoben das Problem mit der Textfarbe in der Wiedergabeliste im Dunkelmodus für bessere Lesbarkeit
+- **Dynamische Themenfarben:** Ausgewählte Songtitel und Künstlernamen passen sich angemessen an die Themenfarben an
+- **Internationalisierungsunterstützung:** Mehrsprachige Unterstützung für die Wiedergabelisten-Benutzeroberfläche hinzugefügt
+- **Barrierefreiheits-Verbesserungen:** Verbesserte Farbkontraste und visuelles Feedback für eine bessere Benutzererfahrung
 
 ### 🎠 Karussell-Optimierung
 - **Verbessertes Banner-Karussell:** Verbesserte Karussell-Logik für bessere Leistung und flüssigere Übergänge

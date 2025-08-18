@@ -60,5 +60,8 @@ export const tr: Translation = {
 	[Key.notFound]: "404",
 	[Key.notFoundTitle]: "Sayfa Bulunamadı",
 	[Key.notFoundDescription]: "Üzgünüz, aradığınız sayfa mevcut değil veya taşınmış.",
-	[Key.backToHome]: "Anasayfaya Dön",
+	[Key.backToHome]: "Ana Sayfaya Dön",
+
+	// Müzik Çalar
+	[Key.playlist]: "Çalma Listesi",
 };

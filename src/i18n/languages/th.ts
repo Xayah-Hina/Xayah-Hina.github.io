@@ -48,17 +48,20 @@ export const th: Translation = {
 
 	// หน้าไดอารี่
 	[Key.diarySubtitle]: "แบ่งปันชีวิตได้ทุกที่ทุกเวลา",
-	[Key.diaryCount]: "โพสต์",
+	[Key.diaryCount]: "ช่วงเวลา",
 	[Key.diaryImage]: "รูปภาพ",
 	[Key.diaryReply]: "ตอบกลับ",
-	[Key.diaryTips]: "แสดงเฉพาะ 30 โพสต์ล่าสุด",
+	[Key.diaryTips]: "แสดงเฉพาะ 30 ช่วงเวลาล่าสุด",
 	[Key.diaryMinutesAgo]: "นาทีที่แล้ว",
 	[Key.diaryHoursAgo]: "ชั่วโมงที่แล้ว",
 	[Key.diaryDaysAgo]: "วันที่แล้ว",
 
 	// หน้า 404
 	[Key.notFound]: "404",
-	[Key.notFoundTitle]: "ไม่พบหน้าที่ต้องการ",
-	[Key.notFoundDescription]: "ขออภัย หน้าที่คุณกำลังมองหาไม่มีอยู่หรือถูกย้ายแล้ว",
+	[Key.notFoundTitle]: "ไม่พบหน้า",
+	[Key.notFoundDescription]: "ขออภัย หน้าที่คุณกำลังมองหาไม่มีอยู่หรือถูกย้าย",
 	[Key.backToHome]: "กลับสู่หน้าแรก",
+
+	// เครื่องเล่นเพลง
+	[Key.playlist]: "เพลย์ลิสต์",
 };

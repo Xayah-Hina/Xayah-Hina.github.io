@@ -64,6 +64,9 @@ enum I18nKey {
 	notFoundTitle = 'notFoundTitle',
 	notFoundDescription = 'notFoundDescription',
 	backToHome = 'backToHome',
+
+	// 音乐播放器
+	playlist = 'playlist',
 }
 
 export default I18nKey;

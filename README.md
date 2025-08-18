@@ -21,7 +21,13 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 [**Español**](./docs/README.es.md) /
 [**Русский**](./docs/README.ru.md)
 
-## 🆕 What's New in v2.8
+## 🆕 What's New in v2.9
+
+### 🎵 Music Player Enhancement
+- **Dark Mode Color Adaptation:** Fixed text color issues in playlist for better readability in dark mode
+- **Dynamic Theme Colors:** Song titles and artist names now properly adapt to theme colors when selected
+- **Internationalization Support:** Added multi-language support for playlist interface
+- **Improved Accessibility:** Enhanced color contrast and visual feedback for better user experience
 
 ### 🎠 Carousel Optimization
 - **Enhanced Banner Carousel:** Improved carousel logic for better performance and smoother transitions

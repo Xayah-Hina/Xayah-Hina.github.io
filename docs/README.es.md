@@ -16,7 +16,13 @@ Una plantilla de blog estático moderna y rica en características con funcional
 [**English**](../README.md) /
 [**Español**](./README.es.md)
 
-## 🆕 Novedades en v2.8
+## 🆕 Novedades en v2.9
+
+### 🎵 Mejoras del Reproductor de Música
+- **Adaptación de colores en modo oscuro:** Corregido el problema de color del texto en la lista de reproducción en modo oscuro para mejorar la legibilidad
+- **Colores de tema dinámicos:** Los títulos de canciones y nombres de artistas seleccionados se adaptan apropiadamente a los colores del tema
+- **Soporte de internacionalización:** Agregado soporte multiidioma para la interfaz de la lista de reproducción
+- **Mejoras de accesibilidad:** Mejorado el contraste de colores y la retroalimentación visual para una mejor experiencia de usuario
 
 ### 🎠 Optimización del Carrusel
 - **Carrusel de banner mejorado:** Lógica de carrusel mejorada para mejor rendimiento y transiciones más suaves

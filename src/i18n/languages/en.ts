@@ -67,4 +67,7 @@ export const en: Translation = {
 	[Key.notFoundTitle]: "Page Not Found",
 	[Key.notFoundDescription]: "Sorry, the page you are looking for doesn't exist or has been moved.",
 	[Key.backToHome]: "Back to Home",
+
+	// Music Player
+	[Key.playlist]: "Playlist",
 };

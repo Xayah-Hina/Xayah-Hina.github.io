@@ -51,7 +51,7 @@ export const vi: Translation = {
 	[Key.diaryCount]: "bài viết",
 	[Key.diaryImage]: "Hình ảnh",
 	[Key.diaryReply]: "Trả lời",
-	[Key.diaryTips]: "Chỉ hiển thị 30 bài viết gần nhất",
+	[Key.diaryTips]: "Chỉ hiển thị 30 khoảnh khắc gần nhất",
 	[Key.diaryMinutesAgo]: "phút trước",
 	[Key.diaryHoursAgo]: "giờ trước",
 	[Key.diaryDaysAgo]: "ngày trước",
@@ -60,5 +60,8 @@ export const vi: Translation = {
 	[Key.notFound]: "404",
 	[Key.notFoundTitle]: "Không tìm thấy trang",
 	[Key.notFoundDescription]: "Xin lỗi, trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.",
-	[Key.backToHome]: "Về trang chủ",
+	[Key.backToHome]: "Quay về trang chủ",
+
+	// Trình phát nhạc
+	[Key.playlist]: "Danh sách phát",
 };
