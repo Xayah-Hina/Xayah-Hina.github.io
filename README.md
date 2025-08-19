@@ -21,33 +21,30 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 [**Español**](./docs/README.es.md) /
 [**Русский**](./docs/README.ru.md)
 
-## 🆕 What's New in v2.9
+## 🆕 What's New in v3.0
 
-### 🎵 Music Player Enhancement
-- **Dark Mode Color Adaptation:** Fixed text color issues in playlist for better readability in dark mode
-- **Dynamic Theme Colors:** Song titles and artist names now properly adapt to theme colors when selected
-- **Internationalization Support:** Added multi-language support for playlist interface
-- **Improved Accessibility:** Enhanced color contrast and visual feedback for better user experience
+![Configuration](configuration.svg)
 
-### 🎠 Carousel Optimization
-- **Enhanced Banner Carousel:** Improved carousel logic for better performance and smoother transitions
-- **Mobile-Desktop Sync:** Unified carousel behavior across all devices while maintaining separate image paths
-- **Bug Fixes:** Resolved issues with carousel stopping after cycling through all images
+### 🔧 Component Configuration System Refactor
+- **Unified Configuration Architecture:** Brand new modular component configuration system with dynamic component management and order configuration
+- **Configuration-Driven Component Loading:** Refactored SideBar component to implement fully configuration-based component loading mechanism
+- **Unified Control Switches:** Removed independent enable switches for music player and announcement components, unified control through sidebarLayoutConfig
+- **Responsive Layout Adaptation:** Components support responsive layout, automatically adjusting display based on device type
 
-### 📱 Mobile Table of Contents
-- **Mobile TOC Component:** Added dedicated table of contents functionality for mobile devices
-- **Improved Navigation:** Better content navigation experience on smaller screens
-- **Responsive Design:** Seamless integration with existing responsive layout
+### 📐 Layout System Optimization
+- **Dynamic Sidebar Position Adjustment:** Support for left/right sidebar switching with automatic layout adaptation
+- **Smart Article Navigation Positioning:** When sidebar is on the right, article navigation automatically moves to the left for better reading experience
+- **Grid Layout Improvements:** Optimized CSS Grid layout, resolved container width anomaly issues
 
-### ✨ Animation Enhancements
-- **Smooth Transitions:** Optimized page transitions and component animations
-- **Performance Improvements:** Reduced animation overhead for better user experience
-- **Visual Polish:** Enhanced visual feedback and interaction animations
+### 🎛️ Configuration File Format Standards
+- **Standardized Configuration Format:** Created unified component configuration file format specifications
+- **Type Safety:** Comprehensive TypeScript type definitions ensuring configuration type safety
+- **Extensibility:** Support for custom component types and configuration options
 
-### 📢 Announcement Feature
-- **Configurable Announcement Bar:** Added a customizable announcement bar with options for title, content, icon, type, and closable functionality.
-- **Flexible Positioning:** Supports positioning the close button at the bottom-right of the announcement bar.
-- Twikoo 评论系统显示和性能优化
+### 🧹 Code Optimization
+- **Test File Cleanup:** Removed unused test configurations and dependencies, reducing project size
+- **Code Structure Optimization:** Improved component architecture, enhanced code maintainability
+- **Performance Improvements:** Optimized component loading logic, improved page rendering performance
 
 ---
 

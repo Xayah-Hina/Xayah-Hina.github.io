@@ -148,7 +148,7 @@ export type ExpressiveCodeConfig = {
 };
 
 export type AnnouncementConfig = {
-	enable: boolean; // 是否启用公告栏功能
+	// enable属性已移除，现在通过sidebarLayoutConfig统一控制
 	title?: string; // 公告栏标题
 	content: string; // 公告栏内容
 	icon?: string; // 公告栏图标
@@ -164,4 +164,52 @@ export type AnnouncementConfig = {
 
 export type MusicPlayerConfig = {
 	enable: boolean; // 是否启用音乐播放器功能
+};
+
+// 组件配置类型定义
+export type WidgetComponentType = 
+	| "profile" 
+	| "announcement" 
+	| "categories" 
+	| "tags" 
+	| "toc" 
+	| "music-player" 
+	| "custom";
+
+export type WidgetComponentConfig = {
+	type: WidgetComponentType; // 组件类型
+	enable: boolean; // 是否启用该组件
+	order: number; // 显示顺序，数字越小越靠前
+	position: "top" | "sticky"; // 组件位置：顶部固定区域或粘性区域
+	class?: string; // 自定义CSS类名
+	style?: string; // 自定义内联样式
+	animationDelay?: number; // 动画延迟时间（毫秒）
+	responsive?: {
+		hidden?: ("mobile" | "tablet" | "desktop")[]; // 在指定设备上隐藏
+		collapseThreshold?: number; // 折叠阈值
+	};
+	customProps?: Record<string, any>; // 自定义属性，用于扩展组件功能
+};
+
+export type SidebarLayoutConfig = {
+	enable: boolean; // 是否启用侧边栏
+	position: "left" | "right"; // 侧边栏位置：左侧或右侧
+	components: WidgetComponentConfig[]; // 组件配置列表
+	defaultAnimation: {
+		enable: boolean; // 是否启用默认动画
+		baseDelay: number; // 基础延迟时间（毫秒）
+		increment: number; // 每个组件递增的延迟时间（毫秒）
+	};
+	responsive: {
+		breakpoints: {
+			mobile: number; // 移动端断点（px）
+			tablet: number; // 平板端断点（px）
+			desktop: number; // 桌面端断点（px）
+		};
+		layout: {
+			mobile: "hidden" | "bottom" | "drawer"; // 移动端布局模式
+			tablet: "sidebar" | "bottom" | "drawer"; // 平板端布局模式
+			desktop: "sidebar"; // 桌面端布局模式
+		};
+	};
 };

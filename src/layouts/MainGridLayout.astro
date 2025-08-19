@@ -1,19 +1,20 @@
 ---
-import type { MarkdownHeading } from "astro";
-import { Icon } from "astro-icon/components";
 import BackToTop from "@components/control/BackToTop.astro";
 import Footer from "@components/Footer.astro";
 import Navbar from "@components/Navbar.astro";
 import SideBar from "@components/widget/SideBar.astro";
+import type { MarkdownHeading } from "astro";
+import { Icon } from "astro-icon/components";
 import ImageWrapper from "../components/misc/ImageWrapper.astro";
-import TOC from "../components/widget/TOC.astro";
 import TypewriterText from "../components/TypewriterText.astro";
-import { siteConfig } from "../config";
+import TOC from "../components/widget/TOC.astro";
+import { sidebarLayoutConfig, siteConfig } from "../config";
 import {
 	BANNER_HEIGHT,
 	BANNER_HEIGHT_EXTEND,
 	MAIN_PANEL_OVERLAPS_BANNER_HEIGHT,
 } from "../constants/constants";
+import { widgetManager } from "../utils/widget-manager";
 import Layout from "./Layout.astro";
 
 interface Props {
@@ -26,22 +27,34 @@ interface Props {
 }
 
 // 类型守卫函数
-const isBannerSrcObject = (src: string | string[] | { desktop?: string | string[]; mobile?: string | string[] }): src is { desktop?: string | string[]; mobile?: string | string[] } => {
-	return typeof src === 'object' && src !== null && !Array.isArray(src) && (src.desktop || src.mobile);
+const isBannerSrcObject = (
+	src:
+		| string
+		| string[]
+		| { desktop?: string | string[]; mobile?: string | string[] },
+): src is { desktop?: string | string[]; mobile?: string | string[] } => {
+	return (
+		typeof src === "object" &&
+		src !== null &&
+		!Array.isArray(src) &&
+		(src.desktop || src.mobile)
+	);
 };
 
 // 获取banner图片的辅助函数
 const getBannerImages = () => {
 	if (isBannerSrcObject(siteConfig.banner.src)) {
 		return {
-			desktop: siteConfig.banner.src.desktop || siteConfig.banner.src.mobile || '',
-			mobile: siteConfig.banner.src.mobile || siteConfig.banner.src.desktop || ''
+			desktop:
+				siteConfig.banner.src.desktop || siteConfig.banner.src.mobile || "",
+			mobile:
+				siteConfig.banner.src.mobile || siteConfig.banner.src.desktop || "",
 		};
 	}
 	// 如果是字符串或字符串数组，同时用于桌面端和移动端
 	return {
 		desktop: siteConfig.banner.src,
-		mobile: siteConfig.banner.src
+		mobile: siteConfig.banner.src,
 	};
 };
 
@@ -63,7 +76,7 @@ const hasBannerLink = !!siteConfig.banner.credit.url;
 const isHomePage = Astro.url.pathname === "/" || Astro.url.pathname === "";
 const showHomeText = siteConfig.banner.homeText?.enable && isHomePage;
 // 手机端非首页不显示banner的CSS类
-const mobileNonHomeBannerClass = !isHomePage ? 'mobile-hide-banner' : '';
+const mobileNonHomeBannerClass = !isHomePage ? "mobile-hide-banner" : "";
 
 // 计算主内容区域位置，考虑手机端非首页时banner被隐藏
 const mainPanelTop = siteConfig.banner.enable
@@ -73,6 +86,48 @@ const mobileNonHomeMainTop = !isHomePage ? "5.5rem" : mainPanelTop;
 
 // 当banner被禁用时，主内容区域应该始终从顶栏下面开始
 const finalMainPanelTop = siteConfig.banner.enable ? mainPanelTop : "5.5rem";
+
+// 检查侧边栏是否启用，动态调整网格布局
+// 全局启用状态
+const globalSidebarEnabled = sidebarLayoutConfig.enable;
+// 侧边栏位置配置
+const sidebarPosition = sidebarLayoutConfig.position || "left";
+// 响应式配置：不同设备上的侧边栏显示状态
+const mobileShowSidebar =
+	globalSidebarEnabled && widgetManager.shouldShowSidebar("mobile");
+const tabletShowSidebar =
+	globalSidebarEnabled && widgetManager.shouldShowSidebar("tablet");
+const desktopShowSidebar =
+	globalSidebarEnabled && widgetManager.shouldShowSidebar("desktop");
+
+// 动态网格布局类名 - 根据侧边栏位置调整列宽
+const gridCols = `
+	${mobileShowSidebar ? "grid-cols-1" : "grid-cols-1"}
+	${tabletShowSidebar ? (sidebarPosition === "right" ? "md:grid-cols-[1fr_17.5rem]" : "md:grid-cols-[17.5rem_1fr]") : "md:grid-cols-1"}
+	${desktopShowSidebar ? (sidebarPosition === "right" ? "lg:grid-cols-[1fr_17.5rem]" : "lg:grid-cols-[17.5rem_1fr]") : "lg:grid-cols-1"}
+`
+	.trim()
+	.replace(/\s+/g, " ");
+
+// 侧边栏容器类名 - 根据位置调整grid-column
+const sidebarClass = `
+	mb-4 row-start-2 row-end-3 col-span-2 onload-animation
+	${mobileShowSidebar ? "block" : "hidden"}
+	${tabletShowSidebar ? `md:block md:row-start-1 md:row-end-2 md:max-w-[17.5rem] ${sidebarPosition === "right" ? "md:col-start-2 md:col-end-3" : "md:col-start-1 md:col-end-2"}` : "md:hidden"}
+	${desktopShowSidebar ? `lg:block lg:row-start-1 lg:row-end-2 lg:max-w-[17.5rem] ${sidebarPosition === "right" ? "lg:col-start-2 lg:col-end-3" : "lg:col-start-1 lg:col-end-2"}` : "lg:hidden"}
+`
+	.trim()
+	.replace(/\s+/g, " ");
+
+// 主内容区域类名 - 根据侧边栏位置调整grid-column
+const mainContentClass = `
+	transition-swup-fade overflow-hidden
+	${mobileShowSidebar ? "col-span-2" : "col-span-1"}
+	${tabletShowSidebar ? `${sidebarPosition === "right" ? "md:col-start-1 md:col-end-2" : "md:col-start-2 md:col-end-3"}` : "md:col-span-1"}
+	${desktopShowSidebar ? `${sidebarPosition === "right" ? "lg:col-start-1 lg:col-end-2" : "lg:col-start-2 lg:col-end-3"}` : "lg:col-span-1"}
+`
+	.trim()
+	.replace(/\s+/g, " ");
 ---
 
 <Layout title={title} banner={banner} description={description} lang={lang} setOGTypeArticle={setOGTypeArticle}>
@@ -239,8 +294,7 @@ const finalMainPanelTop = siteConfig.banner.enable ? mainPanelTop : "5.5rem";
 <div class={`absolute w-full z-30 pointer-events-none ${mobileNonHomeBannerClass ? 'mobile-main-no-banner' : ''} ${!siteConfig.banner.enable ? 'no-banner-layout' : ''}`} style={`top: ${finalMainPanelTop}`}>
     <!-- The pointer-events-none here prevent blocking the click event of the TOC -->
     <div class="relative max-w-[var(--page-width)] mx-auto pointer-events-auto">
-        <div id="main-grid" class="transition duration-700 w-full left-0 right-0 grid grid-cols-[17.5rem_auto] grid-rows-[auto_1fr_auto] lg:grid-rows-[auto]
-    mx-auto gap-4 px-0 md:px-4"
+        <div id="main-grid" class={`transition duration-700 w-full left-0 right-0 grid ${gridCols} grid-rows-[auto_1fr_auto] lg:grid-rows-[auto] mx-auto gap-4 px-0 md:px-4`}
         >
             <!-- Banner image credit -->
             {hasBannerCredit && <a href={siteConfig.banner.credit.url} id="banner-credit" target="_blank" rel="noopener" aria-label="Visit image source"
@@ -256,9 +310,9 @@ const finalMainPanelTop = siteConfig.banner.enable ? mainPanelTop : "5.5rem";
             </a>}
 
 
-            <SideBar class="mb-4 row-start-2 row-end-3 col-span-2 lg:row-start-1 lg:row-end-2 lg:col-span-1 lg:max-w-[17.5rem] onload-animation" headings={headings}></SideBar>
+            {(mobileShowSidebar || tabletShowSidebar || desktopShowSidebar) && <SideBar class={sidebarClass} headings={headings}></SideBar>}
 
-            <main id="swup-container" class="transition-swup-fade col-span-2 lg:col-span-1 overflow-hidden">
+            <main id="swup-container" class={mainContentClass}>
                 <div id="content-wrapper" class="onload-animation">
                     <!-- the overflow-hidden here prevent long text break the layout-->
                     <!-- make id different from windows.swup global property -->
@@ -282,7 +336,8 @@ const finalMainPanelTop = siteConfig.banner.enable ? mainPanelTop : "5.5rem";
 <div class="absolute w-full z-0 hidden xl:block">
     <div class="relative max-w-[var(--page-width)] mx-auto">
         <!-- TOC component -->
-        {siteConfig.toc.enable && <div id="toc-wrapper" class:list={["hidden lg:block transition absolute top-0 -right-[var(--toc-width)] w-[var(--toc-width)] items-center",
+        {siteConfig.toc.enable && <div id="toc-wrapper" class:list={["hidden lg:block transition absolute top-0 w-[var(--toc-width)] items-center",
+            sidebarLayoutConfig.position === "right" ? "-left-[var(--toc-width)]" : "-right-[var(--toc-width)]",
             {"toc-hide": siteConfig.banner.enable}]}
         >
             <div id="toc-inner-wrapper" class="fixed top-14 w-[var(--toc-width)] h-[calc(100vh_-_20rem)] overflow-y-scroll overflow-x-hidden hide-scrollbar">

@@ -16,35 +16,30 @@ Un modèle de blog statique moderne et riche en fonctionnalités avec des foncti
 [**English**](../README.md) /
 [**Français**](./README.fr.md)
 
-## 🆕 Nouveautés de la v2.9
+## 🆕 Nouveautés de la v3.0
 
-### 🎵 Améliorations du Lecteur de Musique
-- **Adaptation des couleurs en mode sombre :** Correction du problème de couleur du texte dans la liste de lecture en mode sombre pour améliorer la lisibilité
-- **Couleurs de thème dynamiques :** Les titres de chansons et noms d'artistes sélectionnés s'adaptent appropriément aux couleurs du thème
-- **Support d'internationalisation :** Ajout du support multilingue pour l'interface de la liste de lecture
-- **Améliorations d'accessibilité :** Amélioration du contraste des couleurs et du retour visuel pour une meilleure expérience utilisateur
+![Configuration](configuration.svg)
 
-### 🎠 Optimisation du Carrousel
-- **Carrousel de bannière amélioré :** Amélioration de la logique du carrousel pour de meilleures performances et des transitions plus fluides
-- **Synchronisation mobile-bureau :** Comportement unifié du carrousel sur tous les appareils tout en maintenant des chemins d'images séparés
-- **Corrections de bugs :** Résolution du problème où le carrousel s'arrêtait après avoir parcouru toutes les images
+### 🔧 Refactorisation du Système de Configuration des Composants
+- **Architecture de Configuration Unifiée :** Tout nouveau système de configuration de composants modulaire avec support pour la gestion dynamique des composants et la configuration de l'ordre
+- **Chargement de Composants Piloté par Configuration :** Refactorisation du composant SideBar pour implémenter un mécanisme de chargement de composants entièrement basé sur la configuration
+- **Commutateurs de Contrôle Unifiés :** Suppression des commutateurs d'activation indépendants pour le lecteur de musique et les composants d'annonce, contrôle unifié par sidebarLayoutConfig
+- **Adaptation de Mise en Page Responsive :** Les composants supportent les mises en page responsives et ajustent automatiquement l'affichage selon le type d'appareil
 
-### 📱 Table des Matières Mobile
-- **Composant de table des matières mobile :** Ajout d'une fonctionnalité de table des matières dédiée aux appareils mobiles
-- **Navigation améliorée :** Meilleure expérience de navigation du contenu sur les petits écrans
-- **Design responsive :** Intégration transparente avec la mise en page responsive existante
+### 📐 Optimisation du Système de Mise en Page
+- **Ajustement Dynamique de Position de Barre Latérale :** Support pour la commutation gauche-droite de la barre latérale avec adaptation automatique de la mise en page
+- **Placement Intelligent de Navigation d'Article :** Quand la barre latérale est à droite, la navigation d'article se déplace automatiquement à gauche pour une meilleure expérience de lecture
+- **Améliorations de Mise en Page Grid :** Optimisation de la mise en page CSS Grid pour résoudre les anomalies de largeur de conteneur
 
-### ✨ Améliorations d'Animation
-- **Transitions fluides :** Optimisation des transitions de page et des animations de composants
-- **Améliorations de performance :** Réduction de la surcharge d'animation pour une meilleure expérience utilisateur
-- **Amélioration visuelle :** Amélioration du retour visuel et des animations d'interaction
+### 🎛️ Standardisation du Format de Fichier de Configuration
+- **Formats de Configuration Standardisés :** Création de spécifications de format de fichier de configuration de composants unifiées
+- **Sécurité de Type :** Définitions de types TypeScript complètes pour assurer la sécurité de type de configuration
+- **Extensibilité :** Support pour les types de composants personnalisés et les options de configuration
 
-### 📢 Fonction d'Annonce
-- **Barre d'Annonce Configurable :** Ajout d'une barre d'annonce personnalisable avec des options pour le titre, le contenu, l'icône, le type et la fonction de fermeture.
-- **Positionnement Flexible :** Prend en charge le positionnement du bouton de fermeture en bas à droite de la barre d'annonce.
-
-### 💬 Optimisation Twikoo
-- **Optimisation de l'affichage et des performances :** Amélioration de la vitesse de chargement et de la réactivité du système de commentaires Twikoo.
+### 🧹 Optimisation du Code
+- **Nettoyage des Fichiers de Test :** Suppression des configurations de test inutilisées et des dépendances pour réduire la taille du projet
+- **Optimisation de Structure de Code :** Amélioration de l'architecture des composants pour augmenter la maintenabilité du code
+- **Améliorations de Performance :** Optimisation de la logique de chargement des composants pour améliorer les performances de rendu de page
 
 ---
 

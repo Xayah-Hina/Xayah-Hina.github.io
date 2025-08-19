@@ -16,35 +16,30 @@ Eine moderne, funktionsreiche statische Blog-Vorlage mit erweiterten Funktionen 
 [**English**](../README.md) /
 [**Deutsch**](./README.de.md)
 
-## 🆕 Neues in v2.9
+## 🆕 Neues in v3.0
 
-### 🎵 Musik-Player-Verbesserungen
-- **Dunkelmodus-Farbanpassung:** Behoben das Problem mit der Textfarbe in der Wiedergabeliste im Dunkelmodus für bessere Lesbarkeit
-- **Dynamische Themenfarben:** Ausgewählte Songtitel und Künstlernamen passen sich angemessen an die Themenfarben an
-- **Internationalisierungsunterstützung:** Mehrsprachige Unterstützung für die Wiedergabelisten-Benutzeroberfläche hinzugefügt
-- **Barrierefreiheits-Verbesserungen:** Verbesserte Farbkontraste und visuelles Feedback für eine bessere Benutzererfahrung
+![Configuration](configuration.svg)
 
-### 🎠 Karussell-Optimierung
-- **Verbessertes Banner-Karussell:** Verbesserte Karussell-Logik für bessere Leistung und flüssigere Übergänge
-- **Mobile-Desktop-Synchronisation:** Einheitliches Karussell-Verhalten auf allen Geräten bei Beibehaltung separater Bildpfade
-- **Fehlerbehebungen:** Lösung des Problems, bei dem das Karussell nach dem Durchlaufen aller Bilder stoppte
+### 🔧 Komponenten-Konfigurationssystem-Refactoring
+- **Einheitliche Konfigurationsarchitektur:** Völlig neues modulares Komponenten-Konfigurationssystem mit Unterstützung für dynamisches Komponenten-Management und Reihenfolgen-Konfiguration
+- **Konfigurationsgesteuerte Komponenten-Ladung:** Refactoring der SideBar-Komponente zur Implementierung eines vollständig konfigurationsbasierten Komponenten-Lademechanismus
+- **Einheitliche Kontrollschalter:** Entfernung der unabhängigen Enable-Schalter für Musik-Player und Ankündigungs-Komponenten, einheitliche Kontrolle durch sidebarLayoutConfig
+- **Responsive Layout-Anpassung:** Komponenten unterstützen responsive Layouts und passen die Anzeige automatisch basierend auf dem Gerätetyp an
 
-### 📱 Mobile Inhaltsverzeichnis
-- **Mobile Inhaltsverzeichnis-Komponente:** Hinzufügung einer dedizierten Inhaltsverzeichnis-Funktionalität für mobile Geräte
-- **Verbesserte Navigation:** Bessere Inhaltsnavigation auf kleinen Bildschirmen
-- **Responsives Design:** Nahtlose Integration mit dem bestehenden responsiven Layout
+### 📐 Layout-System-Optimierung
+- **Dynamische Sidebar-Positionsanpassung:** Unterstützung für Links-Rechts-Sidebar-Umschaltung mit automatischer Layout-Anpassung
+- **Intelligente Artikel-Navigation-Platzierung:** Wenn die Sidebar rechts ist, bewegt sich die Artikel-Navigation automatisch nach links für bessere Leseerfahrung
+- **Grid-Layout-Verbesserungen:** Optimierung des CSS-Grid-Layouts zur Lösung von Container-Breiten-Anomalien
 
-### ✨ Animations-Verbesserungen
-- **Flüssige Übergänge:** Optimierung von Seitenübergängen und Komponenten-Animationen
-- **Leistungsverbesserungen:** Reduzierung des Animations-Overheads für bessere Benutzererfahrung
-- **Visuelle Verbesserungen:** Verbesserung von visuellem Feedback und Interaktions-Animationen
+### 🎛️ Konfigurationsdatei-Format-Standardisierung
+- **Standardisierte Konfigurationsformate:** Erstellung einheitlicher Komponenten-Konfigurationsdatei-Format-Spezifikationen
+- **Typsicherheit:** Umfassende TypeScript-Typdefinitionen zur Gewährleistung der Konfigurationstypsicherheit
+- **Erweiterbarkeit:** Unterstützung für benutzerdefinierte Komponententypen und Konfigurationsoptionen
 
-### 📢 Ankündigungsfunktion
-- **Konfigurierbare Ankündigungsleiste:** Eine anpassbare Ankündigungsleiste mit Optionen für Titel, Inhalt, Symbol, Typ und Schließfunktion wurde hinzugefügt.
-- **Flexible Positionierung:** Unterstützt die Positionierung der Schließen-Schaltfläche unten rechts in der Ankündigungsleiste.
-
-### 💬 Twikoo Kommentar System
-- **Anzeige- und Leistungsoptimierung:** Verbesserte Darstellung und Leistung des Twikoo-Kommentarsystems.
+### 🧹 Code-Optimierung
+- **Test-Datei-Bereinigung:** Entfernung ungenutzter Test-Konfigurationen und Abhängigkeiten zur Reduzierung der Projektgröße
+- **Code-Struktur-Optimierung:** Verbesserung der Komponenten-Architektur zur Erhöhung der Code-Wartbarkeit
+- **Leistungsverbesserungen:** Optimierung der Komponenten-Ladelogik zur Verbesserung der Seiten-Rendering-Performance
 
 ---
 
