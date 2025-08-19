@@ -285,7 +285,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			desktop: 1280,
 		},
 		// 不同设备的布局模式
-		//hidden:显示
+		//hidden:不显示侧边栏 sidebar:显示侧边栏
 		layout: {
 			// 移动端：隐藏侧边栏
 			mobile: "sidebar",
