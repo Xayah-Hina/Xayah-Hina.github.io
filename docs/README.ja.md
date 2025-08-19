@@ -12,8 +12,8 @@
 [**🖥️ ライブデモ**](https://blog.mysqil.com/)
 
 🌏 README言語
-[**中文**](../README.zh-CN.md) /
-[**English**](../README.md) /
+[**中文**](../README.md) /
+[**English**](../README.en.md) /
 [**日本語**](./README.ja.md)
 
 ## 🆕 v3.0の新機能

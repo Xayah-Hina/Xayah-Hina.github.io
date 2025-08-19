@@ -12,8 +12,8 @@ Un modèle de blog statique moderne et riche en fonctionnalités avec des foncti
 [**🖥️ Démo en direct**](https://blog.mysqil.com/)
 
 🌏 Langues README
-[**中文**](../README.zh-CN.md) /
-[**English**](../README.md) /
+[**中文**](../README.md) /
+[**English**](../README.en.md) /
 [**Français**](./README.fr.md)
 
 ## 🆕 Nouveautés de la v3.0

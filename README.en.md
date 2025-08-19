@@ -12,8 +12,8 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 [**🖥️ Live Demo**](https://blog.mysqil.com/)
 
 🌏 README Languages
-[**中文**](./README.zh-CN.md) /
-[**English**](./README.md) /
+[**中文**](./README.md) /
+[**English**](./README.en.md) /
 [**日本語**](./docs/README.ja.md) /
 [**한국어**](./docs/README.ko.md) /
 [**Français**](./docs/README.fr.md) /

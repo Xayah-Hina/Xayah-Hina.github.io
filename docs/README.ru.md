@@ -12,8 +12,8 @@
 [**🖥️ Живая демонстрация**](https://blog.mysqil.com/)
 
 🌏 Языки README
-[**中文**](../README.zh-CN.md) /
-[**English**](../README.md) /
+[**中文**](../README.md) /
+[**English**](../README.en.md) /
 [**Русский**](./README.ru.md)
 
 ## 🆕 Новое в v3.0

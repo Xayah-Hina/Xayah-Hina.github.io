@@ -12,8 +12,8 @@
 [**🖥️ 在线演示**](https://blog.mysqil.com/)
 
 🌏 README 语言
-[**中文**](./README.zh-CN.md) /
-[**English**](./README.md) /
+[**中文**](./README.md) /
+[**English**](./README.en.md) /
 [**日本語**](./docs/README.ja.md) /
 [**한국어**](./docs/README.ko.md) /
 [**Français**](./docs/README.fr.md) /

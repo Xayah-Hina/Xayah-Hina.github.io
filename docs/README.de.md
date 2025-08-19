@@ -12,8 +12,8 @@ Eine moderne, funktionsreiche statische Blog-Vorlage mit erweiterten Funktionen 
 [**🖥️ Live-Demo**](https://blog.mysqil.com/)
 
 🌏 README-Sprachen
-[**中文**](../README.zh-CN.md) /
-[**English**](../README.md) /
+[**中文**](../README.md) /
+[**English**](../README.en.md) /
 [**Deutsch**](./README.de.md)
 
 ## 🆕 Neues in v3.0

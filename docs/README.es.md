@@ -12,8 +12,8 @@ Una plantilla de blog estático moderna y rica en características con funcional
 [**🖥️ Demo en vivo**](https://blog.mysqil.com/)
 
 🌏 Idiomas README
-[**中文**](../README.zh-CN.md) /
-[**English**](../README.md) /
+[**中文**](../README.md) /
+[**English**](../README.en.md) /
 [**Español**](./README.es.md)
 
 ## 🆕 Novedades en v3.0
