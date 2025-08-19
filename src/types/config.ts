@@ -155,6 +155,7 @@ export type AnnouncementConfig = {
 	type?: "info" | "warning" | "success" | "error"; // 公告类型
 	closable?: boolean; // 是否可关闭
 	link?: {
+		enable: boolean; // 是否启用链接
 		text: string; // 链接文字
 		url: string; // 链接地址
 		external?: boolean; // 是否外部链接
