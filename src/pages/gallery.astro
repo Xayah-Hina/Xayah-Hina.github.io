@@ -1,0 +1,184 @@
+---
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { Icon } from "astro-icon/components";
+import { formatDateI18n } from "@utils/date-utils";
+
+// 相册数据 - 直接在服务端定义
+const galleryData = {
+	data: [
+		{
+			id: 1,
+			title: "Anime",
+			description:
+				"Anime is a genre of Japanese animation that features vibrant colors, complex characters, and imaginative worlds.",
+			coverImage: "/images/gallery/anime/pc/2.jpg",
+			createdAt: "2025-08-20",
+			tags: ["Anime", "Character", "Scene"],
+			images: [
+				"/images/gallery/anime/pe/1.webp",
+				"/images/gallery/anime/pe/2.jpg",
+				"/images/gallery/anime/pe/3.jpg",
+				"/images/gallery/anime/pe/4.jpg",
+				"/images/gallery/anime/pc/1.jpg",
+				"/images/gallery/anime/pc/2.jpg",
+				"/images/gallery/anime/pc/3.jpg",
+				"/images/gallery/anime/pc/4.jpg",
+			],
+		},
+	],
+};
+
+// 计算总图片数量
+const totalImages = galleryData.data.reduce(
+	(total, group) => total + group.images.length,
+	0,
+);
+
+// 使用国际化日期格式化函数
+// formatDateI18n 函数已从 date-utils 导入，支持多语言日期格式
+---
+
+<MainGridLayout title={i18n(I18nKey.gallery)} description={i18n(I18nKey.gallerySubtitle)}>
+	<div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-9 py-6 relative w-full">
+			<!-- 页面标题 -->
+			<div class="mb-8">
+				<h1 class="text-3xl font-bold text-[var(--deep-text)] dark:text-white mb-2">
+					{i18n(I18nKey.gallery)}
+				</h1>
+				<p class="text-[var(--content-meta)]">
+					{i18n(I18nKey.gallerySubtitle)}
+				</p>
+			</div>
+
+			<!-- 统计信息 -->
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+				<div class="bg-[var(--card-bg)] border border-[var(--line-divider)] rounded-[var(--radius-large)] p-4 hover:bg-[var(--btn-card-bg-hover)] transition-colors">
+					<div class="flex items-center justify-between">
+						<div>
+							<p class="text-[var(--content-meta)] text-sm">{i18n(I18nKey.galleryTotalGroups)}</p>
+							<p class="text-2xl font-bold text-[var(--deep-text)] dark:text-white">{galleryData.data.length}</p>
+						</div>
+						<Icon name="material-symbols:photo-library" class="w-8 h-8 text-[var(--primary)]" />
+					</div>
+				</div>
+				<div class="bg-[var(--card-bg)] border border-[var(--line-divider)] rounded-[var(--radius-large)] p-4 hover:bg-[var(--btn-card-bg-hover)] transition-colors">
+					<div class="flex items-center justify-between">
+						<div>
+							<p class="text-[var(--content-meta)] text-sm">{i18n(I18nKey.galleryTotalImages)}</p>
+							<p class="text-2xl font-bold text-[var(--deep-text)] dark:text-white">{totalImages}</p>
+						</div>
+						<Icon name="material-symbols:image" class="w-8 h-8 text-[var(--primary)]" />
+					</div>
+				</div>
+				<div class="bg-[var(--card-bg)] border border-[var(--line-divider)] rounded-[var(--radius-large)] p-4 hover:bg-[var(--btn-card-bg-hover)] transition-colors">
+					<div class="flex items-center justify-between">
+						<div>
+							<p class="text-[var(--content-meta)] text-sm">{i18n(I18nKey.galleryRecentActivity)}</p>
+							<p class="text-2xl font-bold text-[var(--deep-text)] dark:text-white">3</p>
+						</div>
+						<Icon name="material-symbols:trending-up" class="w-8 h-8 text-[var(--primary)]" />
+					</div>
+				</div>
+			</div>
+
+			<!-- 相册组列表 -->
+			<div class="space-y-6">
+				{galleryData.data.map(group => (
+					<div class="gallery-group bg-[var(--card-bg)] rounded-[var(--radius-large)] overflow-hidden transition-all duration-300 hover:shadow-lg">
+						<!-- 相册组头部 - 可点击展开/折叠 -->
+						<div class="gallery-header cursor-pointer relative h-48 overflow-hidden group">
+						<img
+							src={group.coverImage}
+							alt={group.title}
+							class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+							loading="lazy"
+						/>
+						<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+						<div class="absolute bottom-4 left-4 text-white">
+							<h3 class="text-xl font-bold mb-1">{group.title}</h3>
+							<p class="text-sm opacity-90">{group.images.length} 张图片</p>
+							<p class="text-xs opacity-75 mt-1">{group.description}</p>
+						</div>
+						<div class="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-sm">
+							{formatDateI18n(group.createdAt)}
+						</div>
+						<!-- 展开/折叠图标 -->
+						<div class="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full">
+							<svg class="expand-icon w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+							</svg>
+						</div>
+					</div>
+
+						<!-- 相册组内容 - 默认隐藏 -->
+						<div class="gallery-content hidden">
+							<div class="p-6">
+								<!-- 标签 -->
+								<div class="flex flex-wrap gap-2 mb-4">
+									{group.tags.map(tag => (
+										<span class="bg-[var(--btn-regular-bg)] text-[var(--btn-content)] px-3 py-1 rounded-full text-sm">
+											{tag}
+										</span>
+									))}
+								</div>
+
+								<!-- 瀑布流图片网格 -->
+								<div class="masonry-grid">
+									{group.images.map((image, index) => (
+										<div class="gallery-image cursor-pointer group relative overflow-hidden rounded-lg mb-3" data-image={image}>
+											<img
+												src={image}
+												alt={`${group.title} - 图片 ${index + 1}`}
+												class="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
+												loading="lazy"
+											/>
+											<div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+												<svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+												</svg>
+											</div>
+										</div>
+									))}
+								</div>
+							</div>
+						</div>
+					</div>
+				))}
+			</div>
+		</div>
+	</div>
+</MainGridLayout>
+
+<!-- 相册功能已移至Layout.astro全局范围，无需本地调试脚本 -->
+
+<!-- 相册功能已移至全局范围，无需本地 JavaScript -->
+
+<style>
+	.btn-primary {
+		@apply bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)] active:bg-[var(--btn-regular-bg-active)] text-[var(--btn-content)] px-4 py-2 rounded-[var(--radius-large)] transition-colors duration-200 font-medium;
+	}
+
+	.card-base {
+		@apply bg-[var(--card-bg)] rounded-[var(--radius-large)] shadow-sm border border-[var(--line-divider)];
+	}
+
+	.line-clamp-2 {
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+	
+	.gallery-modal {
+		opacity: 0;
+		transition: opacity 0.2s ease;
+	}
+	
+	.gallery-viewer {
+		transform: scale(0.95);
+		transition: transform 0.2s ease;
+	}
+</style>
