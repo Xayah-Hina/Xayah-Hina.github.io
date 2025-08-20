@@ -3,7 +3,7 @@ import type { Translation } from "../translation";
 
 export const es: Translation = {
 	[Key.home]: "Inicio",
-	[Key.about]: "Sobre mí",
+	[Key.about]: "Acerca de nosotros",
 	[Key.archive]: "Archivo",
 	[Key.search]: "Buscar",
 
@@ -59,7 +59,8 @@ export const es: Translation = {
 	// Página 404
 	[Key.notFound]: "404",
 	[Key.notFoundTitle]: "Página no encontrada",
-	[Key.notFoundDescription]: "Lo sentimos, la página que buscas no existe o ha sido movida.",
+	[Key.notFoundDescription]:
+		"Lo sentimos, la página que buscas no existe o ha sido movida.",
 	[Key.backToHome]: "Volver al inicio",
 
 	// Reproductor de música

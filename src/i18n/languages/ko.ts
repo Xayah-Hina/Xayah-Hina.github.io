@@ -3,7 +3,7 @@ import type { Translation } from "../translation";
 
 export const ko: Translation = {
 	[Key.home]: "홈",
-	[Key.about]: "소개",
+	[Key.about]: "회사 소개",
 	[Key.archive]: "아카이브",
 	[Key.search]: "검색",
 
@@ -61,7 +61,8 @@ export const ko: Translation = {
 	// 404페이지
 	[Key.notFound]: "404",
 	[Key.notFoundTitle]: "페이지를 찾을 수 없습니다",
-	[Key.notFoundDescription]: "죄송합니다. 찾으시는 페이지가 존재하지 않거나 이동되었습니다.",
+	[Key.notFoundDescription]:
+		"죄송합니다. 찾으시는 페이지가 존재하지 않거나 이동되었습니다.",
 	[Key.backToHome]: "홈으로 돌아가기",
 
 	// 음악 플레이어

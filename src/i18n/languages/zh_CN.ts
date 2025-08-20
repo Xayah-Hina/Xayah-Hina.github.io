@@ -3,7 +3,7 @@ import type { Translation } from "../translation";
 
 export const zh_CN: Translation = {
 	[Key.home]: "主页",
-	[Key.about]: "关于",
+	[Key.about]: "关于我们",
 	[Key.archive]: "归档",
 	[Key.search]: "搜索",
 
@@ -69,4 +69,25 @@ export const zh_CN: Translation = {
 
 	// 音乐播放器
 	[Key.playlist]: "播放列表",
+
+	// 相册
+	[Key.gallery]: "相册",
+	[Key.gallerySubtitle]: "记录和分享美好瞬间",
+	[Key.galleryGroups]: "相册组",
+	[Key.galleryCreateGroup]: "创建相册组",
+	[Key.galleryGroupName]: "相册组名称",
+	[Key.galleryGroupDescription]: "相册组描述",
+	[Key.galleryGroupCover]: "封面图片",
+	[Key.galleryUploadImages]: "上传图片",
+	[Key.galleryImageCount]: "张图片",
+	[Key.galleryImagesCount]: "张图片",
+	[Key.galleryViewAll]: "查看全部",
+	[Key.galleryEdit]: "编辑",
+	[Key.galleryDelete]: "删除",
+	[Key.gallerySort]: "排序",
+	[Key.galleryComments]: "评论",
+	[Key.galleryAddComment]: "添加评论",
+	[Key.galleryNoGroups]: "暂无相册组",
+	[Key.galleryNoImages]: "该相册组暂无图片",
+	[Key.galleryCreateFirst]: "创建您的第一个相册组",
 };

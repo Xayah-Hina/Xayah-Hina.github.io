@@ -3,7 +3,7 @@ import type { Translation } from "../translation";
 
 export const tr: Translation = {
 	[Key.home]: "Anasayfa",
-	[Key.about]: "Hakkında",
+	[Key.about]: "Hakkımızda",
 	[Key.archive]: "Arşiv",
 	[Key.search]: "Ara",
 
@@ -59,7 +59,8 @@ export const tr: Translation = {
 	// 404 Sayfası
 	[Key.notFound]: "404",
 	[Key.notFoundTitle]: "Sayfa Bulunamadı",
-	[Key.notFoundDescription]: "Üzgünüz, aradığınız sayfa mevcut değil veya taşınmış.",
+	[Key.notFoundDescription]:
+		"Üzgünüz, aradığınız sayfa mevcut değil veya taşınmış.",
 	[Key.backToHome]: "Ana Sayfaya Dön",
 
 	// Müzik Çalar

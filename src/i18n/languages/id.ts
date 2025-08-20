@@ -3,7 +3,7 @@ import type { Translation } from "../translation";
 
 export const id: Translation = {
 	[Key.home]: "Beranda",
-	[Key.about]: "Tentang",
+	[Key.about]: "Tentang Kami",
 	[Key.archive]: "Arsip",
 	[Key.search]: "Cari",
 
@@ -59,7 +59,8 @@ export const id: Translation = {
 	// Halaman 404
 	[Key.notFound]: "404",
 	[Key.notFoundTitle]: "Halaman Tidak Ditemukan",
-	[Key.notFoundDescription]: "Maaf, halaman yang Anda cari tidak ada atau telah dipindahkan.",
+	[Key.notFoundDescription]:
+		"Maaf, halaman yang Anda cari tidak ada atau telah dipindahkan.",
 	[Key.backToHome]: "Kembali ke Beranda",
 
 	// Pemutar Musik

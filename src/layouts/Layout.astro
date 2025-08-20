@@ -969,3 +969,139 @@ if (window.swup) {
 	document.addEventListener("swup:enable", setup)
 }
 </script>
+
+<script>
+// 全局相册功能
+function initGalleryGlobal() {
+	// 移除之前的事件监听器（如果存在）
+	document.removeEventListener('click', handleGalleryClick);
+	
+	// 使用事件委托处理相册点击事件
+	function handleGalleryClick(e) {
+		// 处理相册头部点击（展开/折叠）
+		const galleryHeader = e.target.closest('.gallery-header');
+		if (galleryHeader) {
+			e.preventDefault();
+			const galleryGroup = galleryHeader.closest('.gallery-group');
+			const content = galleryGroup.querySelector('.gallery-content');
+			const expandIcon = galleryHeader.querySelector('.expand-icon');
+			
+			// 切换展开/折叠状态
+			if (content.classList.contains('hidden')) {
+				// 展开
+				content.classList.remove('hidden');
+				galleryGroup.classList.add('expanded');
+			} else {
+				// 折叠
+				content.classList.add('hidden');
+				galleryGroup.classList.remove('expanded');
+			}
+			return;
+		}
+		
+		// 处理图片点击（查看大图）
+		const galleryImage = e.target.closest('.gallery-image');
+		if (galleryImage) {
+			e.preventDefault();
+			const imageSrc = galleryImage.getAttribute('data-image');
+			if (imageSrc) {
+				showImageModal(imageSrc);
+			}
+			return;
+		}
+	}
+	
+	// 添加事件委托监听器
+	document.addEventListener('click', handleGalleryClick)
+
+	// 显示图片模态框
+	function showImageModal(imageSrc) {
+		// 创建模态框
+		const modal = document.createElement('div');
+		modal.className = 'image-modal fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4';
+		modal.innerHTML = `
+			<div class="relative max-w-full max-h-full">
+				<img src="${imageSrc}" alt="查看图片" class="max-w-full max-h-full object-contain rounded-lg" />
+				<button class="close-btn absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-colors">
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+					</svg>
+				</button>
+			</div>
+		`;
+
+		// 添加到页面
+		document.body.appendChild(modal);
+
+		// 添加动画效果
+		setTimeout(() => {
+			modal.style.opacity = '1';
+		}, 10);
+
+		// 关闭事件
+		const closeBtn = modal.querySelector('.close-btn');
+		closeBtn.addEventListener('click', closeImageModal);
+
+		// 点击背景关闭
+		modal.addEventListener('click', function(e) {
+			if (e.target === modal) {
+				closeImageModal();
+			}
+		});
+
+		// ESC键关闭
+		function handleEscKey(e) {
+			if (e.key === 'Escape') {
+				closeImageModal();
+			}
+		}
+		document.addEventListener('keydown', handleEscKey);
+
+		function closeImageModal() {
+			modal.style.opacity = '0';
+			setTimeout(() => {
+				if (document.body.contains(modal)) {
+					document.body.removeChild(modal);
+				}
+				document.removeEventListener('keydown', handleEscKey);
+			}, 200);
+		}
+	}
+
+	// 检查是否在相册页面并初始化
+	const galleryGroups = document.querySelectorAll('.gallery-group');
+	console.log('initGalleryGlobal 被调用，找到相册组数量:', galleryGroups.length);
+	if (galleryGroups.length > 0) {
+		console.log('开始初始化相册页面功能');
+		initGalleryPage();
+	}
+}
+
+// 全局相册设置
+const setupGallery = () => {
+	// 立即初始化
+	initGalleryGlobal();
+	
+	// 为Swup页面切换添加钩子
+	if (window.swup) {
+		window.swup.hooks.on("page:view", () => {
+			initGalleryGlobal();
+		});
+	}
+}
+
+// 确保在所有情况下都能正确初始化
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', () => {
+		setupGallery();
+	});
+} else {
+	// DOM已经加载完成，立即执行
+	setupGallery();
+}
+
+// 为Swup启用事件添加监听
+if (!window.swup) {
+	document.addEventListener("swup:enable", setupGallery);
+}
+</script>

@@ -136,12 +136,12 @@ export const navBarConfig: NavBarConfig = {
 		{
 			name: "My",
 			url: "/content/",
-			children: [
-				LinkPreset.About,
-				LinkPreset.Friends,
-				LinkPreset.Anime,
-				LinkPreset.Diary,
-			],
+			children: [LinkPreset.Anime, LinkPreset.Diary, LinkPreset.Gallery],
+		},
+		{
+			name: "About",
+			url: "/content/",
+			children: [LinkPreset.About, LinkPreset.Friends],
 		},
 	],
 };

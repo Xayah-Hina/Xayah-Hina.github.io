@@ -3,7 +3,7 @@ import type { Translation } from "../translation";
 
 export const ja: Translation = {
 	[Key.home]: "Home",
-	[Key.about]: "About",
+	[Key.about]: "私たちについて",
 	[Key.archive]: "Archive",
 	[Key.search]: "検索",
 
@@ -65,7 +65,8 @@ export const ja: Translation = {
 	// 404ページ
 	[Key.notFound]: "404",
 	[Key.notFoundTitle]: "ページが見つかりません",
-	[Key.notFoundDescription]: "申し訳ございませんが、お探しのページは存在しないか移動されました。",
+	[Key.notFoundDescription]:
+		"申し訳ございませんが、お探しのページは存在しないか移動されました。",
 	[Key.backToHome]: "ホームに戻る",
 
 	// 音楽プレーヤー

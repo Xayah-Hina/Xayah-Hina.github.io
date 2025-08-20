@@ -65,9 +65,31 @@ export const en: Translation = {
 	// 404页面
 	[Key.notFound]: "404",
 	[Key.notFoundTitle]: "Page Not Found",
-	[Key.notFoundDescription]: "Sorry, the page you are looking for doesn't exist or has been moved.",
+	[Key.notFoundDescription]:
+		"Sorry, the page you are looking for doesn't exist or has been moved.",
 	[Key.backToHome]: "Back to Home",
 
 	// Music Player
 	[Key.playlist]: "Playlist",
+
+	// Gallery
+	[Key.gallery]: "Gallery",
+	[Key.gallerySubtitle]: "Capture and share beautiful moments",
+	[Key.galleryGroups]: "Gallery Groups",
+	[Key.galleryCreateGroup]: "Create Group",
+	[Key.galleryGroupName]: "Group Name",
+	[Key.galleryGroupDescription]: "Group Description",
+	[Key.galleryGroupCover]: "Cover Image",
+	[Key.galleryUploadImages]: "Upload Images",
+	[Key.galleryImageCount]: "image",
+	[Key.galleryImagesCount]: "images",
+	[Key.galleryViewAll]: "View All",
+	[Key.galleryEdit]: "Edit",
+	[Key.galleryDelete]: "Delete",
+	[Key.gallerySort]: "Sort",
+	[Key.galleryComments]: "Comments",
+	[Key.galleryAddComment]: "Add Comment",
+	[Key.galleryNoGroups]: "No gallery groups yet",
+	[Key.galleryNoImages]: "No images in this group",
+	[Key.galleryCreateFirst]: "Create your first gallery group",
 };

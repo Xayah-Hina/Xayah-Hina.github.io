@@ -81,6 +81,7 @@ export enum LinkPreset {
 	Friends = 3,
 	Anime = 4,
 	Diary = 5,
+	Gallery = 6,
 }
 
 export type NavBarLink = {
@@ -168,13 +169,13 @@ export type MusicPlayerConfig = {
 };
 
 // 组件配置类型定义
-export type WidgetComponentType = 
-	| "profile" 
-	| "announcement" 
-	| "categories" 
-	| "tags" 
-	| "toc" 
-	| "music-player" 
+export type WidgetComponentType =
+	| "profile"
+	| "announcement"
+	| "categories"
+	| "tags"
+	| "toc"
+	| "music-player"
 	| "custom";
 
 export type WidgetComponentConfig = {
