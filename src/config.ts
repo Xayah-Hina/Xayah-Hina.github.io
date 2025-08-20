@@ -111,15 +111,37 @@ export const navBarConfig: NavBarConfig = {
 	links: [
 		LinkPreset.Home,
 		LinkPreset.Archive,
-		LinkPreset.About,
-		LinkPreset.Friends,
-		LinkPreset.Anime,
-		LinkPreset.Diary,
+		// 支持自定义导航栏链接,并且支持多级菜单,3.1版本新加
 		{
-			name: "GitHub",
-			url: "https://github.com/matsuzaka-yuki", // Internal links should not include base path as it will be automatically added
-
-			external: true, // Show external link icon and open in new tab
+			name: "Links",
+			url: "/links/",
+			children: [
+				{
+					name: "GitHub",
+					url: "https://github.com/matsuzaka-yuki/Mizuki",
+					external: true,
+				},
+				{
+					name: "Bilibili",
+					url: "https://space.bilibili.com/701864046",
+					external: true,
+				},
+				{
+					name: "Gitee",
+					url: "https://gitee.com/matsuzakayuki/Mizuki",
+					external: true,
+				},
+			],
+		},
+		{
+			name: "My",
+			url: "/content/",
+			children: [
+				LinkPreset.About,
+				LinkPreset.Friends,
+				LinkPreset.Anime,
+				LinkPreset.Diary,
+			],
 		},
 	],
 };
@@ -287,7 +309,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		// 不同设备的布局模式
 		//hidden:不显示侧边栏 sidebar:显示侧边栏
 		layout: {
-			// 移动端：隐藏侧边栏
+			// 移动端：抽屉模式
 			mobile: "sidebar",
 			// 平板端：显示侧边栏
 			tablet: "sidebar",

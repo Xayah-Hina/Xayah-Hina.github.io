@@ -1,4 +1,4 @@
-import type { AUTO_MODE, DARK_MODE, LIGHT_MODE } from "@constants/constants";
+import type { AUTO_MODE, DARK_MODE, LIGHT_MODE } from "../constants/constants";
 
 export type SiteConfig = {
 	title: string;
@@ -87,6 +87,7 @@ export type NavBarLink = {
 	name: string;
 	url: string;
 	external?: boolean;
+	children?: (NavBarLink | LinkPreset)[]; // 支持子菜单，可以是NavBarLink或LinkPreset
 };
 
 export type NavBarConfig = {
