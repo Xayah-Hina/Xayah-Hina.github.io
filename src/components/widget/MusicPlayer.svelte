@@ -415,7 +415,7 @@ onDestroy(() => {
             <div class="cover-container relative w-12 h-12 rounded-full overflow-hidden">
                 <img src={getAssetPath(currentSong.cover)} alt="封面"
                      class="w-full h-full object-cover transition-transform duration-300"
-                     class:animate-spin={isPlaying && !isLoading}
+                     class:spinning={isPlaying && !isLoading}
                      class:animate-pulse={isLoading} />
                 <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                     {#if isLoading}
@@ -453,7 +453,7 @@ onDestroy(() => {
             <div class="cover-container relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
                 <img src={getAssetPath(currentSong.cover)} alt="封面"
                      class="w-full h-full object-cover transition-transform duration-300"
-                     class:animate-spin={isPlaying && !isLoading}
+                     class:spinning={isPlaying && !isLoading}
                      class:animate-pulse={isLoading} />
             </div>
             <div class="flex-1 min-w-0">
@@ -679,17 +679,7 @@ onDestroy(() => {
 .expanded-player {
     width: 320px;
 }
-.cover-container img.animate-spin {
-    animation: spin 3s linear infinite;
-}
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
+
 .animate-pulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
@@ -789,6 +779,25 @@ onDestroy(() => {
         height: 12px;
     }
 }
+/* 自定义旋转动画，停止时保持当前位置 */
+@keyframes spin-continuous {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.cover-container img {
+    animation: spin-continuous 3s linear infinite;
+    animation-play-state: paused;
+}
+
+.cover-container img.spinning {
+    animation-play-state: running;
+}
+
 /* 让主题色按钮更有视觉反馈 */
 button.bg-\[var\(--primary\)\] {
     box-shadow: 0 0 0 2px var(--primary);
