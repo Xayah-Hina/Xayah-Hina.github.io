@@ -82,6 +82,7 @@ export enum LinkPreset {
 	Anime = 4,
 	Diary = 5,
 	Gallery = 6,
+	Series = 7,
 }
 
 export type NavBarLink = {
@@ -109,6 +110,8 @@ export type ProfileConfig = {
 		shareId: string;
 		region: string;
 	};
+	icp?: string;
+	icpEnable?: boolean;
 };
 
 export type LicenseConfig = {
@@ -142,6 +145,7 @@ export type BlogPostData = {
 	tags: string[];
 	draft?: boolean;
 	image?: string;
+	series?: string;
 	category?: string;
 	pinned?: boolean;
 	prevTitle?: string;

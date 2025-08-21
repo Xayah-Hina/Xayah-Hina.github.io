@@ -3,6 +3,7 @@ import type { Translation } from "../translation";
 
 export const ko: Translation = {
 	[Key.home]: "홈",
+	[Key.series]: "시리즈",
 	[Key.about]: "회사 소개",
 	[Key.archive]: "아카이브",
 	[Key.search]: "검색",
