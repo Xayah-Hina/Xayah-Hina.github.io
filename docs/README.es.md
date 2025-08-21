@@ -10,7 +10,7 @@
 Una plantilla de blog estático moderna y rica en características con funcionalidades avanzadas y hermoso diseño, construida con [Astro](https://astro.build).
 
 [**🖥️ Demo en vivo**](https://mizuki.mysqil.com/)
-[**🖥️ Documentación oficial de usuario de Mizuki**](https://docs.mizuki.mysqil.com/)
+[**🔧 Documentación oficial de usuario de Mizuki**](https://docs.mizuki.mysqil.com/)
 
 🌏 Idiomas README
 [**中文**](../README.md) /
