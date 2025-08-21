@@ -5,6 +5,7 @@ import Navbar from "@components/Navbar.astro";
 import SideBar from "@components/widget/SideBar.astro";
 import type { MarkdownHeading } from "astro";
 import { Icon } from "astro-icon/components";
+import { compileModule } from "svelte/compiler";
 import ImageWrapper from "../components/misc/ImageWrapper.astro";
 import TypewriterText from "../components/TypewriterText.astro";
 import TOC from "../components/widget/TOC.astro";
@@ -353,6 +354,7 @@ const mainContentClass = `
         {!siteConfig.toc.enable && <div id="toc"></div>}
     </div>
 </div>
+<script defer src="https://cloud.umami.is/script.js" data-website-id="YOUR_UMAMI_WEBSITE_ID" slot="head"></script>
 </Layout>
 
 <style>
