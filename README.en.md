@@ -137,7 +137,13 @@ Deploy your blog to any static hosting platform:
 
 Before deployment, update the `site` URL in `astro.config.mjs`.
 
-## 📝 Post Frontmatter
+### Deploy to Vercel
+
+It is relatively well-known, but the provided domain name is blocked. The speed is acceptable with a custom domain. Cold start speed is average.
+
+<a href="https://vercel.com/import/project?template=https://github.com/matsuzaka-yuki/Mizuki"><img src="https://vercel.com/button" height="36"></a>
+
+### 📝 Post Frontmatter
 
 ```yaml
 ---

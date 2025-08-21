@@ -132,6 +132,12 @@
 
 デプロイ前に、`astro.config.mjs`の`site` URLを更新してください。
 
+### Vercelへのデプロイ
+
+比較的有名ですが、提供されているドメイン名はブロックされています。カスタムドメインを使用すると速度は許容範囲です。コールドスタートの速度は平均的です。
+
+<a href="https://vercel.com/import/project?template=https://github.com/matsuzaka-yuki/Mizuki"><img src="https://vercel.com/button" height="36"></a>
+
 ## 📝 投稿フロントマター
 
 ```yaml

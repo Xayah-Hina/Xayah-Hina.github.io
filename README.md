@@ -119,6 +119,10 @@
    ```
    博客将在 `http://localhost:4321` 可用
 
+
+
+
+
 ### 📝 内容管理
 
 - **创建新文章：** `pnpm new-post <文件名>`
@@ -136,6 +140,17 @@
 - **Cloudflare Pages：** 连接您的仓库
 
 部署前，请在 `astro.config.mjs` 中更新 `site` URL。
+### 部署到vercel
+
+比较出名，提供的域名被阻断，使用自有域名后速度尚可。冷启动速度一般。
+
+<a href="https://vercel.com/import/project?template=https://github.com/matsuzaka-yuki/Mizuki"><img src="https://vercel.com/button" height="36"></a>
+
+一直下一步即可。
+
+<details>
+
+<summary>Deprecated</summary>
 
 ## 📝 文章前言格式
 

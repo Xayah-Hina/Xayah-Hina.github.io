@@ -132,7 +132,13 @@
 
 배포 전에 `astro.config.mjs`의 `site` URL을 업데이트하세요.
 
-## 📝 게시물 프론트매터
+### Vercel에 배포
+
+상대적으로 잘 알려져 있지만, 제공된 도메인 이름은 차단되어 있습니다. 사용자 지정 도메인을 사용하면 속도는 괜찮습니다. 콜드 스타트 속도는 보통입니다.
+
+<a href="https://vercel.com/import/project?template=https://github.com/matsuzaka-yuki/Mizuki"><img src="https://vercel.com/button" height="36"></a>
+
+### 📝 게시물 프론트매터
 
 ```yaml
 ---

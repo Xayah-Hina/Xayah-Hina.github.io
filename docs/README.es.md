@@ -132,6 +132,12 @@ Despliega tu blog en plataformas de hosting estático:
 
 Recuerda actualizar la URL `site` en `astro.config.mjs` antes del despliegue.
 
+### Despliegue en Vercel
+
+Es relativamente conocido, pero el nombre de dominio proporcionado está bloqueado. La velocidad es aceptable con un dominio personalizado. La velocidad de arranque en frío es promedio.
+
+<a href="https://vercel.com/import/project?template=https://github.com/matsuzaka-yuki/Mizuki"><img src="https://vercel.com/button" height="36"></a>
+
 ## 📝 Frontmatter de Publicaciones
 
 ```yaml

@@ -132,11 +132,17 @@ Stellen Sie Ihren Blog auf statischen Hosting-Plattformen bereit:
 
 Vergessen Sie nicht, die `site`-URL in `astro.config.mjs` vor der Bereitstellung zu aktualisieren.
 
+### Bereitstellung auf Vercel
+
+Es ist relativ bekannt, aber der bereitgestellte Domainname ist blockiert. Die Geschwindigkeit ist mit einer benutzerdefinierten Domain akzeptabel. Die Kaltstartgeschwindigkeit ist durchschnittlich.
+
+<a href="https://vercel.com/import/project?template=https://github.com/matsuzaka-yuki/Mizuki"><img src="https://vercel.com/button" height="36"></a>
+
 ## 📝 Beitrags-Frontmatter
 
 ```yaml
 ---
-title: Mein Erster Blog-Beitrag
+```title: Mein Erster Blog-Beitrag
 published: 2023-09-09
 description: Dies ist der erste Beitrag meines neuen Astro-Blogs.
 image: ./cover.jpg
