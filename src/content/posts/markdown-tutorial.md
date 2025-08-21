@@ -9,6 +9,7 @@ licenseName: "Unlicensed"
 author: emn178
 sourceLink: "https://github.com/emn178/markdown"
 draft: false
+series: "Markdown"
 ---
 
 # Markdown Tutorial

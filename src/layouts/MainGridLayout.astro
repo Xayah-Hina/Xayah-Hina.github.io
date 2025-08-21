@@ -25,6 +25,7 @@ interface Props {
 	lang?: string;
 	setOGTypeArticle?: boolean;
 	headings?: MarkdownHeading[];
+	series?: string;
 }
 
 // 类型守卫函数
@@ -68,6 +69,7 @@ const {
 	lang,
 	setOGTypeArticle,
 	headings = [],
+	series,
 } = Astro.props;
 const hasBannerCredit =
 	siteConfig.banner.enable && siteConfig.banner.credit.enable;
@@ -311,7 +313,7 @@ const mainContentClass = `
             </a>}
 
 
-            {(mobileShowSidebar || tabletShowSidebar || desktopShowSidebar) && <SideBar class={sidebarClass} headings={headings}></SideBar>}
+            {(mobileShowSidebar || tabletShowSidebar || desktopShowSidebar) && <SideBar class={sidebarClass} headings={headings} series={series}></SideBar>}
 
             <main id="swup-container" class={mainContentClass}>
                 <div id="content-wrapper" class="onload-animation">
