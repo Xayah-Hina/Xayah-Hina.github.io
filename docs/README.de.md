@@ -16,7 +16,9 @@ Eine moderne, funktionsreiche statische Blog-Vorlage mit erweiterten Funktionen 
 [**English**](../README.en.md) /
 [**Deutsch**](./README.de.md)
 
-## 🆕 Neues in v3.0
+## 🆕 Neues in v3.3
+- **Mermaid Syntax-Unterstützung:** Unterstützung für die Mermaid-Diagrammsyntax hinzugefügt, die das direkte Einbetten von Flussdiagrammen, Sequenzdiagrammen, Gantt-Diagrammen usw. in Markdown.
+- **Umami Zugriffsstatistik:** Unterstützung für Umami Zugriffsstatistik hinzugefügt, die eine einfache Integration der Website-Verkehrsdatenanalyse ermöglicht.
 
 ![Configuration](configuration.svg)
 

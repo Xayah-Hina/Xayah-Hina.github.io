@@ -16,7 +16,9 @@ Un modèle de blog statique moderne et riche en fonctionnalités avec des foncti
 [**English**](../README.en.md) /
 [**Français**](./README.fr.md)
 
-## 🆕 Nouveautés de la v3.0
+## 🆕 Nouveautés de la v3.3
+- **Support de la syntaxe Mermaid :** Ajout du support de la syntaxe de diagramme Mermaid, permettant l'intégration directe de diagrammes de flux, de diagrammes de séquence, de diagrammes de Gantt, etc., dans Markdown.
+- **Statistiques Umami :** Ajout du support des statistiques Umami, permettant une intégration facile de l'analyse des données de trafic du site web.
 
 ![Configuration](configuration.svg)
 

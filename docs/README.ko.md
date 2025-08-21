@@ -16,7 +16,9 @@
 [**English**](../README.en.md) /
 [**한국어**](./README.ko.md)
 
-## 🆕 v3.0의 새로운 기능
+## 🆕 v3.3의 새로운 기능
+- **Mermaid 구문 지원:** Mermaid 다이어그램 구문 지원이 추가되어 흐름도, 순서도, 간트 차트 등을 Markdown에 직접 삽입할 수 있습니다.
+- **Umami 액세스 통계:** Umami 액세스 통계 지원이 추가되어 웹사이트 트래픽 데이터 분석을 쉽게 통합할 수 있습니다.
 
 ![Configuration](configuration.svg)
 

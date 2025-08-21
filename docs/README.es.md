@@ -16,7 +16,9 @@ Una plantilla de blog estático moderna y rica en características con funcional
 [**English**](../README.en.md) /
 [**Español**](./README.es.md)
 
-## 🆕 Novedades en v3.0
+## 🆕 Novedades en v3.3
+- **Soporte de sintaxis de Mermaid:** Se añadió soporte para la sintaxis de diagramas de Mermaid, permitiendo la incrustación directa de diagramas de flujo, diagramas de secuencia, diagramas de Gantt, etc., en Markdown.
+- **Estadísticas de Umami:** Se añadió soporte para estadísticas de Umami, permitiendo la fácil integración del análisis de tráfico del sitio web.
 
 ![Configuration](configuration.svg)
 

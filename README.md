@@ -21,7 +21,9 @@
 [**Español**](./docs/README.es.md) /
 [**Русский**](./docs/README.ru.md)
 
-## 🆕 v3.0 版本更新
+## 🆕 v3.3 版本更新
+- **Mermaid 语法支持：** 添加了对 Mermaid 图表语法的支持，现在可以在 Markdown 中直接嵌入流程图、序列图、甘特图等。
+- **Umami 访问统计：** 添加了对 Umami 访问统计的支持，可以轻松集成网站访问数据分析。
 
 ![Configuration](configuration.svg)
 

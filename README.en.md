@@ -21,7 +21,9 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 [**Español**](./docs/README.es.md) /
 [**Русский**](./docs/README.ru.md)
 
-## 🆕 What's New in v3.0
+## 🆕 What's New in v3.3
+- **Mermaid Syntax Support:** Added support for Mermaid diagram syntax, allowing direct embedding of flowcharts, sequence diagrams, Gantt charts, etc., in Markdown.
+- **Umami Analytics:** Added support for Umami analytics, enabling easy integration of website traffic data analysis.
 
 ![Configuration](configuration.svg)
 

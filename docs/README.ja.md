@@ -16,7 +16,9 @@
 [**English**](../README.en.md) /
 [**日本語**](./README.ja.md)
 
-## 🆕 v3.0の新機能
+## 🆕 v3.3の新機能
+- **Mermaid構文のサポート：** Mermaid図の構文サポートを追加し、フローチャート、シーケンス図、ガントチャートなどをMarkdownに直接埋め込むことができます。
+- **Umamiアクセス統計：** Umamiアクセス統計のサポートを追加し、ウェブサイトのトラフィックデータ分析を簡単に統合できるようにしました。
 
 ![Configuration](configuration.svg)
 
