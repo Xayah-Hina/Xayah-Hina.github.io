@@ -1,5 +1,6 @@
 ---
 import { Icon } from "astro-icon/components";
+import { profileConfig } from "../config";
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 import { formatDateToYYYYMMDD } from "../utils/date-utils";
@@ -23,6 +24,10 @@ const {
 	hideUpdateDate = false,
 } = Astro.props;
 const className = Astro.props.class;
+const homePaths = ["/", ...Array.from({ length: 20 }, (_, i) => `/${i + 1}/`)];
+const isHome = homePaths.includes(Astro.url.pathname);
+const umamiShareId = profileConfig.umami?.shareId || "";
+const umamiRegion = profileConfig.umami?.region || "eu";
 ---
 
 <div class:list={["flex flex-wrap text-neutral-500 dark:text-neutral-400 items-center gap-4 gap-x-4 gap-y-2", className]}>
@@ -79,4 +84,76 @@ const className = Astro.props.class;
             {!(tags && tags.length > 0) && <div class="transition text-50 text-sm font-medium">{i18n(I18nKey.noTags)}</div>}
         </div>
     </div>
+        <!-- 访问量（首页不显示，且umami.enable为true时显示） -->
+        {!isHome && profileConfig.umami?.enable && (
+                <>
+                    <div class="flex items-center">
+                            <div class="meta-icon">
+                                    <Icon name="material-symbols:visibility-outline-rounded" class="text-xl"></Icon>
+                            </div>
+                            <span>浏览量：<span id="post-umami-pageviews">加载中...</span></span>，
+                            <span>访问次数：<span id="post-umami-visits">加载中...</span></span>
+                    </div>
+
+                    <script is:inline define:vars={{umamiShareId, umamiRegion}}>
+                        const fetchUmamiStatss = async () => {
+                            try {
+                                const pathname = window.location.pathname;
+                                const shareId = umamiShareId;
+                                const region = umamiRegion;
+                                console.log('shareId:', shareId, 'region:', region);
+                                console.log('pathname:', pathname);
+                                
+                                const shareRes = await fetch(`https://${region}.umami.is/api/share/${shareId}`);
+                                console.log('shareRes status:', shareRes.status);
+                                
+                                if (!shareRes.ok) {
+                                    throw new Error(`Share API failed: ${shareRes.status}`);
+                                }
+                                
+                                const shareData = await shareRes.json();
+                                console.log('shareData:', shareData);
+                                const token = shareData.token;
+                                const websiteId = shareData.websiteId || shareData.website_id || shareData.id;
+                                console.log('token:', token, 'websiteId:', websiteId);
+                                
+                                const statsUrl = `https://${region}.umami.is/api/websites/${websiteId}/stats?` +
+                                        new URLSearchParams({
+                                                startAt: '1753333200000',
+                                                endAt: Date.now(),
+                                                unit: 'hour',
+                                                timezone: 'Asia/Hong_Kong',
+                                                url: pathname,
+                                                compare: 'false',
+                                        });
+                                console.log('statsUrl:', statsUrl);
+                                        
+                                const res = await fetch(statsUrl, {
+                                        method: 'GET',
+                                        headers: {
+                                                'x-umami-share-token': token,
+                                        },
+                                });
+                                console.log('stats res status:', res.status);
+                                
+                                if (!res.ok) {
+                                    document.getElementById('post-umami-pageviews').textContent = 'N/A';
+                                    document.getElementById('post-umami-visits').textContent = 'N/A';
+                                    return;
+                                }
+                                const data = await res.json();
+                                console.log('stats data:', data);
+                                document.getElementById('post-umami-pageviews').textContent = data.pageviews?.value ?? 'N/A';
+                                document.getElementById('post-umami-visits').textContent = data.visits?.value ?? 'N/A';
+                            } catch (error) {
+                                console.error('Umami stats error:', error);
+                                document.getElementById('post-umami-pageviews').textContent = 'Error';
+                                document.getElementById('post-umami-visits').textContent = 'Error';
+                            }
+                        };
+                        fetchUmamiStatss();
+                        setInterval(fetchUmamiStatss, 5000);
+                    </script>
+                </>
+        )}
 </div>
