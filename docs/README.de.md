@@ -9,7 +9,8 @@
 
 Eine moderne, funktionsreiche statische Blog-Vorlage mit erweiterten Funktionen und schönem Design, erstellt mit [Astro](https://astro.build).
 
-[**🖥️ Live-Demo**](https://blog.mysqil.com/)
+[**🖥️ Live-Demo**](https://mizuki.mysqil.com/)
+[**🔧 Offizielle Mizuki-Benutzerdokumentation**](https://docs.mizuki.mysqil.com/)
 
 🌏 README-Sprachen
 [**中文**](../README.md) /
@@ -132,11 +133,7 @@ Stellen Sie Ihren Blog auf statischen Hosting-Plattformen bereit:
 
 Vergessen Sie nicht, die `site`-URL in `astro.config.mjs` vor der Bereitstellung zu aktualisieren.
 
-### Bereitstellung auf Vercel
 
-Es ist relativ bekannt, aber der bereitgestellte Domainname ist blockiert. Die Geschwindigkeit ist mit einer benutzerdefinierten Domain akzeptabel. Die Kaltstartgeschwindigkeit ist durchschnittlich.
-
-<a href="https://vercel.com/import/project?template=https://github.com/matsuzaka-yuki/Mizuki"><img src="https://vercel.com/button" height="36"></a>
 
 ## 📝 Beitrags-Frontmatter
 

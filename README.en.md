@@ -9,7 +9,8 @@
 
 A modern, feature-rich static blog template built with [Astro](https://astro.build), enhanced with advanced functionality and beautiful design.
 
-[**🖥️ Live Demo**](https://blog.mysqil.com/)
+[**🖥️ Live Demo**](https://mizuki.mysqil.com/)
+[**🔧 Mizuki Official User Documentation**](https://docs.mizuki.mysqil.com/)
 
 🌏 README Languages
 [**中文**](./README.md) /
@@ -137,11 +138,7 @@ Deploy your blog to any static hosting platform:
 
 Before deployment, update the `site` URL in `astro.config.mjs`.
 
-### Deploy to Vercel
 
-It is relatively well-known, but the provided domain name is blocked. The speed is acceptable with a custom domain. Cold start speed is average.
-
-<a href="https://vercel.com/import/project?template=https://github.com/matsuzaka-yuki/Mizuki"><img src="https://vercel.com/button" height="36"></a>
 
 ### 📝 Post Frontmatter
 

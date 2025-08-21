@@ -9,7 +9,8 @@
 
 一个现代化、功能丰富的静态博客模板，基于 [Astro](https://astro.build) 构建，具有先进的功能和精美的设计。
 
-[**🖥️ 在线演示**](https://blog.mysqil.com/)
+[**🖥️ 在线演示**](https://mizuki.mysqil.com/)
+[**🔧 Mizuki官方用户文档**](https://docs.mizuki.mysqil.com/)
 
 🌏 README 语言
 [**中文**](./README.md) /
@@ -140,13 +141,7 @@
 - **Cloudflare Pages：** 连接您的仓库
 
 部署前，请在 `astro.config.mjs` 中更新 `site` URL。
-### 部署到vercel
 
-比较出名，提供的域名被阻断，使用自有域名后速度尚可。冷启动速度一般。
-
-<a href="https://vercel.com/import/project?template=https://github.com/matsuzaka-yuki/Mizuki"><img src="https://vercel.com/button" height="36"></a>
-
-一直下一步即可。
 
 
 

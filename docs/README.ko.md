@@ -9,7 +9,8 @@
 
 [Astro](https://astro.build)로 구축된 고급 기능과 아름다운 디자인을 갖춘 현대적이고 기능이 풍부한 정적 블로그 템플릿입니다.
 
-[**🖥️ 라이브 데모**](https://blog.mysqil.com/)
+[**🖥️ 라이브 데모**](https://mizuki.mysqil.com/)
+[**🔧 Mizuki 공식 사용자 문서**](https://docs.mizuki.mysqil.com/)
 
 🌏 README 언어
 [**中文**](../README.md) /
@@ -132,11 +133,7 @@
 
 배포 전에 `astro.config.mjs`의 `site` URL을 업데이트하세요.
 
-### Vercel에 배포
 
-상대적으로 잘 알려져 있지만, 제공된 도메인 이름은 차단되어 있습니다. 사용자 지정 도메인을 사용하면 속도는 괜찮습니다. 콜드 스타트 속도는 보통입니다.
-
-<a href="https://vercel.com/import/project?template=https://github.com/matsuzaka-yuki/Mizuki"><img src="https://vercel.com/button" height="36"></a>
 
 ### 📝 게시물 프론트매터
 
