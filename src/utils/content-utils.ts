@@ -13,68 +13,13 @@ async function getRawSortedPosts() {
 		// 首先按置顶状态排序，置顶文章在前
 		if (a.data.pinned && !b.data.pinned) return -1;
 		if (!a.data.pinned && b.data.pinned) return 1;
-
+		
 		// 如果置顶状态相同，则按发布日期排序
 		const dateA = new Date(a.data.published);
 		const dateB = new Date(b.data.published);
 		return dateA > dateB ? -1 : 1;
 	});
 	return sorted;
-}
-
-export async function getPostSeries(
-	seriesName: string,
-): Promise<{ body: string; data: BlogPostData; slug: string }[]> {
-	const posts = (await getCollection("posts", ({ data }) => {
-		return (
-			(import.meta.env.PROD ? data.draft !== true : true) &&
-			data.series === seriesName
-		);
-	})) as unknown as { body: string; data: BlogPostData; slug: string }[];
-
-	posts.sort((a, b) => {
-		const dateA = new Date(a.data.published);
-		const dateB = new Date(b.data.published);
-		return dateA > dateB ? 1 : -1;
-	});
-
-	return posts;
-}
-
-export async function getAllSeries(): Promise<
-	{ name: string; count: number; posts: PostForList[] }[]
-> {
-	const posts = await getSortedPostsList();
-	const seriesMap = new Map<string, PostForList[]>();
-
-	// 按系列分组
-	posts.forEach((post) => {
-		if (post.data.series) {
-			if (!seriesMap.has(post.data.series)) {
-				seriesMap.set(post.data.series, []);
-			}
-			const seriesPosts = seriesMap.get(post.data.series);
-			if (seriesPosts) {
-				seriesPosts.push(post);
-			}
-		}
-	});
-
-	// 转换为数组并排序
-	const seriesArray = Array.from(seriesMap.entries()).map(([name, posts]) => ({
-		name,
-		count: posts.length,
-		posts: posts.sort((a, b) => {
-			const dateA = new Date(a.data.published);
-			const dateB = new Date(b.data.published);
-			return dateA > dateB ? 1 : -1;
-		}),
-	}));
-
-	// 按文章数量排序
-	seriesArray.sort((a, b) => b.count - a.count);
-
-	return seriesArray;
 }
 
 export async function getSortedPosts() {

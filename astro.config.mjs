@@ -27,7 +27,7 @@ import { remarkMermaid } from "./src/plugins/remark-mermaid.js";
 import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
 // https://astro.build/config
 export default defineConfig({
-	site: "https://mizuki.mysqil.com/",
+	site: "https://blog.mysqil.com/",
 
 	base: "/",
 	trailingSlash: "always",
@@ -40,7 +40,7 @@ export default defineConfig({
 			animationClass: "transition-swup-", // see https://swup.js.org/options/#animationselector
 			// the default value `transition-` cause transition delay
 			// when the Tailwind class `transition-all` is used
-			containers: ["main", "#series"],
+			containers: ["main"],
 			smoothScrolling: false, // 禁用平滑滚动以提升性能
 			cache: true,
 			preload: false, // 禁用预加载以减少网络请求

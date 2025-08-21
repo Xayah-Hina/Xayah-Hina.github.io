@@ -1,22 +1,19 @@
 ---
 import type { MarkdownHeading } from "astro";
 import { widgetManager } from "../../utils/widget-manager";
+import Profile from "./Profile.astro";
 import Announcement from "./Announcement.astro";
 import Categories from "./Categories.astro";
-import MusicPlayer from "./MusicPlayer.svelte";
-import Profile from "./Profile.astro";
-import Series from "./Series.astro";
 import Tags from "./Tags.astro";
 import TOC from "./TOC.astro";
+import MusicPlayer from "./MusicPlayer.svelte";
 
 interface Props {
 	class?: string;
 	headings?: MarkdownHeading[];
-	series?: string;
 }
 
 const { class: className, headings } = Astro.props;
-const series = Astro.props.series;
 
 // 获取配置的组件列表
 const topComponents = widgetManager.getComponentsByPosition("top");
@@ -34,21 +31,20 @@ const componentMap = {
 
 // 渲染组件的辅助函数
 function renderComponent(component: any, index: number, components: any[]) {
-	const ComponentToRender =
-		componentMap[component.type as keyof typeof componentMap];
+	const ComponentToRender = componentMap[component.type as keyof typeof componentMap];
 	if (!ComponentToRender) return null;
-
+	
 	const componentClass = widgetManager.getComponentClass(component, index);
 	const componentStyle = widgetManager.getComponentStyle(component, index);
-
+	
 	return {
 		Component: ComponentToRender,
 		props: {
 			class: componentClass,
 			style: componentStyle,
-			headings: component.type === "toc" ? headings : undefined,
+			headings: component.type === 'toc' ? headings : undefined,
 			...component.customProps,
-		},
+		}
 	};
 }
 ---
@@ -64,9 +60,6 @@ function renderComponent(component: any, index: number, components: any[]) {
 				const { Component, props } = renderData;
 				return <Component {...props} />;
 			})}
-		<div id="series" class="flex flex-col w-full gap-4">
-            { series && <Series series={ series }></Series> }
-        </div>
 		</div>
 	)}
 	

@@ -9,8 +9,7 @@
 
 Eine moderne, funktionsreiche statische Blog-Vorlage mit erweiterten Funktionen und schönem Design, erstellt mit [Astro](https://astro.build).
 
-[**🖥️ Live-Demo**](https://mizuki.mysqil.com/)
-[**🔧 Offizielle Mizuki-Benutzerdokumentation**](https://docs.mizuki.mysqil.com/)
+[**🖥️ Live-Demo**](https://blog.mysqil.com/)
 
 🌏 README-Sprachen
 [**中文**](../README.md) /
@@ -133,13 +132,11 @@ Stellen Sie Ihren Blog auf statischen Hosting-Plattformen bereit:
 
 Vergessen Sie nicht, die `site`-URL in `astro.config.mjs` vor der Bereitstellung zu aktualisieren.
 
-
-
 ## 📝 Beitrags-Frontmatter
 
 ```yaml
 ---
-```title: Mein Erster Blog-Beitrag
+title: Mein Erster Blog-Beitrag
 published: 2023-09-09
 description: Dies ist der erste Beitrag meines neuen Astro-Blogs.
 image: ./cover.jpg

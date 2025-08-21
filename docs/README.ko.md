@@ -9,8 +9,7 @@
 
 [Astro](https://astro.build)로 구축된 고급 기능과 아름다운 디자인을 갖춘 현대적이고 기능이 풍부한 정적 블로그 템플릿입니다.
 
-[**🖥️ 라이브 데모**](https://mizuki.mysqil.com/)
-[**🔧 Mizuki 공식 사용자 문서**](https://docs.mizuki.mysqil.com/)
+[**🖥️ 라이브 데모**](https://blog.mysqil.com/)
 
 🌏 README 언어
 [**中文**](../README.md) /
@@ -133,9 +132,7 @@
 
 배포 전에 `astro.config.mjs`의 `site` URL을 업데이트하세요.
 
-
-
-### 📝 게시물 프론트매터
+## 📝 게시물 프론트매터
 
 ```yaml
 ---

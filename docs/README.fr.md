@@ -9,8 +9,7 @@
 
 Un modèle de blog statique moderne et riche en fonctionnalités avec des fonctionnalités avancées et un design magnifique, construit avec [Astro](https://astro.build).
 
-[**🖥️ Démo en direct**](https://mizuki.mysqil.com/)
-[**🔧 Documentation utilisateur officielle de Mizuki**](https://docs.mizuki.mysqil.com/)
+[**🖥️ Démo en direct**](https://blog.mysqil.com/)
 
 🌏 Langues README
 [**中文**](../README.md) /
@@ -132,8 +131,6 @@ Déployez votre blog sur des plateformes d'hébergement statique :
 - **Cloudflare Pages :** Connectez votre dépôt
 
 N'oubliez pas de mettre à jour l'URL `site` dans `astro.config.mjs` avant le déploiement.
-
->
 
 ## 📝 Front Matter des Articles
 

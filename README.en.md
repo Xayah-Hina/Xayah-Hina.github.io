@@ -9,8 +9,7 @@
 
 A modern, feature-rich static blog template built with [Astro](https://astro.build), enhanced with advanced functionality and beautiful design.
 
-[**🖥️ Live Demo**](https://mizuki.mysqil.com/)
-[**🔧 Mizuki Official User Documentation**](https://docs.mizuki.mysqil.com/)
+[**🖥️ Live Demo**](https://blog.mysqil.com/)
 
 🌏 README Languages
 [**中文**](./README.md) /
@@ -138,9 +137,7 @@ Deploy your blog to any static hosting platform:
 
 Before deployment, update the `site` URL in `astro.config.mjs`.
 
-
-
-### 📝 Post Frontmatter
+## 📝 Post Frontmatter
 
 ```yaml
 ---

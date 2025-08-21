@@ -5,7 +5,6 @@ import Navbar from "@components/Navbar.astro";
 import SideBar from "@components/widget/SideBar.astro";
 import type { MarkdownHeading } from "astro";
 import { Icon } from "astro-icon/components";
-import { compileModule } from "svelte/compiler";
 import ImageWrapper from "../components/misc/ImageWrapper.astro";
 import TypewriterText from "../components/TypewriterText.astro";
 import TOC from "../components/widget/TOC.astro";
@@ -25,7 +24,6 @@ interface Props {
 	lang?: string;
 	setOGTypeArticle?: boolean;
 	headings?: MarkdownHeading[];
-	series?: string;
 }
 
 // 类型守卫函数
@@ -69,7 +67,6 @@ const {
 	lang,
 	setOGTypeArticle,
 	headings = [],
-	series,
 } = Astro.props;
 const hasBannerCredit =
 	siteConfig.banner.enable && siteConfig.banner.credit.enable;
@@ -313,7 +310,7 @@ const mainContentClass = `
             </a>}
 
 
-            {(mobileShowSidebar || tabletShowSidebar || desktopShowSidebar) && <SideBar class={sidebarClass} headings={headings} series={series}></SideBar>}
+            {(mobileShowSidebar || tabletShowSidebar || desktopShowSidebar) && <SideBar class={sidebarClass} headings={headings}></SideBar>}
 
             <main id="swup-container" class={mainContentClass}>
                 <div id="content-wrapper" class="onload-animation">
@@ -356,7 +353,6 @@ const mainContentClass = `
         {!siteConfig.toc.enable && <div id="toc"></div>}
     </div>
 </div>
-<script defer src="https://cloud.umami.is/script.js" data-website-id="YOUR_UMAMI_WEBSITE_ID" slot="head"></script>
 </Layout>
 
 <style>

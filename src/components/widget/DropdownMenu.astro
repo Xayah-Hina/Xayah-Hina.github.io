@@ -1,7 +1,7 @@
 ---
 import { Icon } from "astro-icon/components";
+import { type NavBarLink, LinkPreset } from "../../types/config";
 import { LinkPresets } from "../../constants/link-presets";
-import { LinkPreset, type NavBarLink } from "../../types/config";
 import { url } from "../../utils/url-utils";
 
 interface Props {
@@ -11,11 +11,6 @@ interface Props {
 
 const { link, class: className } = Astro.props;
 
-// 检查link是否存在，避免undefined错误
-if (!link) {
-	throw new Error("DropdownMenu: link prop is required");
-}
-
 // 转换子菜单中的LinkPreset为NavBarLink
 const processedLink = {
 	...link,
@@ -24,7 +19,7 @@ const processedLink = {
 			return LinkPresets[child];
 		}
 		return child;
-	}),
+	})
 };
 
 const hasChildren = processedLink.children && processedLink.children.length > 0;
