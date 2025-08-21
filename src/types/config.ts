@@ -110,6 +110,8 @@ export type ProfileConfig = {
 		shareId: string;
 		region: string;
 	};
+	icp?: string;
+	icpEnable?: boolean;
 };
 
 export type LicenseConfig = {
