@@ -9,12 +9,19 @@
 
 Una plantilla de blog estático moderna y rica en características con funcionalidades avanzadas y hermoso diseño, construida con [Astro](https://astro.build).
 
-[**🖥️ Demo en vivo**](https://blog.mysqil.com/)
+[**🖥️ Demo en vivo**](https://mizuki.mysqil.com/)
+[**📖 Documentación de usuario**](https://docs.mizuki.mysqil.com/)
 
 🌏 Idiomas README
 [**中文**](../README.md) /
 [**English**](../README.en.md) /
 [**Español**](./README.es.md)
+
+## 🆕 Novedades en v3.4
+- **Nuevas páginas:** Se han añadido las páginas de visualización de proyectos (Projects), visualización de habilidades (Skills) y línea de tiempo (Timeline), enriqueciendo el contenido de presentación personal.
+- **Menú secundario corregido:** Se ha corregido un error en el menú secundario de la barra de navegación superior que mostraba un borde al hacer clic, optimizando la experiencia del usuario.
+- **Función de búsqueda optimizada:** Se han resuelto problemas conocidos en la función de búsqueda, mejorando la precisión y usabilidad de la misma.
+- **Inyección de HTML en la parte inferior:** Se ha añadido una nueva función de inyección de HTML en la parte inferior, permitiendo a los usuarios personalizar el contenido del pie de página.
 
 ## 🆕 Novedades en v3.3
 - **Soporte de sintaxis de Mermaid:** Se añadió soporte para la sintaxis de diagramas de Mermaid, permitiendo la incrustación directa de diagramas de flujo, diagramas de secuencia, diagramas de Gantt, etc., en Markdown.

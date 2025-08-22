@@ -9,12 +9,19 @@
 
 Eine moderne, funktionsreiche statische Blog-Vorlage mit erweiterten Funktionen und schönem Design, erstellt mit [Astro](https://astro.build).
 
-[**🖥️ Live-Demo**](https://blog.mysqil.com/)
+[**🖥️ Live-Demo**](https://mizuki.mysqil.com/)
+[**📖 Benutzerhandbuch**](https://docs.mizuki.mysqil.com/)
 
 🌏 README-Sprachen
 [**中文**](../README.md) /
 [**English**](../README.en.md) /
 [**Deutsch**](./README.de.md)
+
+## 🆕 Neues in v3.4
+- **Neue Seiten:** Projektanzeige (Projects), Fähigkeitsanzeige (Skills) und Zeitleisten (Timeline) Seiten wurden hinzugefügt, um persönliche Präsentationen zu bereichern.
+- **Sekundäres Menü behoben:** Ein Fehler im sekundären Menü der oberen Navigation wurde behoben, der nach dem Klicken einen Rahmen anzeigte, wodurch die Benutzererfahrung verbessert wurde.
+- **Suchfunktion optimiert:** Bekannte Probleme in der Suchfunktion wurden behoben, um die Genauigkeit und Benutzerfreundlichkeit der Suche zu verbessern.
+- **HTML-Einfügung am Ende:** Eine neue Funktion zur HTML-Einfügung am Ende wurde hinzugefügt, die es Benutzern ermöglicht, den Fußzeileninhalt anzupassen.
 
 ## 🆕 Neues in v3.3
 - **Mermaid Syntax-Unterstützung:** Unterstützung für die Mermaid-Diagrammsyntax hinzugefügt, die das direkte Einbetten von Flussdiagrammen, Sequenzdiagrammen, Gantt-Diagrammen usw. in Markdown.

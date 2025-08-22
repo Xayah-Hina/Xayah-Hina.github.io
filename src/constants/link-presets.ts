@@ -31,4 +31,16 @@ export const LinkPresets: { [key in LinkPreset]: NavBarLink } = {
 		name: i18n(I18nKey.gallery),
 		url: "/gallery/",
 	},
+	[LinkPreset.Projects]: {
+		name: i18n(I18nKey.projects),
+		url: "/projects/",
+	},
+	[LinkPreset.Skills]: {
+		name: i18n(I18nKey.skills),
+		url: "/skills/",
+	},
+	[LinkPreset.Timeline]: {
+		name: i18n(I18nKey.timeline),
+		url: "/timeline/",
+	},
 };

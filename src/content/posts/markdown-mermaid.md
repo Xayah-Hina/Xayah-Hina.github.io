@@ -15,6 +15,9 @@ This article demonstrates how to create various complex diagrams using Mermaid i
 
 Flowcharts are excellent for representing processes or algorithm steps.
 
+
+
+
 ```mermaid
 graph TD
     A[Start] --> B{Condition Check}

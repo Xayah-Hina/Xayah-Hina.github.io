@@ -9,7 +9,8 @@
 
 A modern, feature-rich static blog template built with [Astro](https://astro.build), enhanced with advanced functionality and beautiful design.
 
-[**🖥️ Live Demo**](https://blog.mysqil.com/)
+[**🖥️ Live Demo**](https://mizuki.mysqil.com/)
+[**📖 User Docs**](https://docs.mizuki.mysqil.com/)
 
 🌏 README Languages
 [**中文**](./README.md) /
@@ -20,6 +21,12 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 [**Deutsch**](./docs/README.de.md) /
 [**Español**](./docs/README.es.md) /
 [**Русский**](./docs/README.ru.md)
+
+## 🆕 What's New in v3.4
+- **New Pages:** Added dedicated pages for Projects, Skills, and Timeline to showcase your work, expertise, and journey.
+- **Dropdown Menu Bug Fix:** Resolved an issue with the dropdown menu that caused an outline border to appear on click, improving UI consistency.
+- **Search Functionality Optimization:** Enhanced the search feature for better performance and accuracy.
+- **Bottom HTML Injection:** Introduced a new feature allowing custom HTML content to be injected at the bottom of pages for greater flexibility.
 
 ## 🆕 What's New in v3.3
 - **Mermaid Syntax Support:** Added support for Mermaid diagram syntax, allowing direct embedding of flowcharts, sequence diagrams, Gantt charts, etc., in Markdown.

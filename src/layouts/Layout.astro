@@ -929,7 +929,7 @@ function createPhotoSwipe() {
 		doubleTapAction: 'zoom',
 	})
 
-	// Add filter after lightbox is initialized
+	// Add filter BEFORE lightbox is initialized
 	lightbox.addFilter("domItemData", (itemData, element) => {
 		if (element instanceof HTMLImageElement) {
 			itemData.src = element.src
@@ -943,7 +943,8 @@ function createPhotoSwipe() {
 		return itemData
 	})
 
-	(lightbox as any).init()
+	// Initialize lightbox AFTER adding filters
+	lightbox.init()
 }
 
 const setup = () => {
