@@ -504,10 +504,16 @@ const bannerOffset =
 
 				// 樱花特效初始化
 				(function() {
+					// 全局标记，确保樱花特效只初始化一次
+					if (window.sakuraInitialized) {
+						return;
+					}
+					
 					// 初始化樱花特效的函数
 					const setupSakura = () => {
-						if (sakuraConfig.enable) {
+						if (sakuraConfig.enable && !window.sakuraInitialized) {
 							initSakura(sakuraConfig);
+							window.sakuraInitialized = true;
 						}
 					};
 					
@@ -516,13 +522,6 @@ const bannerOffset =
 						document.addEventListener('DOMContentLoaded', setupSakura);
 					} else {
 						setupSakura();
-					}
-					
-					// Swup页面切换支持
-					if (window.swup) {
-						window.swup.hooks.on("page:view", () => {
-							setTimeout(setupSakura, 50);
-						});
 					}
 				})();
 			</script>
