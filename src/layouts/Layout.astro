@@ -23,6 +23,7 @@ import { defaultFavicons } from "../constants/icon";
 import type { Favicon } from "../types/config";
 import { pathsEqual, url } from "../utils/url-utils";
 import "katex/dist/katex.css";
+import "../styles/mobile-navbar.css";
 
 interface Props {
 	title?: string;
@@ -1089,6 +1090,12 @@ const setup = () => {
 			} else {
 				bannerTextOverlay.classList.add('hidden')
 			}
+		}
+
+		// Control navbar transparency based on page
+		const navbar = document.getElementById('navbar')
+		if (navbar) {
+			navbar.setAttribute('data-is-home', isHomePage.toString())
 		}
 
 		// Control mobile banner visibility based on page with improved staging animation

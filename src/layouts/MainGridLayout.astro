@@ -708,15 +708,12 @@ const mainContentClass = `
 /* 移动端导航栏与banner的协调 */
 @media (max-width: 1023px) {
     #navbar-wrapper {
-        background: rgba(255, 255, 255, 0.95) !important;
-        backdrop-filter: blur(10px) !important;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+        /* 移除覆盖样式，让Navbar.astro的圆角和半透明效果生效 */
     }
     
     /* 暗色主题下的导航栏 */
     :root.dark #navbar-wrapper {
-        background: rgba(0, 0, 0, 0.95) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        /* 移除覆盖样式，让Navbar.astro的圆角和半透明效果生效 */
     }
 }
 

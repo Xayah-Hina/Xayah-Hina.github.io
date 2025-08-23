@@ -96,6 +96,10 @@ export const siteConfig: SiteConfig = {
 			text: "Describe", // 要显示的来源文本
 			url: "", // （可选）原始艺术品或艺术家页面的 URL 链接
 		},
+
+		navbar: {
+			transparentMode: "full", // 导航栏透明模式："semi" 半透明加圆角，"full" 完全透明
+		},
 	},
 	toc: {
 		enable: true, // 启用目录功能
