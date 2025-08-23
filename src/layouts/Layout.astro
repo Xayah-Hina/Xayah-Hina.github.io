@@ -6,6 +6,8 @@ import "@fontsource/roboto/700.css";
 import ConfigCarrier from "@components/ConfigCarrier.astro";
 import MusicPlayer from "@components/widget/MusicPlayer.svelte";
 import { profileConfig, siteConfig } from "@/config";
+import {widgetConfigs} from '../config';
+import type {SakuraConfig} from '../types/config';
 import {
 	AUTO_MODE,
 	BANNER_HEIGHT,
@@ -193,6 +195,43 @@ const bannerOffset =
 		<!-- increase the page height during page transition to prevent the scrolling animation from jumping -->
 		<div id="page-height-extend" class="hidden h-[300vh]"></div>
 
+		<!-- Sakura Effect -->
+		{(widgetConfigs.sakura as SakuraConfig)?.enable && (
+			<script define:vars={{ sakuraConfig: widgetConfigs.sakura }}>
+				// 樱花特效初始化
+				(async () => {
+					try {
+						// 动态导入樱花管理器
+						const module = await import('/src/utils/sakura-manager.ts');
+						const { initSakura } = module;
+						
+						// 初始化樱花特效的函数
+						const setupSakura = () => {
+							if (sakuraConfig.enable) {
+								initSakura(sakuraConfig);
+							}
+						};
+						
+						// 页面加载完成后初始化樱花特效
+						if (document.readyState === 'loading') {
+							document.addEventListener('DOMContentLoaded', setupSakura);
+						} else {
+							setupSakura();
+						}
+						
+						// Swup页面切换支持
+						if (window.swup) {
+							window.swup.hooks.on("page:view", () => {
+								setTimeout(setupSakura, 50);
+							});
+						}
+					} catch (error) {
+						console.error('Failed to load sakura effect:', error);
+					}
+				})();
+			</script>
+		)}
+		
 		<!-- Translate.js integration - lazy loading -->
 		{siteConfig.translate?.enable && (
 			<script>
