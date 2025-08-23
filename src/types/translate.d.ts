@@ -28,7 +28,6 @@ declare global {
         set: (key: string, value: string) => void;
       };
     };
-    loadTranslateScript?: () => Promise<void>;
   }
 }
 
