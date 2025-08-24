@@ -156,3 +156,34 @@ Make the emoji component display correctly when there are too many emoji packs
 .card-base {
   overflow: visible;
 }
+
+/* 防止 Twikoo 操作时的意外滚动 */
+.tk-action-icon,
+.tk-owo,
+.tk-submit,
+.tk-cancel,
+.tk-preview,
+.tk-admin,
+.tk-delete,
+.tk-edit {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* 确保点击区域足够大 */
+.tk-action {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+}
+
+/* 防止表单提交时的意外跳转 */
+.tk-submit-wrapper {
+  position: relative;
+}
+
+/* 管理面板样式优化 */
+.tk-admin-panel {
+  position: relative;
+  z-index: 100;
+}

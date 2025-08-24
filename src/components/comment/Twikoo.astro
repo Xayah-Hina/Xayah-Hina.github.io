@@ -13,16 +13,16 @@ const config = {
 ---
 
 <div id="tcomment"></div>
+<script is:inline src="/scroll-protection.js"></script>
 <script is:inline src="/assets/js/twikoo.all.min.js"></script>
 <script is:inline define:vars={{ config }}>
-  // 获取当前页面路径的函数
+  // 获取当前页面路径
   function getCurrentPath() {
     const pathname = window.location.pathname;
-    // 移除末尾的斜杠（如果存在）
     return pathname.endsWith('/') && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
   }
   
-  // 动态创建配置对象的函数
+  // 动态创建配置对象
   function createTwikooConfig() {
     return {
       ...config,
@@ -31,81 +31,52 @@ const config = {
     };
   }
   
-  // 初始化 Twikoo 的函数
-  function initTwikooWithRetry() {
-    let retryCount = 0;
-    const maxRetries = 3;
-    
-    function initTwikoo() {
-      if (typeof twikoo !== 'undefined') {
-        // 清空现有评论容器
-        const commentEl = document.getElementById('tcomment');
-        if (commentEl) {
-          commentEl.innerHTML = '';
-        }
+  // 初始化 Twikoo
+  function initTwikoo() {
+    if (typeof twikoo !== 'undefined') {
+      const commentEl = document.getElementById('tcomment');
+      if (commentEl) {
+        commentEl.innerHTML = '';
         
-        // 使用动态配置初始化 Twikoo
         const dynamicConfig = createTwikooConfig();
-        console.log('Twikoo 初始化配置:', dynamicConfig);
-        twikoo.init(dynamicConfig);
-      } else if (retryCount < maxRetries) {
-        retryCount++;
-        console.log(`Twikoo 加载重试 ${retryCount}/${maxRetries}...`);
-        setTimeout(initTwikoo, 500); // 500ms 后重试
-      } else {
-        console.error('Twikoo 加载失败，请刷新页面重试');
+        console.log('[Twikoo] 初始化配置:', dynamicConfig);
+        
+        twikoo.init(dynamicConfig).then(() => {
+          console.log('[Twikoo] 初始化完成');
+        }).catch((error) => {
+          console.error('[Twikoo] 初始化失败:', error);
+        });
       }
-    }
-    
-    initTwikoo();
-  }
-  
-  // 页面首次加载时初始化
-  document.addEventListener('DOMContentLoaded', initTwikooWithRetry);
-  
-  // 监听 Swup 页面切换事件，在内容替换后重新初始化 Twikoo
-  function setupSwupHooks() {
-    if (window.swup && window.swup.hooks) {
-      // 在页面内容替换后重新初始化
-      window.swup.hooks.on('content:replace', function() {
-        // 延迟执行以确保 DOM 已完全更新
-        setTimeout(function() {
-          const commentEl = document.getElementById('tcomment');
-          if (commentEl) {
-            console.log('Swup 页面切换后重新初始化 Twikoo，当前路径:', getCurrentPath());
-            initTwikooWithRetry();
-          }
-        }, 200);
-      });
-      
-      // 在页面访问开始时清理旧的评论数据
-      window.swup.hooks.on('visit:start', function() {
-        const commentEl = document.getElementById('tcomment');
-        if (commentEl) {
-          commentEl.innerHTML = '';
-          console.log('页面切换开始，清理评论容器');
-        }
-      });
+    } else {
+      // 如果 Twikoo 未加载，稍后重试
+      setTimeout(initTwikoo, 500);
     }
   }
   
-  // 设置 Swup 钩子
-  if (window.swup) {
-    setupSwupHooks();
+  // 页面加载时初始化
+  document.addEventListener('DOMContentLoaded', initTwikoo);
+  
+  // Swup 页面切换后重新初始化
+  if (window.swup && window.swup.hooks) {
+    window.swup.hooks.on('content:replace', function() {
+      setTimeout(initTwikoo, 200);
+    });
   } else {
-    document.addEventListener('swup:enable', setupSwupHooks);
+    document.addEventListener('swup:enable', function() {
+      if (window.swup && window.swup.hooks) {
+        window.swup.hooks.on('content:replace', function() {
+          setTimeout(initTwikoo, 200);
+        });
+      }
+    });
   }
   
-  // 监听自定义事件，在页面完全加载后重新初始化 Twikoo
-  document.addEventListener('mizuki:page:loaded', function(event) {
-    const eventDetail = event.detail || {};
-    console.log('Mizuki 页面加载完成事件触发，路径:', eventDetail.path, '时间戳:', eventDetail.timestamp);
-    
+  // 自定义事件监听
+  document.addEventListener('mizuki:page:loaded', function() {
     const commentEl = document.getElementById('tcomment');
     if (commentEl) {
-      // 确保在自定义事件触发时也使用最新的路径
-      console.log('通过自定义事件重新初始化 Twikoo，当前路径:', getCurrentPath());
-      initTwikooWithRetry();
+      console.log('[Twikoo] 通过自定义事件重新初始化');
+      initTwikoo();
     }
   });
 </script>
