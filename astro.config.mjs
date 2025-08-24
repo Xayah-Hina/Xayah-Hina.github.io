@@ -41,18 +41,13 @@ export default defineConfig({
 			// the default value `transition-` cause transition delay
 			// when the Tailwind class `transition-all` is used
 			containers: ["main"],
-			smoothScrolling: true, // 启用平滑滚动
+			smoothScrolling: false, // 禁用平滑滚动以提升性能
 			cache: true,
 			preload: false, // 禁用预加载以减少网络请求
 			accessibility: true,
 			updateHead: true,
 			updateBodyClass: false,
 			globalInstance: true,
-			// 滚动相关配置
-			resolveUrl: (url) => url,
-			scrollBehavior: "smooth",
-			animateHistoryBrowsing: false,
-			skipPopStateHandling: false,
 		}),
 		icon({
 			include: {

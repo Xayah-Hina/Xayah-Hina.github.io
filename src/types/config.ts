@@ -54,9 +54,6 @@ export type SiteConfig = {
 				pauseTime: number; // 完整显示后的暂停时间（毫秒）
 			};
 		};
-		navbar?: {
-			transparentMode?: "semi" | "full"; // 导航栏透明模式："semi" 半透明加圆角，"full" 完全透明
-		};
 		credit: {
 			enable: boolean;
 			text: string;
@@ -225,17 +222,17 @@ export type SidebarLayoutConfig = {
 			desktop: number; // 桌面端断点（px）
 		};
 		layout: {
-			mobile: "hidden" | "bottom" | "drawer" | "sidebar"; // 移动端布局模式
+			mobile: "hidden" | "bottom" | "drawer"; // 移动端布局模式
 			tablet: "sidebar" | "bottom" | "drawer"; // 平板端布局模式
 			desktop: "sidebar"; // 桌面端布局模式
 		};
 	};
 };
 
-// 设备特定的樱花配置
-export type DeviceSpecificSakuraConfig = {
-	enable: boolean; // 是否在该设备上启用樱花特效
-	sakuraNum: number; // 樱花数量
+export type SakuraConfig = {
+	enable: boolean; // 是否启用樱花特效
+	sakuraNum: number; // 樱花数量，默认21
+	limitTimes: number; // 樱花越界限制次数，-1为无限循环
 	size: {
 		min: number; // 樱花最小尺寸倍数
 		max: number; // 樱花最大尺寸倍数
@@ -251,32 +248,5 @@ export type DeviceSpecificSakuraConfig = {
 		};
 		rotation: number; // 旋转速度
 	};
-};
-
-export type SakuraConfig = {
-	enable: boolean; // 是否启用樱花特效（全局开关）
-	limitTimes: number; // 樱花越界限制次数，-1为无限循环
 	zIndex: number; // 层级，确保樱花在合适的层级显示
-	// 设备特定配置
-	devices: {
-		desktop: DeviceSpecificSakuraConfig; // 桌面端配置
-		mobile: DeviceSpecificSakuraConfig; // 移动端配置
-	};
-	// 向后兼容的配置（当devices未设置时使用）
-	sakuraNum?: number; // 樱花数量，默认21
-	size?: {
-		min: number; // 樱花最小尺寸倍数
-		max: number; // 樱花最大尺寸倍数
-	};
-	speed?: {
-		horizontal: {
-			min: number; // 水平移动速度最小值
-			max: number; // 水平移动速度最大值
-		};
-		vertical: {
-			min: number; // 垂直移动速度最小值
-			max: number; // 垂直移动速度最大值
-		};
-		rotation: number; // 旋转速度
-	};
 };

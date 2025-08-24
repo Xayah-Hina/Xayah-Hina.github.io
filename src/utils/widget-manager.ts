@@ -1,5 +1,5 @@
-import { sidebarLayoutConfig } from "../config";
 import type { WidgetComponentConfig, WidgetComponentType, SidebarLayoutConfig } from "../types/config";
+import { sidebarLayoutConfig } from "../config";
 
 /**
  * 组件映射表 - 将组件类型映射到实际的组件路径
@@ -146,11 +146,6 @@ export class WidgetManager {
 			return false;
 		}
 
-		// 安全检查：确保responsive配置存在
-		if (!this.config.responsive || !this.config.responsive.layout) {
-			return true; // 默认显示侧边栏
-		}
-
 		const layoutMode = this.config.responsive.layout[deviceType];
 		return layoutMode === "sidebar";
 	}
@@ -159,15 +154,6 @@ export class WidgetManager {
 	 * 获取设备断点配置
 	 */
 	getBreakpoints() {
-		// 安全检查：确保responsive配置存在
-		if (!this.config.responsive || !this.config.responsive.breakpoints) {
-			// 返回默认断点配置
-			return {
-				mobile: 768,
-				tablet: 1024,
-				desktop: 1280,
-			};
-		}
 		return this.config.responsive.breakpoints;
 	}
 
@@ -237,7 +223,7 @@ export const widgetManager = new WidgetManager();
  * @param componentType 组件类型
  */
 export function getComponentConfig(componentType: WidgetComponentType): WidgetComponentConfig | undefined {
-	return sidebarLayoutConfig.components.find(c => c.type === componentType);
+	return widgetManager.config.components.find(c => c.type === componentType);
 }
 
 /**
@@ -253,8 +239,5 @@ export function isComponentEnabled(componentType: WidgetComponentType): boolean 
  * 工具函数：获取所有启用的组件类型
  */
 export function getEnabledComponentTypes(): WidgetComponentType[] {
-	return sidebarLayoutConfig.components
-		.filter(component => component.enable)
-		.sort((a, b) => a.order - b.order)
-		.map(c => c.type);
+	return widgetManager.enabledComponents.map(c => c.type);
 }

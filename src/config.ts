@@ -68,7 +68,7 @@ export const siteConfig: SiteConfig = {
 		carousel: {
 			enable: true, // 为 true 时：为多张图片启用轮播。为 false 时：从数组中随机显示一张图片
 
-			interval: 2, // 轮播间隔时间（秒）- 减慢轮播速度
+			interval: 1, // 轮播间隔时间（秒）
 		},
 
 		homeText: {
@@ -216,7 +216,7 @@ export const expressiveCodeConfig: ExpressiveCodeConfig = {
 export const commentConfig: CommentConfig = {
 	enable: false, // 启用评论功能。当设置为 false 时，评论组件将不会显示在文章区域。
 	twikoo: {
-		envId: "https://twikoo.mysqil.com/",
+		envId: "https://twikoo.vercel.app",
 	},
 };
 
@@ -266,7 +266,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			position: "top",
 			// CSS 类名，用于应用样式和动画
 			class: "onload-animation",
-			// 动画延迟时间（毫秒），用于错开动画效果 - 优化为0延迟
+			// 动画延迟时间（毫秒），用于错开动画效果
 			animationDelay: 0,
 		},
 		{
@@ -280,8 +280,8 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			position: "top",
 			// CSS 类名
 			class: "onload-animation",
-			// 动画延迟时间 - 优化为0延迟
-			animationDelay: 0,
+			// 动画延迟时间
+			animationDelay: 50,
 		},
 		{
 			// 组件类型：分类组件
@@ -294,8 +294,8 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			position: "sticky",
 			// CSS 类名
 			class: "onload-animation",
-			// 动画延迟时间 - 优化为最小延迟
-			animationDelay: 30,
+			// 动画延迟时间
+			animationDelay: 150,
 			// 响应式配置
 			responsive: {
 				// 折叠阈值：当分类数量超过5个时自动折叠
@@ -313,8 +313,8 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			position: "sticky",
 			// CSS 类名
 			class: "onload-animation",
-			// 动画延迟时间 - 优化为最小延迟
-			animationDelay: 60,
+			// 动画延迟时间
+			animationDelay: 200,
 			// 响应式配置
 			responsive: {
 				// 折叠阈值：当标签数量超过20个时自动折叠
@@ -323,14 +323,14 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		},
 	],
 
-	// 优化的默认动画配置
+	// 默认动画配置
 	defaultAnimation: {
 		// 是否启用默认动画
 		enable: true,
-		// 基础延迟时间（毫秒）- 优化为0
+		// 基础延迟时间（毫秒）
 		baseDelay: 0,
-		// 递增延迟时间（毫秒）- 优化为更小的值
-		increment: 20,
+		// 递增延迟时间（毫秒），每个组件依次增加的延迟
+		increment: 50,
 	},
 
 	// 响应式布局配置
@@ -358,67 +358,25 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 };
 
 export const sakuraConfig: SakuraConfig = {
-	enable: true, // 全局樱花特效开关
+	enable: true, // 默认关闭樱花特效
+	sakuraNum: 21, // 樱花数量
 	limitTimes: -1, // 樱花越界限制次数，-1为无限循环
-	zIndex: 100, // 层级，确保樱花在合适的层级显示
-	// 设备特定配置
-	devices: {
-		desktop: {
-			enable: true, // 桌面端启用樱花
-			sakuraNum: 21, // 桌面端樱花数量
-			size: {
-				min: 0.5, // 桌面端樱花最小尺寸倍数
-				max: 1.1, // 桌面端樱花最大尺寸倍数
-			},
-			speed: {
-				horizontal: {
-					min: -0.8, // 桌面端水平移动速度最小值
-					max: -0.5, // 桌面端水平移动速度最大值
-				},
-				vertical: {
-					min: 0.6, // 桌面端垂直移动速度最小值
-					max: 1.0, // 桌面端垂直移动速度最大值
-				},
-				rotation: 0.015, // 桌面端旋转速度
-			},
-		},
-		mobile: {
-			enable: true, // 移动端启用樱花
-			sakuraNum: 12, // 移动端樱花数量（较少以优化性能）
-			size: {
-				min: 0.4, // 移动端樱花最小尺寸倍数（较小）
-				max: 0.8, // 移动端樱花最大尺寸倍数（较小）
-			},
-			speed: {
-				horizontal: {
-					min: -0.6, // 移动端水平移动速度最小值（较慢）
-					max: -0.3, // 移动端水平移动速度最大值（较慢）
-				},
-				vertical: {
-					min: 0.4, // 移动端垂直移动速度最小值（较慢）
-					max: 0.7, // 移动端垂直移动速度最大值（较慢）
-				},
-				rotation: 0.01, // 移动端旋转速度（较慢）
-			},
-		},
-	},
-	// 向后兼容的默认配置（当devices未设置时使用）
-	sakuraNum: 21, // 默认樱花数量
 	size: {
-		min: 0.5, // 默认樱花最小尺寸倍数
-		max: 1.1, // 默认樱花最大尺寸倍数
+		min: 0.5, // 樱花最小尺寸倍数
+		max: 1.1, // 樱花最大尺寸倍数
 	},
 	speed: {
 		horizontal: {
-			min: -0.8, // 默认水平移动速度最小值
-			max: -0.5, // 默认水平移动速度最大值
+			min: -1.7, // 水平移动速度最小值
+			max: -1.2, // 水平移动速度最大值
 		},
 		vertical: {
-			min: 0.6, // 默认垂直移动速度最小值
-			max: 1.0, // 默认垂直移动速度最大值
+			min: 1.5, // 垂直移动速度最小值
+			max: 2.2, // 垂直移动速度最大值
 		},
-		rotation: 0.015, // 默认旋转速度
+		rotation: 0.03, // 旋转速度
 	},
+	zIndex: 100, // 层级，确保樱花在合适的层级显示
 };
 // 导出所有配置的统一接口
 export const widgetConfigs = {
