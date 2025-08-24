@@ -98,7 +98,7 @@ export const siteConfig: SiteConfig = {
 		},
 
 		navbar: {
-			transparentMode: "full", // 导航栏透明模式："semi" 半透明加圆角，"full" 完全透明
+			transparentMode: "semifull", // 导航栏透明模式："semi" 半透明加圆角，"full" 完全透明，"semifull" 半完全透明（完全复刻full模式）
 		},
 	},
 	toc: {
@@ -123,49 +123,59 @@ export const navBarConfig: NavBarConfig = {
 		{
 			name: "链接",
 			url: "/links/",
+			icon: "material-symbols:link",
 			children: [
 				{
 					name: "GitHub",
 					url: "https://github.com/matsuzaka-yuki/Mizuki",
 					external: true,
+					icon: "fa6-brands:github",
 				},
 				{
 					name: "Bilibili",
 					url: "https://space.bilibili.com/701864046",
 					external: true,
+					icon: "fa6-brands:bilibili",
 				},
 				{
 					name: "Gitee",
 					url: "https://gitee.com/matsuzakayuki/Mizuki",
 					external: true,
+					icon: "mdi:git",
 				},
 			],
 		},
 		{
 			name: "我的",
 			url: "/content/",
+			icon: "material-symbols:person",
 			children: [LinkPreset.Anime, LinkPreset.Diary, LinkPreset.Gallery],
 		},
 		{
 			name: "关于",
 			url: "/content/",
+			icon: "material-symbols:info",
 			children: [LinkPreset.About, LinkPreset.Friends],
 		},
 		{
 			name: "其他",
 			url: "#",
+			icon: "material-symbols:more-horiz",
 			children: [
 				{
 					name: "项目展示",
 					url: "/projects/",
+					icon: "material-symbols:work",
 				},
 				{
 					name: "技能展示",
 					url: "/skills/",
+					icon: "material-symbols:psychology",
 				},
 				{
 					name: "时间线",
 					url: "/timeline/",
+					icon: "material-symbols:timeline",
 				},
 			],
 		},

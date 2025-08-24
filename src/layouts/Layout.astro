@@ -44,6 +44,11 @@ const isHomePage = pathsEqual(Astro.url.pathname, url("/"));
 // why doing this in Layout instead of GlobalStyles: https://github.com/withastro/astro/issues/6728#issuecomment-1502203757
 const configHue = siteConfig.themeColor.hue;
 
+// 获取导航栏透明模式配置
+const navbarTransparentMode = siteConfig.banner?.navbar?.transparentMode || "semi";
+// 判断是否应该显示顶部高光效果（只在full和semifull模式下显示）
+const shouldShowTopHighlight = navbarTransparentMode === "full" || navbarTransparentMode === "semifull";
+
 // 获取默认banner图片的辅助函数
 const getDefaultBanner = (): string => {
 	const src = siteConfig.banner.src;
@@ -188,6 +193,8 @@ const bannerOffset =
 	<body class=" min-h-screen transition " class:list={[{"lg:is-home": isHomePage, "enable-banner": enableBanner}]}
 		  data-overlayscrollbars-initialize
 	>
+		<!-- 页面顶部渐变高光效果 - 只在full和semifull模式下显示 -->
+		{shouldShowTopHighlight && <div class="top-gradient-highlight"></div>}
 		<ConfigCarrier></ConfigCarrier>
 		<slot />
 		
@@ -1070,6 +1077,19 @@ const setup = () => {
 				window.translate.execute();
 			}
 		}, 100);
+		
+		// 重新初始化semifull模式的滚动检测
+		const navbar = document.getElementById('navbar')
+		if (navbar) {
+			const transparentMode = navbar.getAttribute('data-transparent-mode')
+			
+			if (transparentMode === 'semifull') {
+				// 重新调用初始化函数来重新绑定滚动事件
+				if (typeof window.initSemifullScrollDetection === 'function') {
+					window.initSemifullScrollDetection()
+				}
+			}
+		}
 	})
 	window.swup.hooks.on('visit:start', (visit: {to: {url: string}}) => {
 		// change banner height immediately when a link is clicked
@@ -1096,6 +1116,15 @@ const setup = () => {
 		const navbar = document.getElementById('navbar')
 		if (navbar) {
 			navbar.setAttribute('data-is-home', isHomePage.toString())
+			
+			// 重新初始化semifull模式的滚动检测
+			const transparentMode = navbar.getAttribute('data-transparent-mode')
+			if (transparentMode === 'semifull') {
+				// 重新调用初始化函数来重新绑定滚动事件
+				if (typeof window.initSemifullScrollDetection === 'function') {
+					window.initSemifullScrollDetection()
+				}
+			}
 		}
 
 		// Control mobile banner visibility based on page with improved staging animation

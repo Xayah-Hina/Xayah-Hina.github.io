@@ -59,6 +59,9 @@ export type SiteConfig = {
 			text: string;
 			url?: string;
 		};
+		navbar?: {
+			transparentMode?: "semi" | "full" | "semifull"; // 导航栏透明模式
+		};
 	};
 	toc: {
 		enable: boolean;
@@ -91,6 +94,7 @@ export type NavBarLink = {
 	name: string;
 	url: string;
 	external?: boolean;
+	icon?: string; // 菜单项图标
 	children?: (NavBarLink | LinkPreset)[]; // 支持子菜单，可以是NavBarLink或LinkPreset
 };
 

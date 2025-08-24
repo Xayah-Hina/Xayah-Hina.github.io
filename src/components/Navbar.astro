@@ -107,6 +107,78 @@ function loadButtonScript() {
 }
 
 loadButtonScript();
+
+// 为semifull模式添加滚动检测逻辑
+function initSemifullScrollDetection() {
+    const navbar = document.getElementById('navbar');
+    if (!navbar) return;
+    
+    const transparentMode = navbar.getAttribute('data-transparent-mode');
+    if (transparentMode !== 'semifull') return;
+    
+    const isHomePage = navbar.getAttribute('data-is-home') === 'true';
+    
+    // 如果不是首页，移除滚动事件监听器并设置为半透明状态
+    if (!isHomePage) {
+        // 移除之前的滚动事件监听器（如果存在）
+        if (window.semifullScrollHandler) {
+            window.removeEventListener('scroll', window.semifullScrollHandler);
+            window.semifullScrollHandler = null;
+        }
+        // 设置为半透明状态
+        navbar.classList.add('scrolled');
+        return;
+    }
+    
+    // 移除现有的scrolled类，重置状态
+    navbar.classList.remove('scrolled');
+    
+    let ticking = false;
+    
+    function updateNavbarState() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const threshold = 50; // 滚动阈值，可以根据需要调整
+        
+        if (scrollTop > threshold) {
+            navbar.classList.add('scrolled');
+        } else {
+            navbar.classList.remove('scrolled');
+        }
+        
+        ticking = false;
+    }
+    
+    function requestTick() {
+        if (!ticking) {
+            requestAnimationFrame(updateNavbarState);
+            ticking = true;
+        }
+    }
+    
+    // 移除之前的滚动事件监听器（如果存在）
+    if (window.semifullScrollHandler) {
+        window.removeEventListener('scroll', window.semifullScrollHandler);
+    }
+    
+    // 保存新的事件处理器引用
+    window.semifullScrollHandler = requestTick;
+    
+    // 监听滚动事件
+    window.addEventListener('scroll', requestTick, { passive: true });
+    
+    // 初始化状态
+    updateNavbarState();
+}
+
+// 将函数暴露到全局对象，供页面切换时调用
+window.initSemifullScrollDetection = initSemifullScrollDetection;
+
+// 页面加载完成后初始化滚动检测
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSemifullScrollDetection);
+} else {
+    initSemifullScrollDetection();
+}
 </script>
 
 {import.meta.env.PROD && <script is:inline define:vars={{scriptUrl: url('/pagefind/pagefind.js')}}>

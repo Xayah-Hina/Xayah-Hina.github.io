@@ -1,7 +1,7 @@
 ---
 import { Icon } from "astro-icon/components";
-import { type NavBarLink, LinkPreset } from "../../types/config";
 import { LinkPresets } from "../../constants/link-presets";
+import { LinkPreset, type NavBarLink } from "../../types/config";
 import { url } from "../../utils/url-utils";
 
 interface Props {
@@ -19,7 +19,7 @@ const processedLink = {
 			return LinkPresets[child];
 		}
 		return child;
-	})
+	}),
 };
 
 const hasChildren = processedLink.children && processedLink.children.length > 0;
@@ -34,8 +34,9 @@ const hasChildren = processedLink.children && processedLink.children.length > 0;
 			data-dropdown-trigger
 		>
 			<div class="flex items-center">
+				{processedLink.icon && <Icon name={processedLink.icon} class="text-[1.1rem] mr-2" />}
 				{processedLink.name}
-				<Icon name="material-symbols:keyboard-arrow-down-rounded" class="text-[1.25rem] transition-transform duration-200 dropdown-arrow" />
+				<Icon name="material-symbols:keyboard-arrow-down-rounded" class="text-[1.25rem] transition-transform duration-200 dropdown-arrow ml-1" />
 			</div>
 		</button>
 		<div class="dropdown-menu" data-dropdown-menu>
@@ -47,7 +48,10 @@ const hasChildren = processedLink.children && processedLink.children.length > 0;
 						class="dropdown-item"
 						aria-label={child.name}
 					>
-						<span>{child.name}</span>
+						<div class="flex items-center">
+							{child.icon && <Icon name={child.icon} class="text-[1rem] mr-2" />}
+							<span>{child.name}</span>
+						</div>
 						{child.external && (
 							<Icon name="fa6-solid:arrow-up-right-from-square" class="text-[0.75rem] text-black/25 dark:text-white/25" />
 						)}
@@ -63,6 +67,7 @@ const hasChildren = processedLink.children && processedLink.children.length > 0;
 			class="btn-plain scale-animation rounded-lg h-11 font-bold px-5 active:scale-95"
 		>
 			<div class="flex items-center">
+				{processedLink.icon && <Icon name={processedLink.icon} class="text-[1.1rem] mr-2" />}
 				{processedLink.name}
 				{processedLink.external && <Icon name="fa6-solid:arrow-up-right-from-square" class="text-[0.875rem] transition -translate-y-[1px] ml-1 text-black/[0.2] dark:text-white/[0.2]" />}
 			</div>
