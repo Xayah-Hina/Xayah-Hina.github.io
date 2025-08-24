@@ -54,6 +54,9 @@ export type SiteConfig = {
 				pauseTime: number; // 完整显示后的暂停时间（毫秒）
 			};
 		};
+		navbar?: {
+			transparentMode?: "semi" | "full"; // 导航栏透明模式："semi" 半透明加圆角，"full" 完全透明
+		};
 		credit: {
 			enable: boolean;
 			text: string;
@@ -222,7 +225,7 @@ export type SidebarLayoutConfig = {
 			desktop: number; // 桌面端断点（px）
 		};
 		layout: {
-			mobile: "hidden" | "bottom" | "drawer"; // 移动端布局模式
+			mobile: "hidden" | "bottom" | "drawer" | "sidebar"; // 移动端布局模式
 			tablet: "sidebar" | "bottom" | "drawer"; // 平板端布局模式
 			desktop: "sidebar"; // 桌面端布局模式
 		};

@@ -779,19 +779,22 @@ onDestroy(() => {
         height: 12px;
     }
 }
-/* 自定义旋转动画，停止时保持当前位置 */
-@keyframes spin-continuous {
+/* 优化的旋转动画 - 使用硬件加速 */
+@keyframes spin-optimized {
     from {
-        transform: rotate(0deg);
+        transform: rotate3d(0, 0, 1, 0deg);
     }
     to {
-        transform: rotate(360deg);
+        transform: rotate3d(0, 0, 1, 360deg);
     }
 }
 
 .cover-container img {
-    animation: spin-continuous 3s linear infinite;
+    will-change: transform;
+    transform: translateZ(0); /* 启用硬件加速 */
+    animation: spin-optimized 4s linear infinite; /* 减慢旋转速度，从4秒改为8秒 */
     animation-play-state: paused;
+    backface-visibility: hidden; /* 优化渲染性能 */
 }
 
 .cover-container img.spinning {

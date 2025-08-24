@@ -15,9 +15,9 @@
   --widget-gap-tablet: 1rem;
   --widget-gap-desktop: 1.25rem;
   
-  /* 动画变量 */
-  --widget-animation-duration: 0.3s;
-  --widget-animation-timing: ease-in-out;
+  /* 优化的动画变量 */
+  --widget-animation-duration: 0.2s;
+  --widget-animation-timing: cubic-bezier(0.4, 0, 0.2, 1);
   
   /* 侧边栏宽度 */
   --sidebar-width-mobile: 100%;
@@ -45,14 +45,19 @@
   overflow: hidden;
 }
 
-/* 组件悬停效果 */
+/* 优化的组件悬停效果 - 使用硬件加速 */
+.widget-container {
+  will-change: transform;
+  transform: translateZ(0); /* 启用硬件加速 */
+}
+
 .widget-container:hover {
-  transform: translateY(-2px);
+  transform: translate3d(0, -2px, 0);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .widget-container.widget-hover {
-  transform: translateY(-2px);
+  transform: translate3d(0, -2px, 0);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -145,9 +150,9 @@
     display: none;
   }
   
-  /* 桌面端增强效果 */
+  /* 优化的桌面端增强效果 */
   .widget-container:hover {
-    transform: translateY(-4px);
+    transform: translate3d(0, -4px, 0);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   }
 }
@@ -255,60 +260,67 @@
   }
 }
 
-/* 动画效果 */
+/* 优化的动画效果 - 使用硬件加速 */
 
-/* 淡入动画 */
-@keyframes fadeIn {
+/* 优化的淡入动画 */
+@keyframes fadeInOptimized {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translate3d(0, 1rem, 0);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
-/* 滑入动画 */
-@keyframes slideIn {
+/* 优化的滑入动画 */
+@keyframes slideInOptimized {
   from {
     opacity: 0;
-    transform: translateX(-30px);
+    transform: translate3d(-1.5rem, 0, 0);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
-/* 缩放动画 */
-@keyframes scaleIn {
+/* 优化的缩放动画 */
+@keyframes scaleInOptimized {
   from {
     opacity: 0;
-    transform: scale(0.8);
+    transform: scale3d(0.9, 0.9, 1);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: scale3d(1, 1, 1);
   }
 }
 
-/* 动画类 */
+/* 优化的动画类 - 启用硬件加速 */
 .widget-animation-fade {
-  animation: fadeIn var(--widget-animation-duration) var(--widget-animation-timing) forwards;
+  animation: fadeInOptimized var(--widget-animation-duration) var(--widget-animation-timing) forwards;
+  will-change: opacity, transform;
+  transform: translateZ(0);
 }
 
 .widget-animation-slide {
-  animation: slideIn var(--widget-animation-duration) var(--widget-animation-timing) forwards;
+  animation: slideInOptimized var(--widget-animation-duration) var(--widget-animation-timing) forwards;
+  will-change: opacity, transform;
+  transform: translateZ(0);
 }
 
 .widget-animation-scale {
-  animation: scaleIn var(--widget-animation-duration) var(--widget-animation-timing) forwards;
+  animation: scaleInOptimized var(--widget-animation-duration) var(--widget-animation-timing) forwards;
+  will-change: opacity, transform;
+  transform: translateZ(0);
 }
 
-/* 初始状态 */
+/* 优化的初始状态 */
 .widget-container {
   opacity: 0;
+  will-change: opacity, transform;
 }
 
 .widget-container.widget-animated {

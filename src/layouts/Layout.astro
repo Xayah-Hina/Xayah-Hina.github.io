@@ -1098,27 +1098,23 @@ const setup = () => {
 			navbar.setAttribute('data-is-home', isHomePage.toString())
 		}
 
-		// Control mobile banner visibility based on page with improved staging animation
+		// Control mobile banner visibility based on page - 优化性能，减少延迟
 		const bannerWrapper = document.getElementById('banner-wrapper')
 		const mainContentWrapper = document.querySelector('.absolute.w-full.z-30')
 		
 		if (bannerWrapper && mainContentWrapper) {
-			if (isHomePage) {
-				// 首页：延迟移除隐藏类，让banner和内容优雅地出现
-				setTimeout(() => {
+			// 使用 requestAnimationFrame 替代 setTimeout 以获得更好的性能
+			requestAnimationFrame(() => {
+				if (isHomePage) {
+					// 首页：立即移除隐藏类，让CSS过渡处理动画
 					bannerWrapper.classList.remove('mobile-hide-banner')
-				}, 100)
-				setTimeout(() => {
 					mainContentWrapper.classList.remove('mobile-main-no-banner')
-				}, 150)
-			} else {
-				// 非首页：分阶段隐藏，先隐藏banner，再移动内容
-				bannerWrapper.classList.add('mobile-hide-banner')
-				// 延迟移动内容，让banner先完全消失
-				setTimeout(() => {
+				} else {
+					// 非首页：立即应用隐藏类，让CSS过渡处理动画
+					bannerWrapper.classList.add('mobile-hide-banner')
 					mainContentWrapper.classList.add('mobile-main-no-banner')
-				}, 100)
-			}
+				}
+			})
 		}
 
 		// increase the page height during page transition to prevent the scrolling animation from jumping
