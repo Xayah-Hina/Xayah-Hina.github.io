@@ -44,19 +44,7 @@ import { Icon } from "astro-icon/components";
 
 <script is:raw is:inline>
 function backToTop() {
-    // 检查是否使用了OverlayScrollbars
-    const bodyElement = document.querySelector('body');
-    const osInstance = bodyElement && bodyElement.osInstance;
-    
-    if (osInstance) {
-        // 如果使用了OverlayScrollbars，使用其API进行平滑滚动
-        const { viewport } = osInstance.elements();
-        if (viewport) {
-            viewport.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    } else {
-        // 否则使用原生滚动
-        window.scroll({ top: 0, behavior: 'smooth' });
-    }
+    // 直接使用原生滚动，避免OverlayScrollbars冲突
+    window.scroll({ top: 0, behavior: 'smooth' });
 }
 </script>

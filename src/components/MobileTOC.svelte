@@ -1,210 +1,221 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import Icon from '@iconify/svelte';
-	import { i18n } from '../i18n/translation';
-	import I18nKey from '../i18n/i18nKey';
-	import { navigateToPage } from '../utils/navigation-utils';
+import Icon from "@iconify/svelte";
+import { onMount } from "svelte";
+import I18nKey from "../i18n/i18nKey";
+import { i18n } from "../i18n/translation";
+import { navigateToPage } from "../utils/navigation-utils";
 
-	let tocItems: Array<{id: string, text: string, level: number}> = [];
-	let postItems: Array<{title: string, url: string, category?: string, pinned?: boolean}> = [];
-	let activeId = '';
-	let observer: IntersectionObserver;
-	let isHomePage = false;
-	let swupReady = false;
+let tocItems: Array<{ id: string; text: string; level: number }> = [];
+let postItems: Array<{
+	title: string;
+	url: string;
+	category?: string;
+	pinned?: boolean;
+}> = [];
+let activeId = "";
+let observer: IntersectionObserver;
+let isHomePage = false;
+let swupReady = false;
 
-	const togglePanel = () => {
-		const panel = document.getElementById('mobile-toc-panel');
-		panel?.classList.toggle('float-panel-closed');
-	};
+const togglePanel = () => {
+	const panel = document.getElementById("mobile-toc-panel");
+	panel?.classList.toggle("float-panel-closed");
+};
 
-	const setPanelVisibility = (show: boolean): void => {
-		const panel = document.getElementById('mobile-toc-panel');
-		if (!panel) return;
+const setPanelVisibility = (show: boolean): void => {
+	const panel = document.getElementById("mobile-toc-panel");
+	if (!panel) return;
 
-		if (show) {
-			panel.classList.remove('float-panel-closed');
-		} else {
-			panel.classList.add('float-panel-closed');
+	if (show) {
+		panel.classList.remove("float-panel-closed");
+	} else {
+		panel.classList.add("float-panel-closed");
+	}
+};
+
+const generateTOC = () => {
+	const headings = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+	const items: Array<{ id: string; text: string; level: number }> = [];
+
+	headings.forEach((heading) => {
+		if (heading.id) {
+			const level = Number.parseInt(heading.tagName.charAt(1));
+			const text = heading.textContent?.trim() || "";
+			items.push({ id: heading.id, text, level });
 		}
-	};
+	});
 
-	const generateTOC = () => {
-		const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-		const items: Array<{id: string, text: string, level: number}> = [];
+	tocItems = items;
+};
 
-		headings.forEach((heading) => {
-			if (heading.id) {
-				const level = parseInt(heading.tagName.charAt(1));
-				const text = heading.textContent?.trim() || '';
-				items.push({ id: heading.id, text, level });
+const generatePostList = () => {
+	// 查找所有文章卡片
+	const postCards = document.querySelectorAll(".card-base");
+	const items: Array<{
+		title: string;
+		url: string;
+		category?: string;
+		pinned?: boolean;
+	}> = [];
+
+	postCards.forEach((card) => {
+		// 查找标题链接
+		const titleLink = card.querySelector('a[href*="/posts/"].transition.group');
+		// 查找分类链接
+		const categoryLink = card.querySelector('a[href*="/categories/"].link-lg');
+		// 查找置顶图标
+		const pinnedIcon = titleLink?.querySelector('svg[data-icon="mdi:pin"]');
+
+		if (titleLink) {
+			const href = titleLink.getAttribute("href");
+			const title = titleLink.textContent?.replace(/\s+/g, " ").trim() || "";
+			const category = categoryLink?.textContent?.trim() || "";
+			const pinned = !!pinnedIcon;
+
+			if (href && title) {
+				items.push({ title, url: href, category, pinned });
 			}
-		});
-
-		tocItems = items;
-	};
-
-	const generatePostList = () => {
-		// 查找所有文章卡片
-		const postCards = document.querySelectorAll('.card-base');
-		const items: Array<{title: string, url: string, category?: string, pinned?: boolean}> = [];
-
-		postCards.forEach((card) => {
-			// 查找标题链接
-			const titleLink = card.querySelector('a[href*="/posts/"].transition.group');
-			// 查找分类链接
-			const categoryLink = card.querySelector('a[href*="/categories/"].link-lg');
-			// 查找置顶图标
-			const pinnedIcon = titleLink?.querySelector('svg[data-icon="mdi:pin"]');
-			
-			if (titleLink) {
-				const href = titleLink.getAttribute('href');
-				const title = titleLink.textContent?.replace(/\s+/g, ' ').trim() || '';
-				const category = categoryLink?.textContent?.trim() || '';
-				const pinned = !!pinnedIcon;
-				
-				if (href && title) {
-					items.push({ title, url: href, category, pinned });
-				}
-			}
-		});
-
-		postItems = items;
-	};
-
-	const checkIsHomePage = () => {
-		isHomePage = window.location.pathname === '/' || window.location.pathname === '';
-	};
-
-	const scrollToHeading = (id: string) => {
-		const element = document.getElementById(id);
-		if (element) {
-			// 关闭面板
-			setPanelVisibility(false);
-			
-			// 滚动到目标位置，考虑导航栏高度
-			const offset = 80;
-			const elementPosition = element.offsetTop - offset;
-			
-			window.scrollTo({
-				top: elementPosition,
-				behavior: 'smooth'
-			});
 		}
-	};
+	});
 
-	const navigateToPost = (url: string) => {
+	postItems = items;
+};
+
+const checkIsHomePage = () => {
+	isHomePage =
+		window.location.pathname === "/" || window.location.pathname === "";
+};
+
+const scrollToHeading = (id: string) => {
+	const element = document.getElementById(id);
+	if (element) {
 		// 关闭面板
 		setPanelVisibility(false);
-		
-		// 使用统一的导航工具函数，实现无刷新跳转
-		navigateToPage(url);
-	};
 
-	const updateActiveHeading = () => {
-		const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-		const scrollTop = window.scrollY;
-		const offset = 100;
+		// 滚动到目标位置，考虑导航栏高度
+		const offset = 80;
+		const elementPosition = element.offsetTop - offset;
 
-		let currentActiveId = '';
-		headings.forEach((heading) => {
-			if (heading.id) {
-				const elementTop = (heading as HTMLElement).offsetTop - offset;
-				if (scrollTop >= elementTop) {
-					currentActiveId = heading.id;
-				}
-			}
+		window.scrollTo({
+			top: elementPosition,
+			behavior: "smooth",
 		});
+	}
+};
 
-		activeId = currentActiveId;
-	};
+const navigateToPost = (url: string) => {
+	// 关闭面板
+	setPanelVisibility(false);
 
-	const setupIntersectionObserver = () => {
-		const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-		
+	// 使用统一的导航工具函数，实现无刷新跳转
+	navigateToPage(url);
+};
+
+const updateActiveHeading = () => {
+	const headings = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+	const scrollTop = window.scrollY;
+	const offset = 100;
+
+	let currentActiveId = "";
+	headings.forEach((heading) => {
+		if (heading.id) {
+			const elementTop = (heading as HTMLElement).offsetTop - offset;
+			if (scrollTop >= elementTop) {
+				currentActiveId = heading.id;
+			}
+		}
+	});
+
+	activeId = currentActiveId;
+};
+
+const setupIntersectionObserver = () => {
+	const headings = document.querySelectorAll("h1, h2, h3, h4, h5, h6");
+
+	if (observer) {
+		observer.disconnect();
+	}
+
+	observer = new IntersectionObserver(
+		(entries) => {
+			entries.forEach((entry) => {
+				if (entry.isIntersecting) {
+					activeId = entry.target.id;
+				}
+			});
+		},
+		{
+			rootMargin: "-80px 0px -80% 0px",
+			threshold: 0,
+		},
+	);
+
+	headings.forEach((heading) => {
+		if (heading.id) {
+			observer.observe(heading);
+		}
+	});
+};
+
+const checkSwupAvailability = () => {
+	if (typeof window !== "undefined") {
+		// 检查Swup是否已加载
+		swupReady = !!(window as any).swup;
+
+		// 如果Swup还未加载，监听其加载事件
+		if (!swupReady) {
+			const checkSwup = () => {
+				if ((window as any).swup) {
+					swupReady = true;
+					document.removeEventListener("swup:enable", checkSwup);
+				}
+			};
+
+			// 监听Swup启用事件
+			document.addEventListener("swup:enable", checkSwup);
+
+			// 设置超时检查
+			setTimeout(() => {
+				if ((window as any).swup) {
+					swupReady = true;
+					document.removeEventListener("swup:enable", checkSwup);
+				}
+			}, 1000);
+		}
+	}
+};
+
+const init = () => {
+	checkIsHomePage();
+	checkSwupAvailability();
+	if (isHomePage) {
+		generatePostList();
+	} else {
+		generateTOC();
+		setupIntersectionObserver();
+		updateActiveHeading();
+	}
+};
+
+onMount(() => {
+	// 延迟初始化，确保页面内容已加载
+	setTimeout(init, 100);
+
+	// 监听滚动事件作为备用
+	window.addEventListener("scroll", updateActiveHeading);
+
+	return () => {
 		if (observer) {
 			observer.disconnect();
 		}
-
-		observer = new IntersectionObserver(
-			(entries) => {
-				entries.forEach((entry) => {
-					if (entry.isIntersecting) {
-						activeId = entry.target.id;
-					}
-				});
-			},
-			{
-				rootMargin: '-80px 0px -80% 0px',
-				threshold: 0
-			}
-		);
-
-		headings.forEach((heading) => {
-			if (heading.id) {
-				observer.observe(heading);
-			}
-		});
+		window.removeEventListener("scroll", updateActiveHeading);
 	};
+});
 
-	const checkSwupAvailability = () => {
-		if (typeof window !== 'undefined') {
-			// 检查Swup是否已加载
-			swupReady = !!(window as any).swup;
-			
-			// 如果Swup还未加载，监听其加载事件
-			if (!swupReady) {
-				const checkSwup = () => {
-					if ((window as any).swup) {
-						swupReady = true;
-						document.removeEventListener('swup:enable', checkSwup);
-					}
-				};
-				
-				// 监听Swup启用事件
-				document.addEventListener('swup:enable', checkSwup);
-				
-				// 设置超时检查
-				setTimeout(() => {
-					if ((window as any).swup) {
-						swupReady = true;
-						document.removeEventListener('swup:enable', checkSwup);
-					}
-				}, 1000);
-			}
-		}
-	};
-
-	const init = () => {
-		checkIsHomePage();
-		checkSwupAvailability();
-		if (isHomePage) {
-			generatePostList();
-		} else {
-			generateTOC();
-			setupIntersectionObserver();
-			updateActiveHeading();
-		}
-	};
-
-	onMount(() => {
-		// 延迟初始化，确保页面内容已加载
-		setTimeout(init, 100);
-
-		// 监听滚动事件作为备用
-		window.addEventListener('scroll', updateActiveHeading);
-
-		return () => {
-			if (observer) {
-				observer.disconnect();
-			}
-			window.removeEventListener('scroll', updateActiveHeading);
-		};
-	});
-
-	// 导出初始化函数供外部调用
-	if (typeof window !== 'undefined') {
-		(window as any).mobileTOCInit = init;
-	}
+// 导出初始化函数供外部调用
+if (typeof window !== "undefined") {
+	(window as any).mobileTOCInit = init;
+}
 </script>
 
 <!-- TOC toggle button for mobile -->

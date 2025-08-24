@@ -41,18 +41,20 @@ export default defineConfig({
 			// the default value `transition-` cause transition delay
 			// when the Tailwind class `transition-all` is used
 			containers: ["main"],
-			smoothScrolling: true, // 禁用平滑滚动以提升性能
+			smoothScrolling: false, // 禁用平滑滚动以提升性能，避免与锚点导航冲突
 			cache: true,
-			preload: true, // 禁用预加载以减少网络请求
+			preload: false, // 禁用预加载以减少网络请求
 			accessibility: true,
 			updateHead: true,
 			updateBodyClass: false,
 			globalInstance: true,
-			// 滚动相关配置
+			// 滚动相关配置优化
 			resolveUrl: (url) => url,
-			scrollBehavior: "smooth",
 			animateHistoryBrowsing: false,
-			skipPopStateHandling: false,
+			skipPopStateHandling: (event) => {
+				// 跳过锚点链接的处理，让浏览器原生处理
+				return event.state && event.state.url && event.state.url.includes("#");
+			},
 		}),
 		icon({
 			include: {

@@ -17,7 +17,8 @@ for (const heading of headings) {
 
 const className = Astro.props.class;
 // 修复路由判断逻辑，确保在文章页面能正确显示TOC
-const isPostsRoute = Astro.url.pathname.includes("/posts/") || headings.length > 0;
+const isPostsRoute =
+	Astro.url.pathname.includes("/posts/") || headings.length > 0;
 
 const removeTailingHash = (text: string) => {
 	let lastIndexOfHash = text.lastIndexOf("#");
@@ -169,30 +170,35 @@ class TableOfContents extends HTMLElement {
             const targetElement = document.getElementById(id);
             
             if (targetElement) {
+                // 临时禁用滚动保护，确保TOC导航能够立即响应
+                const scrollProtection = (window as any).scrollProtectionManager;
+                const wasProtectionEnabled = scrollProtection?.isEnabled();
+                
+                if (scrollProtection && wasProtectionEnabled) {
+                    scrollProtection.disable();
+                }
+                
                 // 计算目标位置
-                const targetTop = targetElement.getBoundingClientRect().top + window.pageYOffset - 80; // 80px偏移量
+                const navbarHeight = 80; // 导航栏高度
+                const targetTop = targetElement.getBoundingClientRect().top + window.pageYOffset - navbarHeight;
                 
-                // 检查是否使用了OverlayScrollbars
-                const bodyElement = document.querySelector('body');
-                const osInstance = bodyElement && (bodyElement as any).osInstance;
+                // 使用原生滚动方法，确保立即响应
+                try {
+                    // 优先使用最快的滚动方式
+                    window.scrollTo({
+                        top: targetTop,
+                        behavior: "smooth"
+                    });
+                } catch (error) {
+                    // 降级到传统方式
+                    window.scrollTo(0, targetTop);
+                }
                 
-                if (osInstance && osInstance.elements) {
-                    // 如果使用了OverlayScrollbars，使用其API进行平滑滚动
-                    try {
-                        const { viewport } = osInstance.elements();
-                        if (viewport && viewport.scrollTo) {
-                            viewport.scrollTo({ top: targetTop, behavior: 'smooth' });
-                        } else {
-                            // 降级到原生滚动
-                            window.scrollTo({ top: targetTop, behavior: 'smooth' });
-                        }
-                    } catch (error) {
-                        // 如果OverlayScrollbars API调用失败，降级到原生滚动
-                        window.scrollTo({ top: targetTop, behavior: 'smooth' });
-                    }
-                } else {
-                    // 使用原生滚动
-                    window.scrollTo({ top: targetTop, behavior: 'smooth' });
+                // 延迟恢复滚动保护（如果之前是启用的）
+                if (scrollProtection && wasProtectionEnabled) {
+                    setTimeout(() => {
+                        scrollProtection.enable(2000); // 重新启用2秒保护
+                    }, 100);
                 }
             }
             
