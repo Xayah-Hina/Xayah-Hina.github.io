@@ -1,10 +1,10 @@
 ---
-import type { MarkdownHeading } from "astro";
-import { Icon } from "astro-icon/components";
 import BackToTop from "@components/control/BackToTop.astro";
 import Footer from "@components/Footer.astro";
 import Navbar from "@components/Navbar.astro";
 import SideBar from "@components/widget/SideBar.astro";
+import type { MarkdownHeading } from "astro";
+import { Icon } from "astro-icon/components";
 import ImageWrapper from "../components/misc/ImageWrapper.astro";
 import IconifyLoader from "../components/misc/IconifyLoader.astro";
 import TypewriterText from "../components/TypewriterText.astro";
@@ -43,7 +43,7 @@ const isBannerSrcObject = (
 };
 
 // 获取banner图片的辅助函数
-const getBannerImages = (): { desktop: string | string[]; mobile: string | string[] } => {
+const getBannerImages = () => {
 	if (isBannerSrcObject(siteConfig.banner.src)) {
 		return {
 			desktop:
@@ -298,7 +298,7 @@ const mainContentClass = `
 <div class={`absolute w-full z-30 pointer-events-none ${mobileNonHomeBannerClass ? 'mobile-main-no-banner' : ''} ${!siteConfig.banner.enable ? 'no-banner-layout' : ''}`} style={`top: ${finalMainPanelTop}`}>
     <!-- The pointer-events-none here prevent blocking the click event of the TOC -->
     <div class="relative max-w-[var(--page-width)] mx-auto pointer-events-auto">
-        <div id="main-grid" class={`transition duration-1000 w-full left-0 right-0 grid ${gridCols} grid-rows-[auto_1fr_auto] lg:grid-rows-[auto] mx-auto gap-4 px-0 md:px-4 ${!mobileShowSidebar ? 'mobile-no-sidebar' : ''}`}
+        <div id="main-grid" class={`transition duration-700 w-full left-0 right-0 grid ${gridCols} grid-rows-[auto_1fr_auto] lg:grid-rows-[auto] mx-auto gap-4 px-0 md:px-4 ${!mobileShowSidebar ? 'mobile-no-sidebar' : ''}`}
         >
             <!-- Banner image credit -->
             {hasBannerCredit && <a href={siteConfig.banner.credit.url} id="banner-credit" target="_blank" rel="noopener" aria-label="Visit image source"
@@ -670,7 +670,7 @@ const mainContentClass = `
 /* 手机端非首页隐藏banner - 改进的分阶段动画 */
 @media (max-width: 1023px) {
     #banner-wrapper {
-        transition: transform 0.3s ease-out, opacity 0.2s ease-out;
+        transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease-out;
         transform-origin: top center;
         /* 硬件加速优化 */
         will-change: transform, opacity;
@@ -684,13 +684,13 @@ const mainContentClass = `
         transform: translateY(-100%) translateZ(0) !important;
         opacity: 0 !important;
         pointer-events: none !important;
-        /* 优化过渡时间，减少卡顿 */
-        transition: transform 0.3s ease-out, opacity 0.2s ease-out !important;
+        /* 快速消失 */
+        transition: transform 0.3s ease-in, opacity 0.2s ease-in !important;
     }
     
-    /* 手机端非首页时主内容区域从顶部开始 - 移除延迟，减少卡顿 */
+    /* 手机端非首页时主内容区域从顶部开始 - 延迟出现的动画 */
     .absolute.w-full.z-30 {
-        transition: top 0.3s ease-out;
+        transition: top 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s;
         /* 硬件加速优化 */
         will-change: top;
         transform: translateZ(0);
@@ -701,7 +701,7 @@ const mainContentClass = `
         top: 5.5rem !important;
         min-height: calc(100vh - 5.5rem) !important;
         /* 内容区域快速上移 */
-        transition: top 0.3s ease-out !important;
+        transition: top 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.2s !important;
     }
 }
 

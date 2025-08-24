@@ -358,7 +358,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 };
 
 export const sakuraConfig: SakuraConfig = {
-	enable: false, // 全局樱花特效开关
+	enable: true, // 全局樱花特效开关
 	limitTimes: -1, // 樱花越界限制次数，-1为无限循环
 	zIndex: 100, // 层级，确保樱花在合适的层级显示
 	// 设备特定配置

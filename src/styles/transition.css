@@ -1,33 +1,28 @@
-/* 优化的页面转场动画 - 使用硬件加速 */
+/* Page transition animations with Swup */
 html.is-changing .transition-swup-fade {
-    transition-property: opacity;
-    transition-duration: 200ms;
-    will-change: opacity;
-    transform: translateZ(0); /* 强制硬件加速 */
+    @apply transition-all duration-200
 }
 html.is-animating .transition-swup-fade {
-    opacity: 0;
+    @apply opacity-0 translate-y-4
 }
 
-/* 优化的淡入动画 - 减少transform复杂度 */
-@keyframes fade-in-optimized {
+/* Fade-in animations for components */
+@keyframes fade-in-up {
     0% {
+        transform: translateY(2rem);
         opacity: 0;
-        transform: translate3d(0, 1rem, 0); /* 使用3D变换启用硬件加速 */
     }
     100% {
+        transform: translateY(0);
         opacity: 1;
-        transform: translate3d(0, 0, 0);
     }
 }
 
-/* 高性能组件动画 */
+/* Main components - 减少动画延迟提升性能 */
 .onload-animation {
     opacity: 0;
-    animation: 200ms fade-in-optimized ease-out;
+    animation: 150ms fade-in-up;
     animation-fill-mode: forwards;
-    will-change: opacity, transform;
-    transform: translateZ(0); /* 启用硬件加速 */
 }
 #navbar {
     animation-delay: 0ms
