@@ -6,9 +6,7 @@ import "@fontsource/roboto/700.css";
 import ConfigCarrier from "@components/ConfigCarrier.astro";
 import MusicPlayer from "@components/widget/MusicPlayer.svelte";
 import { profileConfig, siteConfig } from "@/config";
-import {widgetConfigs} from '../config';
-import type {SakuraConfig} from '../types/config';
-
+import { widgetConfigs } from "../config";
 import {
 	AUTO_MODE,
 	BANNER_HEIGHT,
@@ -20,7 +18,7 @@ import {
 	PAGE_WIDTH,
 } from "../constants/constants";
 import { defaultFavicons } from "../constants/icon";
-import type { Favicon } from "../types/config";
+import type { Favicon, SakuraConfig } from "../types/config";
 import { pathsEqual, url } from "../utils/url-utils";
 import "katex/dist/katex.css";
 import "../styles/mobile-navbar.css";
@@ -200,309 +198,6 @@ const bannerOffset =
 		<!-- Sakura Effect -->
 		{(widgetConfigs.sakura as SakuraConfig)?.enable && (
 			<script define:vars={{ sakuraConfig: widgetConfigs.sakura }}>
-				// 樱花对象类
-				class Sakura {
-					constructor(x, y, s, r, fn, idx, img, limitArray, config) {
-						this.x = x;
-						this.y = y;
-						this.s = s;
-						this.r = r;
-						this.fn = fn;
-						this.idx = idx;
-						this.img = img;
-						this.limitArray = limitArray;
-						this.config = config;
-					}
-
-					draw(cxt) {
-						cxt.save();
-						cxt.translate(this.x, this.y);
-						cxt.rotate(this.r);
-						cxt.drawImage(this.img, 0, 0, 40 * this.s, 40 * this.s);
-						cxt.restore();
-					}
-
-					update() {
-						this.x = this.fn.x(this.x, this.y);
-						this.y = this.fn.y(this.y, this.y);
-						this.r = this.fn.r(this.r);
-
-						// 如果樱花越界，重新调整位置
-						if (
-							this.x > window.innerWidth ||
-							this.x < 0 ||
-							this.y > window.innerHeight ||
-							this.y < 0
-						) {
-							// 如果樱花不做限制
-							if (this.limitArray[this.idx] === -1) {
-								this.resetPosition();
-							}
-							// 否则樱花有限制
-							else {
-								if (this.limitArray[this.idx] > 0) {
-									this.resetPosition();
-									this.limitArray[this.idx]--;
-								}
-							}
-						}
-					}
-
-					resetPosition() {
-						this.r = getRandom('fnr', this.config);
-						if (Math.random() > 0.4) {
-							this.x = getRandom('x', this.config);
-							this.y = 0;
-							this.s = getRandom('s', this.config);
-							this.r = getRandom('r', this.config);
-						} else {
-							this.x = window.innerWidth;
-							this.y = getRandom('y', this.config);
-							this.s = getRandom('s', this.config);
-							this.r = getRandom('r', this.config);
-						}
-					}
-				}
-
-				// 樱花列表类
-				class SakuraList {
-					constructor() {
-						this.list = [];
-					}
-
-					push(sakura) {
-						this.list.push(sakura);
-					}
-
-					update() {
-						for (let i = 0, len = this.list.length; i < len; i++) {
-							this.list[i].update();
-						}
-					}
-
-					draw(cxt) {
-						for (let i = 0, len = this.list.length; i < len; i++) {
-							this.list[i].draw(cxt);
-						}
-					}
-
-					get(i) {
-						return this.list[i];
-					}
-
-					size() {
-						return this.list.length;
-					}
-				}
-
-				// 获取随机值的函数
-				function getRandom(option, config) {
-					let ret;
-					let random;
-
-					switch (option) {
-						case 'x':
-							ret = Math.random() * window.innerWidth;
-							break;
-						case 'y':
-							ret = Math.random() * window.innerHeight;
-							break;
-						case 's':
-							ret = config.size.min + Math.random() * (config.size.max - config.size.min);
-							break;
-						case 'r':
-							ret = Math.random() * 6;
-							break;
-						case 'fnx':
-							random = config.speed.horizontal.min + Math.random() * (config.speed.horizontal.max - config.speed.horizontal.min);
-							ret = function (x, y) {
-								return x + random;
-							};
-							break;
-						case 'fny':
-							random = config.speed.vertical.min + Math.random() * (config.speed.vertical.max - config.speed.vertical.min);
-							ret = function (x, y) {
-								return y + random;
-							};
-							break;
-						case 'fnr':
-							ret = function (r) {
-								return r + config.speed.rotation;
-							};
-							break;
-					}
-					return ret;
-				}
-
-				// 樱花管理器类
-				class SakuraManager {
-					constructor(config) {
-						this.config = config;
-						this.canvas = null;
-						this.ctx = null;
-						this.sakuraList = null;
-						this.animationId = null;
-						this.img = null;
-						this.isRunning = false;
-					}
-
-					// 初始化樱花特效
-					async init() {
-						if (!this.config.enable || this.isRunning) {
-							return;
-						}
-
-						// 创建图片对象
-						this.img = new Image();
-						this.img.src = '/sakura.png'; // 使用樱花图片
-
-						// 等待图片加载完成
-						await new Promise((resolve, reject) => {
-							if (this.img) {
-								this.img.onload = () => resolve();
-								this.img.onerror = () => reject(new Error('Failed to load sakura image'));
-							}
-						});
-
-						this.createCanvas();
-						this.createSakuraList();
-						this.startAnimation();
-						this.isRunning = true;
-					}
-
-					// 创建画布
-					createCanvas() {
-						this.canvas = document.createElement('canvas');
-						this.canvas.height = window.innerHeight;
-						this.canvas.width = window.innerWidth;
-						this.canvas.setAttribute('style', `position: fixed; left: 0; top: 0; pointer-events: none; z-index: ${this.config.zIndex};`);
-						this.canvas.setAttribute('id', 'canvas_sakura');
-						document.body.appendChild(this.canvas);
-						this.ctx = this.canvas.getContext('2d');
-
-						// 监听窗口大小变化
-						window.addEventListener('resize', this.handleResize.bind(this));
-					}
-
-					// 创建樱花列表
-					createSakuraList() {
-						if (!this.img || !this.ctx) return;
-
-						this.sakuraList = new SakuraList();
-						const limitArray = new Array(this.config.sakuraNum).fill(this.config.limitTimes);
-
-						for (let i = 0; i < this.config.sakuraNum; i++) {
-							const randomX = getRandom('x', this.config);
-							const randomY = getRandom('y', this.config);
-							const randomR = getRandom('r', this.config);
-							const randomS = getRandom('s', this.config);
-							const randomFnx = getRandom('fnx', this.config);
-							const randomFny = getRandom('fny', this.config);
-							const randomFnR = getRandom('fnr', this.config);
-
-							const sakura = new Sakura(
-								randomX,
-								randomY,
-								randomS,
-								randomR,
-								{
-									x: randomFnx,
-									y: randomFny,
-									r: randomFnR,
-								},
-								i,
-								this.img,
-								limitArray,
-								this.config
-							);
-
-							sakura.draw(this.ctx);
-							this.sakuraList.push(sakura);
-						}
-					}
-
-					// 开始动画
-					startAnimation() {
-						if (!this.ctx || !this.canvas || !this.sakuraList) return;
-
-						const animate = () => {
-							if (!this.ctx || !this.canvas || !this.sakuraList) return;
-
-							this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-							this.sakuraList.update();
-							this.sakuraList.draw(this.ctx);
-							this.animationId = requestAnimationFrame(animate);
-						};
-
-						this.animationId = requestAnimationFrame(animate);
-					}
-
-					// 处理窗口大小变化
-					handleResize() {
-						if (this.canvas) {
-							this.canvas.width = window.innerWidth;
-							this.canvas.height = window.innerHeight;
-						}
-					}
-
-					// 停止樱花特效
-					stop() {
-						if (this.animationId) {
-							cancelAnimationFrame(this.animationId);
-							this.animationId = null;
-						}
-
-						if (this.canvas) {
-							document.body.removeChild(this.canvas);
-							this.canvas = null;
-						}
-
-						window.removeEventListener('resize', this.handleResize.bind(this));
-						this.isRunning = false;
-					}
-
-					// 切换樱花特效
-					toggle() {
-						if (this.isRunning) {
-							this.stop();
-						} else {
-							this.init();
-						}
-					}
-
-					// 更新配置
-					updateConfig(newConfig) {
-						const wasRunning = this.isRunning;
-						if (wasRunning) {
-							this.stop();
-						}
-						this.config = newConfig;
-						if (wasRunning && newConfig.enable) {
-							this.init();
-						}
-					}
-
-					// 获取运行状态
-					getIsRunning() {
-						return this.isRunning;
-					}
-				}
-
-				// 创建全局樱花管理器实例
-				let globalSakuraManager = null;
-
-				// 初始化樱花特效
-				function initSakura(config) {
-					if (globalSakuraManager) {
-						globalSakuraManager.updateConfig(config);
-					} else {
-						globalSakuraManager = new SakuraManager(config);
-						if (config.enable) {
-							globalSakuraManager.init();
-						}
-					}
-				}
-
 				// 樱花特效初始化
 				(function() {
 					// 全局标记，确保樱花特效只初始化一次
@@ -513,8 +208,13 @@ const bannerOffset =
 					// 初始化樱花特效的函数
 					const setupSakura = () => {
 						if (sakuraConfig.enable && !window.sakuraInitialized) {
-							initSakura(sakuraConfig);
-							window.sakuraInitialized = true;
+							try {
+								// 直接在客户端初始化樱花特效
+								initClientSakura(sakuraConfig);
+								window.sakuraInitialized = true;
+							} catch (error) {
+								console.warn('樱花特效初始化失败:', error);
+							}
 						}
 					};
 					
@@ -525,9 +225,379 @@ const bannerOffset =
 						setupSakura();
 					}
 				})();
+				
+				// 设备检测函数
+				function detectDevice() {
+					// 检测屏幕宽度，768px以下为移动端
+					if (window.innerWidth < 768) {
+						return 'mobile';
+					}
+					// 检测触摸设备
+					if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+						// 如果是触摸设备但屏幕较大，仍可能是平板，按桌面端处理
+						if (window.innerWidth >= 1024) {
+							return 'desktop';
+						}
+						return 'mobile';
+					}
+					return 'desktop';
+				}
+				
+				// 获取设备特定配置的函数
+				function getDeviceSpecificConfig(config) {
+					const device = detectDevice();
+					
+					// 如果有设备特定配置，直接使用
+					if (config.devices && config.devices[device]) {
+						return config.devices[device];
+					}
+					
+					// 向后兼容：如果没有设备特定配置，使用全局配置
+					return {
+						enable: config.enable,
+						sakuraNum: config.sakuraNum || 21,
+						size: config.size || { min: 0.5, max: 1.1 },
+						speed: config.speed || {
+							horizontal: { min: -0.8, max: -0.5 },
+							vertical: { min: 0.6, max: 1.0 },
+							rotation: 0.015
+						}
+					};
+				}
+				
+				// 客户端樱花管理器初始化
+				function initClientSakura(config) {
+					if (window.globalSakuraManager) {
+						window.globalSakuraManager.updateConfig(config);
+					} else {
+						window.globalSakuraManager = new ClientSakuraManager(config);
+						if (config.enable) {
+							window.globalSakuraManager.init();
+						}
+					}
+				}
+				
+				// 客户端樱花管理器类
+				class ClientSakuraManager {
+					constructor(config) {
+						this.config = config;
+						this.currentDevice = detectDevice();
+						this.deviceConfig = getDeviceSpecificConfig(config);
+						this.canvas = null;
+						this.ctx = null;
+						this.sakuraList = [];
+						this.animationId = null;
+						this.img = null;
+						this.isRunning = false;
+						this.setupDeviceChangeHandlers();
+					}
+					
+					// 设置设备变化检测
+					setupDeviceChangeHandlers() {
+						window.addEventListener('resize', () => {
+							const newDevice = detectDevice();
+							if (newDevice !== this.currentDevice) {
+								this.currentDevice = newDevice;
+								this.deviceConfig = getDeviceSpecificConfig(this.config);
+								
+								// 如果樱花正在运行，重新初始化
+								if (this.isRunning) {
+									this.restart();
+								}
+							}
+						});
+					}
+					
+					// 初始化樱花特效
+					async init() {
+						// 检查全局和设备特定的启用状态
+						if (!this.config.enable || !this.deviceConfig.enable || this.isRunning) {
+							return;
+						}
+						
+						try {
+							// 预加载图片
+							await this.loadImage();
+							
+							// 创建优化的Canvas
+							this.createOptimizedCanvas();
+							
+							// 创建樱花粒子系统
+							this.createSakuraList();
+							
+							// 启动动画循环
+							this.startAnimation();
+							
+							this.isRunning = true;
+							console.log(`樱花特效启动成功 - 设备: ${this.currentDevice}, 数量: ${this.deviceConfig.sakuraNum}`);
+						} catch (error) {
+							console.warn('樱花特效初始化失败:', error);
+						}
+					}
+					
+					// 加载樱花图片
+					async loadImage() {
+						return new Promise((resolve, reject) => {
+							this.img = new Image();
+							this.img.crossOrigin = 'anonymous';
+							this.img.onload = () => resolve();
+							this.img.onerror = () => reject(new Error('樱花图片加载失败'));
+							this.img.src = '/sakura.png';
+						});
+					}
+					
+					// 创建优化的Canvas
+					createOptimizedCanvas() {
+						this.canvas = document.createElement('canvas');
+						
+						// 设置Canvas尺寸和样式
+						this.updateCanvasSize();
+						this.canvas.style.cssText = `
+							position: fixed;
+							left: 0;
+							top: 0;
+							pointer-events: none;
+							z-index: ${this.config.zIndex};
+							will-change: transform;
+						`;
+						this.canvas.id = 'canvas_sakura';
+						
+						document.body.appendChild(this.canvas);
+						this.ctx = this.canvas.getContext('2d', {
+							alpha: true,
+							desynchronized: true,
+							willReadFrequently: false
+						});
+						
+						// 优化Canvas渲染设置
+						if (this.ctx) {
+							this.ctx.imageSmoothingEnabled = true;
+							this.ctx.imageSmoothingQuality = 'low';
+						}
+						
+						// 监听窗口大小变化
+						window.addEventListener('resize', this.handleResize.bind(this));
+					}
+					
+					// 更新Canvas尺寸
+					updateCanvasSize() {
+						if (!this.canvas) return;
+						
+						const dpr = Math.min(window.devicePixelRatio || 1, 2);
+						const width = window.innerWidth;
+						const height = window.innerHeight;
+						
+						this.canvas.width = width * dpr;
+						this.canvas.height = height * dpr;
+						this.canvas.style.width = width + 'px';
+						this.canvas.style.height = height + 'px';
+						
+						if (this.ctx) {
+							this.ctx.scale(dpr, dpr);
+						}
+					}
+					
+					// 创建樱花粒子系统
+					createSakuraList() {
+						if (!this.img || !this.ctx) return;
+						
+						const limitArray = new Array(this.deviceConfig.sakuraNum).fill(this.config.limitTimes);
+						
+						// 批量创建樱花粒子
+						for (let i = 0; i < this.deviceConfig.sakuraNum; i++) {
+							const sakura = this.createSakuraParticle(i, limitArray);
+							this.sakuraList.push(sakura);
+						}
+					}
+					
+					// 创建单个樱花粒子
+					createSakuraParticle(index, limitArray) {
+						const x = Math.random() * window.innerWidth;
+						const y = Math.random() * window.innerHeight;
+						const s = this.deviceConfig.size.min + Math.random() * (this.deviceConfig.size.max - this.deviceConfig.size.min);
+						const r = Math.random() * 6;
+						const vx = this.deviceConfig.speed.horizontal.min + Math.random() * (this.deviceConfig.speed.horizontal.max - this.deviceConfig.speed.horizontal.min);
+						const vy = this.deviceConfig.speed.vertical.min + Math.random() * (this.deviceConfig.speed.vertical.max - this.deviceConfig.speed.vertical.min);
+						const vr = this.deviceConfig.speed.rotation;
+						
+						return {
+							x, y, s, r, vx, vy, vr, idx: index, limitArray,
+							active: true,
+							lastUpdateTime: performance.now(),
+							
+							// 绘制方法
+							draw: function(ctx) {
+								if (!this.active) return;
+								
+								ctx.save();
+								ctx.translate(this.x, this.y);
+								ctx.rotate(this.r);
+								ctx.drawImage(window.globalSakuraManager.img, -20 * this.s, -20 * this.s, 40 * this.s, 40 * this.s);
+								ctx.restore();
+							},
+							
+							// 更新方法
+							update: function(currentTime, deltaTime) {
+								if (!this.active) return;
+								
+								const clampedDelta = Math.min(deltaTime, 50);
+								const timeScale = clampedDelta / 16.67; // 60fps基准
+								
+								this.x += this.vx * timeScale;
+								this.y += this.vy * timeScale;
+								this.r += this.vr * timeScale;
+								
+								// 边界检测和重置
+								const margin = 100;
+								if (this.x > window.innerWidth + margin || this.x < -margin || this.y > window.innerHeight + margin) {
+									if (this.limitArray[this.idx] === -1) {
+										this.resetPosition();
+									} else if (this.limitArray[this.idx] > 0) {
+										this.resetPosition();
+										this.limitArray[this.idx]--;
+									} else {
+										this.active = false;
+									}
+								}
+								
+								this.lastUpdateTime = currentTime;
+							},
+							
+							// 重置位置方法
+							resetPosition: function() {
+								this.active = true;
+								
+								// 重新生成速度
+								const config = window.globalSakuraManager.deviceConfig;
+								this.vx = config.speed.horizontal.min + Math.random() * (config.speed.horizontal.max - config.speed.horizontal.min);
+								this.vy = config.speed.vertical.min + Math.random() * (config.speed.vertical.max - config.speed.vertical.min);
+								this.vr = config.speed.rotation;
+								
+								// 60%概率从顶部进入，40%概率从右侧进入
+								if (Math.random() > 0.4) {
+									this.x = Math.random() * window.innerWidth;
+									this.y = -100;
+									this.s = config.size.min + Math.random() * (config.size.max - config.size.min);
+									this.r = Math.random() * 6;
+								} else {
+									this.x = window.innerWidth + 100;
+									this.y = Math.random() * window.innerHeight;
+									this.s = config.size.min + Math.random() * (config.size.max - config.size.min);
+									this.r = Math.random() * 6;
+								}
+							}
+						};
+					}
+					
+					// 启动动画循环
+					startAnimation() {
+						if (!this.ctx || !this.canvas || !this.sakuraList.length) return;
+						
+						this.lastFrameTime = performance.now();
+						
+						const animate = (currentTime) => {
+							if (!this.ctx || !this.canvas || !this.isRunning) return;
+							
+							// 计算时间差
+							const deltaTime = currentTime - this.lastFrameTime;
+							
+							// 帧率控制
+							if (deltaTime < 16.67) {
+								this.animationId = requestAnimationFrame(animate);
+								return;
+							}
+							
+							// 清除画布
+							this.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+							
+							// 更新和绘制樱花
+							for (let i = 0; i < this.sakuraList.length; i++) {
+								const sakura = this.sakuraList[i];
+								if (sakura.active) {
+									sakura.update(currentTime, deltaTime);
+									sakura.draw(this.ctx);
+								}
+							}
+							
+							this.lastFrameTime = currentTime;
+							this.animationId = requestAnimationFrame(animate);
+						};
+						
+						this.animationId = requestAnimationFrame(animate);
+					}
+					
+					// 处理窗口大小变化
+					handleResize() {
+						clearTimeout(this.resizeTimeout);
+						this.resizeTimeout = setTimeout(() => {
+							this.updateCanvasSize();
+							
+							// 重新激活所有樱花以适应新的屏幕尺寸
+							for (let i = 0; i < this.sakuraList.length; i++) {
+								if (!this.sakuraList[i].active) {
+									this.sakuraList[i].resetPosition();
+								}
+							}
+						}, 150);
+					}
+					
+					// 停止樱花特效
+					stop() {
+						this.isRunning = false;
+						
+						if (this.animationId) {
+							cancelAnimationFrame(this.animationId);
+							this.animationId = null;
+						}
+						
+						if (this.canvas && this.canvas.parentNode) {
+							document.body.removeChild(this.canvas);
+							this.canvas = null;
+							this.ctx = null;
+						}
+						
+						if (this.resizeTimeout) {
+							clearTimeout(this.resizeTimeout);
+							this.resizeTimeout = null;
+						}
+						
+						window.removeEventListener('resize', this.handleResize.bind(this));
+						this.sakuraList = [];
+						this.img = null;
+					}
+					
+					// 重启樱花效果（设备切换时使用）
+					async restart() {
+						const wasRunning = this.isRunning;
+						if (wasRunning) {
+							this.stop();
+						}
+						if (wasRunning && this.deviceConfig.enable) {
+							await this.init();
+						}
+					}
+					
+					// 更新配置
+					updateConfig(newConfig) {
+						const wasRunning = this.isRunning;
+						if (wasRunning) {
+							this.stop();
+						}
+						this.config = newConfig;
+						this.currentDevice = detectDevice();
+						this.deviceConfig = getDeviceSpecificConfig(newConfig);
+						if (wasRunning && newConfig.enable && this.deviceConfig.enable) {
+							this.init();
+						}
+					}
+					
+					// 获取运行状态
+					getIsRunning() {
+						return this.isRunning;
+					}
+				}
 			</script>
 		)}
-		
 		<!-- Translate.js integration - lazy loading -->
 		{siteConfig.translate?.enable && (
 			<script>
@@ -1256,7 +1326,7 @@ function createPhotoSwipe() {
 		gallery: ".custom-md img, #post-cover img, .moment-images img",
 		pswpModule: () => pswp,
 		closeSVG: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M480-424 284-228q-11 11-28 11t-28-11q-11-11-11-28t11-28l196-196-196-196q-11-11-11-28t11-28q11-11 28-11t28 11l196 196 196-196q11-11 11-28t28 11q11 11 11 28t-11 28L536-480l196 196q11 11 11 28t-11 28q-11 11-28 11t-28-11L480-424Z"/></svg>',
-		zoomSVG: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M340-540h-40q-17 0-28.5-11.5T260-580q0-17 11.5-28.5T300-620h40v-40q0-17 11.5-28.5T380-700q17 0 28.5 11.5T420-660v40h40q17 0 28.5 11.5T500-580q0 17-11.5 28.5T460-540h-40v40q0 17-11.5 28.5T380-460q-17 0-28.5-11.5T340-500v-40Zm40 220q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l224 224q11 11 11 28t-11 28q-11 11-28 11t-28-11L532-372q-30 24-69 38t-83 14Zm0-80q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>',
+		zoomSVG: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M340-540h-40q-17 0-28.5-11.5T260-580q0-17 11.5-28.5T300-620h40v-40q0-17 11.5-28.5T380-700q17 0 28.5 11.5T420-660v40h40q17 0 28.5 11.5T500-580q0 17-11.5 28.5T460-540h-40v40q0 17-11.5 28.5T380-460q-17 0-28.5-11.5T340-500v-40Zm0 220q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l224 224q11 11 11 28t-11 28q-11 11-28 11t-28-11L532-372q-30 24-69 38t-83 14Zm0-80q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>',
 		padding: { top: 20, bottom: 20, left: 20, right: 20 },
 		wheelToZoom: true,
 		arrowPrev: false,

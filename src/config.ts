@@ -358,25 +358,67 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 };
 
 export const sakuraConfig: SakuraConfig = {
-	enable: true, // 默认关闭樱花特效
-	sakuraNum: 21, // 樱花数量
+	enable: false, // 全局樱花特效开关
 	limitTimes: -1, // 樱花越界限制次数，-1为无限循环
+	zIndex: 100, // 层级，确保樱花在合适的层级显示
+	// 设备特定配置
+	devices: {
+		desktop: {
+			enable: true, // 桌面端启用樱花
+			sakuraNum: 21, // 桌面端樱花数量
+			size: {
+				min: 0.5, // 桌面端樱花最小尺寸倍数
+				max: 1.1, // 桌面端樱花最大尺寸倍数
+			},
+			speed: {
+				horizontal: {
+					min: -0.8, // 桌面端水平移动速度最小值
+					max: -0.5, // 桌面端水平移动速度最大值
+				},
+				vertical: {
+					min: 0.6, // 桌面端垂直移动速度最小值
+					max: 1.0, // 桌面端垂直移动速度最大值
+				},
+				rotation: 0.015, // 桌面端旋转速度
+			},
+		},
+		mobile: {
+			enable: true, // 移动端启用樱花
+			sakuraNum: 12, // 移动端樱花数量（较少以优化性能）
+			size: {
+				min: 0.4, // 移动端樱花最小尺寸倍数（较小）
+				max: 0.8, // 移动端樱花最大尺寸倍数（较小）
+			},
+			speed: {
+				horizontal: {
+					min: -0.6, // 移动端水平移动速度最小值（较慢）
+					max: -0.3, // 移动端水平移动速度最大值（较慢）
+				},
+				vertical: {
+					min: 0.4, // 移动端垂直移动速度最小值（较慢）
+					max: 0.7, // 移动端垂直移动速度最大值（较慢）
+				},
+				rotation: 0.01, // 移动端旋转速度（较慢）
+			},
+		},
+	},
+	// 向后兼容的默认配置（当devices未设置时使用）
+	sakuraNum: 21, // 默认樱花数量
 	size: {
-		min: 0.5, // 樱花最小尺寸倍数
-		max: 1.1, // 樱花最大尺寸倍数
+		min: 0.5, // 默认樱花最小尺寸倍数
+		max: 1.1, // 默认樱花最大尺寸倍数
 	},
 	speed: {
 		horizontal: {
-			min: -0.8, // 水平移动速度最小值 - 减慢速度
-			max: -0.5, // 水平移动速度最大值 - 减慢速度
+			min: -0.8, // 默认水平移动速度最小值
+			max: -0.5, // 默认水平移动速度最大值
 		},
 		vertical: {
-			min: 0.6, // 垂直移动速度最小值 - 减慢速度
-			max: 1.0, // 垂直移动速度最大值 - 减慢速度
+			min: 0.6, // 默认垂直移动速度最小值
+			max: 1.0, // 默认垂直移动速度最大值
 		},
-		rotation: 0.015, // 旋转速度 - 减慢一半
+		rotation: 0.015, // 默认旋转速度
 	},
-	zIndex: 100, // 层级，确保樱花在合适的层级显示
 };
 // 导出所有配置的统一接口
 export const widgetConfigs = {
