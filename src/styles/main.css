@@ -31,16 +31,35 @@ html {
     .theme-changing *::before,
     .theme-changing *::after {
         transition: none !important;
-        animation-duration: 0s !important;
     }
     
-    /* 特别保护波浪效果SVG填充色 */
-    .theme-changing svg,
-    .theme-changing svg *,
-    .theme-changing .waves,
-    .theme-changing .waves * {
-        transition: none !important;
-        animation-duration: 0s !important;
+    /* 波浪效果精确同步处理 */
+    .theme-changing svg use {
+        /* 禁用过渡但保持动画 */
+        transition: none;
+        /* 强制立即继承页面背景色 */
+        fill: currentColor;
+    }
+    
+    /* 波浪容器的颜色传递 */
+    .theme-changing #header-waves {
+        /* 设置当前颜色为页面背景色，供SVG继承 */
+        color: var(--page-bg);
+        /* 确保与页面在同一合成层 */
+        isolation: isolate;
+        /* 优化渲染性能 */
+        contain: layout style paint;
+        /* GPU层合成 */
+        transform: translateZ(0);
+        /* 确保没有背景色 */
+        background: transparent;
+    }
+    
+    .theme-changing #header-waves use {
+        /* 保持动画连续性 */
+        will-change: transform;
+        /* GPU优化 */
+        transform: translateZ(0);
     }
     
     .card-base {
