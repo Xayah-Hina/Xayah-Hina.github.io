@@ -57,9 +57,9 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 		return;
 	}
 	
-	// 只在需要主题切换时添加防闪烁保护
+	// 只在需要主题切换时添加过渡保护
 	if (needsThemeChange) {
-		document.documentElement.classList.add('theme-changing');
+		document.documentElement.classList.add('is-theme-transitioning');
 	}
 	
 	// 使用 requestAnimationFrame 确保 DOM 更新的时序
@@ -79,12 +79,12 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 			expressiveCodeConfig.theme,
 		);
 		
-		// 只在有主题切换时移除防闪烁类
+		// 在同一帧内快速移除保护类，使用微任务确保DOM更新完成
 		if (needsThemeChange) {
-			// 使用最短延迟确保CSS变量同步更新
-			setTimeout(() => {
-				document.documentElement.classList.remove('theme-changing');
-			}, 8); // 减少到8ms，最小化视觉影响
+			// 使用微任务在同一帧内处理，避免额外的帧延迟
+			Promise.resolve().then(() => {
+				document.documentElement.classList.remove('is-theme-transitioning');
+			});
 		}
 	});
 }

@@ -26,15 +26,15 @@ html {
 }
 
 @layer components {
-    /* 主题切换防闪烁类 - 临时禁用所有过渡 */
-    .theme-changing *,
-    .theme-changing *::before,
-    .theme-changing *::after {
+    /* 主题过渡保护类 - 临时禁用所有过渡动画 */
+    .is-theme-transitioning *,
+    .is-theme-transitioning *::before,
+    .is-theme-transitioning *::after {
         transition: none !important;
     }
     
     /* 波浪效果精确同步处理 */
-    .theme-changing svg use {
+    .is-theme-transitioning svg use {
         /* 禁用过渡但保持动画 */
         transition: none;
         /* 强制立即继承页面背景色 */
@@ -42,7 +42,7 @@ html {
     }
     
     /* 波浪容器的颜色传递 */
-    .theme-changing #header-waves {
+    .is-theme-transitioning #header-waves {
         /* 设置当前颜色为页面背景色，供SVG继承 */
         color: var(--page-bg);
         /* 确保与页面在同一合成层 */
@@ -55,7 +55,7 @@ html {
         background: transparent;
     }
     
-    .theme-changing #header-waves use {
+    .is-theme-transitioning #header-waves use {
         /* 保持动画连续性 */
         will-change: transform;
         /* GPU优化 */
