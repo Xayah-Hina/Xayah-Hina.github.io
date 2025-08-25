@@ -28,37 +28,64 @@ export function setHue(hue: number): void {
 }
 
 export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
-	// 添加防闪烁类，禁用所有过渡
-	document.documentElement.classList.add('theme-changing');
+	// 获取当前主题状态的完整信息
+	const currentIsDark = document.documentElement.classList.contains('dark');
+	const currentTheme = document.documentElement.getAttribute('data-theme');
+	
+	// 计算目标主题状态
+	let targetIsDark: boolean;
+	switch (theme) {
+		case LIGHT_MODE:
+			targetIsDark = false;
+			break;
+		case DARK_MODE:
+			targetIsDark = true;
+			break;
+		case AUTO_MODE:
+			targetIsDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+			break;
+	}
+	
+	// 检测是否真的需要主题切换：
+	// 1. dark类状态是否改变
+	// 2. expressiveCode主题是否需要更新
+	const needsThemeChange = currentIsDark !== targetIsDark;
+	const needsCodeThemeUpdate = currentTheme !== expressiveCodeConfig.theme;
+	
+	// 如果既不需要主题切换也不需要代码主题更新，直接返回
+	if (!needsThemeChange && !needsCodeThemeUpdate) {
+		return;
+	}
+	
+	// 只在需要主题切换时添加过渡保护
+	if (needsThemeChange) {
+		document.documentElement.classList.add('is-theme-transitioning');
+	}
 	
 	// 使用 requestAnimationFrame 确保 DOM 更新的时序
 	requestAnimationFrame(() => {
-		switch (theme) {
-			case LIGHT_MODE:
-				document.documentElement.classList.remove("dark");
-				break;
-			case DARK_MODE:
+		// 应用主题变化
+		if (needsThemeChange) {
+			if (targetIsDark) {
 				document.documentElement.classList.add("dark");
-				break;
-			case AUTO_MODE:
-				if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-					document.documentElement.classList.add("dark");
-				} else {
-					document.documentElement.classList.remove("dark");
-				}
-				break;
+			} else {
+				document.documentElement.classList.remove("dark");
+			}
 		}
 
-		// Set the theme for Expressive Code
+		// Set the theme for Expressive Code (always update this)
 		document.documentElement.setAttribute(
 			"data-theme",
 			expressiveCodeConfig.theme,
 		);
 		
-		// 在下一帧移除防闪烁类，恢复过渡效果
-		requestAnimationFrame(() => {
-			document.documentElement.classList.remove('theme-changing');
-		});
+		// 在同一帧内快速移除保护类，使用微任务确保DOM更新完成
+		if (needsThemeChange) {
+			// 使用微任务在同一帧内处理，避免额外的帧延迟
+			Promise.resolve().then(() => {
+				document.documentElement.classList.remove('is-theme-transitioning');
+			});
+		}
 	});
 }
 
