@@ -41,6 +41,33 @@ html {
         fill: currentColor;
     }
     
+    /* 导航栏主题切换保护 - 完全禁用过渡以确保性能 */
+    .is-theme-transitioning #navbar > div,
+    .is-theme-transitioning #navbar[data-transparent-mode] > div,
+    .is-theme-transitioning #navbar[data-transparent-mode].scrolled > div,
+    .is-theme-transitioning body.wallpaper-transparent #navbar > div,
+    .is-theme-transitioning body.wallpaper-transparent #navbar[data-transparent-mode] > div,
+    .is-theme-transitioning body.wallpaper-transparent #navbar[data-transparent-mode].scrolled > div,
+    .is-theme-transitioning #banner-wrapper ~ * #navbar > div,
+    .is-theme-transitioning #banner-wrapper ~ * #navbar[data-transparent-mode] > div,
+    .is-theme-transitioning body:has(#banner-wrapper) #navbar > div,
+    .is-theme-transitioning body:has(#banner-wrapper) #navbar[data-transparent-mode] > div {
+        transition: none !important;
+        backdrop-filter: none !important;
+    }
+    
+    /* 导航栏相关浮动面板的过渡禁用 */
+    .is-theme-transitioning .dropdown-content,
+    .is-theme-transitioning .float-panel,
+    .is-theme-transitioning #display-setting,
+    .is-theme-transitioning #nav-menu-panel,
+    .is-theme-transitioning #translate-panel,
+    .is-theme-transitioning #mobile-toc-panel,
+    .is-theme-transitioning #search-panel {
+        transition: none !important;
+        backdrop-filter: none !important;
+    }
+    
     /* 波浪容器的颜色传递 */
     .is-theme-transitioning #header-waves {
         /* 设置当前颜色为页面背景色，供SVG继承 */
