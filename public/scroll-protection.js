@@ -183,7 +183,6 @@
 				enableScrollProtection(4000); // 增加保护时间到4秒
 				console.log("[强力滚动保护] 检测到 Twikoo 交互，启动保护");
 			}
-			}
 
 			// 特别检查管理面板相关操作（包括关闭操作）
 			if (
