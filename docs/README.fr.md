@@ -17,6 +17,14 @@ Un modèle de blog statique moderne et riche en fonctionnalités avec des foncti
 [**English**](../README.en.md) /
 [**Français**](./README.fr.md)
 
+## 🆕 Nouveautés de la v4.0
+- **Fonctionnalité d'Images de Fond en Plein Écran :** Ajout du support pour les images de fond en plein écran en mode non-Banner, offrant une expérience visuelle immersive. Supporte le changement en carrousel, l'ajustement de la transparence et la configuration des effets de flou.
+- **Optimisation des Chemins de Ressources :** Correction des problèmes de chargement des ressources d'image en mode Banner et mode fond d'écran, assurant le chargement correct des ressources depuis le répertoire public.
+- **Effet de Transparence de la Barre de Navigation :** Optimisation de l'effet de coins arrondis semi-transparents de la barre de navigation en mode fond d'écran, améliorant la cohérence visuelle.
+- **Optimisation de la Bannière Mobile :** Supporte les appels vers des liens externes
+
+![Aperçu des fonctionnalités de Mizuki v4.0](../README.png)
+
 ## 🆕 Nouveautés de la v3.4
 - **Nouvelles pages :** Les pages d'affichage de projets (Projects), d'affichage de compétences (Skills) et de chronologie (Timeline) ont été ajoutées, enrichissant le contenu de présentation personnelle.
 - **Correction du bug du sous-menu :** Un bug dans le sous-menu de la barre de navigation supérieure qui affichait une bordure au clic a été corrigé, optimisant l'expérience utilisateur.
@@ -59,6 +67,7 @@ Un modèle de blog statique moderne et riche en fonctionnalités avec des foncti
 - [x] Animations fluides et transitions de page avec [Swup](https://swup.js.org/)
 - [x] Mode clair/sombre avec détection des paramètres système
 - [x] Couleurs de thème personnalisables et carrousel de bannières dynamique
+- [x] Images de fond en plein écran avec carrousel, transparence et effets de flou
 - [x] Design entièrement responsive pour tous les appareils
 - [x] Belle typographie avec la police JetBrains Mono
 

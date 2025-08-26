@@ -22,6 +22,15 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 [**Español**](./docs/README.es.md) /
 [**Русский**](./docs/README.ru.md)
 
+## 🆕 What's New in v4.0
+- **Full-screen Background Image Feature:** Added support for full-screen background images in non-Banner mode, providing an immersive visual experience. Supports carousel switching, transparency adjustment, and blur effect configuration.
+- **Live2D Mascot:** Integrated cute Live2D mascot functionality, supports desktop display, and allows customization of model, position, scaling, and transparency parameters through configuration files.
+- **Resource Path Optimization:** Fixed image resource loading issues in both Banner mode and full-screen wallpaper mode, ensuring correct resource loading from the public directory.
+- **Navigation Bar Transparency Effect:** Optimized the semi-transparent rounded corner effect of the navigation bar in full-screen wallpaper mode, improving visual consistency.
+- **Mobile Banner Optimization:** Supports calling external links
+
+![Mizuki v4.0 Feature Showcase](/README.png)
+
 ## 🆕 What's New in v3.4
 - **New Pages:** Added dedicated pages for Projects, Skills, and Timeline to showcase your work, expertise, and journey.
 - **Dropdown Menu Bug Fix:** Resolved an issue with the dropdown menu that caused an outline border to appear on click, improving UI consistency.
@@ -64,6 +73,7 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 - [x] Smooth animations and page transitions with [Swup](https://swup.js.org/)
 - [x] Light / dark mode with system preference detection
 - [x] Customizable theme colors & dynamic banner carousel
+- [x] Full-screen background images with carousel, transparency, and blur effects
 - [x] Fully responsive design for all devices
 - [x] Beautiful typography with JetBrains Mono font
 

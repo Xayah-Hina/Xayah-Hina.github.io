@@ -17,6 +17,15 @@ Una plantilla de blog estático moderna y rica en características con funcional
 [**English**](../README.en.md) /
 [**Español**](./README.es.md)
 
+## 🆕 Novedades en v4.0
+- **Función de Imágenes de Fondo en Pantalla Completa:** Se añadió soporte para imágenes de fondo en pantalla completa en modo no-Banner, proporcionando una experiencia visual inmersiva. Soporta cambio de carrusel, ajuste de transparencia y configuración de efectos de desenfoque.
+- **Mascota Live2D:** Se integró la funcionalidad de mascota Live2D, soporta visualización en escritorio y permite personalizar modelo, posición, escala y parámetros de transparencia a través de archivos de configuración.
+- **Optimización de Rutas de Recursos:** Se corrigieron problemas de carga de recursos de imagen en modo Banner y modo de fondo de pantalla completa, asegurando la carga correcta de recursos desde el directorio público.
+- **Efecto de Transparencia de Barra de Navegación:** Se optimizó el efecto de esquinas redondeadas semitransparentes de la barra de navegación en modo de fondo de pantalla completa, mejorando la consistencia visual.
+- **Optimización de Banner Móvil:** Soporta llamadas a enlaces externos
+
+![Mizuki v4.0 Muestra de Funcionalidades](../README.png)
+
 ## 🆕 Novedades en v3.4
 - **Nuevas páginas:** Se han añadido las páginas de visualización de proyectos (Projects), visualización de habilidades (Skills) y línea de tiempo (Timeline), enriqueciendo el contenido de presentación personal.
 - **Menú secundario corregido:** Se ha corregido un error en el menú secundario de la barra de navegación superior que mostraba un borde al hacer clic, optimizando la experiencia del usuario.
@@ -59,6 +68,7 @@ Una plantilla de blog estático moderna y rica en características con funcional
 - [x] Animaciones suaves y transiciones de página con [Swup](https://swup.js.org/)
 - [x] Modo claro/oscuro con detección de configuración del sistema
 - [x] Colores de tema personalizables y carrusel de banners dinámico
+- [x] Imágenes de fondo en pantalla completa con carrusel, transparencia y efectos de desenfoque
 - [x] Diseño completamente responsivo para todos los dispositivos
 - [x] Hermosa tipografía con fuente JetBrains Mono
 
