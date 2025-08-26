@@ -24,12 +24,11 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 
 ## 🆕 What's New in v4.0
 - **Full-screen Background Image Feature:** Added support for full-screen background images in non-Banner mode, providing an immersive visual experience. Supports carousel switching, transparency adjustment, and blur effect configuration.
-- **Live2D Mascot:** Integrated cute Live2D mascot functionality, supports desktop display, and allows customization of model, position, scaling, and transparency parameters through configuration files.
 - **Resource Path Optimization:** Fixed image resource loading issues in both Banner mode and full-screen wallpaper mode, ensuring correct resource loading from the public directory.
 - **Navigation Bar Transparency Effect:** Optimized the semi-transparent rounded corner effect of the navigation bar in full-screen wallpaper mode, improving visual consistency.
 - **Mobile Banner Optimization:** Supports calling external links
 
-![Mizuki v4.0 Feature Showcase](/README.png)
+![Mizuki v4.0 Feature Showcase](/README2.webp)
 
 ## 🆕 What's New in v3.4
 - **New Pages:** Added dedicated pages for Projects, Skills, and Timeline to showcase your work, expertise, and journey.

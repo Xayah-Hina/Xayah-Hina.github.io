@@ -23,7 +23,7 @@ Un modèle de blog statique moderne et riche en fonctionnalités avec des foncti
 - **Effet de Transparence de la Barre de Navigation :** Optimisation de l'effet de coins arrondis semi-transparents de la barre de navigation en mode fond d'écran, améliorant la cohérence visuelle.
 - **Optimisation de la Bannière Mobile :** Supporte les appels vers des liens externes
 
-![Aperçu des fonctionnalités de Mizuki v4.0](../README.png)
+![Aperçu des fonctionnalités de Mizuki v4.0](../README2.webp)
 
 ## 🆕 Nouveautés de la v3.4
 - **Nouvelles pages :** Les pages d'affichage de projets (Projects), d'affichage de compétences (Skills) et de chronologie (Timeline) ont été ajoutées, enrichissant le contenu de présentation personnelle.
