@@ -40,7 +40,7 @@ export const siteConfig: SiteConfig = {
 		ignoreTags: ["script", "style", "code", "pre"], // 翻译时忽略的 HTML 标签
 	},
 	banner: {
-		enable: false, // 是否启动Banner壁纸模式
+		enable: true, // 是否启动Banner壁纸模式
 
 		// 支持单张图片或图片数组，当数组长度 > 1 时自动启用轮播
 		src: {
