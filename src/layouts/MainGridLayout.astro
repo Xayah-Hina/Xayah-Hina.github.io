@@ -6,10 +6,11 @@ import SideBar from "@components/widget/SideBar.astro";
 import type { MarkdownHeading } from "astro";
 import { Icon } from "astro-icon/components";
 import ImageWrapper from "../components/misc/ImageWrapper.astro";
+import FullscreenWallpaper from "../components/misc/FullscreenWallpaper.astro";
 import IconifyLoader from "../components/misc/IconifyLoader.astro";
 import TypewriterText from "../components/TypewriterText.astro";
 import TOC from "../components/widget/TOC.astro";
-import { sidebarLayoutConfig, siteConfig } from "../config";
+import { sidebarLayoutConfig, siteConfig, fullscreenWallpaperConfig } from "../config";
 import {
 	BANNER_HEIGHT,
 	BANNER_HEIGHT_EXTEND,
@@ -132,6 +133,11 @@ const mainContentClass = `
 ---
 
 <Layout title={title} banner={banner} description={description} lang={lang} setOGTypeArticle={setOGTypeArticle}>
+
+<!-- 全屏壁纸 - 仅在banner关闭且全屏壁纸启用时显示 -->
+{!siteConfig.banner.enable && fullscreenWallpaperConfig.enable && (
+	<FullscreenWallpaper config={fullscreenWallpaperConfig} />
+)}
 
 <!-- 全局图标加载器 -->
 <IconifyLoader />
