@@ -65,6 +65,36 @@ html {
     .card-base {
         @apply rounded-[var(--radius-large)] overflow-hidden bg-[var(--card-bg)] transition-colors duration-150;
     }
+    .card-base-transparent {
+        @apply rounded-[var(--radius-large)] overflow-hidden bg-[var(--card-bg-transparent)] backdrop-blur-sm transition-colors duration-150;
+    }
+    
+    /* 全屏壁纸模式下的半透明效果 */
+    .wallpaper-transparent .card-base {
+        @apply bg-[var(--card-bg-transparent)] backdrop-blur-sm;
+    }
+    
+    .wallpaper-transparent .float-panel {
+        @apply bg-[var(--card-bg-transparent)] backdrop-blur-sm;
+    }
+    
+    .wallpaper-transparent #navbar > div {
+    @apply bg-[var(--card-bg-transparent)] backdrop-blur-sm;
+}
+    
+    .wallpaper-transparent .btn-card {
+        @apply bg-[var(--card-bg-transparent)] backdrop-blur-sm;
+    }
+    
+    .wallpaper-transparent ~ * .music-player .mini-player,
+    .wallpaper-transparent ~ * .music-player .expanded-player,
+    .wallpaper-transparent ~ * .music-player .playlist-panel,
+    body.wallpaper-transparent .music-player .mini-player,
+    body.wallpaper-transparent .music-player .expanded-player,
+    body.wallpaper-transparent .music-player .playlist-panel {
+        background-color: var(--card-bg-transparent) !important;
+        backdrop-filter: blur(8px) !important;
+    }
     h1, h2, h3, h4, h5, h6, p, a, span, li, ul, ol, blockquote, code, pre, table, th, td, strong {
         @apply transition-colors duration-150;
     }

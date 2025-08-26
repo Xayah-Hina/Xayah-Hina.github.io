@@ -6,9 +6,7 @@ import "@fontsource/roboto/700.css";
 import ConfigCarrier from "@components/ConfigCarrier.astro";
 import MusicPlayer from "@components/widget/MusicPlayer.svelte";
 import { profileConfig, siteConfig } from "@/config";
-import {widgetConfigs} from '../config';
-import type {SakuraConfig} from '../types/config';
-
+import { widgetConfigs } from "../config";
 import {
 	AUTO_MODE,
 	BANNER_HEIGHT,
@@ -20,10 +18,11 @@ import {
 	PAGE_WIDTH,
 } from "../constants/constants";
 import { defaultFavicons } from "../constants/icon";
-import type { Favicon } from "../types/config";
+import type { Favicon, SakuraConfig } from "../types/config";
 import { pathsEqual, url } from "../utils/url-utils";
 import "katex/dist/katex.css";
 import "../styles/mobile-navbar.css";
+import "../styles/wallpaper-navbar-transparent.css";
 
 interface Props {
 	title?: string;
@@ -45,9 +44,11 @@ const isHomePage = pathsEqual(Astro.url.pathname, url("/"));
 const configHue = siteConfig.themeColor.hue;
 
 // 获取导航栏透明模式配置
-const navbarTransparentMode = siteConfig.banner?.navbar?.transparentMode || "semi";
+const navbarTransparentMode =
+	siteConfig.banner?.navbar?.transparentMode || "semi";
 // 判断是否应该显示顶部高光效果（只在full和semifull模式下显示）
-const shouldShowTopHighlight = navbarTransparentMode === "full" || navbarTransparentMode === "semifull";
+const shouldShowTopHighlight =
+	navbarTransparentMode === "full" || navbarTransparentMode === "semifull";
 
 // 获取默认banner图片的辅助函数
 const getDefaultBanner = (): string => {

@@ -40,25 +40,25 @@ export const siteConfig: SiteConfig = {
 		ignoreTags: ["script", "style", "code", "pre"], // 翻译时忽略的 HTML 标签
 	},
 	banner: {
-		enable: false, // 暂时禁用横幅以提高加载速度
+		enable: true, // 是否启动Banner壁纸模式
 
 		// 支持单张图片或图片数组，当数组长度 > 1 时自动启用轮播
 		src: {
 			desktop: [
-				"assets/desktop-banner/1.webp",
-				"assets/desktop-banner/2.webp",
-				"assets/desktop-banner/3.webp",
-				"assets/desktop-banner/4.webp",
-				"assets/desktop-banner/5.webp",
-				"assets/desktop-banner/6.webp",
+				"/assets/desktop-banner/1.webp",
+				"/assets/desktop-banner/2.webp",
+				"/assets/desktop-banner/3.webp",
+				"/assets/desktop-banner/4.webp",
+				"/assets/desktop-banner/5.webp",
+				"/assets/desktop-banner/6.webp",
 			], // 桌面横幅图片
 			mobile: [
-				"assets/mobile-banner/1.webp",
-				"assets/mobile-banner/2.webp",
-				"assets/mobile-banner/3.webp",
-				"assets/mobile-banner/4.webp",
-				"assets/mobile-banner/5.webp",
-				"assets/mobile-banner/6.webp",
+				"/assets/mobile-banner/1.webp",
+				"/assets/mobile-banner/2.webp",
+				"/assets/mobile-banner/3.webp",
+				"/assets/mobile-banner/4.webp",
+				"/assets/mobile-banner/5.webp",
+				"/assets/mobile-banner/6.webp",
 			], // 移动横幅图片
 		}, // 使用本地横幅图片
 
@@ -67,7 +67,7 @@ export const siteConfig: SiteConfig = {
 		carousel: {
 			enable: true, // 为 true 时：为多张图片启用轮播。为 false 时：从数组中随机显示一张图片
 
-			interval: 1, // 轮播间隔时间（秒）
+			interval: 1.5, // 轮播间隔时间（秒）
 		},
 
 		homeText: {
@@ -120,13 +120,19 @@ export const fullscreenWallpaperConfig: FullscreenWallpaperConfig = {
 			"/assets/desktop-banner/1.webp",
 			"/assets/desktop-banner/2.webp",
 			"/assets/desktop-banner/3.webp",
-		], // 桌面端壁纸图片
+			"/assets/desktop-banner/4.webp",
+			"/assets/desktop-banner/5.webp",
+			"/assets/desktop-banner/6.webp",
+		], // 桌面横幅图片
 		mobile: [
 			"/assets/mobile-banner/1.webp",
 			"/assets/mobile-banner/2.webp",
 			"/assets/mobile-banner/3.webp",
-		], // 移动端壁纸图片
-	},
+			"/assets/mobile-banner/4.webp",
+			"/assets/mobile-banner/5.webp",
+			"/assets/mobile-banner/6.webp",
+		], // 移动横幅图片
+	}, // 使用本地横幅图片
 	position: "center", // 壁纸位置，等同于 object-position
 	carousel: {
 		enable: true, // 启用轮播
