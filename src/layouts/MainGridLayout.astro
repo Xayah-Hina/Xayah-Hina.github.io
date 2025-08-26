@@ -197,7 +197,7 @@ const mainContentClass = `
                 <!-- Mobile: use mobile-specific image with same logic as desktop -->
                 <ImageWrapper 
                     alt="Mobile banner image of the blog" 
-                    class:list={["block lg:hidden object-cover h-full w-full transition duration-700 opacity-0 scale-105"]}
+                    class:list={["block lg:hidden object-cover h-full w-full transition duration-700 opacity-100"]}
                     src={(Array.isArray(bannerImages.mobile) ? bannerImages.mobile[0] : bannerImages.mobile) || (Array.isArray(bannerImages.desktop) ? bannerImages.desktop[0] : bannerImages.desktop) || ''} 
                     position={siteConfig.banner.position}
                 />
@@ -205,7 +205,7 @@ const mainContentClass = `
                 <ImageWrapper 
                     id="banner" 
                     alt="Desktop banner image of the blog" 
-                    class:list={["hidden lg:block object-cover h-full transition duration-700 opacity-0 scale-105"]}
+                    class:list={["hidden lg:block object-cover h-full transition duration-700 opacity-100"]}
                     src={(Array.isArray(bannerImages.desktop) ? bannerImages.desktop[0] : bannerImages.desktop) || (Array.isArray(bannerImages.mobile) ? bannerImages.mobile[0] : bannerImages.mobile) || ''} 
                     position={siteConfig.banner.position}
                 />

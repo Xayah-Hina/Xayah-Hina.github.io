@@ -170,36 +170,15 @@ class TableOfContents extends HTMLElement {
             const targetElement = document.getElementById(id);
             
             if (targetElement) {
-                // 临时禁用滚动保护，确保TOC导航能够立即响应
-                const scrollProtection = (window as any).scrollProtectionManager;
-                const wasProtectionEnabled = scrollProtection?.isEnabled();
-                
-                if (scrollProtection && wasProtectionEnabled) {
-                    scrollProtection.disable();
-                }
-                
-                // 计算目标位置
+                // 计算目标位置，与移动端保持一致
                 const navbarHeight = 80; // 导航栏高度
                 const targetTop = targetElement.getBoundingClientRect().top + window.pageYOffset - navbarHeight;
                 
-                // 使用原生滚动方法，确保立即响应
-                try {
-                    // 优先使用最快的滚动方式
-                    window.scrollTo({
-                        top: targetTop,
-                        behavior: "smooth"
-                    });
-                } catch (error) {
-                    // 降级到传统方式
-                    window.scrollTo(0, targetTop);
-                }
-                
-                // 延迟恢复滚动保护（如果之前是启用的）
-                if (scrollProtection && wasProtectionEnabled) {
-                    setTimeout(() => {
-                        scrollProtection.enable(2000); // 重新启用2秒保护
-                    }, 100);
-                }
+                // 使用与移动端相同的滚动方式
+                window.scrollTo({
+                    top: targetTop,
+                    behavior: "smooth"
+                });
             }
             
             const idx = this.headingIdxMap.get(id);
