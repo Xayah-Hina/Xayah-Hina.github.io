@@ -81,13 +81,20 @@ async function changeLanguage(languageCode: string) {
 // 点击外部关闭面板
 function handleClickOutside(event: MouseEvent) {
 	const target = event.target as HTMLElement;
+	
+	// 只有在翻译面板打开时才处理点击外部事件
+	if (!isOpen || !translatePanel) {
+		return;
+	}
+	
+	// 检查点击是否在翻译相关元素内部
 	if (
-		translatePanel &&
 		!translatePanel.contains(target) &&
 		!target.closest("#translate-switch")
 	) {
 		isOpen = false;
 		translatePanel.classList.add("float-panel-closed");
+		// 不阻止事件传播，让其他元素的点击事件正常执行
 	}
 }
 

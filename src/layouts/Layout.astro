@@ -1353,14 +1353,20 @@ class GalleryManager {
 	}
 
 	init() {
+		console.log('GalleryManager init called');
 		// 检查是否在相册页面
 		const galleryGroups = document.querySelectorAll('.gallery-group');
-		if (galleryGroups.length === 0) return;
+		console.log('Found gallery groups:', galleryGroups.length);
+		if (galleryGroups.length === 0) {
+			console.log('No gallery groups found, skipping initialization');
+			return;
+		}
 
 		// 清理之前的监听器
 		this.cleanup();
 
 		// 创建新的点击处理器
+		console.log('Adding click event listener to document');
 		this.clickHandler = (e) => this.handleClick(e);
 		document.addEventListener('click', this.clickHandler);
 		this.isInitialized = true;
@@ -1375,10 +1381,14 @@ class GalleryManager {
 	}
 
 	handleClick(e) {
+		console.log('GalleryManager handleClick triggered', e.target);
+		
 		// 处理相册头部点击（展开/折叠）
 		const galleryHeader = e.target.closest('.gallery-header');
 		if (galleryHeader) {
+			console.log('Gallery header clicked', galleryHeader);
 			e.preventDefault();
+			e.stopPropagation(); // 防止事件冲突，确保相册展开功能正常工作
 			this.toggleGallery(galleryHeader);
 			return;
 		}
@@ -1386,7 +1396,9 @@ class GalleryManager {
 		// 处理图片点击（查看大图）
 		const galleryImage = e.target.closest('.gallery-image');
 		if (galleryImage) {
+			console.log('Gallery image clicked', galleryImage);
 			e.preventDefault();
+			e.stopPropagation(); // 防止事件冲突
 			const imageSrc = galleryImage.getAttribute('data-image');
 			if (imageSrc) {
 				this.showImageModal(imageSrc);
@@ -1395,20 +1407,28 @@ class GalleryManager {
 	}
 
 	toggleGallery(header) {
+		console.log('toggleGallery called', header);
 		const group = header.closest('.gallery-group');
 		const content = group.querySelector('.gallery-content');
 		const icon = header.querySelector('.expand-icon');
+		
+		console.log('Found elements:', { group, content, icon });
+		console.log('Content hidden?', content?.classList.contains('hidden'));
 
-		if (content.classList.contains('hidden')) {
+		if (content && content.classList.contains('hidden')) {
 			// 展开
+			console.log('Expanding gallery');
 			content.classList.remove('hidden');
 			group.classList.add('expanded');
 			if (icon) icon.style.transform = 'rotate(180deg)';
-		} else {
+		} else if (content) {
 			// 折叠
+			console.log('Collapsing gallery');
 			content.classList.add('hidden');
 			group.classList.remove('expanded');
 			if (icon) icon.style.transform = 'rotate(0deg)';
+		} else {
+			console.error('Gallery content not found!');
 		}
 	}
 

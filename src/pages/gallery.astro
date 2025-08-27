@@ -35,9 +35,6 @@ const totalImages = galleryData.data.reduce(
 	(total, group) => total + group.images.length,
 	0,
 );
-
-// 使用国际化日期格式化函数
-// formatDateI18n 函数已从 date-utils 导入，支持多语言日期格式
 ---
 
 <MainGridLayout title={i18n(I18nKey.gallery)} description={i18n(I18nKey.gallerySubtitle)}>
@@ -86,35 +83,40 @@ const totalImages = galleryData.data.reduce(
 
 			<!-- 相册组列表 -->
 			<div class="space-y-6">
-				{galleryData.data.map(group => (
-					<div class="gallery-group bg-[var(--card-bg)] rounded-[var(--radius-large)] overflow-hidden transition-all duration-300 hover:shadow-lg">
+				{galleryData.data.map((group, groupIndex) => (
+					<div class="gallery-group bg-[var(--card-bg)] rounded-[var(--radius-large)] overflow-hidden transition-all duration-300 hover:shadow-lg" data-group-id={group.id}>
 						<!-- 相册组头部 - 可点击展开/折叠 -->
-						<div class="gallery-header cursor-pointer relative h-48 overflow-hidden group">
-						<img
-							src={group.coverImage}
-							alt={group.title}
-							class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-							loading="lazy"
-						/>
-						<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-						<div class="absolute bottom-4 left-4 text-white">
-							<h3 class="text-xl font-bold mb-1">{group.title}</h3>
-							<p class="text-sm opacity-90">{group.images.length} 张图片</p>
-							<p class="text-xs opacity-75 mt-1">{group.description}</p>
+						<div class="gallery-header cursor-pointer relative h-48 overflow-hidden group" data-action="toggle">
+							<img
+								src={group.coverImage}
+								alt={group.title}
+								class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+								loading="lazy"
+							/>
+							<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+							
+							<!-- 相册信息 -->
+							<div class="absolute bottom-4 left-4 text-white">
+								<h3 class="text-xl font-bold mb-1">{group.title}</h3>
+								<p class="text-sm opacity-90">{group.images.length} 张图片</p>
+								<p class="text-xs opacity-75 mt-1">{group.description}</p>
+							</div>
+							
+							<!-- 日期标签 -->
+							<div class="absolute top-4 right-4 bg-black/50 text-white px-2 py-1 rounded-full text-sm">
+								{formatDateI18n(group.createdAt)}
+							</div>
+							
+							<!-- 展开/折叠图标 -->
+							<div class="absolute bottom-4 right-4 bg-black/50 text-white p-2 rounded-full transition-all duration-300">
+								<svg class="expand-icon w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+								</svg>
+							</div>
 						</div>
-						<div class="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-2 py-1 rounded-full text-sm">
-							{formatDateI18n(group.createdAt)}
-						</div>
-						<!-- 展开/折叠图标 -->
-						<div class="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full">
-							<svg class="expand-icon w-5 h-5 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-							</svg>
-						</div>
-					</div>
 
 						<!-- 相册组内容 - 默认隐藏 -->
-						<div class="gallery-content hidden">
+						<div class="gallery-content hidden transition-all duration-300">
 							<div class="p-6">
 								<!-- 标签 -->
 								<div class="flex flex-wrap gap-2 mb-4">
@@ -125,18 +127,18 @@ const totalImages = galleryData.data.reduce(
 									))}
 								</div>
 
-								<!-- 瀑布流图片网格 -->
-								<div class="masonry-grid">
+								<!-- 图片网格 -->
+								<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 									{group.images.map((image, index) => (
-										<div class="gallery-image cursor-pointer group relative overflow-hidden rounded-lg mb-3" data-image={image}>
+										<div class="gallery-image cursor-pointer group relative overflow-hidden rounded-lg aspect-square" data-image={image} data-action="view">
 											<img
 												src={image}
 												alt={`${group.title} - 图片 ${index + 1}`}
-												class="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
+												class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
 												loading="lazy"
 											/>
-											<div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-												<svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+												<svg class="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
 												</svg>
 											</div>
@@ -152,33 +154,189 @@ const totalImages = galleryData.data.reduce(
 	</div>
 </MainGridLayout>
 
-<!-- 相册功能已移至Layout.astro全局范围，无需本地调试脚本 -->
+<!-- 相册功能脚本 -->
+<script>
+	// 简化的相册管理器
+	class SimpleGalleryManager {
+		constructor() {
+			this.init();
+		}
 
-<!-- 相册功能已移至全局范围，无需本地 JavaScript -->
+		init() {
+			console.log('SimpleGalleryManager 初始化');
+			// 使用事件委托处理所有点击事件
+			document.addEventListener('click', this.handleClick.bind(this));
+		}
 
-<style>
-	.btn-primary {
-		@apply bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)] active:bg-[var(--btn-regular-bg-active)] text-[var(--btn-content)] px-4 py-2 rounded-[var(--radius-large)] transition-colors duration-200 font-medium;
+		handleClick(event) {
+			const target = event.target.closest('[data-action]');
+			if (!target) return;
+
+			// 阻止事件冒泡和默认行为，防止被translate.js的全局click监听器干扰
+			event.preventDefault();
+			event.stopPropagation();
+			event.stopImmediatePropagation();
+
+			const action = target.getAttribute('data-action');
+			console.log('点击事件:', action, target);
+
+			switch (action) {
+				case 'toggle':
+					this.toggleGallery(target);
+					break;
+				case 'view':
+					const imageSrc = target.getAttribute('data-image');
+					if (imageSrc) {
+						this.showImageModal(imageSrc);
+					}
+					break;
+			}
+		}
+
+		toggleGallery(header) {
+			console.log('切换相册展开状态');
+			const group = header.closest('.gallery-group');
+			const content = group.querySelector('.gallery-content');
+			const icon = header.querySelector('.expand-icon');
+
+			if (!content) {
+				console.error('未找到相册内容元素');
+				return;
+			}
+
+			const isHidden = content.classList.contains('hidden');
+			console.log('当前状态 - 隐藏:', isHidden);
+
+			if (isHidden) {
+				// 展开相册
+				content.classList.remove('hidden');
+				group.classList.add('expanded');
+				if (icon) {
+					icon.style.transform = 'rotate(180deg)';
+				}
+				console.log('相册已展开');
+			} else {
+				// 折叠相册
+				content.classList.add('hidden');
+				group.classList.remove('expanded');
+				if (icon) {
+					icon.style.transform = 'rotate(0deg)';
+				}
+				console.log('相册已折叠');
+			}
+		}
+
+		showImageModal(imageSrc) {
+			console.log('显示图片模态框:', imageSrc);
+			
+			// 创建模态框
+			const modal = document.createElement('div');
+			modal.className = 'fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4';
+			modal.style.opacity = '0';
+			modal.style.transition = 'opacity 0.3s ease';
+
+			// 创建图片容器
+			const imageContainer = document.createElement('div');
+			imageContainer.className = 'relative max-w-full max-h-full';
+
+			// 创建图片元素
+			const img = document.createElement('img');
+			img.src = imageSrc;
+			img.alt = '查看图片';
+			img.className = 'max-w-full max-h-full object-contain rounded-lg';
+			img.style.transform = 'scale(0.9)';
+			img.style.transition = 'transform 0.3s ease';
+
+			// 创建关闭按钮
+			const closeBtn = document.createElement('button');
+			closeBtn.className = 'absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors';
+			closeBtn.innerHTML = `
+				<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+				</svg>
+			`;
+
+			// 组装模态框
+			imageContainer.appendChild(img);
+			imageContainer.appendChild(closeBtn);
+			modal.appendChild(imageContainer);
+			document.body.appendChild(modal);
+
+			// 显示动画
+			requestAnimationFrame(() => {
+				modal.style.opacity = '1';
+				img.style.transform = 'scale(1)';
+			});
+
+			// 关闭模态框函数
+			const closeModal = () => {
+				modal.style.opacity = '0';
+				img.style.transform = 'scale(0.9)';
+				setTimeout(() => {
+					if (document.body.contains(modal)) {
+						document.body.removeChild(modal);
+					}
+					document.removeEventListener('keydown', handleEsc);
+				}, 300);
+			};
+
+			// ESC键关闭
+			const handleEsc = (e) => {
+				if (e.key === 'Escape') closeModal();
+			};
+
+			// 绑定事件
+			closeBtn.addEventListener('click', closeModal);
+			modal.addEventListener('click', (e) => {
+				if (e.target === modal) closeModal();
+			});
+			document.addEventListener('keydown', handleEsc);
+		}
 	}
 
+	// 初始化相册管理器
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', () => {
+			new SimpleGalleryManager();
+		});
+	} else {
+		new SimpleGalleryManager();
+	}
+</script>
+
+<style>
 	.card-base {
 		@apply bg-[var(--card-bg)] rounded-[var(--radius-large)] shadow-sm border border-[var(--line-divider)];
 	}
 
-	.line-clamp-2 {
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
+	.gallery-group.expanded {
+		@apply shadow-xl;
+	}
+
+	.gallery-content {
+		max-height: 0;
 		overflow: hidden;
+		transition: max-height 0.3s ease-out;
 	}
-	
-	.gallery-modal {
-		opacity: 0;
-		transition: opacity 0.2s ease;
+
+	.gallery-group.expanded .gallery-content {
+		max-height: 2000px;
 	}
-	
-	.gallery-viewer {
-		transform: scale(0.95);
-		transition: transform 0.2s ease;
+
+	.gallery-image:hover {
+		@apply shadow-lg;
+	}
+
+	/* 响应式网格调整 */
+	@media (max-width: 768px) {
+		.gallery-content .grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (max-width: 480px) {
+		.gallery-content .grid {
+			grid-template-columns: repeat(1, 1fr);
+		}
 	}
 </style>
