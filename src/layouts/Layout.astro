@@ -186,6 +186,7 @@ const bannerOffset =
 		}}></style>  <!-- defines global css variables. This will be applied to <html> <body> and some other elements idk why -->
 
 
+
 		<slot name="head"></slot>
 
 		<link rel="alternate" type="application/rss+xml" title={profileConfig.name} href={`${Astro.site}rss.xml`}/>
@@ -1445,9 +1446,12 @@ class GalleryManager {
 		modal.className = 'gallery-modal fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4';
 		modal.style.opacity = '0';
 		modal.style.transition = 'opacity 0.3s ease';
+		modal.style.borderRadius = '12px';
 		
 		const modalContent = document.createElement('div');
 		modalContent.className = 'relative max-w-full max-h-full';
+		modalContent.style.borderRadius = '12px';
+		modalContent.style.overflow = 'hidden';
 		
 		const img = document.createElement('img');
 		img.src = imageSrc;
@@ -1455,6 +1459,7 @@ class GalleryManager {
 		img.className = 'max-w-full max-h-full object-contain rounded-lg';
 		img.style.transform = 'scale(0.9)';
 		img.style.transition = 'transform 0.3s ease';
+		img.style.borderRadius = '12px';
 		
 		const closeBtn = document.createElement('button');
 		closeBtn.className = 'close-btn absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-colors';

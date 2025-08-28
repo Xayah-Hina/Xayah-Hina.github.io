@@ -111,62 +111,29 @@ if (!album) {
 </MainGridLayout>
 
 <script>
-  // 增强的图片查看器初始化
+  // 确保PhotoSwipe正确处理相册图片
   document.addEventListener('DOMContentLoaded', () => {
     console.log('=== 相册页面加载完成 ===');
     
     // 检查页面中的图片元素
-    const albumImages = document.querySelectorAll('.moment-images img');
+    const albumImages = document.querySelectorAll('.moment-images img, .photo-gallery img');
     console.log('相册图片数量:', albumImages.length);
     
-    // 为每个图片添加点击事件，打开原始图片
+    // 预加载图片以确保正确显示
     albumImages.forEach((img) => {
       if (img instanceof HTMLImageElement) {
-        // 预加载图片以确保正确显示
         const preloadImg = new Image();
         preloadImg.src = img.src;
-        
-        img.addEventListener('click', (e) => {
-          if (e.target instanceof HTMLImageElement) {
-            console.log('图片被点击:', e.target.src);
-            
-            // 打开图片在新窗口或使用模态框
-            const imgUrl = e.target.src;
-            const imgExt = imgUrl.split('.').pop()?.toLowerCase();
-            
-            // 对于动态图片格式(gif)和其他格式分别处理
-            if (imgExt === 'gif') {
-              // GIF需要特殊处理以保持动画效果
-              window.open(imgUrl, '_blank');
-            } else {
-              // 其他格式可以使用内置查看器
-              const modal = document.createElement('div');
-              modal.style.position = 'fixed';
-              modal.style.top = '0';
-              modal.style.left = '0';
-              modal.style.width = '100%';
-              modal.style.height = '100%';
-              modal.style.backgroundColor = 'rgba(0,0,0,0.9)';
-              modal.style.display = 'flex';
-              modal.style.alignItems = 'center';
-              modal.style.justifyContent = 'center';
-              modal.style.zIndex = '9999';
-              
-              const modalImg = document.createElement('img');
-              modalImg.src = imgUrl;
-              modalImg.style.maxWidth = '90%';
-              modalImg.style.maxHeight = '90%';
-              modalImg.style.objectFit = 'contain';
-              
-              modal.appendChild(modalImg);
-              document.body.appendChild(modal);
-              
-              // 点击关闭模态框
-              modal.addEventListener('click', () => {
-                document.body.removeChild(modal);
-              });
-            }
-          }
+      }
+    });
+    
+    // 修复相册图片链接，确保它们可以被PhotoSwipe正确处理
+    document.querySelectorAll('.photo-gallery a').forEach(link => {
+      if (link instanceof HTMLAnchorElement) {
+        // 阻止默认的新窗口打开行为
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          // 不需要额外操作，PhotoSwipe会处理点击事件
         });
       }
     });
