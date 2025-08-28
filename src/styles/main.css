@@ -328,14 +328,16 @@ html {
     height: var(--collapsedHeight);
 }
 
-
+/*剧透效果*/
 .custom-md spoiler {
-  @apply bg-[var(--codeblock-bg)] hover:bg-transparent px-1 py-0.5 overflow-hidden rounded-md transition-all duration-150;
+  --_spoiler-mask: var(--primary);
+  @apply hover:bg-transparent px-1 py-0.5 overflow-hidden rounded-md transition-all duration-150;
+  background-color: var(--_spoiler-mask);
 
   &:not(:hover) {
-    color: var(--codeblock-bg);
+    color: var(--_spoiler-mask);
     * {
-        color: var(--codeblock-bg);
+        color: var(--_spoiler-mask);
     }
   }
 }
