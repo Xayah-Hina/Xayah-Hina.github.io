@@ -36,15 +36,9 @@ async function processAlbumFolder(
 ): Promise<AlbumGroup | null> {
 	// 检查必要文件
 	const infoPath = path.join(folderPath, "info.json");
-	const coverPath = path.join(folderPath, "cover.jpg");
 
 	if (!fs.existsSync(infoPath)) {
 		console.warn(`相册 ${folderName} 缺少 info.json 文件`);
-		return null;
-	}
-
-	if (!fs.existsSync(coverPath)) {
-		console.warn(`相册 ${folderName} 缺少 cover.jpg 文件`);
 		return null;
 	}
 
@@ -58,15 +52,44 @@ async function processAlbumFolder(
 		return null;
 	}
 
-	// 扫描照片
-	const photos = scanPhotos(folderPath, folderName);
+	// 检查是否为外链模式
+	const isExternalMode = info.mode === "external";
+	let photos: Photo[] = [];
+	let cover: string;
+
+	if (isExternalMode) {
+		// 外链模式：从 info.json 中获取封面和照片
+		if (!info.cover) {
+			console.warn(`相册 ${folderName} 外链模式缺少 cover 字段`);
+			return null;
+		}
+
+		cover = info.cover;
+		photos = processExternalPhotos(info.photos || [], folderName);
+	} else {
+		// 本地模式：检查本地文件
+		const coverPath = path.join(folderPath, "cover.jpg");
+		if (!fs.existsSync(coverPath)) {
+			console.warn(`相册 ${folderName} 缺少 cover.jpg 文件`);
+			return null;
+		}
+
+		cover = `/images/albums/${folderName}/cover.jpg`;
+		photos = scanPhotos(folderPath, folderName);
+	}
+
+	// 检查是否隐藏相册
+	if (info.hidden === true) {
+		console.log(`相册 ${folderName} 已设置为隐藏，跳过显示`);
+		return null;
+	}
 
 	// 构建相册对象
 	return {
 		id: folderName,
 		title: info.title || folderName,
 		description: info.description || "",
-		cover: `/images/albums/${folderName}/cover.jpg`,
+		cover,
 		date: info.date || new Date().toISOString().split("T")[0],
 		location: info.location || "",
 		tags: info.tags || [],
@@ -114,6 +137,36 @@ function scanPhotos(folderPath: string, albumId: string): Photo[] {
 			title: baseName,
 			tags: tags,
 			date: stats.mtime.toISOString().split("T")[0],
+		});
+	});
+
+	return photos;
+}
+
+function processExternalPhotos(externalPhotos: any[], albumId: string): Photo[] {
+	const photos: Photo[] = [];
+
+	externalPhotos.forEach((photo, index) => {
+		if (!photo.src) {
+			console.warn(`相册 ${albumId} 的第 ${index + 1} 张照片缺少 src 字段`);
+			return;
+		}
+
+		photos.push({
+			id: photo.id || `${albumId}-external-photo-${index}`,
+			src: photo.src,
+			thumbnail: photo.thumbnail,
+			alt: photo.alt || photo.title || `Photo ${index + 1}`,
+			title: photo.title,
+			description: photo.description,
+			tags: photo.tags || [],
+			date: photo.date || new Date().toISOString().split("T")[0],
+			location: photo.location,
+			width: photo.width,
+			height: photo.height,
+			camera: photo.camera,
+			lens: photo.lens,
+			settings: photo.settings,
 		});
 	});
 
