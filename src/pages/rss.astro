@@ -3,13 +3,14 @@ import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getSortedPosts } from "@utils/content-utils";
 import { formatDateToYYYYMMDD } from "@utils/date-utils";
 import { Icon } from "astro-icon/components";
-import { siteConfig } from "../config";
+import I18nKey from "../i18n/i18nKey";
+import { i18n } from "../i18n/translation";
 
 const posts = await getSortedPosts();
 const recentPosts = posts.slice(0, 6);
 ---
 
-<MainGridLayout title="RSS 订阅" description="订阅我的博客，获取最新文章更新">
+<MainGridLayout title={i18n(I18nKey.rss)} description={i18n(I18nKey.rssDescription)}>
     <div class="onload-animation">
         <!-- RSS 标题和介绍 -->
         <div class="card-base rounded-[var(--radius-large)] p-8 mb-6">
@@ -17,9 +18,9 @@ const recentPosts = posts.slice(0, 6);
                 <div class="inline-flex items-center justify-center w-16 h-16 bg-[var(--primary)] rounded-2xl mb-4">
                     <Icon name="material-symbols:rss-feed" class="text-white text-3xl" />
                 </div>
-                <h1 class="text-3xl font-bold text-[var(--primary)] mb-3">RSS 订阅</h1>
+                <h1 class="text-3xl font-bold text-[var(--primary)] mb-3">{i18n(I18nKey.rss)}</h1>
                 <p class="text-75 max-w-2xl mx-auto">
-                    通过RSS订阅我的博客，第一时间获取最新文章更新
+                    {i18n(I18nKey.rssSubtitle)}
                 </p>
             </div>
         </div>
@@ -32,8 +33,8 @@ const recentPosts = posts.slice(0, 6);
                         <Icon name="material-symbols:link" class="text-white text-xl" />
                     </div>
                     <div>
-                        <h3 class="font-semibold text-90 mb-1">RSS 订阅链接</h3>
-                        <p class="text-sm text-75">复制链接到你的RSS阅读器中</p>
+                        <h3 class="font-semibold text-90 mb-1">{i18n(I18nKey.rssLink)}</h3>
+                        <p class="text-sm text-75">{i18n(I18nKey.rssCopyToReader)}</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
@@ -45,7 +46,7 @@ const recentPosts = posts.slice(0, 6);
                         class="px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:opacity-80 transition-all duration-200 font-medium text-sm"
                         data-url={`${Astro.site}rss.xml`}
                     >
-                        复制链接
+                        {i18n(I18nKey.rssCopyLink)}
                     </button>
                 </div>
             </div>
@@ -55,7 +56,7 @@ const recentPosts = posts.slice(0, 6);
         <div class="card-base rounded-[var(--radius-large)] p-6 mb-6">
             <h2 class="text-xl font-bold text-90 mb-4 flex items-center">
                 <Icon name="material-symbols:article" class="mr-2 text-[var(--primary)]" />
-                最新文章
+                {i18n(I18nKey.rssLatestPosts)}
             </h2>
             <div class="space-y-4">
                 {recentPosts.map((post) => (
@@ -74,20 +75,6 @@ const recentPosts = posts.slice(0, 6);
                             <time datetime={post.data.published.toISOString()} class="text-75">
                                 {formatDateToYYYYMMDD(post.data.published)}
                             </time>
-                            {post.data.category && (
-                                <span class="px-2 py-1 bg-[var(--primary)]/10 text-[var(--primary)] rounded-md text-xs">
-                                    {post.data.category}
-                                </span>
-                            )}
-                            {post.data.tags && post.data.tags.length > 0 && (
-                                <div class="flex gap-1">
-                                    {post.data.tags.slice(0, 3).map((tag) => (
-                                        <span class="px-2 py-1 bg-[var(--card-bg)] text-75 rounded-md text-xs border border-[var(--line-divider)]">
-                                            #{tag}
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
                         </div>
                     </article>
                 ))}
@@ -98,20 +85,20 @@ const recentPosts = posts.slice(0, 6);
         <div class="card-base rounded-[var(--radius-large)] p-6">
             <h2 class="text-xl font-bold text-90 mb-4 flex items-center">
                 <Icon name="material-symbols:help-outline" class="mr-2 text-[var(--primary)]" />
-                什么是RSS？
+                {i18n(I18nKey.rssWhatIsRSS)}
             </h2>
             <div class="text-75 space-y-3">
                 <p>
-                    RSS（Really Simple Syndication）是一种用于发布经常更新内容的标准化格式。通过RSS，你可以：
+                    {i18n(I18nKey.rssWhatIsRSSDescription)}
                 </p>
                 <ul class="list-disc list-inside space-y-1 ml-4">
-                    <li>在一个地方订阅多个网站的内容更新</li>
-                    <li>无需访问网站即可获取最新文章</li>
-                    <li>避免错过重要的内容更新</li>
-                    <li>享受无广告、纯净的阅读体验</li>
+                    <li>{i18n(I18nKey.rssBenefit1)}</li>
+                    <li>{i18n(I18nKey.rssBenefit2)}</li>
+                    <li>{i18n(I18nKey.rssBenefit3)}</li>
+                    <li>{i18n(I18nKey.rssBenefit4)}</li>
                 </ul>
                 <p class="text-sm">
-                    只需将上方的RSS链接添加到你喜欢的RSS阅读器中，就能开始订阅我的博客了！
+                    {i18n(I18nKey.rssHowToUse)}
                 </p>
             </div>
         </div>
@@ -126,8 +113,8 @@ const recentPosts = posts.slice(0, 6);
                     if (!url) return;
                     try {
                         await navigator.clipboard.writeText(url);
-                        const originalText = this.textContent || '复制链接';
-                        this.textContent = '已复制！';
+                        const originalText = this.textContent || i18n.RSS.copyLink;
+                        this.textContent = i18n.RSS.copied;
                         this.style.backgroundColor = 'var(--success-color, #10b981)';
                         
                         setTimeout(() => {
@@ -136,8 +123,8 @@ const recentPosts = posts.slice(0, 6);
                         }, 2000);
                     } catch (err) {
                         console.error('复制失败:', err);
-                        const originalText = this.textContent || '复制链接';
-                        this.textContent = '复制失败';
+                        const originalText = this.textContent || i18n.RSS.copyLink;
+                        this.textContent = i18n.RSS.copyFailed;
                         setTimeout(() => {
                             this.textContent = originalText;
                         }, 2000);
