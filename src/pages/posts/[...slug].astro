@@ -3,6 +3,7 @@ import path from "node:path";
 import Comment from "@components/comment/index.astro";
 import License from "@components/misc/License.astro";
 import Markdown from "@components/misc/Markdown.astro";
+import PasswordProtection from "@components/PasswordProtection.astro";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
@@ -14,6 +15,8 @@ import ImageWrapper from "../../components/misc/ImageWrapper.astro";
 import PostMetadata from "../../components/PostMeta.astro";
 import { profileConfig, siteConfig } from "../../config";
 import { formatDateToYYYYMMDD } from "../../utils/date-utils";
+import CryptoJS from "crypto-js";
+import bcryptjs from "bcryptjs";
 export async function getStaticPaths() {
 	const blogEntries = await getSortedPosts();
 	return blogEntries.map((entry) => ({
@@ -26,6 +29,24 @@ const { entry } = Astro.props;
 const { Content, headings } = await entry.render();
 
 const { remarkPluginFrontmatter } = await entry.render();
+
+// 处理加密逻辑
+let encryptedContent = '';
+let passwordHash = '';
+let isEncrypted = entry.data.encrypted && entry.data.password;
+
+if (isEncrypted) {
+	// 对于加密文章，我们将使用markdown内容进行加密
+	// 在客户端解密后，会通过JavaScript重新渲染markdown
+	const contentToEncrypt = entry.body;
+	
+	// 使用AES加密内容
+	encryptedContent = CryptoJS.AES.encrypt(contentToEncrypt, entry.data.password).toString();
+	
+	// 生成密码哈希
+	const saltRounds = 10;
+	passwordHash = bcryptjs.hashSync(entry.data.password, saltRounds);
+}
 
 const jsonLd = {
 	"@context": "https://schema.org",
@@ -102,11 +123,19 @@ const jsonLd = {
             }
 
 
-            <Markdown class="mb-6 markdown-content onload-animation">
-                <Content />
-            </Markdown>
-
-            {licenseConfig.enable && <License title={entry.data.title} slug={entry.slug} pubDate={entry.data.published} author={entry.data.author} sourceLink={entry.data.sourceLink} licenseName={entry.data.licenseName} licenseUrl={entry.data.licenseUrl} class="mb-6 rounded-xl license-container onload-animation"></License>}
+            {isEncrypted ? (
+                <PasswordProtection 
+                    encryptedContent={encryptedContent}
+                    passwordHash={passwordHash}
+                />
+            ) : (
+                <>
+                    <Markdown class="mb-6 markdown-content onload-animation">
+                        <Content />
+                    </Markdown>
+                    {licenseConfig.enable && <License title={entry.data.title} slug={entry.slug} pubDate={entry.data.published} author={entry.data.author} sourceLink={entry.data.sourceLink} licenseName={entry.data.licenseName} licenseUrl={entry.data.licenseUrl} class="mb-6 rounded-xl license-container onload-animation"></License>}
+                </>
+            )}
 
         </div>
     </div>

@@ -118,3 +118,9 @@
     }
     
 }
+
+/* 修复代码块内列表项标记颜色问题 */
+.custom-md .expressive-code ul li::marker,
+.custom-md .expressive-code ol li::marker {
+    @apply text-inherit;
+}

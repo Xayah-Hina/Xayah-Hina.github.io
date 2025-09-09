@@ -168,4 +168,35 @@ export const ja: Translation = {
 	[Key.timelineCurrentRole]: "現在の役職",
 	[Key.timelineEmployed]: "在職中",
 	[Key.timelineAvailable]: "利用可能",
+
+	// 密码保护
+	[Key.passwordProtected]: "パスワード保護",
+	[Key.passwordProtectedTitle]: "このコンテンツはパスワードで保護されています",
+	// RSS
+	[Key.rss]: "RSS",
+	[Key.rssDescription]: "RSSフィード",
+	[Key.rssSubtitle]: "最新の投稿を購読",
+	[Key.rssLink]: "RSSリンク",
+	[Key.rssCopyToReader]: "RSSリーダーにリンクをコピー",
+	[Key.rssCopyLink]: "リンクをコピー",
+	[Key.rssLatestPosts]: "最新の投稿",
+	[Key.rssWhatIsRSS]: "RSSとは？",
+	[Key.rssWhatIsRSSDescription]:
+		"RSS（Really Simple Syndication）は、頻繁に更新されるコンテンツを公開するための標準フォーマットです。RSSを使用すると、以下のことができます：",
+	[Key.rssBenefit1]: "手動で訪問せずにウェブサイトの最新コンテンツを取得",
+	[Key.rssBenefit2]: "複数のウェブサイトの購読を一箇所で管理",
+	[Key.rssBenefit3]: "重要な更新や記事を見逃さない",
+	[Key.rssBenefit4]: "広告なしのクリーンな読書体験を楽しむ",
+	[Key.rssHowToUse]:
+		"Feedly、Inoreader、または他のRSSリーダーを使用してこのサイトを購読することをお勧めします。",
+	[Key.rssCopied]: "RSSリンクがクリップボードにコピーされました！",
+	[Key.rssCopyFailed]: "コピーに失敗しました。リンクを手動でコピーしてください",
+
+	[Key.passwordProtectedDescription]:
+		"保護されたコンテンツを表示するにはパスワードを入力してください",
+	[Key.passwordPlaceholder]: "パスワードを入力してください",
+	[Key.passwordUnlock]: "ロック解除",
+	[Key.passwordUnlocking]: "ロック解除中...",
+	[Key.passwordIncorrect]: "パスワードが間違っています。もう一度お試しください",
+	[Key.passwordDecryptError]: "復号化に失敗しました。パスワードが正しいか確認してください",
 };

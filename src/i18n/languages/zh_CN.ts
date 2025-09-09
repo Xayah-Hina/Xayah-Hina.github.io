@@ -121,7 +121,8 @@ export const zh_CN: Translation = {
 	[Key.rssCopyLink]: "复制链接",
 	[Key.rssLatestPosts]: "最新文章",
 	[Key.rssWhatIsRSS]: "什么是 RSS？",
-	[Key.rssWhatIsRSSDescription]: "RSS（Really Simple Syndication）是一种用于发布经常更新内容的标准格式。通过 RSS，你可以：",
+	[Key.rssWhatIsRSSDescription]:
+		"RSS（Really Simple Syndication）是一种用于发布经常更新内容的标准格式。通过 RSS，你可以：",
 	[Key.rssBenefit1]: "及时获取网站最新内容，无需手动访问",
 	[Key.rssBenefit2]: "在一个地方管理多个网站的订阅",
 	[Key.rssBenefit3]: "避免错过重要更新和文章",
@@ -183,4 +184,14 @@ export const zh_CN: Translation = {
 	[Key.timelineCurrentRole]: "当前状态",
 	[Key.timelineEmployed]: "在职",
 	[Key.timelineAvailable]: "可入职",
+
+	// 密码保护
+	[Key.passwordProtected]: "密码保护",
+	[Key.passwordProtectedTitle]: "此内容受密码保护",
+	[Key.passwordProtectedDescription]: "请输入密码以查看受保护的内容",
+	[Key.passwordPlaceholder]: "请输入密码",
+	[Key.passwordUnlock]: "解锁",
+	[Key.passwordUnlocking]: "解锁中...",
+	[Key.passwordIncorrect]: "密码错误，请重试",
+	[Key.passwordDecryptError]: "解密失败，请检查密码是否正确",
 };
