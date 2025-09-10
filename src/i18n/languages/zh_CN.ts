@@ -194,4 +194,13 @@ export const zh_CN: Translation = {
 	[Key.passwordUnlocking]: "解锁中...",
 	[Key.passwordIncorrect]: "密码错误，请重试",
 	[Key.passwordDecryptError]: "解密失败，请检查密码是否正确",
+	[Key.passwordRequired]: "请输入密码",
+	[Key.passwordVerifying]: "验证中...",
+	[Key.passwordDecryptFailed]: "解密失败，请检查密码",
+	[Key.passwordDecryptRetry]: "解密失败，请重试",
+	[Key.passwordUnlockButton]: "解锁",
+	[Key.copyFailed]: "复制失败:",
+	[Key.syntaxHighlightFailed]: "语法高亮失败:",
+	[Key.autoSyntaxHighlightFailed]: "自动语法高亮也失败:",
+	[Key.decryptionError]: "解密过程中发生错误:",
 };

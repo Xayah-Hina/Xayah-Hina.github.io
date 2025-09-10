@@ -1,5 +1,5 @@
-// 时间线数据配置文件
-// 用于管理时间线页面的数据
+// Timeline data configuration file
+// Used to manage data for the timeline page
 
 export interface TimelineItem {
 	id: string;
@@ -7,7 +7,7 @@ export interface TimelineItem {
 	description: string;
 	type: "education" | "work" | "project" | "achievement";
 	startDate: string;
-	endDate?: string; // 如果为空表示至今
+	endDate?: string; // If empty, it means current
 	location?: string;
 	organization?: string;
 	position?: string;
@@ -26,18 +26,18 @@ export interface TimelineItem {
 export const timelineData: TimelineItem[] = [
 	{
 		id: "current-study",
-		title: "计算机科学与技术专业在读",
+		title: "Studying Computer Science and Technology",
 		description:
-			"目前正在学习计算机科学与技术专业，专注于Web开发和软件工程方向。",
+			"Currently studying Computer Science and Technology, focusing on web development and software engineering.",
 		type: "education",
 		startDate: "2022-09-01",
-		location: "北京",
-		organization: "北京理工大学",
+		location: "Beijing",
+		organization: "Beijing Institute of Technology",
 		skills: ["Java", "Python", "JavaScript", "HTML/CSS", "MySQL"],
 		achievements: [
-			"当前GPA: 3.6/4.0",
-			"完成了数据结构与算法课程设计",
-			"参与了多个课程项目开发",
+			"Current GPA: 3.6/4.0",
+			"Completed data structures and algorithms course project",
+			"Participated in multiple course project developments",
 		],
 		icon: "material-symbols:school",
 		color: "#059669",
@@ -45,17 +45,17 @@ export const timelineData: TimelineItem[] = [
 	},
 	{
 		id: "mizuki-blog-project",
-		title: "Mizuki个人博客项目",
+		title: "Mizuki Personal Blog Project",
 		description:
-			"使用Astro框架开发的个人博客网站，作为学习前端技术的实践项目。",
+			"A personal blog website developed using the Astro framework as a practical project for learning frontend technologies.",
 		type: "project",
 		startDate: "2024-06-01",
 		endDate: "2024-08-01",
 		skills: ["Astro", "TypeScript", "Tailwind CSS", "Git"],
 		achievements: [
-			"掌握了现代前端开发技术栈",
-			"学会了响应式设计和用户体验优化",
-			"完成了从设计到部署的完整流程",
+			"Mastered modern frontend development tech stack",
+			"Learned responsive design and user experience optimization",
+			"Completed the full process from design to deployment",
 		],
 		links: [
 			{
@@ -75,19 +75,19 @@ export const timelineData: TimelineItem[] = [
 	},
 	{
 		id: "summer-internship-2024",
-		title: "前端开发实习生",
-		description: "暑期在一家互联网公司实习，参与Web应用的前端开发工作。",
+		title: "Frontend Development Intern",
+		description: "Summer internship at an internet company, participating in frontend development of web applications.",
 		type: "work",
 		startDate: "2024-07-01",
 		endDate: "2024-08-31",
-		location: "北京",
-		organization: "TechStart科技有限公司",
+		location: "Beijing",
+		organization: "TechStart Internet Company",
 		position: "Frontend Development Intern",
 		skills: ["React", "JavaScript", "CSS3", "Git", "Figma"],
 		achievements: [
-			"完成了用户界面组件的开发",
-			"学习了团队协作和代码规范",
-			"获得了实习优秀表现证明",
+			"Completed user interface component development",
+			"Learned team collaboration and code standards",
+			"Received outstanding internship performance certificate",
 		],
 		icon: "material-symbols:work",
 		color: "#DC2626",
@@ -95,17 +95,17 @@ export const timelineData: TimelineItem[] = [
 	},
 	{
 		id: "web-development-course",
-		title: "Web开发在线课程完成",
-		description: "完成了全栈Web开发的在线课程，系统学习了前后端开发技术。",
+		title: "Completed Web Development Online Course",
+		description: "Completed a full-stack web development online course, systematically learning frontend and backend development technologies.",
 		type: "achievement",
 		startDate: "2024-01-15",
 		endDate: "2024-05-30",
-		organization: "慕课网",
+		organization: "Mooc Website",
 		skills: ["HTML", "CSS", "JavaScript", "Node.js", "Express"],
 		achievements: [
-			"获得了课程完成证书",
-			"完成了5个实战项目",
-			"掌握了全栈开发基础",
+			"Received course completion certificate",
+			"Completed 5 practical projects",
+			"Mastered full-stack development fundamentals",
 		],
 		links: [
 			{
@@ -119,97 +119,97 @@ export const timelineData: TimelineItem[] = [
 	},
 	{
 		id: "student-management-system",
-		title: "学生管理系统课程设计",
-		description: "数据库课程的期末项目，开发了一个完整的学生信息管理系统。",
+		title: "Student Management System Course Project",
+		description: "Final project for the database course, developed a complete student information management system.",
 		type: "project",
 		startDate: "2023-11-01",
 		endDate: "2023-12-15",
 		skills: ["Java", "MySQL", "Swing", "JDBC"],
 		achievements: [
-			"获得了课程设计优秀成绩",
-			"实现了完整的CRUD功能",
-			"学会了数据库设计和优化",
+			"Received excellent course project grade",
+			"Implemented complete CRUD functionality",
+			"Learned database design and optimization",
 		],
 		icon: "material-symbols:database",
 		color: "#EA580C",
 	},
 	{
 		id: "programming-contest",
-		title: "校内程序设计竞赛",
-		description: "参加了学校举办的程序设计竞赛，提升了算法和编程能力。",
+		title: "University Programming Contest",
+		description: "Participated in a programming contest held by the university, improving algorithm and programming skills.",
 		type: "achievement",
 		startDate: "2023-10-20",
-		location: "北京理工大学",
-		organization: "计算机学院",
-		skills: ["C++", "算法", "数据结构"],
+		location: "Beijing Institute of Technology",
+		organization: "School of Computer Science",
+		skills: ["C++", "Algorithms", "Data Structures"],
 		achievements: [
-			"获得了校内竞赛三等奖",
-			"提升了算法思维能力",
-			"加强了编程基础技能",
+			"Won third prize in university contest",
+			"Improved algorithmic thinking ability",
+			"Strengthened programming fundamentals",
 		],
 		icon: "material-symbols:emoji-events",
 		color: "#7C3AED",
 	},
 	{
 		id: "part-time-tutor",
-		title: "编程家教兼职",
-		description: "为高中生提供编程入门辅导，帮助他们学习Python基础。",
+		title: "Part-time Programming Tutor",
+		description: "Provided programming tutoring for high school students, helping them learn Python basics.",
 		type: "work",
 		startDate: "2023-09-01",
 		endDate: "2024-01-31",
-		position: "编程辅导老师",
-		skills: ["Python", "教学", "沟通"],
+		position: "Programming Tutor",
+		skills: ["Python", "Teaching", "Communication"],
 		achievements: [
-			"帮助3名学生掌握了Python基础",
-			"提升了表达和沟通能力",
-			"获得了教学经验",
+			"Helped 3 students master Python basics",
+			"Improved expression and communication skills",
+			"Gained teaching experience",
 		],
 		icon: "material-symbols:school",
 		color: "#059669",
 	},
 	{
 		id: "high-school-graduation",
-		title: "高中毕业",
-		description: "以优异成绩从高中毕业，考入北京理工大学计算机科学与技术专业。",
+		title: "High School Graduation",
+		description: "Graduated from high school with excellent grades and was admitted to the Computer Science and Technology program at Beijing Institute of Technology.",
 		type: "education",
 		startDate: "2019-09-01",
 		endDate: "2022-06-30",
-		location: "山东济南",
-		organization: "济南市第一中学",
+		location: "Jinan, Shandong",
+		organization: "No.1 High School of Jinan",
 		achievements: [
-			"高考成绩620分",
-			"获得了市级三好学生称号",
-			"在数学竞赛中获得省级二等奖",
+			"College entrance exam score: 620",
+			"Received municipal model student award",
+			"Won provincial second prize in math competition",
 		],
 		icon: "material-symbols:school",
 		color: "#2563EB",
 	},
 	{
 		id: "first-programming-experience",
-		title: "初次接触编程",
-		description: "在高中信息技术课上第一次接触编程，开始学习Python基础语法。",
+		title: "First Programming Experience",
+		description: "First encountered programming in high school IT class, started learning Python basic syntax.",
 		type: "education",
 		startDate: "2021-03-01",
-		skills: ["Python", "基础编程概念"],
+		skills: ["Python", "Basic Programming Concepts"],
 		achievements: [
-			'完成了第一个"Hello World"程序',
-			"学会了基本的循环和条件语句",
-			"培养了对编程的兴趣",
+			'Completed first "Hello World" program',
+			"Learned basic loops and conditional statements",
+			"Developed interest in programming",
 		],
 		icon: "material-symbols:code",
 		color: "#7C3AED",
 	},
 	{
 		id: "english-certificate",
-		title: "英语四级证书",
-		description: "通过了大学英语四级考试，具备了基本的英语读写能力。",
+		title: "English CET-4 Certificate",
+		description: "Passed the College English Test Band 4, acquired basic English reading and writing skills.",
 		type: "achievement",
 		startDate: "2023-06-15",
-		organization: "全国大学英语四、六级考试委员会",
+		organization: "National College English Test Committee",
 		achievements: [
-			"四级成绩：550分",
-			"提升了英语技术文档阅读能力",
-			"为后续学习国外技术资料打下基础",
+			"CET-4 score: 550",
+			"Improved English technical documentation reading ability",
+			"Laid foundation for future study of foreign technical materials",
 		],
 		links: [
 			{
@@ -223,7 +223,7 @@ export const timelineData: TimelineItem[] = [
 	},
 ];
 
-// 获取时间线统计信息
+// Get timeline statistics
 export const getTimelineStats = () => {
 	const total = timelineData.length;
 	const byType = {
@@ -237,7 +237,7 @@ export const getTimelineStats = () => {
 	return { total, byType };
 };
 
-// 按类型获取时间线项目
+// Get timeline items by type
 export const getTimelineByType = (type?: string) => {
 	if (!type || type === "all") {
 		return timelineData.sort(
@@ -253,7 +253,7 @@ export const getTimelineByType = (type?: string) => {
 		);
 };
 
-// 获取特色时间线项目
+// Get featured timeline items
 export const getFeaturedTimeline = () => {
 	return timelineData
 		.filter((item) => item.featured)
@@ -263,12 +263,12 @@ export const getFeaturedTimeline = () => {
 		);
 };
 
-// 获取当前进行中的项目
+// Get current ongoing items
 export const getCurrentItems = () => {
 	return timelineData.filter((item) => !item.endDate);
 };
 
-// 计算总工作经验
+// Calculate total work experience
 export const getTotalWorkExperience = () => {
 	const workItems = timelineData.filter((item) => item.type === "work");
 	let totalMonths = 0;

@@ -201,4 +201,13 @@ export const en: Translation = {
 	[Key.passwordIncorrect]: "Incorrect password, please try again",
 	[Key.passwordDecryptError]:
 		"Decryption failed, please check if the password is correct",
+	[Key.passwordRequired]: "Please enter password",
+	[Key.passwordVerifying]: "Verifying...",
+	[Key.passwordDecryptFailed]: "Decryption failed, please check password",
+	[Key.passwordDecryptRetry]: "Decryption failed, please retry",
+	[Key.passwordUnlockButton]: "Unlock",
+	[Key.copyFailed]: "Copy failed:",
+	[Key.syntaxHighlightFailed]: "Syntax highlighting failed:",
+	[Key.autoSyntaxHighlightFailed]: "Auto syntax highlighting also failed:",
+	[Key.decryptionError]: "Error occurred during decryption:",
 };

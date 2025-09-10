@@ -1,5 +1,5 @@
-// 项目数据配置文件
-// 用于管理项目展示页面的数据
+// Project data configuration file
+// Used to manage data for the project display page
 
 export interface Project {
 	id: string;
@@ -21,7 +21,7 @@ export const projectsData: Project[] = [
 	{
 		id: 'mizuki-blog',
 		title: 'Mizuki Blog Theme',
-		description: '基于Astro框架开发的现代化博客主题，支持多语言、暗黑模式、响应式设计等功能。',
+		description: 'Modern blog theme developed based on the Astro framework, supporting multilingual, dark mode, and responsive design features.',
 		image: '',
 		category: 'web',
 		techStack: ['Astro', 'TypeScript', 'Tailwind CSS', 'Svelte'],
@@ -36,7 +36,7 @@ export const projectsData: Project[] = [
 	{
 		id: 'portfolio-website',
 		title: 'Personal Portfolio',
-		description: '个人作品集网站，展示项目经验和技术技能。',
+		description: 'Personal portfolio website showcasing project experience and technical skills.',
 		image: '',
 		category: 'web',
 		techStack: ['React', 'Next.js', 'TypeScript', 'Framer Motion'],
@@ -51,7 +51,7 @@ export const projectsData: Project[] = [
 	{
 		id: 'task-manager-app',
 		title: 'Task Manager App',
-		description: '跨平台任务管理应用，支持团队协作和项目管理。',
+		description: 'Cross-platform task management application supporting team collaboration and project management.',
 		image: '',
 		category: 'mobile',
 		techStack: ['React Native', 'TypeScript', 'Redux', 'Firebase'],
@@ -62,7 +62,7 @@ export const projectsData: Project[] = [
 	{
 		id: 'data-visualization-tool',
 		title: 'Data Visualization Tool',
-		description: '数据可视化工具，支持多种图表类型和交互式分析。',
+		description: 'Data visualization tool supporting multiple chart types and interactive analysis.',
 		image: '',
 		category: 'web',
 		techStack: ['Vue.js', 'D3.js', 'TypeScript', 'Node.js'],
@@ -75,7 +75,7 @@ export const projectsData: Project[] = [
 	{
 		id: 'e-commerce-platform',
 		title: 'E-commerce Platform',
-		description: '全栈电商平台，包含用户管理、商品管理、订单处理等功能。',
+		description: 'Full-stack e-commerce platform including user management, product management, and order processing features.',
 		image: '',
 		category: 'web',
 		techStack: ['Next.js', 'Node.js', 'PostgreSQL', 'Stripe'],
@@ -85,7 +85,7 @@ export const projectsData: Project[] = [
 	}
 ];
 
-// 获取项目统计信息
+// Get project statistics
 export const getProjectStats = () => {
 	const total = projectsData.length;
 	const completed = projectsData.filter(p => p.status === 'completed').length;
@@ -102,7 +102,7 @@ export const getProjectStats = () => {
 	};
 };
 
-// 按分类获取项目
+// Get projects by category
 export const getProjectsByCategory = (category?: string) => {
 	if (!category || category === 'all') {
 		return projectsData;
@@ -110,12 +110,12 @@ export const getProjectsByCategory = (category?: string) => {
 	return projectsData.filter(p => p.category === category);
 };
 
-// 获取特色项目
+// Get featured projects
 export const getFeaturedProjects = () => {
 	return projectsData.filter(p => p.featured);
 };
 
-// 获取所有技术栈
+// Get all tech stacks
 export const getAllTechStack = () => {
 	const techSet = new Set<string>();
 	projectsData.forEach(project => {

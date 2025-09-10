@@ -176,8 +176,17 @@ export const zh_TW: Translation = {
 	[Key.passwordUnlocking]: "解鎖中...",
 	[Key.passwordIncorrect]: "密碼錯誤，請重試",
 	[Key.passwordDecryptError]: "解密失敗，請檢查密碼是否正確",
+	[Key.passwordRequired]: "請輸入密碼",
+	[Key.passwordVerifying]: "驗證中...",
+	[Key.passwordDecryptFailed]: "解密失敗，請檢查密碼",
+	[Key.passwordDecryptRetry]: "解密失敗，請重試",
+	[Key.passwordUnlockButton]: "解鎖",
+	[Key.copyFailed]: "複製失敗：",
+	[Key.syntaxHighlightFailed]: "語法高亮失敗：",
+	[Key.autoSyntaxHighlightFailed]: "自動語法高亮也失敗了：",
+	[Key.decryptionError]: "解密過程中發生錯誤：",
 
-	// RSS 頁面
+	// RSS
 	[Key.rss]: "RSS 訂閱",
 	[Key.rssDescription]: "訂閱獲取最新更新",
 	[Key.rssSubtitle]: "通過 RSS 訂閱，第一時間獲取最新文章和動態",

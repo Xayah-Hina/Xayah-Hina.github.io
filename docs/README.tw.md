@@ -14,10 +14,10 @@
 [**📝 使用者文檔**](https://docs.mizuki.mysqil.com/)
 
 🌏 README 語言
-[**中文**](../README.md) /
-[**English**](../README.en.md) /
+[**English**](../README.md) /
+[**中文**](../README.zh.md) /
 [**日本語**](./README.ja.md) /
-[**中文繁體**](./README.tw.md) /
+[**中文繁体**](./README.tw.md) /
 
 ## 🆕 v4.8 版本更新
 - **Pio 看板娘整合**：整合了 Pio 看板娘，提供可愛的互動角色，增強使用者互動體驗。
