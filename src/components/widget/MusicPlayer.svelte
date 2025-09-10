@@ -343,10 +343,16 @@ onMount(() => {
 	if (mode === "meting") {
 		fetchMetingPlaylist();
 	} else {
-		playlist = localPlaylist;
-		if (playlist.length > 0) loadSong(playlist[0]);
+		// 使用本地播放列表，不发送任何API请求
+		playlist = [...localPlaylist];
+		if (playlist.length > 0) {
+			loadSong(playlist[0]);
+		} else {
+			showErrorMessage("本地播放列表为空");
+		}
 	}
 });
+
 
 onDestroy(() => {
 	if (audio) {
@@ -358,7 +364,7 @@ onDestroy(() => {
 
 {#if musicPlayerConfig.enable}
 {#if showError}
-<div class="fixed bottom-20 left-4 z-[60] max-w-sm">
+<div class="fixed bottom-20 right-4 z-[60] max-w-sm">
     <div class="bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-slide-up">
         <Icon icon="material-symbols:error" class="text-xl flex-shrink-0" />
         <span class="text-sm flex-1">{errorMessage}</span>
@@ -369,7 +375,7 @@ onDestroy(() => {
 </div>
 {/if}
 
-<div class="music-player fixed bottom-4 left-4 z-50 transition-all duration-300 ease-in-out"
+<div class="music-player fixed bottom-4 right-4 z-50 transition-all duration-300 ease-in-out"
      class:expanded={isExpanded}
      class:hidden-mode={isHidden}>
     <!-- 隐藏状态的小圆球 -->
@@ -583,7 +589,7 @@ onDestroy(() => {
         </div>
     </div>
     {#if showPlaylist}
-        <div class="playlist-panel float-panel fixed bottom-20 left-4 w-80 max-h-96 overflow-hidden z-50"
+        <div class="playlist-panel float-panel fixed bottom-20 right-4 w-80 max-h-96 overflow-hidden z-50"
              transition:slide={{ duration: 300, axis: 'y' }}>
             <div class="playlist-header flex items-center justify-between p-4 border-b border-[var(--line-divider)]">
                 <h3 class="text-lg font-semibold text-90">{i18n(Key.playlist)}</h3>
@@ -677,10 +683,14 @@ onDestroy(() => {
     width: 280px;
     position: absolute;
     bottom: 0;
-    left: 0;
+    right: 0;
+    /*left: 0;*/
 }
 .expanded-player {
     width: 320px;
+    position: absolute;
+    bottom: 0;
+    right: 0;
 }
 
 .animate-pulse {
@@ -702,18 +712,19 @@ onDestroy(() => {
 @media (max-width: 768px) {
     .music-player {
         max-width: 280px;
-        left: 8px !important;
+        /*left: 8px !important;*/
         bottom: 8px !important;
+        right: 8px !important;
     }
     .music-player.expanded {
         width: calc(100vw - 16px);
         max-width: none;
-        left: 8px !important;
+        /*left: 8px !important;*/
         right: 8px !important;
     }
     .playlist-panel {
         width: calc(100vw - 16px) !important;
-        left: 8px !important;
+        /*left: 8px !important;*/
         right: 8px !important;
         max-width: none;
     }
