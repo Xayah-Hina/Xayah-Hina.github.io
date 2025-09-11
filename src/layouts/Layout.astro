@@ -25,8 +25,6 @@ import "katex/dist/katex.css";
 import "../styles/mobile-navbar.css";
 import "../styles/wallpaper-navbar-transparent.css";
 
-
-
 interface Props {
 	title?: string;
 	banner?: string;
@@ -723,63 +721,47 @@ function loadHue() {
 }
 
 function initCustomScrollbar() {
-	// 延迟初始化滚动条以提升性能
-	requestIdleCallback(() => {
-		const bodyElement = document.querySelector('body');
-		if (!bodyElement) return;
+	// 完全禁用OverlayScrollbars的body初始化，避免导致页面重新加载
+	// 只处理katex元素的滚动条
+	const katexElements = document.querySelectorAll('.katex-display:not([data-scrollbar-initialized])') as NodeListOf<HTMLElement>;
+	katexElements.forEach(element => {
+		if (!element.parentNode) return;
+
+		const container = document.createElement('div');
+		container.className = 'katex-display-container';
+		element.parentNode.insertBefore(container, element);
+		container.appendChild(element);
+
+		// 使用简单的CSS滚动条而不是OverlayScrollbars
+		container.style.cssText = `
+			overflow-x: auto;
+			scrollbar-width: thin;
+			scrollbar-color: rgba(0,0,0,0.3) transparent;
+		`;
 		
-		// 简化配置以提升性能
-		OverlayScrollbars(
-			{
-				target: bodyElement,
-				cancel: {
-					nativeScrollbarsOverlaid: true,
-				}
-			}, {
-			scrollbars: {
-				theme: 'scrollbar-base scrollbar-auto py-1',
-				autoHide: 'move',
-				autoHideDelay: 100,
-				autoHideSuspend: true,
-			},
-		});
+		// 为webkit浏览器添加自定义滚动条样式
+		const style = document.createElement('style');
+		style.textContent = `
+			.katex-display-container::-webkit-scrollbar {
+				height: 6px;
+			}
+			.katex-display-container::-webkit-scrollbar-track {
+				background: transparent;
+			}
+			.katex-display-container::-webkit-scrollbar-thumb {
+				background: rgba(0,0,0,0.3);
+				border-radius: 3px;
+			}
+			.katex-display-container::-webkit-scrollbar-thumb:hover {
+				background: rgba(0,0,0,0.5);
+			}
+		`;
+		if (!document.head.querySelector('style[data-katex-scrollbar]')) {
+			style.setAttribute('data-katex-scrollbar', 'true');
+			document.head.appendChild(style);
+		}
 
-		// 懒加载katex滚动条
-		const katexElements = document.querySelectorAll('.katex-display') as NodeListOf<HTMLElement>;
-		if (katexElements.length === 0) return;
-
-		const katexObserver = new IntersectionObserver((entries, observer) => {
-			entries.forEach(entry => {
-				if (entry.isIntersecting) {
-					const element = entry.target as HTMLElement;
-					if (!element.parentNode || element.hasAttribute('data-scrollbar-initialized')) return;
-
-					const container = document.createElement('div');
-					container.className = 'katex-display-container';
-					element.parentNode.insertBefore(container, element);
-					container.appendChild(element);
-
-					OverlayScrollbars(container, {
-						scrollbars: {
-							theme: 'scrollbar-base scrollbar-auto',
-							autoHide: 'leave',
-							autoHideDelay: 800,
-						}
-					});
-
-					element.setAttribute('data-scrollbar-initialized', 'true');
-					observer.unobserve(entry.target);
-				}
-			});
-		}, {
-			root: null,
-			rootMargin: '200px',
-			threshold: 0.1
-		});
-
-		katexElements.forEach(element => {
-			katexObserver.observe(element);
-		});
+		element.setAttribute('data-scrollbar-initialized', 'true');
 	});
 }
 
@@ -1059,27 +1041,34 @@ const setup = () => {
 		}
 	})
 	window.swup.hooks.on('content:replace', () => {
+		// 只处理新的katex元素的滚动条，使用原生CSS滚动条
 		initCustomScrollbar();
 		
-		// 重新初始化 TOC 组件
-		const tocElement = document.querySelector('table-of-contents');
-		if (tocElement && typeof tocElement.init === 'function') {
-			setTimeout(() => {
-				tocElement.init();
-			}, 100);
-		}
+		// 检查当前页面是否为文章页面（有TOC元素）
+		const tocWrapper = document.getElementById('toc-wrapper');
+		const isArticlePage = tocWrapper !== null;
 		
-		// 重新初始化移动端 TOC 组件
-		if (typeof window.mobileTOCInit === 'function') {
-			setTimeout(() => {
-				window.mobileTOCInit();
-			}, 100);
+		// 只在文章页面重新初始化 TOC 组件
+		if (isArticlePage) {
+			const tocElement = document.querySelector('table-of-contents');
+			if (tocElement && typeof (tocElement as any).init === 'function') {
+				setTimeout(() => {
+					(tocElement as any).init();
+				}, 100);
+			}
+			
+			// 重新初始化移动端 TOC 组件
+			if (typeof (window as any).mobileTOCInit === 'function') {
+				setTimeout(() => {
+					(window as any).mobileTOCInit();
+				}, 100);
+			}
 		}
 		
 		// 页面内容替换后重新执行翻译（仅在翻译已加载时）
 		setTimeout(() => {
-			if (siteConfig.translate?.enable && typeof window.translate !== 'undefined') {
-				window.translate.execute();
+			if (siteConfig.translate?.enable && typeof (window as any).translate !== 'undefined') {
+				(window as any).translate.execute();
 			}
 		}, 100);
 		
@@ -1090,8 +1079,8 @@ const setup = () => {
 			
 			if (transparentMode === 'semifull') {
 				// 重新调用初始化函数来重新绑定滚动事件
-				if (typeof window.initSemifullScrollDetection === 'function') {
-					window.initSemifullScrollDetection()
+				if (typeof (window as any).initSemifullScrollDetection === 'function') {
+					(window as any).initSemifullScrollDetection()
 				}
 			}
 		}

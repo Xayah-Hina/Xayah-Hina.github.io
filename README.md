@@ -19,7 +19,7 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 [**日本語**](./docs/README.ja.md) /
 [**中文繁体**](./docs/README.tw.md) /
 
-## 🆕 v4.8 Update
+## 🆕 v4.9 Update
 - **Pio Live2D Integration**: Added Pio Live2D character, providing a cute interactive companion to enhance user engagement.
 - **Highly Configurable**: Supports detailed configuration in `src/config.ts`, including model path, position, size, dialogue content, etc., to meet personalized needs.
 - **Seamless Navigation**: The "Back to Home" feature now uses the theme's built-in Swup for smooth, no-refresh page transitions.
