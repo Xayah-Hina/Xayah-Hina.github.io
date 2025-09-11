@@ -1269,6 +1269,15 @@ window.onresize = () => {
 	document.documentElement.style.setProperty('--banner-height-extend', `${offset}px`);
 }
 
+// 页面加载完成后初始化banner和轮播图
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', () => {
+		showBanner();
+	});
+} else {
+	showBanner();
+}
+
 </script>
 
 <script>
