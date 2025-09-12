@@ -5,8 +5,20 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![Mizuki 預覽](../README.webp)
-![Mizuki 預覽](../README2.webp)
+![Mizuki Preview](./README.png)
+
+<table>
+  <tr>
+    <td><img alt="" src="image/1.png"></td>
+    <td><img alt="" src="image/2.png"></td>
+    <td><img alt="" src="image/3.png"></td>
+  <tr>
+  <tr>
+    <td><img alt="" src="image/4.png"></td>
+    <td><img alt="" src="image/5.png"></td>
+    <td><img alt="" src="image/6.png"></td>
+  <tr>
+</table>
 
 一個現代化、功能豐富的靜態部落格模板，基於 [Astro](https://astro.build) 構建，具有先進的功能和精美的設計。
 
