@@ -5,8 +5,20 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![Mizuki プレビュー](../README.webp)
-![Mizuki プレビュー](../README2.webp)
+![Mizuki Preview](./README.png)
+
+<table>
+  <tr>
+    <td><img alt="" src="docs/image/1.png"></td>
+    <td><img alt="" src="docs/image/2.png"></td>
+    <td><img alt="" src="docs/image/3.png"></td>
+  <tr>
+  <tr>
+    <td><img alt="" src="docs/image/4.png"></td>
+    <td><img alt="" src="docs/image/5.png"></td>
+    <td><img alt="" src="docs/image/6.png"></td>
+  <tr>
+</table>
 
 [Astro](https://astro.build)をベースにした、先進的な機能と美しいデザインを備えた現代的な静的ブログテンプレートです。
 
