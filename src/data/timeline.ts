@@ -76,7 +76,8 @@ export const timelineData: TimelineItem[] = [
 	{
 		id: "summer-internship-2024",
 		title: "Frontend Development Intern",
-		description: "Summer internship at an internet company, participating in frontend development of web applications.",
+		description:
+			"Summer internship at an internet company, participating in frontend development of web applications.",
 		type: "work",
 		startDate: "2024-07-01",
 		endDate: "2024-08-31",
@@ -96,7 +97,8 @@ export const timelineData: TimelineItem[] = [
 	{
 		id: "web-development-course",
 		title: "Completed Web Development Online Course",
-		description: "Completed a full-stack web development online course, systematically learning frontend and backend development technologies.",
+		description:
+			"Completed a full-stack web development online course, systematically learning frontend and backend development technologies.",
 		type: "achievement",
 		startDate: "2024-01-15",
 		endDate: "2024-05-30",
@@ -120,7 +122,8 @@ export const timelineData: TimelineItem[] = [
 	{
 		id: "student-management-system",
 		title: "Student Management System Course Project",
-		description: "Final project for the database course, developed a complete student information management system.",
+		description:
+			"Final project for the database course, developed a complete student information management system.",
 		type: "project",
 		startDate: "2023-11-01",
 		endDate: "2023-12-15",
@@ -136,7 +139,8 @@ export const timelineData: TimelineItem[] = [
 	{
 		id: "programming-contest",
 		title: "University Programming Contest",
-		description: "Participated in a programming contest held by the university, improving algorithm and programming skills.",
+		description:
+			"Participated in a programming contest held by the university, improving algorithm and programming skills.",
 		type: "achievement",
 		startDate: "2023-10-20",
 		location: "Beijing Institute of Technology",
@@ -153,7 +157,8 @@ export const timelineData: TimelineItem[] = [
 	{
 		id: "part-time-tutor",
 		title: "Part-time Programming Tutor",
-		description: "Provided programming tutoring for high school students, helping them learn Python basics.",
+		description:
+			"Provided programming tutoring for high school students, helping them learn Python basics.",
 		type: "work",
 		startDate: "2023-09-01",
 		endDate: "2024-01-31",
@@ -170,7 +175,8 @@ export const timelineData: TimelineItem[] = [
 	{
 		id: "high-school-graduation",
 		title: "High School Graduation",
-		description: "Graduated from high school with excellent grades and was admitted to the Computer Science and Technology program at Beijing Institute of Technology.",
+		description:
+			"Graduated from high school with excellent grades and was admitted to the Computer Science and Technology program at Beijing Institute of Technology.",
 		type: "education",
 		startDate: "2019-09-01",
 		endDate: "2022-06-30",
@@ -187,7 +193,8 @@ export const timelineData: TimelineItem[] = [
 	{
 		id: "first-programming-experience",
 		title: "First Programming Experience",
-		description: "First encountered programming in high school IT class, started learning Python basic syntax.",
+		description:
+			"First encountered programming in high school IT class, started learning Python basic syntax.",
 		type: "education",
 		startDate: "2021-03-01",
 		skills: ["Python", "Basic Programming Concepts"],
@@ -202,7 +209,8 @@ export const timelineData: TimelineItem[] = [
 	{
 		id: "english-certificate",
 		title: "English CET-4 Certificate",
-		description: "Passed the College English Test Band 4, acquired basic English reading and writing skills.",
+		description:
+			"Passed the College English Test Band 4, acquired basic English reading and writing skills.",
 		type: "achievement",
 		startDate: "2023-06-15",
 		organization: "National College English Test Committee",

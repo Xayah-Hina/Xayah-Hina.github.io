@@ -198,10 +198,12 @@ export const ja: Translation = {
 	[Key.passwordUnlock]: "ロック解除",
 	[Key.passwordUnlocking]: "ロック解除中...",
 	[Key.passwordIncorrect]: "パスワードが間違っています。もう一度お試しください",
-	[Key.passwordDecryptError]: "復号化に失敗しました。パスワードが正しいか確認してください",
+	[Key.passwordDecryptError]:
+		"復号化に失敗しました。パスワードが正しいか確認してください",
 	[Key.passwordRequired]: "パスワードを入力してください",
 	[Key.passwordVerifying]: "検証中...",
-	[Key.passwordDecryptFailed]: "復号化に失敗しました。パスワードを確認してください",
+	[Key.passwordDecryptFailed]:
+		"復号化に失敗しました。パスワードを確認してください",
 	[Key.passwordDecryptRetry]: "復号化に失敗しました。再試行してください",
 	[Key.passwordUnlockButton]: "ロック解除",
 	[Key.copyFailed]: "コピーに失敗しました:",

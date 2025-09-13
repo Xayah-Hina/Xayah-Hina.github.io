@@ -118,6 +118,7 @@ export const siteConfig: SiteConfig = {
 		enable: true, // 启用目录功能
 		depth: 3, // 目录深度，1-6，1 表示只显示 h1 标题，2 表示显示 h1 和 h2 标题，依此类推
 	},
+	generateOgImages: true, // 启用生成OpenGraph图片功能
 	favicon: [
 		// 留空以使用默认 favicon
 		// {
@@ -131,25 +132,25 @@ export const fullscreenWallpaperConfig: FullscreenWallpaperConfig = {
 	enable: true, // 启用全屏壁纸功能,非Banner模式下生效
 	src: {
 		desktop: [
-				"/assets/desktop-banner/d1.webp",
-				"/assets/desktop-banner/d2.webp",
-				"/assets/desktop-banner/d3.webp",
-				"/assets/desktop-banner/d4.webp",
-				"/assets/desktop-banner/d5.webp",
-				"/assets/desktop-banner/d6.webp",
-				"/assets/desktop-banner/d7.webp",
-				"/assets/desktop-banner/d8.webp",
-			], // 桌面横幅图片
-			mobile: [
-				"/assets/mobile-banner/m1.webp",
-				"/assets/mobile-banner/m2.webp",
-				"/assets/mobile-banner/m3.webp",
-				"/assets/mobile-banner/m4.webp",
-				"/assets/mobile-banner/m5.webp",
-				"/assets/mobile-banner/m6.webp",
-				"/assets/mobile-banner/m7.webp",
-				"/assets/mobile-banner/m8.webp",
-			], // 移动横幅图片
+			"/assets/desktop-banner/d1.webp",
+			"/assets/desktop-banner/d2.webp",
+			"/assets/desktop-banner/d3.webp",
+			"/assets/desktop-banner/d4.webp",
+			"/assets/desktop-banner/d5.webp",
+			"/assets/desktop-banner/d6.webp",
+			"/assets/desktop-banner/d7.webp",
+			"/assets/desktop-banner/d8.webp",
+		], // 桌面横幅图片
+		mobile: [
+			"/assets/mobile-banner/m1.webp",
+			"/assets/mobile-banner/m2.webp",
+			"/assets/mobile-banner/m3.webp",
+			"/assets/mobile-banner/m4.webp",
+			"/assets/mobile-banner/m5.webp",
+			"/assets/mobile-banner/m6.webp",
+			"/assets/mobile-banner/m7.webp",
+			"/assets/mobile-banner/m8.webp",
+		], // 移动横幅图片
 	}, // 使用本地横幅图片
 	position: "center", // 壁纸位置，等同于 object-position
 	carousel: {
@@ -237,7 +238,7 @@ export const navBarConfig: NavBarConfig = {
 };
 
 export const profileConfig: ProfileConfig = {
-	avatar: "assets/images/avatar.jpg", // 相对于 /src 目录。如果以 '/' 开头，则相对于 /public 目录
+	avatar: "assets/images/avatar.png", // 相对于 /src 目录。如果以 '/' 开头，则相对于 /public 目录
 	name: "Mizuki",
 	bio: "The world is big, you have to go and see",
 	links: [
@@ -255,7 +256,8 @@ export const profileConfig: ProfileConfig = {
 			name: "GitHub",
 			icon: "fa6-brands:github",
 			url: "https://github.com/matsuzaka-yuki",
-		},{
+		},
+		{
 			name: "Discord",
 			icon: "fa6-brands:discord",
 			url: "https://discord.gg/MqW6TcQtVM",
