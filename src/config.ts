@@ -32,7 +32,7 @@ export const siteConfig: SiteConfig = {
 		fixed: false, // 对访问者隐藏主题色选择器
 	},
 	translate: {
-		enable: true, // 启用翻译功能
+		enable: false, // 启用翻译功能
 		service: "client.edge", // 使用 Edge 浏览器翻译服务
 		defaultLanguage: getTranslateLanguageFromConfig(SITE_LANG), // 根据站点语言自动设置默认翻译语言
 		showSelectTag: false, // 不显示默认语言选择下拉菜单，使用自定义按钮
@@ -138,99 +138,85 @@ export const navBarConfig: NavBarConfig = {
 		LinkPreset.Home,
 		LinkPreset.Archive,
 		// 支持自定义导航栏链接,并且支持多级菜单,3.1版本新加
-		{
-			name: "Links",
-			url: "/links/",
-			icon: "material-symbols:link",
-			children: [
-				{
-					name: "GitHub",
-					url: "https://github.com/matsuzaka-yuki/Mizuki",
-					external: true,
-					icon: "fa6-brands:github",
-				},
-				{
-					name: "Bilibili",
-					url: "https://space.bilibili.com/701864046",
-					external: true,
-					icon: "fa6-brands:bilibili",
-				},
-				{
-					name: "Gitee",
-					url: "https://gitee.com/matsuzakayuki/Mizuki",
-					external: true,
-					icon: "mdi:git",
-				},
-			],
-		},
-		{
-			name: "My",
-			url: "/content/",
-			icon: "material-symbols:person",
-			children: [
-				LinkPreset.Anime,
-				LinkPreset.Diary,
-				{
-					name: "Gallery",
-					url: "/albums/",
-					icon: "material-symbols:photo-library",
-				},
-			],
-		},
+		// {
+		// 	name: "Links",
+		// 	url: "/links/",
+		// 	icon: "material-symbols:link",
+		// 	children: [
+		// 		{
+		// 			name: "GitHub",
+		// 			url: "https://github.com/matsuzaka-yuki/Mizuki",
+		// 			external: true,
+		// 			icon: "fa6-brands:github",
+		// 		},
+		// 		{
+		// 			name: "Bilibili",
+		// 			url: "https://space.bilibili.com/701864046",
+		// 			external: true,
+		// 			icon: "fa6-brands:bilibili",
+		// 		},
+		// 		{
+		// 			name: "Gitee",
+		// 			url: "https://gitee.com/matsuzakayuki/Mizuki",
+		// 			external: true,
+		// 			icon: "mdi:git",
+		// 		},
+		// 	],
+		// },
+		// {
+		// 	name: "My",
+		// 	url: "/content/",
+		// 	icon: "material-symbols:person",
+		// 	children: [
+		// 		LinkPreset.Anime,
+		// 		LinkPreset.Diary,
+		// 		{
+		// 			name: "Gallery",
+		// 			url: "/albums/",
+		// 			icon: "material-symbols:photo-library",
+		// 		},
+		// 	],
+		// },
 		{
 			name: "About",
 			url: "/content/",
 			icon: "material-symbols:info",
-			children: [LinkPreset.About, LinkPreset.Friends],
+			// children: [LinkPreset.About, LinkPreset.Friends],
 		},
-		{
-			name: "Others",
-			url: "#",
-			icon: "material-symbols:more-horiz",
-			children: [
-				{
-					name: "Projects",
-					url: "/projects/",
-					icon: "material-symbols:work",
-				},
-				{
-					name: "Skills",
-					url: "/skills/",
-					icon: "material-symbols:psychology",
-				},
-				{
-					name: "Timeline",
-					url: "/timeline/",
-					icon: "material-symbols:timeline",
-				},
-			],
-		},
+		// {
+		// 	name: "Others",
+		// 	url: "#",
+		// 	icon: "material-symbols:more-horiz",
+		// 	children: [
+		// 		{
+		// 			name: "Projects",
+		// 			url: "/projects/",
+		// 			icon: "material-symbols:work",
+		// 		},
+		// 		{
+		// 			name: "Skills",
+		// 			url: "/skills/",
+		// 			icon: "material-symbols:psychology",
+		// 		},
+		// 		{
+		// 			name: "Timeline",
+		// 			url: "/timeline/",
+		// 			icon: "material-symbols:timeline",
+		// 		},
+		// 	],
+		// },
 	],
 };
 
 export const profileConfig: ProfileConfig = {
-	avatar: "assets/images/avatar.gif", // 相对于 /src 目录。如果以 '/' 开头，则相对于 /public 目录
-	name: "Mizuki",
-	bio: "The world is big, you have to go and see",
+	avatar: "assets/images/avatar.JPG", // 相对于 /src 目录。如果以 '/' 开头，则相对于 /public 目录
+	name: "Xayah Hina",
+	bio: "Graphics & VOCALOID",
 	links: [
-		{
-			name: "Bilibli",
-			icon: "fa6-brands:bilibili",
-			url: "https://space.bilibili.com/701864046",
-		},
-		{
-			name: "Gitee",
-			icon: "mdi:git",
-			url: "https://gitee.com/matsuzakayuki",
-		},
 		{
 			name: "GitHub",
 			icon: "fa6-brands:github",
-			url: "https://github.com/matsuzaka-yuki",
-		},{
-			name: "Discord",
-			icon: "fa6-brands:discord",
-			url: "https://discord.gg/MqW6TcQtVM",
+			url: "https://github.com/Xayah-Hina",
 		},
 	],
 	// Umami统计部份，记得在layout插入Umami的head标签
@@ -242,7 +228,7 @@ export const profileConfig: ProfileConfig = {
 };
 
 export const licenseConfig: LicenseConfig = {
-	enable: true,
+	enable: false,
 	name: "CC BY-NC-SA 4.0",
 	url: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
 };
@@ -263,7 +249,7 @@ export const commentConfig: CommentConfig = {
 export const announcementConfig: AnnouncementConfig = {
 	title: "Announcement", // 公告标题
 	content: "Welcome to my blog! This is a sample announcement.", // 公告内容
-	closable: true, // 允许用户关闭公告
+	closable: false, // 允许用户关闭公告
 	link: {
 		enable: true, // 启用链接
 		text: "Learn More", // 链接文本
@@ -291,7 +277,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 	enable: true,
 
 	// 侧边栏位置：左侧或右侧
-	position: "left",
+	position: "right",
 
 	// 侧边栏组件配置列表
 	components: [
