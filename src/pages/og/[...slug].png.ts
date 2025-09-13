@@ -1,6 +1,6 @@
 import type { CollectionEntry } from "astro:content";
 import { getCollection } from "astro:content";
-import fs from "node:fs";
+import * as fs from "node:fs";
 import type { APIContext, GetStaticPaths } from "astro";
 import satori from "satori";
 import sharp from "sharp";
@@ -8,6 +8,7 @@ import sharp from "sharp";
 import { profileConfig, siteConfig } from "../../config";
 
 type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
+
 type FontStyle = "normal" | "italic";
 interface FontOptions {
 	data: Buffer | ArrayBuffer;

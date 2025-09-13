@@ -1,10 +1,16 @@
 ---
-import { getCollection } from 'astro:content';
-import MainGridLayout from '../layouts/MainGridLayout.astro';
-import { projectsData, getProjectStats, getProjectsByCategory, getFeaturedProjects, getAllTechStack } from '../data/projects';
-import { i18n } from '../i18n/translation';
-import I18nKey from '../i18n/i18nKey';
-import { UNCATEGORIZED } from '../constants/constants';
+import { getCollection } from "astro:content";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+import {
+	projectsData,
+	getProjectStats,
+	getProjectsByCategory,
+	getFeaturedProjects,
+	getAllTechStack,
+} from "../data/projects";
+import { i18n } from "../i18n/translation";
+import I18nKey from "../i18n/i18nKey";
+import { UNCATEGORIZED } from "../constants/constants";
 
 const { lang } = Astro.props;
 
@@ -14,33 +20,38 @@ const featuredProjects = getFeaturedProjects();
 const allTechStack = getAllTechStack();
 
 // 获取所有分类
-const categories = [...new Set(projectsData.map(project => project.category))];
+const categories = [
+	...new Set(projectsData.map((project) => project.category)),
+];
 
 // 按分类获取项目
-const projectsByCategory = categories.reduce((acc, category) => {
-  acc[category] = getProjectsByCategory(category);
-  return acc;
-}, {} as Record<string, typeof projectsData>);
+const projectsByCategory = categories.reduce(
+	(acc, category) => {
+		acc[category] = getProjectsByCategory(category);
+		return acc;
+	},
+	{} as Record<string, typeof projectsData>,
+);
 
 const title = i18n(I18nKey.projects);
 const subtitle = i18n(I18nKey.projectsSubtitle);
 
 // 获取分类文本的国际化翻译
 const getCategoryText = (category: string) => {
-  switch (category) {
-    case 'web':
-      return i18n(I18nKey.projectsWeb);
-    case 'mobile':
-      return i18n(I18nKey.projectsMobile);
-    case 'desktop':
-      return i18n(I18nKey.projectsDesktop);
-    case 'other':
-      return i18n(I18nKey.projectsOther);
-    case UNCATEGORIZED:
-      return i18n(I18nKey.uncategorized);
-    default:
-      return category;
-  }
+	switch (category) {
+		case "web":
+			return i18n(I18nKey.projectsWeb);
+		case "mobile":
+			return i18n(I18nKey.projectsMobile);
+		case "desktop":
+			return i18n(I18nKey.projectsDesktop);
+		case "other":
+			return i18n(I18nKey.projectsOther);
+		case UNCATEGORIZED:
+			return i18n(I18nKey.uncategorized);
+		default:
+			return category;
+	}
 };
 ---
 
