@@ -118,6 +118,7 @@ export const siteConfig: SiteConfig = {
 		enable: true, // 启用目录功能
 		depth: 3, // 目录深度，1-6，1 表示只显示 h1 标题，2 表示显示 h1 和 h2 标题，依此类推
 	},
+	generateOgImages: true, // 启用生成OpenGraph图片功能
 	favicon: [
 		// 留空以使用默认 favicon
 		// {
@@ -237,7 +238,7 @@ export const navBarConfig: NavBarConfig = {
 };
 
 export const profileConfig: ProfileConfig = {
-	avatar: "assets/images/avatar.jpg", // 相对于 /src 目录。如果以 '/' 开头，则相对于 /public 目录
+	avatar: "assets/images/avatar.png", // 相对于 /src 目录。如果以 '/' 开头，则相对于 /public 目录
 	name: "Mizuki",
 	bio: "The world is big, you have to go and see",
 	links: [
