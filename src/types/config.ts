@@ -20,6 +20,14 @@ export type SiteConfig = {
 		hue: number;
 		fixed: boolean;
 	};
+
+	// 添加字体配置
+	font: {
+		zenMaruGothic: {
+			enable: boolean; // 是否使用 ZenMaruGothic-Black 作为全局字体
+		};
+	};
+
 	translate?: {
 		enable: boolean; // 是否启用翻译功能
 		service?: string; // 翻译服务类型，如 'client.edge'

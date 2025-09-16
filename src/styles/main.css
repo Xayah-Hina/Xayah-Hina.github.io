@@ -8,6 +8,22 @@
 /* 导入加密内容样式 */
 @import './encrypted-content.css';
 
+/* 导入 ZenMaruGothic-Medium 字体 */
+@font-face {
+  font-family: 'ZenMaruGothic-Medium';
+  src: url('/assets/font/ZenMaruGothic-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-display: swap;
+}
+
+/* 导入 GenEiGothic 字体 */
+@font-face {
+	font-family: "GenEiGothic";
+	src: url("/assets/font/GenEiGothicP.ttf") format("truetype");
+	font-weight: normal;
+	font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -15,6 +31,11 @@
 /* 确保平滑滚动 */
 html {
     scroll-behavior: smooth;
+}
+
+/* 当启用 ZenMaruGothic-Medium 字体时应用为全局字体 */
+.zen-maru-gothic-enabled {
+  font-family: 'ZenMaruGothic-Medium', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 /* 页面顶部渐变高光效果 */
