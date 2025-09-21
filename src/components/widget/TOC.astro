@@ -93,16 +93,11 @@ class TableOfContents extends HTMLElement {
         if (min > max) {
             this.activeIndicator?.setAttribute("style", `opacity: 0`);
         } else {
-            // 修复活跃指示器位置计算
-            const tocRect = this.tocEl?.getBoundingClientRect();
-            const minEntryRect = this.tocEntries[min].getBoundingClientRect();
-            const maxEntryRect = this.tocEntries[max].getBoundingClientRect();
-            
-            if (tocRect) {
-                const top = minEntryRect.top - tocRect.top + this.tocEl.scrollTop;
-                const bottom = maxEntryRect.bottom - tocRect.top + this.tocEl.scrollTop;
-                this.activeIndicator?.setAttribute("style", `top: ${top}px; height: ${bottom - top}px; opacity: 1`);
-            }
+            let parentOffset = this.tocEl?.getBoundingClientRect().top || 0;
+            let scrollOffset = this.tocEl?.scrollTop || 0;
+            let top = this.tocEntries[min].getBoundingClientRect().top - parentOffset + scrollOffset;
+            let bottom = this.tocEntries[max].getBoundingClientRect().bottom - parentOffset + scrollOffset;
+            this.activeIndicator?.setAttribute("style", `top: ${top}px; height: ${bottom - top}px`);
         }
     };
 
@@ -301,7 +296,7 @@ class TableOfContents extends HTMLElement {
                 </a>`;
             }).join('');
         
-        this.innerHTML = tocHTML + '<div id="active-indicator" style="opacity: 0" class="-z-10 absolute top-0 left-0 bg-[var(--toc-btn-hover)] w-full rounded-xl transition-all group-hover:bg-transparent border-2 border-[var(--toc-btn-hover)] group-hover:border-[var(--toc-btn-active)] border-dashed"></div>';
+        this.innerHTML = tocHTML + '<div id="active-indicator" style="opacity: 0" class="-z-10 absolute bg-[var(--toc-btn-hover)] left-0 right-0 rounded-xl transition-all group-hover:bg-transparent border-2 border-[var(--toc-btn-hover)] group-hover:border-[var(--toc-btn-active)] border-dashed"></div>';
     }
 
     disconnectedCallback() {
