@@ -273,12 +273,7 @@ export const profileConfig: ProfileConfig = {
 			url: "https://discord.gg/MqW6TcQtVM",
 		},
 	],
-	// Umami统计部份，记得在layout插入Umami的head标签
-	umami: {
-		enable: false, // 是否显示umami统计
-		shareId: "", //填入共享URL最后面那一串  比如：https://eu.umami.is/api/share/2dKQ5T0WrUn6AYtr 你就填入2dKQ5T0WrUn6AYtr
-		region: "eu", //Umami有两个区域，按需选择即可  比如：https://eu.umami.is 你就填入eu
-	},
+
 };
 
 export const licenseConfig: LicenseConfig = {
@@ -493,4 +488,12 @@ export const widgetConfigs = {
 	sakura: sakuraConfig,
 	fullscreenWallpaper: fullscreenWallpaperConfig,
 	pio: pioConfig, // 添加 pio 配置
+} as const;
+
+export const umamiConfig = {
+  enabled: false, // 是否显示Umami统计
+  shareURL: "https://us.umami.is/api/share/ABCD1234", //你的分享API,支持自建服务
+  scripts: `
+<script defer src="XXXX.XXX" data-website-id="ABCD1234"></script>
+  `.trim() //上面填你要插入的Script,不用再去Layout中插入
 } as const;
