@@ -1,4 +1,3 @@
-import { factory } from "typescript";
 import type {
 	AnnouncementConfig,
 	CommentConfig,
@@ -31,6 +30,7 @@ export const siteConfig: SiteConfig = {
 		hue: 210, // 主题色的默认色相，范围从 0 到 360。例如：红色：0，青色：200，蓝绿色：250，粉色：345
 		fixed: false, // 对访问者隐藏主题色选择器
 	},
+
 	translate: {
 		enable: false, // 启用翻译功能
 		service: "client.edge", // 使用 Edge 浏览器翻译服务
@@ -46,10 +46,25 @@ export const siteConfig: SiteConfig = {
 		// 支持单张图片或图片数组，当数组长度 > 1 时自动启用轮播
 		src: {
 			desktop: [
-				"/assets/desktop-banner/1.webp",
+				"/assets/desktop-banner/d1.webp",
+				"/assets/desktop-banner/d2.webp",
+				"/assets/desktop-banner/d3.webp",
+				"/assets/desktop-banner/d4.webp",
+				"/assets/desktop-banner/d5.webp",
+				"/assets/desktop-banner/d6.webp",
+				"/assets/desktop-banner/d7.webp",
+				"/assets/desktop-banner/d8.webp",
 			], // 桌面横幅图片
 			mobile: [
 				"/assets/mobile-banner/1.webp",
+				"/assets/mobile-banner/m1.webp",
+				"/assets/mobile-banner/m2.webp",
+				"/assets/mobile-banner/m3.webp",
+				"/assets/mobile-banner/m4.webp",
+				"/assets/mobile-banner/m5.webp",
+				"/assets/mobile-banner/m6.webp",
+				"/assets/mobile-banner/m7.webp",
+				"/assets/mobile-banner/m8.webp",
 			], // 移动横幅图片
 		}, // 使用本地横幅图片
 
@@ -104,6 +119,7 @@ export const siteConfig: SiteConfig = {
 		enable: true, // 启用目录功能
 		depth: 3, // 目录深度，1-6，1 表示只显示 h1 标题，2 表示显示 h1 和 h2 标题，依此类推
 	},
+	generateOgImages: false, // 启用生成OpenGraph图片功能,注意开启后要渲染很长时间，不建议本地调试的时候开启
 	favicon: [
 		// 留空以使用默认 favicon
 		// {
@@ -112,15 +128,41 @@ export const siteConfig: SiteConfig = {
 		//   sizes: '32x32',              // 可选，图标大小
 		// }
 	],
+
+	// 字体配置
+	font: {
+		zenMaruGothic: {
+			enable: true, // 启用全局圆体适合日语和英语，对中文适配一般
+		},
+		hanalei: {
+			enable: false, // 启用 Hanalei 字体作为全局字体，适合中文去使用
+		},
+	},
 };
 export const fullscreenWallpaperConfig: FullscreenWallpaperConfig = {
 	enable: true, // 启用全屏壁纸功能,非Banner模式下生效
 	src: {
 		desktop: [
 			"/assets/desktop-banner/1.webp",
+			"/assets/desktop-banner/d1.webp",
+			"/assets/desktop-banner/d2.webp",
+			"/assets/desktop-banner/d3.webp",
+			"/assets/desktop-banner/d4.webp",
+			"/assets/desktop-banner/d5.webp",
+			"/assets/desktop-banner/d6.webp",
+			"/assets/desktop-banner/d7.webp",
+			"/assets/desktop-banner/d8.webp",
 		], // 桌面横幅图片
 		mobile: [
 			"/assets/mobile-banner/1.webp",
+			"/assets/mobile-banner/m1.webp",
+			"/assets/mobile-banner/m2.webp",
+			"/assets/mobile-banner/m3.webp",
+			"/assets/mobile-banner/m4.webp",
+			"/assets/mobile-banner/m5.webp",
+			"/assets/mobile-banner/m6.webp",
+			"/assets/mobile-banner/m7.webp",
+			"/assets/mobile-banner/m8.webp",
 		], // 移动横幅图片
 	}, // 使用本地横幅图片
 	position: "center", // 壁纸位置，等同于 object-position
@@ -212,19 +254,23 @@ export const profileConfig: ProfileConfig = {
 	avatar: "assets/images/avatar.JPG", // 相对于 /src 目录。如果以 '/' 开头，则相对于 /public 目录
 	name: "Xayah Hina",
 	bio: "Graphics & VOCALOID",
+	avatar: "assets/images/avatar.png", // 相对于 /src 目录。如果以 '/' 开头，则相对于 /public 目录
+	name: "Mizuki",
+	bio: "The world is big, you have to go and see",
 	links: [
 		{
 			name: "GitHub",
 			icon: "fa6-brands:github",
 			url: "https://github.com/Xayah-Hina",
+			url: "https://github.com/matsuzaka-yuki",
+		},
+		{
+			name: "Discord",
+			icon: "fa6-brands:discord",
+			url: "https://discord.gg/MqW6TcQtVM",
 		},
 	],
-	// Umami统计部份，记得在layout插入Umami的head标签
-	umami: {
-		enable: false, // 是否显示umami统计
-		shareId: "", //填入共享URL最后面那一串  比如：https://eu.umami.is/api/share/2dKQ5T0WrUn6AYtr 你就填入2dKQ5T0WrUn6AYtr
-		region: "eu", //Umami有两个区域，按需选择即可  比如：https://eu.umami.is 你就填入eu
-	},
+
 };
 
 export const licenseConfig: LicenseConfig = {
@@ -243,6 +289,7 @@ export const commentConfig: CommentConfig = {
 	enable: false, // 启用评论功能。当设置为 false 时，评论组件将不会显示在文章区域。
 	twikoo: {
 		envId: "https://twikoo.vercel.app",
+		lang: "en", // 设置 Twikoo 评论系统语言为英文
 	},
 };
 
@@ -438,4 +485,12 @@ export const widgetConfigs = {
 	sakura: sakuraConfig,
 	fullscreenWallpaper: fullscreenWallpaperConfig,
 	pio: pioConfig, // 添加 pio 配置
+} as const;
+
+export const umamiConfig = {
+  enabled: false, // 是否显示Umami统计
+  shareURL: "https://us.umami.is/api/share/ABCD1234", //你的分享API,支持自建服务
+  scripts: `
+<script defer src="XXXX.XXX" data-website-id="ABCD1234"></script>
+  `.trim() //上面填你要插入的Script,不用再去Layout中插入
 } as const;

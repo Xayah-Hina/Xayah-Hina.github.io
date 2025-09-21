@@ -140,7 +140,6 @@ html.is-animating .transition-swup-fade {
 .onload-animation,
 .transition-slide-in,
 .card-animation {
-    will-change: transform, opacity;
     backface-visibility: hidden;
     -webkit-font-smoothing: antialiased;
 }

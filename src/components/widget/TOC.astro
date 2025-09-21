@@ -265,8 +265,7 @@ class TableOfContents extends HTMLElement {
                 .map(h => ({
                     depth: parseInt(h.tagName.substring(1)),
                     slug: h.id,
-                    // 去除标题开头和结尾的 # 及空格
-                    text: (h.textContent || '').replace(/^#+\s*/, '').replace(/#+\s*$/, '')
+                    text: (h.textContent || '').replace(/#+\s*$/, '')
                 }));
         
         // 如果没有标题，清空TOC

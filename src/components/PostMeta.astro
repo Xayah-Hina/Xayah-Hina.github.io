@@ -6,29 +6,48 @@ import { i18n } from "../i18n/translation";
 import { formatDateToYYYYMMDD } from "../utils/date-utils";
 import { getCategoryUrl, getTagUrl } from "../utils/url-utils";
 
-interface Props {
-	class: string;
-	published: Date;
-	updated?: Date;
-	tags: string[];
-	category: string | null;
-	hideTagsForMobile?: boolean;
-	hideUpdateDate?: boolean;
+import { umamiConfig } from '../config.ts';
+
+// 解析 umami
+const umamiEnabled  = umamiConfig.enabled || false;
+const umamiShareURL = umamiConfig.shareURL || "";
+let umamiBaseUrl = "";
+let umamiShareId = "";
+if (umamiShareURL) {
+  try {
+    const u = new URL(umamiShareURL);
+    umamiBaseUrl = `${u.protocol}//${u.host}`;
+    umamiShareId = u.pathname.split('/').pop() || "";
+  } catch {
+    console.warn("Invalid Umami shareURL");
+  }
 }
+
+export interface Props {
+  published: Date;
+  updated?: Date;
+  category?: string;
+  tags?: string[];
+  hideUpdateDate?: boolean;
+  hideTagsForMobile?: boolean;
+  isHome?: boolean;
+  className?: string;
+  slug?: string;
+}
+
 const {
-	published,
-	updated,
-	tags,
-	category,
-	hideTagsForMobile = false,
-	hideUpdateDate = false,
+  published,
+  updated,
+  category,
+  tags,
+  hideUpdateDate,
+  hideTagsForMobile,
+  isHome,
+  className = "",
+  slug
 } = Astro.props;
-const className = Astro.props.class;
-const homePaths = ["/", ...Array.from({ length: 20 }, (_, i) => `/${i + 1}/`)];
-const isHome = homePaths.includes(Astro.url.pathname);
-const umamiShareId = profileConfig.umami?.shareId || "";
-const umamiRegion = profileConfig.umami?.region || "eu";
 ---
+
 
 <div class:list={["flex flex-wrap text-neutral-500 dark:text-neutral-400 items-center gap-4 gap-x-4 gap-y-2", className]}>
     <!-- publish date -->
@@ -84,78 +103,76 @@ const umamiRegion = profileConfig.umami?.region || "eu";
             {!(tags && tags.length > 0) && <div class="transition text-50 text-sm font-medium">{i18n(I18nKey.noTags)}</div>}
         </div>
     </div>
-        <!-- 访问量（首页不显示，且umami.enable为true时显示） -->
-        {!isHome && profileConfig.umami?.enable && (
-                <>
-                    <div class="flex items-center">
-                            <div class="meta-icon">
-                                    <Icon name="material-symbols:visibility-outline-rounded" class="text-xl"></Icon>
-                            </div>
-                            <span>浏览量：<span id="post-umami-pageviews">加载中...</span></span>，
-                            <span>访问次数：<span id="post-umami-visits">加载中...</span></span>
-                    </div>
-
-                    <script is:inline define:vars={{umamiShareId, umamiRegion}}>
-                        const fetchUmamiStats = async () => {
-                            try {
-                                const pathname = window.location.pathname;
-                                const shareId = umamiShareId;
-                                const region = umamiRegion;
-                                console.log('PostMeta shareId:', shareId, 'region:', region);
-                                console.log('PostMeta pathname:', pathname);
-                                
-                                const shareRes = await fetch(`https://${region}.umami.is/api/share/${shareId}`);
-                                console.log('PostMeta shareRes status:', shareRes.status);
-                                
-                                if (!shareRes.ok) {
-                                    throw new Error(`Share API failed: ${shareRes.status}`);
-                                }
-                                
-                                const shareData = await shareRes.json();
-                                console.log('PostMeta shareData:', shareData);
-                                const token = shareData.token;
-                                const websiteId = shareData.websiteId || shareData.website_id || shareData.id;
-                                console.log('PostMeta token:', token, 'websiteId:', websiteId);
-                                
-                                const url = `https://${region}.umami.is/api/websites/${websiteId}/stats?` +
-                                    new URLSearchParams({
-                                        startAt: '1753333200000',
-                                        endAt: Date.now(),
-                                        unit: 'hour',
-                                        timezone: 'Asia/Shanghai',
-                                        url: pathname,
-                                        compare: 'false',
-                                    });
-                                console.log('PostMeta statsUrl:', url);
-                                
-                                const res = await fetch(url, {
-                                    method: 'GET',
-                                    headers: {
-                                        'x-umami-share-token': token,
-                                    },
-                                });
-                                console.log('PostMeta stats res status:', res.status);
-                                
-                                const data = await res.json();
-                                console.log('PostMeta stats data:', data);
-                                
-                                if (res.ok) {
-                                    const pageviews = data?.pageviews?.value ?? 'N/A';
-                                    const visits = data?.visits?.value ?? 'N/A';
-                                    document.getElementById('post-umami-pageviews').textContent = pageviews;
-                                    document.getElementById('post-umami-visits').textContent = visits;
-                                } else {
-                                    document.getElementById('post-umami-pageviews').textContent = 'N/A';
-                                    document.getElementById('post-umami-visits').textContent = 'N/A';
-                                }
-                            } catch (error) {
-                                console.error('PostMeta Umami stats error:', error);
-                                document.getElementById('post-umami-pageviews').textContent = 'Error';
-                                document.getElementById('post-umami-visits').textContent = 'Error';
-                            }
-                        };
-                        fetchUmamiStats();
-                    </script>
-                </>
-        )}
+    
+    <!-- 访问量（首页不显示，且umami.enabled为true时显示） -->
+    {!isHome && umamiEnabled && slug && (
+        <div class="flex items-center">
+            <div class="meta-icon">
+                <Icon name="material-symbols:visibility-outline-rounded" class="text-xl"></Icon>
+            </div>
+            <span class="text-50 text-sm font-medium" id="page-views-display">统计加载中...</span>
+        </div>
+    )}
 </div>
+
+<!-- 只有在非首页且启用umami且有slug时才加载脚本 -->
+{!isHome && umamiEnabled && slug && (
+    <script define:vars={{ slug, umamiBaseUrl, umamiShareId, umamiConfig }}>
+        // 客户端统计文案生成函数
+        function generateStatsText(pageViews, visits) {
+            return `浏览量 ${pageViews} · 访问次数 ${visits}`;
+        }
+        
+        // 获取访问量统计
+        async function fetchPageViews(isRetry = false) {
+            if (!umamiConfig.enabled) {
+                return;
+            }
+            
+            try {
+                // 调用全局工具获取 Umami 分享数据
+                const { websiteId, token } = await getUmamiShareData(umamiBaseUrl, umamiShareId);
+                
+                // 第二步：获取统计数据
+                const currentTimestamp = Date.now();
+                const statsUrl = `${umamiBaseUrl}/api/websites/${websiteId}/stats?startAt=0&endAt=${currentTimestamp}&unit=hour&timezone=${encodeURIComponent('Asia/Shanghai')}&url=%2Fposts%2F${slug}%2F&compare=false`;
+                
+                const statsResponse = await fetch(statsUrl, {
+                    headers: {
+                        'x-umami-share-token': token
+                    }
+                });
+                
+                if (!statsResponse.ok) {
+                    if (statsResponse.status === 401 && !isRetry) {
+                        clearUmamiShareCache();
+                        return fetchPageViews(true);
+                    }
+                    throw new Error('获取统计数据失败');
+                }
+                
+                const statsData = await statsResponse.json();
+                const pageViews = statsData.pageviews?.value || 0;
+                const visits = statsData.visits?.value || 0;
+                
+                const displayElement = document.getElementById('page-views-display');
+                if (displayElement) {
+                    displayElement.textContent = generateStatsText(pageViews, visits);
+                }
+            } catch (error) {
+                console.error('Error fetching page views:', error);
+                const displayElement = document.getElementById('page-views-display');
+                if (displayElement) {
+                    displayElement.textContent = '统计不可用';
+                }
+            }
+        }
+
+        // 页面加载完成后获取统计数据
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', fetchPageViews);
+        } else {
+            fetchPageViews();
+        }
+    </script>
+)}
