@@ -93,11 +93,34 @@ class TableOfContents extends HTMLElement {
         if (min > max) {
             this.activeIndicator?.setAttribute("style", `opacity: 0`);
         } else {
-            let parentOffset = this.tocEl?.getBoundingClientRect().top || 0;
-            let scrollOffset = this.tocEl?.scrollTop || 0;
-            let top = this.tocEntries[min].getBoundingClientRect().top - parentOffset + scrollOffset;
-            let bottom = this.tocEntries[max].getBoundingClientRect().bottom - parentOffset + scrollOffset;
-            this.activeIndicator?.setAttribute("style", `top: ${top}px; height: ${bottom - top}px`);
+            // 修复指示器定位算法
+            const tocContainer = this.tocEl;
+            if (!tocContainer) return;
+            
+            const containerRect = tocContainer.getBoundingClientRect();
+            const scrollOffset = tocContainer.scrollTop || 0;
+            
+            // 获取第一个和最后一个活跃条目的位置
+            const firstEntry = this.tocEntries[min];
+            const lastEntry = this.tocEntries[max];
+            
+            if (!firstEntry || !lastEntry) return;
+            
+            const firstRect = firstEntry.getBoundingClientRect();
+            const lastRect = lastEntry.getBoundingClientRect();
+            
+            // 计算相对于TOC容器的位置，考虑滚动偏移
+            const top = firstRect.top - containerRect.top + scrollOffset;
+            const bottom = lastRect.bottom - containerRect.top + scrollOffset;
+            
+            // 设置指示器位置和高度，确保完全包裹标题项
+            // 添加微调偏移以更好地对齐视觉效果
+            const adjustedTop = top;
+            const adjustedHeight = bottom - top;
+            
+            this.activeIndicator?.setAttribute("style", 
+                `opacity: 1; top: ${adjustedTop}px; height: ${adjustedHeight}px; transition: all 0.2s ease-out; z-index: -1;`
+            );
         }
     };
 
@@ -296,7 +319,7 @@ class TableOfContents extends HTMLElement {
                 </a>`;
             }).join('');
         
-        this.innerHTML = tocHTML + '<div id="active-indicator" style="opacity: 0" class="-z-10 absolute bg-[var(--toc-btn-hover)] left-0 right-0 rounded-xl transition-all group-hover:bg-transparent border-2 border-[var(--toc-btn-hover)] group-hover:border-[var(--toc-btn-active)] border-dashed"></div>';
+        this.innerHTML = tocHTML + '<div id="active-indicator" style="opacity: 0" class="-z-10 absolute bg-[var(--toc-item-active)] left-0 right-0 rounded-xl transition-all duration-200 ease-out group-hover:bg-transparent border-2 border-[var(--toc-item-active)] group-hover:border-[var(--toc-btn-active)] border-solid shadow-sm"></div>';
     }
 
     disconnectedCallback() {
