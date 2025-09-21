@@ -7,7 +7,7 @@ export function pluginLanguageBadge() {
 	return definePlugin({
 		name: "Language Badge",
 		// @ts-ignore
-		baseStyles: ({ cssVar }) => `
+		baseStyles: ({ _cssVar }) => `
       [data-language]::before {
         position: absolute;
         z-index: 2;
@@ -19,8 +19,8 @@ export function pluginLanguageBadge() {
         font-size: 0.75rem;
         font-weight: bold;
         text-transform: uppercase;
-        color: ${cssVar("codeForeground")};
-        background: ${cssVar("codeBackground")};
+        color: oklch(0.75 0.1 var(--hue));
+        background: oklch(0.33 0.035 var(--hue));
         border-radius: 0.5rem;
         pointer-events: none;
         transition: opacity 0.3s;
