@@ -36,8 +36,8 @@ let passwordHash = "";
 let isEncrypted = entry.data.encrypted && entry.data.password;
 
 if (isEncrypted) {
-	// 对于加密文章，我们将使用markdown内容进行加密
-	// 在客户端解密后，会通过JavaScript重新渲染markdown
+	// 对于加密文章，我们将使用内容进行加密
+	// 在客户端解密后，会通过JavaScript重新渲染
 	const contentToEncrypt = entry.body;
 
 	// 使用AES加密内容
@@ -156,6 +156,7 @@ const jsonLd = {
                     updated={entry.data.updated}
                     tags={entry.data.tags}
                     category={entry.data.category}
+                    slug={entry.slug}
                 />
                 {
                     !entry.data.image && (

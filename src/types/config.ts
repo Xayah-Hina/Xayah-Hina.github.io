@@ -126,11 +126,7 @@ export type ProfileConfig = {
 		url: string;
 		icon: string;
 	}[];
-	umami?: {
-		enable?: boolean;
-		shareId: string;
-		region: string;
-	};
+
 };
 
 export type LicenseConfig = {
