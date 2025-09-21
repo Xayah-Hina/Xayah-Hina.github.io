@@ -7,7 +7,7 @@ export function pluginLanguageBadge() {
 	return definePlugin({
 		name: "Language Badge",
 		// @ts-ignore
-		baseStyles: ({ _cssVar }) => `
+		baseStyles: ({ cssVar }) => `
       [data-language]::before {
         position: absolute;
         z-index: 2;
@@ -19,20 +19,13 @@ export function pluginLanguageBadge() {
         font-size: 0.75rem;
         font-weight: bold;
         text-transform: uppercase;
-        color: oklch(0.75 0.1 var(--hue));
-        background: oklch(0.33 0.035 var(--hue));
+        color: ${cssVar("codeForeground")};
+        background: ${cssVar("codeBackground")};
         border-radius: 0.5rem;
         pointer-events: none;
         transition: opacity 0.3s;
         opacity: 0;
       }
-      
-      /* 亮色主题下的样式 */
-      :root[data-theme="light-plus"] [data-language]::before {
-        color: oklch(0.35 0.03 var(--hue));
-        background: oklch(0.95 0.015 var(--hue));
-      }
-      
       .frame:not(.has-title):not(.is-terminal) {
         @media (hover: none) {
           & [data-language]::before {

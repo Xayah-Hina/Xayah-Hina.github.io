@@ -34,15 +34,19 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 
 	// 计算目标主题状态
 	let targetIsDark: boolean;
+	let targetExpressiveCodeTheme: string;
 	switch (theme) {
 		case LIGHT_MODE:
 			targetIsDark = false;
+			targetExpressiveCodeTheme = "light-plus";
 			break;
 		case DARK_MODE:
 			targetIsDark = true;
+			targetExpressiveCodeTheme = "github-dark";
 			break;
 		case AUTO_MODE:
 			targetIsDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+			targetExpressiveCodeTheme = targetIsDark ? "github-dark" : "light-plus";
 			break;
 	}
 
@@ -50,7 +54,7 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 	// 1. dark类状态是否改变
 	// 2. expressiveCode主题是否需要更新
 	const needsThemeChange = currentIsDark !== targetIsDark;
-	const needsCodeThemeUpdate = currentTheme !== expressiveCodeConfig.theme;
+	const needsCodeThemeUpdate = currentTheme !== targetExpressiveCodeTheme;
 
 	// 如果既不需要主题切换也不需要代码主题更新，直接返回
 	if (!needsThemeChange && !needsCodeThemeUpdate) {
@@ -74,9 +78,10 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 		}
 
 		// Set the theme for Expressive Code (always update this)
-		// 根据当前的亮/暗模式设置不同的主题
-		const codeTheme = targetIsDark ? "github-dark" : "light-plus";
-		document.documentElement.setAttribute("data-theme", codeTheme);
+		document.documentElement.setAttribute(
+			"data-theme",
+			targetExpressiveCodeTheme,
+		);
 
 		// 在同一帧内快速移除保护类，使用微任务确保DOM更新完成
 		if (needsThemeChange) {
