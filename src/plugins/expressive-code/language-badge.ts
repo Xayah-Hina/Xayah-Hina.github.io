@@ -45,6 +45,12 @@ export function pluginLanguageBadge() {
           }
         }
       }
+      
+      /* 双主题模式支持 */
+      :root[data-theme="light-plus"] [data-language]::before {
+        color: oklch(0.75 0.1 var(--hue));
+        background: oklch(0.95 0.025 var(--hue));
+      }
     `,
 	});
 }
