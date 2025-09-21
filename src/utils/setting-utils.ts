@@ -73,10 +73,11 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 			}
 		}
 
-		// Set the theme for Expressive Code (always update this)
+		// Set the theme for Expressive Code based on current mode
+		const expressiveTheme = targetIsDark ? "github-dark" : "github-light";
 		document.documentElement.setAttribute(
 			"data-theme",
-			expressiveCodeConfig.theme,
+			expressiveTheme,
 		);
 
 		// 在同一帧内快速移除保护类，使用微任务确保DOM更新完成
