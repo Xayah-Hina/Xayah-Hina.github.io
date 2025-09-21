@@ -26,6 +26,13 @@ export function pluginLanguageBadge() {
         transition: opacity 0.3s;
         opacity: 0;
       }
+      
+      /* 亮色主题下的样式 */
+      :root[data-theme="light-plus"] [data-language]::before {
+        color: oklch(0.35 0.03 var(--hue));
+        background: oklch(0.95 0.015 var(--hue));
+      }
+      
       .frame:not(.has-title):not(.is-terminal) {
         @media (hover: none) {
           & [data-language]::before {

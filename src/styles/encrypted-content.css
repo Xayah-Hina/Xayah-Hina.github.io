@@ -45,7 +45,11 @@
 /* 复制按钮样式 - 与markdown.css保持完全一致 */
 #decrypted-content .copy-btn {
   all: initial;
-  @apply opacity-0 shadow-lg shadow-black/50 absolute active:scale-90 h-8 w-8 top-3 right-3 text-sm rounded-lg transition-all ease-in-out z-20 cursor-pointer bg-gray-700 hover:bg-gray-600;
+  @apply opacity-0 shadow-lg shadow-black/50 absolute active:scale-90 h-8 w-8 top-3 right-3 text-sm rounded-lg transition-all ease-in-out z-20 cursor-pointer;
+  background: var(--codeblock-topbar-bg);
+}
+#decrypted-content .copy-btn:hover {
+  background: oklch(0.38 0.04 var(--hue));
 }
 
 #decrypted-content .frame:hover .copy-btn {
