@@ -4,6 +4,128 @@ import type { Element } from "hast";
 export function pluginCustomCopyButton() {
 	return definePlugin({
 		name: "Custom Copy Button",
+		baseStyles: ({ cssVar }) => `
+			.copy-btn {
+				position: absolute;
+				top: 0.5rem;
+				right: 0.5rem;
+				z-index: 10;
+				padding: 0.5rem;
+				background: ${cssVar('frames.copyButtonBackground')};
+				border: none;
+				border-radius: 0.375rem;
+				cursor: pointer;
+				opacity: 0;
+				transition: all 0.2s ease;
+				color: ${cssVar('frames.copyButtonForeground')};
+			}
+			
+			.copy-btn:hover {
+				background: ${cssVar('frames.copyButtonBackgroundHover')};
+				opacity: 1;
+			}
+			
+			.copy-btn:active {
+				background: ${cssVar('frames.copyButtonBackgroundActive')};
+			}
+			
+			.frame:hover .copy-btn {
+				opacity: 1;
+			}
+			
+			.copy-btn-icon {
+				width: 1rem;
+				height: 1rem;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			
+			.copy-btn svg {
+				width: 100%;
+				height: 100%;
+				fill: currentColor;
+			}
+			
+			.copy-btn .success-icon {
+				display: none;
+			}
+			
+			.copy-btn.success .copy-icon {
+				display: none;
+			}
+			
+			.copy-btn.success .success-icon {
+				display: block;
+			}
+			
+			.copy-btn.success {
+				color: var(--primary);
+			}
+			
+			@media (hover: none) {
+				.copy-btn {
+					opacity: 1;
+				}
+			}
+		`,
+		jsModules: [`
+			// Copy button functionality
+			document.addEventListener('DOMContentLoaded', function() {
+				function initializeCopyButtons() {
+					const copyButtons = document.querySelectorAll('.copy-btn:not([data-initialized])');
+					
+					copyButtons.forEach(button => {
+						button.addEventListener('click', async function() {
+							const codeBlock = this.closest('pre');
+							if (!codeBlock) return;
+							
+							const code = codeBlock.querySelector('code');
+							if (!code) return;
+							
+							try {
+								await navigator.clipboard.writeText(code.textContent || '');
+								
+								// Show success state
+								this.classList.add('success');
+								
+								// Reset after 2 seconds
+								setTimeout(() => {
+									this.classList.remove('success');
+								}, 2000);
+								
+							} catch (err) {
+								console.error('Failed to copy code:', err);
+							}
+						});
+						
+						button.setAttribute('data-initialized', 'true');
+					});
+				}
+				
+				// Initialize on page load
+				initializeCopyButtons();
+				
+				// Re-initialize after page transitions
+				if (window.swup) {
+					window.swup.hooks.on('page:view', initializeCopyButtons);
+				}
+				
+				// Handle dynamic content loading
+				const observer = new MutationObserver(function(mutations) {
+					mutations.forEach(function(mutation) {
+						if (mutation.addedNodes.length > 0) {
+							initializeCopyButtons();
+						}
+					});
+				});
+				
+				observer.observe(document.body, {
+					childList: true,
+					subtree: true
+				});
+			});
+		`],
 		hooks: {
 			postprocessRenderedBlock: (context) => {
 				function traverse(node: Element) {
