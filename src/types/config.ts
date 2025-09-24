@@ -40,6 +40,12 @@ export type SiteConfig = {
 		ignoreClasses?: string[]; // 忽略翻译的CSS类名
 		ignoreTags?: string[]; // 忽略翻译的HTML标签
 	};
+
+	// 添加bangumi配置
+	bangumi?: {
+		userId?: string; // Bangumi用户ID
+	};
+
 	banner: {
 		enable: boolean;
 		src:
