@@ -51,6 +51,7 @@ export type SiteConfig = {
 		mode?: "bangumi" | "local"; // 番剧页面模式
 	};
 
+
 	banner: {
 		enable: boolean;
 		src:
