@@ -56,6 +56,9 @@ enum I18nKey {
 	animeStatusPlanned = "animeStatusPlanned",
 	animeYear = "animeYear",
 	animeStudio = "animeStudio",
+	animeEmpty = "animeEmpty",
+	animeEmptyBangumi = "animeEmptyBangumi",
+	animeEmptyLocal = "animeEmptyLocal",
 
 	// 短文页面
 	diarySubtitle = "diarySubtitle",

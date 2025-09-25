@@ -16,13 +16,7 @@
   font-display: swap;
 }
 
-/* 导入 GenEiGothic 字体 */
-@font-face {
-	font-family: "GenEiGothic";
-	src: url("/assets/font/GenEiGothicP.ttf") format("truetype");
-	font-weight: normal;
-	font-display: swap;
-}
+
 
 /* 导入 Hanalei 字体 */
 @font-face {
