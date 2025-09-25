@@ -40,6 +40,17 @@ export type SiteConfig = {
 		ignoreClasses?: string[]; // 忽略翻译的CSS类名
 		ignoreTags?: string[]; // 忽略翻译的HTML标签
 	};
+
+	// 添加bangumi配置
+	bangumi?: {
+		userId?: string; // Bangumi用户ID
+	};
+	
+	// 添加番剧页面配置
+	anime?: {
+		mode?: "bangumi" | "local"; // 番剧页面模式
+	};
+
 	banner: {
 		enable: boolean;
 		src:
