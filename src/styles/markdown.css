@@ -60,10 +60,31 @@
 
     .copy-btn {
         all: initial;
-        @apply opacity-0 shadow-lg shadow-black/50 absolute active:scale-90 h-8 w-8 top-3 right-3 text-sm rounded-lg transition-all ease-in-out z-20 cursor-pointer bg-gray-700 hover:bg-gray-600;
+        @apply opacity-0 shadow-lg absolute active:scale-90 h-8 w-8 top-3 right-3 text-sm rounded-lg transition-all ease-in-out z-20 cursor-pointer;
+        background: oklch(0.90 0.025 var(--hue)); /* 更深的背景色，白天模式下更显眼 */
+        color: oklch(0.45 0.12 var(--hue)); /* 更深的文字颜色，白天模式下更显眼 */
     }
+    
+    .copy-btn:hover {
+        background: oklch(0.85 0.05 var(--hue)); /* 悬停时的背景色 */
+    }
+    
+    .dark .copy-btn {
+        background: oklch(0.33 0.035 var(--hue)); /* 夜间模式保持原来的颜色 */
+        color: oklch(0.75 0.1 var(--hue)); /* 夜间模式保持原来的颜色 */
+    }
+    
+    .dark .copy-btn:hover {
+        background: oklch(0.38 0.04 var(--hue)); /* 夜间模式悬停时的背景色 */
+    }
+    
     .frame:hover .copy-btn {
+        opacity: 0;
+    }
+    
+    .copy-btn:focus {
         opacity: 1;
+        outline: 2px solid var(--primary);
     }
 
     .copy-btn-icon {
