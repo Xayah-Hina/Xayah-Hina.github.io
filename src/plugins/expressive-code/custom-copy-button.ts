@@ -5,80 +5,67 @@ export function pluginCustomCopyButton() {
 	return definePlugin({
 		name: "Custom Copy Button",
 		baseStyles: ({ cssVar }) => `
-			.expressive-code .copy-btn {
-				all: revert !important;
-				position: absolute !important;
-				top: 0.5rem !important;
-				right: 0.5rem !important;
-				z-index: 10 !important;
-				padding: 0.25rem !important;
-				background: var(--btn-regular-bg) !important;
-				border: 1px solid oklch(0.8 0.06 var(--hue)) oklch(0.45 0.05 var(--hue)) !important;
-				border-radius: 0.25rem !important;
-				cursor: pointer !important;
-				opacity: 0.8 !important;
-				transition: all 0.2s ease !important;
-				color: var(--btn-content) !important;
-				box-shadow: 0 1px 3px oklch(0.5 0.02 var(--hue) / 0.1) oklch(0.2 0.01 var(--hue) / 0.2) !important;
-				font-family: inherit !important;
-				font-size: inherit !important;
-				line-height: inherit !important;
+			.copy-btn {
+				position: absolute;
+				top: 0.5rem;
+				right: 0.5rem;
+				z-index: 10;
+				padding: 0.5rem;
+				background: ${cssVar('frames.copyButtonBackground')};
+				border: none;
+				border-radius: 0.375rem;
+				cursor: pointer;
+				opacity: 0;
+				transition: all 0.2s ease;
+				color: ${cssVar('frames.copyButtonForeground')};
 			}
 			
-			.expressive-code .copy-btn:hover {
-				background: var(--btn-regular-bg-hover) !important;
-				border-color: oklch(0.7 0.1 var(--hue)) oklch(0.55 0.08 var(--hue)) !important;
-				opacity: 1 !important;
-				box-shadow: 0 2px 6px oklch(0.4 0.04 var(--hue) / 0.15) oklch(0.15 0.02 var(--hue) / 0.3) !important;
+			.copy-btn:hover {
+				background: ${cssVar('frames.copyButtonBackgroundHover')};
+				opacity: 1;
 			}
 			
-			.expressive-code .copy-btn:active {
-				background: var(--btn-regular-bg-active) !important;
-				border-color: oklch(0.65 0.12 var(--hue)) oklch(0.6 0.1 var(--hue)) !important;
-				box-shadow: 0 1px 2px oklch(0.3 0.06 var(--hue) / 0.2) oklch(0.1 0.03 var(--hue) / 0.4) !important;
+			.copy-btn:active {
+				background: ${cssVar('frames.copyButtonBackgroundActive')};
 			}
 			
-			.expressive-code .frame:hover .copy-btn {
-				opacity: 1 !important;
+			.frame:hover .copy-btn {
+				opacity: 1;
 			}
 			
-			.expressive-code .copy-btn-icon {
-				width: 0.875rem !important;
-				height: 0.875rem !important;
-				display: flex !important;
-				align-items: center !important;
-				justify-content: center !important;
-				position: relative !important;
-				transform: none !important;
-				top: auto !important;
-				left: auto !important;
+			.copy-btn-icon {
+				width: 1rem;
+				height: 1rem;
+				display: flex;
+				align-items: center;
+				justify-content: center;
 			}
 			
-			.expressive-code .copy-btn svg {
-				width: 100% !important;
-				height: 100% !important;
-				fill: currentColor !important;
+			.copy-btn svg {
+				width: 100%;
+				height: 100%;
+				fill: currentColor;
 			}
 			
-			.expressive-code .copy-btn .success-icon {
-				display: none !important;
+			.copy-btn .success-icon {
+				display: none;
 			}
 			
-			.expressive-code .copy-btn.success .copy-icon {
-				display: none !important;
+			.copy-btn.success .copy-icon {
+				display: none;
 			}
 			
-			.expressive-code .copy-btn.success .success-icon {
-				display: block !important;
+			.copy-btn.success .success-icon {
+				display: block;
 			}
 			
-			.expressive-code .copy-btn.success {
-				color: var(--primary) !important;
+			.copy-btn.success {
+				color: var(--primary);
 			}
 			
 			@media (hover: none) {
-				.expressive-code .copy-btn {
-					opacity: 1 !important;
+				.copy-btn {
+					opacity: 1;
 				}
 			}
 		`,
