@@ -11,25 +11,31 @@ export function pluginCustomCopyButton() {
 				right: 0.5rem;
 				z-index: 10;
 				padding: 0.25rem;
-				background: oklch(0.92 0.015 var(--hue)) oklch(0.35 0.035 var(--hue));
-				border: none;
+				background: var(--btn-regular-bg);
+				border: 1px solid oklch(0.8 0.06 var(--hue)) oklch(0.45 0.05 var(--hue));
 				border-radius: 0.25rem;
 				cursor: pointer;
-				opacity: 0;
+				opacity: 0.8;
 				transition: all 0.2s ease;
-				color: oklch(0.45 0.08 var(--hue)) oklch(0.75 0.1 var(--hue));
-				box-shadow: none;
+				color: var(--btn-content);
+				box-shadow: 0 1px 3px oklch(0.5 0.02 var(--hue) / 0.1) oklch(0.2 0.01 var(--hue) / 0.2);
 			}
 			
 			.copy-btn:hover {
-				background: oklch(0.88 0.03 var(--hue)) oklch(0.4 0.04 var(--hue));
+				background: var(--btn-regular-bg-hover);
+				border-color: oklch(0.7 0.1 var(--hue)) oklch(0.55 0.08 var(--hue));
 				opacity: 1;
-				box-shadow: none;
+				box-shadow: 0 2px 6px oklch(0.4 0.04 var(--hue) / 0.15) oklch(0.15 0.02 var(--hue) / 0.3);
 			}
 			
 			.copy-btn:active {
-				background: oklch(0.84 0.05 var(--hue)) oklch(0.45 0.045 var(--hue));
-				box-shadow: none;
+				background: var(--btn-regular-bg-active);
+				border-color: oklch(0.65 0.12 var(--hue)) oklch(0.6 0.1 var(--hue));
+				box-shadow: 0 1px 2px oklch(0.3 0.06 var(--hue) / 0.2) oklch(0.1 0.03 var(--hue) / 0.4);
+			}
+			
+			.frame:hover .copy-btn {
+				opacity: 1;
 			}
 			
 			.frame:hover .copy-btn {
