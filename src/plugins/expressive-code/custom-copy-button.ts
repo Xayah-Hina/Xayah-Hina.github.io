@@ -32,8 +32,13 @@ export function pluginCustomCopyButton() {
 				box-shadow: none;
 			}
 			
-			.frame:hover .copy-btn {
+			.copy-btn:focus {
 				opacity: 1;
+				outline: 2px solid var(--primary);
+			}
+			
+			.frame:hover .copy-btn {
+				opacity: 0;
 			}
 			
 			.copy-btn-icon {
@@ -68,7 +73,7 @@ export function pluginCustomCopyButton() {
 			
 			@media (hover: none) {
 				.copy-btn {
-					opacity: 1;
+					opacity: 0;
 				}
 			}
 		`,
