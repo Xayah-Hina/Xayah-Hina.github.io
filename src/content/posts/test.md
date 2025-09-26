@@ -117,6 +117,131 @@ graph TD
   B -->|否| D[结束]
 ```
 
+```mermaid
+graph TD;
+    %% =========== Build / Create Phase ===========
+    IN["用户提交 BuildDesc"] --> V{"shell_validate?"};
+    V --|false|--> VERR["返回 ValidationFailed"];
+    V --|true|--> TR["shell_translate"];
+    TR --> PK["shell_pack"];
+    PK --> CTB["shell_cache_track_begin"];
+    CTB --> EC["engine_create"];
+
+    subgraph EngineCreateInternals["engine_create 内部"]
+        EC --> CQ{"shell_cache_query(key)"};
+        CQ --|有 key|--> CL["shell_cache_load"];
+        CL --|miss|--> BM["cooking_build_model"];
+        CQ --|无 key|--> BM;
+        CL --|hit|--> HAVE["获得 Model"];
+        BM --> HAVE;
+        HAVE --> STC{"需写入缓存?"};
+        STC --|yes|--> SC["shell_cache_store"];
+        STC --|no|--> NOSTORE["noop"];
+        HAVE --> DC["core_data_create_from_state"];
+        DC --> BSEL["backends_choose"];
+        BSEL --> CFG["配置 Data 执行/布局标志"];
+    end
+
+    CFG --> CTE["shell_cache_track_end"];
+    CTE --> EH["构造 Solver(EngineHandle + TelemetryFrame 初始化)"];
+    EH --> READY["Solver Ready"];
+
+    %% =========== Runtime Commands (Param / Structural) ===========
+    subgraph CommandFlow["运行时命令流"]
+        CMD["外部命令 Command[]"] --> AP1{"Param 修改?"};
+        AP1 --|yes|--> EASP["engine_apply_small_params"];
+        EASP --> OVR["core_data_apply_overrides<br/>更新 Data 参数/开关"];
+        AP1 --|no|--> AP2{"结构修改?"};
+        AP2 --|yes|--> EASC["engine_apply_structural_changes"];
+        EASC --> CRM["cooking_rebuild_model_from_commands"];
+        CRM --> RMP["core_data_apply_remap"];
+        RMP --> REP["替换 EngineHandle 中 Model/Data"];
+        AP2 --|no|--> NOCMD["无影响"];
+    end
+
+    READY --> LOOPENTRY["开始帧循环"];
+    OVR --> LOOPENTRY;
+    REP --> LOOPENTRY;
+
+    %% =========== Runtime per-frame step entry ===========
+    LOOPENTRY --> STEP["sim::step(dt)"];
+    STEP --> ESTP["engine_step"];
+    ESTP --> RSTEP["runtime_step"];
+
+    %% =========== runtime_step internal high-level ===========
+    RSTEP --> PRE{"substeps/iterations/damping 解析<br/>(OVR 覆盖优先)"};
+    PRE --> SUBLOOP{"for each substep"};
+
+    %% ----- Substep Body -----
+    SUBLOOP --> INT["integrate_pred(dt_sub)"];
+    INT --> ALPHA["prepare_alpha_edge(dt_sub)"];
+    ALPHA --> LAYOUT{"布局分支"};
+
+    %% Blocked (AoSoA)
+    LAYOUT --|Blocked|--> PACKB["storage_pack_soa_to_aosoa"];
+    PACKB --> ATTB{"attachment?"};
+    ATTB --|yes|--> ATTBK["presolve_attachment_aosoa"];
+    ATTB --|no|--> SKIPATTB["skip"];
+    ATTBK --> DISTB["project_distance_islands_aosoa"];
+    SKIPATTB --> DISTB;
+    DISTB --> BENDB{"bending?"};
+    BENDB --|yes|--> BENDBK["bending_pass_aosoa"];
+    BENDB --|no|--> SKIPBENDB["skip"];
+    BENDBK --> UNPACKB["storage_unpack_aosoa_to_soa"];
+    SKIPBENDB --> UNPACKB;
+
+    %% AoS
+    LAYOUT --|AoS|--> PACKA["storage_pack_soa_to_aos"];
+    PACKA --> ATTA{"attachment?"};
+    ATTA --|yes|--> ATTAK["presolve_attachment_aos"];
+    ATTA --|no|--> SKIPATTA["skip"];
+    ATTAK --> DISTA["project_distance_islands_aos"];
+    SKIPATTA --> DISTA;
+    DISTA --> BENDA{"bending?"};
+    BENDA --|yes|--> BENDAK["bending_pass_aos"];
+    BENDA --|no|--> SKIPBENDA["skip"];
+    BENDAK --> UNPACKA["storage_unpack_aos_to_soa"];
+    SKIPBENDA --> UNPACKA;
+
+    %% SoA Native
+    LAYOUT --|SoA|--> ATTS{"attachment?"};
+    ATTS --|yes|--> ATTSK["presolve_attachment_soa"];
+    ATTS --|no|--> SKIPATTS["skip"];
+    ATTSK --> DISTS["project_distance_islands_soa"];
+    SKIPATTS --> DISTS;
+    DISTS --> BENDS{"bending?"};
+    BENDS --|yes|--> BENDSK["bending_pass_soa"];
+    BENDS --|no|--> SKIPBENDS["skip"];
+
+    %% Finalize (merged)
+    UNPACKB --> FIN["finalize(dt_sub,damping)"];
+    UNPACKA --> FIN;
+    BENDSK --> FIN;
+    SKIPBENDS --> FIN;
+
+    FIN --> NEXTSUB["下一 substep"];
+    NEXTSUB --> SUBLOOP;
+
+    SUBLOOP --|全部完成|--> RESID["compute_distance_residual"];
+    RESID --> TEL["写 TelemetryFrame(phase timings + residual)"];
+    TEL --> STEPEND["engine_step 返回 Status::Ok"];
+    STEPEND --> FRAMEEND["帧结束"];
+
+    FRAMEEND --> LOOPENTRY;
+
+    %% Feedback edges
+    OVR --> PRE;
+    REP --> PRE;
+
+    classDef phase fill:#064,stroke:#eee,color:#fff;
+    classDef cond fill:#155,stroke:#eee,color:#fff;
+    classDef data fill:#2a7,stroke:#fff,color:#fff;
+    classDef cache fill:#5a4,stroke:#fff,color:#fff;
+    class V,TR,PK,CTB,EC,CQ,CL,BM,HAVE,DC,BSEL,CFG,EH,READY,STEP,ESTP,RSTEP,PRE,SUBLOOP,INT,ALPHA,LAYOUT,PACKB,ATTBK,DISTB,BENDBK,UNPACKB,PACKA,ATTAK,DISTA,BENDAK,UNPACKA,ATTSK,DISTS,BENDSK,FIN,RESID,TEL,STEPEND,FRAMEEND,OVR,EASC,CRM,RMP,REP,EASP phase;
+    class VERR,NOCMD,SKIPATTB,SKIPBENDB,SKIPATTA,SKIPBENDA,SKIPATTS,SKIPBENDS,NOSTORE cache;
+    class CQ,STC,AP1,AP2,LAYOUT,ATTB,BENDA,ATTA,BENDA,ATTS,BENDS,PRE,SUBLOOP cond;
+```
+
 ### 时序图
 ```mermaid
 sequenceDiagram
