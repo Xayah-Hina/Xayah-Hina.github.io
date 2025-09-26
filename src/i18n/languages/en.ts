@@ -59,6 +59,10 @@ export const en: Translation = {
 	[Key.animeStatusPlanned]: "Planned",
 	[Key.animeYear]: "Year",
 	[Key.animeStudio]: "Studio",
+	[Key.animeEmpty]: "No anime data",
+	[Key.animeEmptyBangumi]:
+		"Please check Bangumi configuration or network connection",
+	[Key.animeEmptyLocal]: "Please add anime information in src/data/anime.ts",
 
 	// 短文页面
 	[Key.diarySubtitle]: "Share life anytime, anywhere",
@@ -204,10 +208,10 @@ export const en: Translation = {
 	[Key.passwordRequired]: "Please enter password",
 	[Key.passwordVerifying]: "Verifying...",
 	[Key.passwordDecryptFailed]: "Decryption failed, please check password",
-	[Key.passwordDecryptRetry]: "Decryption failed, please retry",
+	[Key.passwordDecryptRetry]: "Decryption failed, please try again",
 	[Key.passwordUnlockButton]: "Unlock",
 	[Key.copyFailed]: "Copy failed:",
 	[Key.syntaxHighlightFailed]: "Syntax highlighting failed:",
 	[Key.autoSyntaxHighlightFailed]: "Auto syntax highlighting also failed:",
-	[Key.decryptionError]: "Error occurred during decryption:",
+	[Key.decryptionError]: "An error occurred during decryption:",
 };

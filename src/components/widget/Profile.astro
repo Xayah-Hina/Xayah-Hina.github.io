@@ -12,13 +12,18 @@ const umamiShareURL = umamiConfig.shareURL || "";
 let umamiBaseUrl = "";
 let umamiShareId = "";
 if (umamiShareURL) {
-  try {
-    const u = new URL(umamiShareURL);
-    umamiBaseUrl = `${u.protocol}//${u.host}`;
-    umamiShareId = u.pathname.split('/').pop() || "";
-  } catch {
-    console.warn("Invalid Umami shareURL");
-  }
+    try {
+        const u = new URL(umamiShareURL);
+        umamiBaseUrl = `${u.protocol}//${u.host}`;
+        const segments = u.pathname.split('/').filter(Boolean);
+        if (segments[0] === 'share' && segments.length >= 2) {
+            umamiShareId = segments[1];
+        } else {
+            umamiShareId = segments.pop() || '';
+        }
+    } catch {
+        console.warn("Invalid Umami shareURL");
+    }
 }
 ---
 

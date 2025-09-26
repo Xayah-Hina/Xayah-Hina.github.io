@@ -40,6 +40,14 @@ export const siteConfig: SiteConfig = {
 		ignoreClasses: ["ignore", "banner-title", "banner-subtitle"], // 翻译时忽略的 CSS 类名
 		ignoreTags: ["script", "style", "code", "pre"], // 翻译时忽略的 HTML 标签
 	},
+	bangumi: {
+		userId: "your-bangumi-id", // 在此处设置你的Bangumi用户ID，可以设置为 "sai" 测试
+	},
+  
+	anime: {
+		mode: "local", // 番剧页面模式："bangumi" 使用Bangumi API，"local" 使用本地配置
+	},
+
 	banner: {
 		enable: true, // 是否启动Banner壁纸模式
 
@@ -273,7 +281,6 @@ export const profileConfig: ProfileConfig = {
 			url: "https://discord.gg/MqW6TcQtVM",
 		},
 	],
-
 };
 
 export const licenseConfig: LicenseConfig = {
@@ -457,7 +464,7 @@ export const sakuraConfig: SakuraConfig = {
 
 // Pio 看板娘配置
 export const pioConfig: import("./types/config").PioConfig = {
-	enable: true, // 启用看板娘
+	enable: false, // 启用看板娘
 	models: ["/pio/models/pio/model.json"], // 默认模型路径
 	position: "left", // 默认位置在右侧
 	width: 280, // 默认宽度
@@ -491,9 +498,9 @@ export const widgetConfigs = {
 } as const;
 
 export const umamiConfig = {
-  enabled: false, // 是否显示Umami统计
-  shareURL: "https://us.umami.is/api/share/ABCD1234", //你的分享API,支持自建服务
-  scripts: `
+	enabled: false, // 是否显示Umami统计
+	shareURL: "https://us.umami.is/api/share/ABCD1234", //你的分享API,支持自建服务
+	scripts: `
 <script defer src="XXXX.XXX" data-website-id="ABCD1234"></script>
-  `.trim() //上面填你要插入的Script,不用再去Layout中插入
+  `.trim(), //上面填你要插入的Script,不用再去Layout中插入
 } as const;

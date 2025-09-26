@@ -195,16 +195,23 @@ class TableOfContents extends HTMLElement {
     };
 
     connectedCallback() {
-        // wait for the onload animation to finish, which makes the `getBoundingClientRect` return correct values
+        // 优先监听动画结束，兜底定时初始化，确保二次刷新也能正常显示 TOC
         const element = document.querySelector('.custom-md') || document.querySelector('.prose') || document.querySelector('.markdown-content');
-        if (element) {
-            element.addEventListener('animationend', () => {
+        let initialized = false;
+        const tryInit = () => {
+            if (!initialized) {
+                initialized = true;
                 this.init();
-            }, { once: true });
+            }
+        };
+        if (element) {
+            element.addEventListener('animationend', tryInit, { once: true });
+            // 兜底：无论动画是否触发，300ms后强制初始化一次
+            setTimeout(tryInit, 300);
         } else {
-            // 如果没有找到动画元素，直接初始化
-            console.debug('Animation element not found, initializing directly');
-            setTimeout(() => this.init(), 100);
+            // 没有动画元素，直接初始化，兜底再延迟一次
+            tryInit();
+            setTimeout(tryInit, 300);
         }
     };
 
@@ -248,37 +255,36 @@ class TableOfContents extends HTMLElement {
         this.update();
     };
 
-    regenerateTOC() {
+    regenerateTOC(retryCount = 0) {
         // 检查是否为文章页面
         const isPostPage = window.location.pathname.includes('/posts/') || 
                           document.querySelector('.custom-md, .markdown-content') !== null;
-        
         if (!isPostPage) {
             // 如果不是文章页面，隐藏TOC
             this.innerHTML = '';
             return;
         }
-
         // 从当前页面重新获取标题
         const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6'))
-            .filter(h => h.id) // 只包含有id的标题
-                .map(h => ({
-                    depth: parseInt(h.tagName.substring(1)),
-                    slug: h.id,
-                    text: (h.textContent || '').replace(/#+\s*$/, '')
-                }));
-        
-        // 如果没有标题，清空TOC
+            .filter(h => h.id)
+            .map(h => ({
+                depth: parseInt(h.tagName.substring(1)),
+                slug: h.id,
+                text: (h.textContent || '').replace(/#+\s*$/, '')
+            }));
+        // 如果没有标题，延迟重试最多3次
+        if (headings.length === 0 && retryCount < 3) {
+            setTimeout(() => this.regenerateTOC(retryCount + 1), 120);
+            return;
+        }
         if (headings.length === 0) {
             this.innerHTML = '';
             return;
         }
-
         // 重新生成TOC HTML
         const minDepth = Math.min(...headings.map(h => h.depth));
         const maxLevel = 3; // siteConfig.toc.depth
         let heading1Count = 1;
-        
         const tocHTML = headings
             .filter(heading => heading.depth < minDepth + maxLevel)
             .map(heading => {
@@ -287,7 +293,6 @@ class TableOfContents extends HTMLElement {
                 const badgeContent = heading.depth === minDepth ? (heading1Count++) :
                     heading.depth === minDepth + 1 ? '<div class="transition w-2 h-2 rounded-[0.1875rem] bg-[var(--toc-badge-bg)]"></div>' :
                     '<div class="transition w-1.5 h-1.5 rounded-sm bg-black/5 dark:bg-white/10"></div>';
-                
                 return `<a href="#${heading.slug}" class="px-2 flex gap-2 relative transition w-full min-h-9 rounded-xl hover:bg-[var(--toc-btn-hover)] active:bg-[var(--toc-btn-active)] py-2">
                     <div class="transition w-5 h-5 shrink-0 rounded-lg text-xs flex items-center justify-center font-bold ${depthClass} ${heading.depth === minDepth ? 'bg-[var(--toc-badge-bg)] text-[var(--btn-content)]' : ''}">
                         ${badgeContent}
@@ -295,7 +300,6 @@ class TableOfContents extends HTMLElement {
                     <div class="transition text-sm ${heading.depth <= minDepth + 1 ? 'text-50' : 'text-30'}">${heading.text}</div>
                 </a>`;
             }).join('');
-        
         this.innerHTML = tocHTML + '<div id="active-indicator" style="opacity: 0" class="-z-10 absolute bg-[var(--toc-btn-hover)] left-0 right-0 rounded-xl transition-all group-hover:bg-transparent border-2 border-[var(--toc-btn-hover)] group-hover:border-[var(--toc-btn-active)] border-dashed"></div>';
     }
 
