@@ -100,10 +100,7 @@ export default defineConfig({
 					editorActiveTabIndicatorTopColor: "none",
 					editorTabBarBorderBottomColor: "var(--codeblock-topbar-bg)",
 					terminalTitlebarBorderBottomColor: "none",
-					copyButtonBackground: "var(--btn-regular-bg)",
-					copyButtonBackgroundHover: "var(--btn-regular-bg-hover)",
-					copyButtonBackgroundActive: "var(--btn-regular-bg-active)",
-					copyButtonForeground: "var(--btn-content)",
+
 				},
 				textMarkers: {
 					delHue: 0,
