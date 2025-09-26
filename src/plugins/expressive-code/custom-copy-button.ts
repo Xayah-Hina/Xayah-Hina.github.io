@@ -10,23 +10,26 @@ export function pluginCustomCopyButton() {
 				top: 0.5rem;
 				right: 0.5rem;
 				z-index: 10;
-				padding: 0.5rem;
-				background: ${cssVar('frames.copyButtonBackground')};
+				padding: 0.25rem;
+				background: var(--btn-regular-bg);
 				border: none;
-				border-radius: 0.375rem;
+				border-radius: 0.25rem;
 				cursor: pointer;
 				opacity: 0;
 				transition: all 0.2s ease;
-				color: ${cssVar('frames.copyButtonForeground')};
+				color: var(--btn-content);
+				box-shadow: none;
 			}
 			
 			.copy-btn:hover {
-				background: ${cssVar('frames.copyButtonBackgroundHover')};
+				background: var(--btn-regular-bg-hover);
 				opacity: 1;
+				box-shadow: none;
 			}
 			
 			.copy-btn:active {
-				background: ${cssVar('frames.copyButtonBackgroundActive')};
+				background: var(--btn-regular-bg-active);
+				box-shadow: none;
 			}
 			
 			.frame:hover .copy-btn {
@@ -34,8 +37,8 @@ export function pluginCustomCopyButton() {
 			}
 			
 			.copy-btn-icon {
-				width: 1rem;
-				height: 1rem;
+				width: 0.875rem;
+				height: 0.875rem;
 				display: flex;
 				align-items: center;
 				justify-content: center;
