@@ -12,6 +12,7 @@ export function pluginCustomCopyButton() {
 				z-index: 10;
 				padding: 0.5rem;
 				background: ${cssVar('frames.copyButtonBackground')};
+				box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 				border: none;
 				border-radius: 0.375rem;
 				cursor: pointer;
