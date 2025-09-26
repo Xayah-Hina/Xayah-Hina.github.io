@@ -10,40 +10,32 @@ export function pluginCustomCopyButton() {
 				top: 0.5rem;
 				right: 0.5rem;
 				z-index: 10;
-				padding: 0.25rem;
-				background: var(--btn-regular-bg);
+				padding: 0.5rem;
+				background: ${cssVar('frames.copyButtonBackground')};
 				border: none;
-				border-radius: 0.25rem;
+				border-radius: 0.375rem;
 				cursor: pointer;
 				opacity: 0;
 				transition: all 0.2s ease;
-				color: var(--btn-content);
-				box-shadow: none;
+				color: ${cssVar('frames.copyButtonForeground')};
 			}
 			
 			.copy-btn:hover {
-				background: var(--btn-regular-bg-hover);
+				background: ${cssVar('frames.copyButtonBackgroundHover')};
 				opacity: 1;
-				box-shadow: none;
 			}
 			
 			.copy-btn:active {
-				background: var(--btn-regular-bg-active);
-				box-shadow: none;
-			}
-			
-			.copy-btn:focus {
-				opacity: 1;
-				outline: 2px solid var(--primary);
+				background: ${cssVar('frames.copyButtonBackgroundActive')};
 			}
 			
 			.frame:hover .copy-btn {
-				opacity: 0;
+				opacity: 1;
 			}
 			
 			.copy-btn-icon {
-				width: 0.875rem;
-				height: 0.875rem;
+				width: 1rem;
+				height: 1rem;
 				display: flex;
 				align-items: center;
 				justify-content: center;
@@ -73,18 +65,8 @@ export function pluginCustomCopyButton() {
 			
 			@media (hover: none) {
 				.copy-btn {
-					opacity: 0;
+					opacity: 1;
 				}
-			}
-			
-			/* 优化白天模式下的可见性 */
-			:root:not(.dark) .copy-btn {
-				background: oklch(0.90 0.025 var(--hue)); /* 更深的背景色，白天模式下更显眼 */
-				color: oklch(0.45 0.12 var(--hue)); /* 更深的文字颜色，白天模式下更显眼 */
-			}
-			
-			:root:not(.dark) .copy-btn:hover {
-				background: oklch(0.85 0.05 var(--hue)); /* 悬停时的背景色 */
 			}
 		`,
 		jsModules: [`
