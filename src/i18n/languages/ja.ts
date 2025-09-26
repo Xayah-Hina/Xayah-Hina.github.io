@@ -210,4 +210,14 @@ export const ja: Translation = {
 	[Key.syntaxHighlightFailed]: "シンタックスハイライトに失敗しました:",
 	[Key.autoSyntaxHighlightFailed]: "自動シンタックスハイライトも失敗しました:",
 	[Key.decryptionError]: "復号化中にエラーが発生しました:",
+
+	//最後編集時間卡片
+	[Key.lastModifiedPrefix]: "最終編集から: ",
+	[Key.lastModifiedOutdated]: "一部の情報は古くなっている可能性があります",
+	[Key.year]: "年",
+	[Key.month]: "月",
+	[Key.day]: "日",
+	[Key.hour]: "時間",
+	[Key.minute]: "分",
+	[Key.second]: "秒",
 };
