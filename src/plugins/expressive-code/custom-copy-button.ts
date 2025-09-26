@@ -76,6 +76,16 @@ export function pluginCustomCopyButton() {
 					opacity: 0;
 				}
 			}
+			
+			/* 优化白天模式下的可见性 */
+			:root:not(.dark) .copy-btn {
+				background: oklch(0.90 0.025 var(--hue)); /* 更深的背景色，白天模式下更显眼 */
+				color: oklch(0.45 0.12 var(--hue)); /* 更深的文字颜色，白天模式下更显眼 */
+			}
+			
+			:root:not(.dark) .copy-btn:hover {
+				background: oklch(0.85 0.05 var(--hue)); /* 悬停时的背景色 */
+			}
 		`,
 		jsModules: [`
 			// Copy button functionality
