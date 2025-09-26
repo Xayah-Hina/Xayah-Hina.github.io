@@ -145,6 +145,7 @@ export const siteConfig: SiteConfig = {
 			enable: false, // 启用 Hanalei 字体作为全局字体，适合中文去使用
 		},
 	},
+	showLastModified: true, // 控制“上次编辑”卡片显示的开关
 };
 export const fullscreenWallpaperConfig: FullscreenWallpaperConfig = {
 	enable: true, // 启用全屏壁纸功能,非Banner模式下生效

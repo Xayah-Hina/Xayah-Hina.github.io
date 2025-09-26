@@ -214,4 +214,14 @@ export const en: Translation = {
 	[Key.syntaxHighlightFailed]: "Syntax highlighting failed:",
 	[Key.autoSyntaxHighlightFailed]: "Auto syntax highlighting also failed:",
 	[Key.decryptionError]: "An error occurred during decryption:",
+
+	// Last Modified Card
+	[Key.lastModifiedPrefix]: "Last modified: ",
+	[Key.lastModifiedOutdated]: "Some information may be outdated",
+	[Key.year]: "Y ",
+	[Key.month]: "M ",
+	[Key.day]: "D ",
+	[Key.hour]: "H ",
+	[Key.minute]: "Min ",
+	[Key.second]: "Sec",
 };

@@ -203,6 +203,16 @@ enum I18nKey {
 	syntaxHighlightFailed = "syntaxHighlightFailed",
 	autoSyntaxHighlightFailed = "autoSyntaxHighlightFailed",
 	decryptionError = "decryptionError",
+
+	//最后编辑时间卡片
+	lastModifiedPrefix = "lastModifiedPrefix",
+	lastModifiedOutdated = "lastModifiedOutdated",
+	year = "year",
+	month = "month",
+	day = "day",
+	hour = "hour",
+	minute = "minute",
+	second = "second",
 }
 
 export default I18nKey;
