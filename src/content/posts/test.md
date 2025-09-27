@@ -111,10 +111,25 @@ $$
 
 ### 流程图
 ```mermaid
-graph TD
-  A[开始] --> B{选择}
-  B -->|是| C[执行操作]
-  B -->|否| D[结束]
+---
+config:
+  theme: redux-dark
+  layout: elk
+  look: neo
+---
+flowchart TD
+ subgraph s1["Untitled subgraph"]
+        n4["Untitled Node"]
+  end
+    A(["Start"]) --> B{"Decision"} & n1["Untitled Node"]
+    B --> C["Option A"] & D["Option B"] & n3["Untitled Node"] & n5(["Stadium"])
+    n1 --> n2["Untitled Node"]
+    n2 --> s1
+    B --> n6["Parallelogram Reversed"]
+    n6@{ shape: lean-r}
+     A:::Ash
+    classDef Ash stroke-width:1px, stroke-dasharray:none, stroke:#999999, fill:#EEEEEE, color:#000000
+
 ```
 
 ```mermaid
