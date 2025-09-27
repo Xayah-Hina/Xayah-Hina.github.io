@@ -204,4 +204,14 @@ export const zh_TW: Translation = {
 	[Key.rssHowToUse]: "推薦使用 Feedly、Inoreader 或其他 RSS 閱讀器來訂閱本站。",
 	[Key.rssCopied]: "RSS 連結已複製到剪貼簿！",
 	[Key.rssCopyFailed]: "複製失敗，請手動複製連結",
+
+	//最後編輯時間卡片
+	[Key.lastModifiedPrefix]: "距離上次編輯: ",
+	[Key.lastModifiedOutdated]: "部分信息可能已經過時",
+	[Key.year]: "年",
+	[Key.month]: "月",
+	[Key.day]: "天",
+	[Key.hour]: "小時",
+	[Key.minute]: "分",
+	[Key.second]: "秒",
 };
