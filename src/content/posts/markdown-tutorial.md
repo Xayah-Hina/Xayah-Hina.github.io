@@ -8,6 +8,7 @@ category: Examples
 licenseName: "Unlicensed"
 author: emn178
 sourceLink: "https://github.com/emn178/markdown"
+series: Guide
 draft: false
 ---
 
