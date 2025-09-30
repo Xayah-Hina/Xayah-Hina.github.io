@@ -60,14 +60,8 @@
 
     .copy-btn {
         all: initial;
-        @apply opacity-0 absolute active:scale-90 h-6 w-6 top-2 right-2 text-xs rounded transition-all ease-in-out z-20 cursor-pointer;
-        background-color: rgba(55, 65, 81, 0.8); /* gray-700 with 80% opacity */
+        @apply opacity-0 absolute active:scale-90 h-6 w-6 top-2 right-2 text-xs rounded transition-all ease-in-out z-20 cursor-pointer bg-gray-700/80 hover:bg-gray-600;
     }
-    
-    .copy-btn:hover {
-        background-color: rgba(75, 85, 99, 0.9); /* gray-600 with 90% opacity */
-    }
-    
     .frame:hover .copy-btn {
         opacity: 1;
     }
