@@ -60,7 +60,7 @@ export function pluginCustomCopyButton() {
 			}
 			
 			.copy-btn.success {
-				color: var(--primary);
+				color: #3b82f6; /* blue-500 as fallback for var(--primary) */
 			}
 			
 			@media (hover: none) {
