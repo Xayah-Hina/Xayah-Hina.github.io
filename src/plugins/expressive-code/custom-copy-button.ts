@@ -63,8 +63,9 @@ export function pluginCustomCopyButton() {
 				color: var(--primary);
 			}
 			
+			/* 移动端优化：使用触摸事件而不是始终显示 */
 			@media (hover: none) {
-				.copy-btn {
+				.frame.touch-active .copy-btn {
 					opacity: 1;
 				}
 			}
@@ -92,12 +93,36 @@ export function pluginCustomCopyButton() {
 								// Reset after 2 seconds
 								setTimeout(() => {
 									this.classList.remove('success');
+									// 在移动端，复制成功后也重置touch-active状态
+									const frame = this.closest('.frame');
+									if (frame && window.matchMedia('(hover: none)').matches) {
+										frame.classList.remove('touch-active');
+									}
 								}, 2000);
 								
 							} catch (err) {
 								console.error('Failed to copy code:', err);
 							}
 						});
+						
+						// 在移动端添加触摸事件支持
+						if (window.matchMedia('(hover: none)').matches) {
+							const frame = button.closest('.frame');
+							if (frame) {
+								// 添加触摸开始事件
+								frame.addEventListener('touchstart', function() {
+									this.classList.add('touch-active');
+									
+									// 3秒后自动隐藏按钮（除非处于成功状态）
+									setTimeout(() => {
+										const copyBtn = this.querySelector('.copy-btn');
+										if (copyBtn && !copyBtn.classList.contains('success')) {
+											this.classList.remove('touch-active');
+										}
+									}, 3000);
+								}, { passive: true });
+							}
+						}
 						
 						button.setAttribute('data-initialized', 'true');
 					});
