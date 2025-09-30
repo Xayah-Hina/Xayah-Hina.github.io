@@ -217,7 +217,7 @@ const umamiScripts = umamiConfig.scripts || ""; // 获取Umami scripts配置
 		<!-- Umami Analytics -->
 		{umamiEnabled && umamiScripts && <Fragment set:html={umamiScripts} />}
 
-	</head>
+</head>
 	<body class=" min-h-screen " class:list={[{"lg:is-home": isHomePage, "enable-banner": enableBanner, "zen-maru-gothic-enabled": siteConfig.font.zenMaruGothic.enable, "hanalei-enabled": siteConfig.font.hanalei.enable}]}
 		  data-overlayscrollbars-initialize
 	>
