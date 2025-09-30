@@ -5,7 +5,6 @@ description: "How to use this blog template."
 image: "./cover.jpeg"
 tags: ["Mizuki", "Blogging", "Customization"]
 category: Guides
-series: Guide
 draft: false
 ---
 
@@ -23,7 +22,6 @@ description: This is the first post of my new Astro blog.
 image: ./cover.jpg
 tags: [Foo, Bar]
 category: Front-end
-series: Example
 draft: false
 ---
 ```
@@ -41,7 +39,6 @@ draft: false
 | `image`       | The cover image path of the post.<br/>1. Start with `http://` or `https://`: Use web image<br/>2. Start with `/`: For image in `public` dir<br/>3. With none of the prefixes: Relative to the markdown file |
 | `tags`        | The tags of the post.                                                                                                                                                                                       |
 | `category`    | The category of the post.                                                                                                                                                                                   |
-| `series`      | The name of the series this post belongs to. If set, a list of posts in the same series will be displayed at the end of the article.                                                             |
 | `licenseName` | The license name for the post content.                                                                                                                                                                      |
 | `author`      | The author of the post.                                                                                                                                                                                     |
 | `sourceLink`  | The source link or reference for the post content.                                                                                                                                                          |
