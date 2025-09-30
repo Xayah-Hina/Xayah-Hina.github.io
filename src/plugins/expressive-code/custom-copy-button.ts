@@ -10,10 +10,10 @@ export function pluginCustomCopyButton() {
 				top: 0.5rem;
 				right: 0.5rem;
 				z-index: 10;
-				padding: 0.5rem;
+				padding: 0.25rem;
 				background: ${cssVar('frames.copyButtonBackground')};
 				border: none;
-				border-radius: 0.375rem;
+				border-radius: 0.25rem;
 				cursor: pointer;
 				opacity: 0;
 				transition: all 0.2s ease;
@@ -34,8 +34,8 @@ export function pluginCustomCopyButton() {
 			}
 			
 			.copy-btn-icon {
-				width: 1rem;
-				height: 1rem;
+				width: 0.75rem;
+				height: 0.75rem;
 				display: flex;
 				align-items: center;
 				justify-content: center;
