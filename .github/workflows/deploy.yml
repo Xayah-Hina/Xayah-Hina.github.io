@@ -1,4 +1,4 @@
-name: Deploy to Blog Branch
+name: Deploy to pages Branch
 
 on:
   # 每次推送到 `main` 分支时触发这个"工作流程"
