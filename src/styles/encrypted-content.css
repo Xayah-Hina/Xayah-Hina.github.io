@@ -39,13 +39,13 @@
   font-family: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   font-size: 0.875rem;
   line-height: 1.5rem;
-  color: white; /* 确保代码块内文字是白色 */
+  color: inherit; /* 使用继承的颜色而不是强制白色 */
 }
 
 /* 复制按钮样式 - 与markdown.css保持完全一致 */
 #decrypted-content .copy-btn {
   all: initial;
-  @apply opacity-0 absolute active:scale-90 h-6 w-6 top-2 right-2 text-xs rounded transition-all ease-in-out z-20 cursor-pointer bg-gray-700/80 hover:bg-gray-600;
+  @apply opacity-0 absolute active:scale-90 h-6 w-6 top-2 right-2 text-xs rounded transition-all ease-in-out z-20 cursor-pointer bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)];
 }
 
 #decrypted-content .frame:hover .copy-btn {
@@ -145,9 +145,9 @@
   color: #f92672 !important;
 }
 
-/* 默认文本颜色 */
+/* 默认文本颜色 - 移除强制颜色，使用继承的颜色 */
 #decrypted-content .astro-code code {
-  color: #f8f8f2 !important;
+  color: inherit;
 }
 
 /* 确保语法高亮的span元素能够正确显示颜色 */
@@ -157,7 +157,7 @@
 
 /* 行号样式 - 与markdown.css保持一致 */
 #decrypted-content .astro-code code span.line:before {
-  @apply text-white/25 mr-4 w-4 inline-block;
+  @apply text-black/25 dark:text-white/25 mr-4 w-4 inline-block;
   content: counter(line);
   counter-increment: line;
   direction: rtl;
@@ -178,45 +178,4 @@
 /* 确保代码块选择样式正确 */
 #decrypted-content .astro-code ::selection {
   @apply bg-[var(--codeblock-selection)];
-}
-
-/* 语言标识样式 - 模拟expressive-code的language-badge插件 */
-#decrypted-content .frame.has-language-badge [data-language]::before {
-  position: absolute;
-  z-index: 2;
-  right: 0.5rem;
-  top: 0.5rem;
-  padding: 0.1rem 0.5rem;
-  content: attr(data-language);
-  font-family: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 0.75rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  color: oklch(0.75 0.1 var(--hue));
-  background: oklch(0.33 0.035 var(--hue));
-  border-radius: 0.5rem;
-  pointer-events: none;
-  transition: opacity 0.3s;
-  opacity: 1;
-}
-
-/* 在触摸设备上的行为 */
-@media (hover: none) {
-  #decrypted-content .frame.has-language-badge [data-language]::before {
-    opacity: 1;
-    margin-right: 3rem;
-  }
-  #decrypted-content .frame.has-language-badge [data-language]:active::before {
-    opacity: 0;
-  }
-}
-
-/* 在支持悬停的设备上的行为 */
-@media (hover: hover) {
-  #decrypted-content .frame.has-language-badge [data-language]::before {
-    opacity: 1;
-  }
-  #decrypted-content .frame.has-language-badge:hover [data-language]::before {
-    opacity: 0;
-  }
 }
