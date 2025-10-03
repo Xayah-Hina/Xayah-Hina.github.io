@@ -1,5 +1,4 @@
 import {
-	AUTO_MODE,
 	DARK_MODE,
 	DEFAULT_THEME,
 	LIGHT_MODE,
@@ -41,16 +40,14 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 		case DARK_MODE:
 			targetIsDark = true;
 			break;
-		case AUTO_MODE:
-			targetIsDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-			break;
 	}
 
 	// 检测是否真的需要主题切换：
 	// 1. dark类状态是否改变
 	// 2. expressiveCode主题是否需要更新
 	const needsThemeChange = currentIsDark !== targetIsDark;
-	const needsCodeThemeUpdate = currentTheme !== expressiveCodeConfig.theme;
+	const expectedTheme = targetIsDark ? "github-dark" : "github-light";
+	const needsCodeThemeUpdate = currentTheme !== expectedTheme;
 
 	// 如果既不需要主题切换也不需要代码主题更新，直接返回
 	if (!needsThemeChange && !needsCodeThemeUpdate) {
@@ -79,6 +76,14 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 			"data-theme",
 			expressiveTheme,
 		);
+
+		// 强制重新渲染代码块 - 解决从首页进入文章页面时的渲染问题
+		if (needsCodeThemeUpdate) {
+			// 触发 expressice code 重新渲染
+			setTimeout(() => {
+				window.dispatchEvent(new CustomEvent('theme-change'));
+			}, 0);
+		}
 
 		// 在同一帧内快速移除保护类，使用微任务确保DOM更新完成
 		if (needsThemeChange) {

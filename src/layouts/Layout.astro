@@ -174,7 +174,7 @@ const umamiScripts = umamiConfig.scripts || ""; // 获取Umami scripts配置
 		))}
 
 		<!-- Set the theme before the page is rendered to avoid a flash -->
-		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, AUTO_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>
+		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>
 			// Load the theme from local storage
 			const theme = localStorage.getItem('theme') || DEFAULT_THEME;
 			let isDark = false;
@@ -187,19 +187,20 @@ const umamiScripts = umamiConfig.scripts || ""; // 获取Umami scripts配置
 					document.documentElement.classList.add('dark');
 					isDark = true;
 					break
-				case AUTO_MODE:
-					if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-						document.documentElement.classList.add('dark');
-						isDark = true;
-					} else {
-						document.documentElement.classList.remove('dark');
-						isDark = false;
-					}
 			}
 			
 			// Set the theme for Expressive Code based on current mode
 			const expressiveTheme = isDark ? "github-dark" : "github-light";
 			document.documentElement.setAttribute("data-theme", expressiveTheme);
+			
+			// 确保主题正确应用 - 解决代码块渲染问题
+			// 使用 requestAnimationFrame 确保在下一帧检查主题状态
+			requestAnimationFrame(() => {
+				const currentTheme = document.documentElement.getAttribute('data-theme');
+				if (currentTheme !== expressiveTheme) {
+					document.documentElement.setAttribute('data-theme', expressiveTheme);
+				}
+			});
 
 			// Load the hue from local storage
 			const hue = localStorage.getItem('hue') || configHue;
@@ -1200,6 +1201,21 @@ const setup = () => {
 			top: 0,
 			behavior: 'instant'
 		});
+		
+		// 同步主题状态 - 解决从首页进入文章页面时代码块渲染问题
+		const storedTheme = localStorage.getItem('theme') || 'LIGHT_MODE';
+		const isDark = storedTheme === 'DARK_MODE';
+		const expectedTheme = isDark ? 'github-dark' : 'github-light';
+		const currentTheme = document.documentElement.getAttribute('data-theme');
+		
+		// 如果主题不匹配，强制重新应用
+		if (currentTheme !== expectedTheme) {
+			document.documentElement.setAttribute('data-theme', expectedTheme);
+			// 触发代码块重新渲染
+			setTimeout(() => {
+				window.dispatchEvent(new CustomEvent('theme-change'));
+			}, 50);
+		}
 		
 		// 检查当前页面是否为文章页面，如果是则触发自定义事件用于初始化评论系统
 		setTimeout(() => {

@@ -7,3 +7,23 @@
         font-family: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
 }
+
+/* 确保代码块在主题切换时保持可见 */
+.expressive-code pre,
+.expressive-code code {
+    transition: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* 防止主题切换时的闪烁 */
+.expressive-code {
+    transition: none !important;
+}
+
+/* 确保在主题切换过程中代码块内容保持可见 */
+.is-theme-transitioning .expressive-code pre,
+.is-theme-transitioning .expressive-code code {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
