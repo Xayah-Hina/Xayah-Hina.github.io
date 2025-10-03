@@ -12,11 +12,9 @@ import { onMount } from "svelte";
 import type { LIGHT_DARK_MODE } from "@/types/config.ts";
 
 const seq: LIGHT_DARK_MODE[] = [LIGHT_MODE, DARK_MODE];
-let mode: LIGHT_DARK_MODE = $state(LIGHT_MODE);
+let mode: LIGHT_DARK_MODE = $state(getStoredTheme());
 
-onMount(() => {
-	mode = getStoredTheme();
-});
+// Removed onMount as we're now initializing mode with getStoredTheme() directly
 
 function switchScheme(newMode: LIGHT_DARK_MODE) {
 	mode = newMode;
