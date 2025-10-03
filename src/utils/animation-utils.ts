@@ -102,7 +102,7 @@ export class AnimationManager {
 		animatedElements.forEach((element, index) => {
 			const htmlElement = element as HTMLElement;
 			const delay =
-				Number.parseInt(htmlElement.style.animationDelay) || index * 50;
+				Number.parseInt(htmlElement.style.animationDelay, 10) || index * 50;
 
 			// 重置动画
 			htmlElement.style.opacity = "0";
@@ -115,6 +115,26 @@ export class AnimationManager {
 				htmlElement.style.transform = "translateY(0)";
 			}, delay);
 		});
+
+		// 重新初始化侧边栏组件
+		this.initializeSidebarComponents();
+	}
+
+	/**
+	 * 初始化侧边栏组件
+	 */
+	private initializeSidebarComponents(): void {
+		// 查找页面中的侧边栏元素
+		const sidebar = document.getElementById("sidebar");
+		if (sidebar) {
+			// 触发自定义事件，通知侧边栏重新初始化
+			const event = new CustomEvent("sidebar:init");
+			sidebar.dispatchEvent(event);
+		}
+
+		// 触发全局事件，通知所有组件重新初始化
+		const globalEvent = new CustomEvent("page:reinit");
+		document.dispatchEvent(globalEvent);
 	}
 
 	/**

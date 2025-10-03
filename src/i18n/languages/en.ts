@@ -45,10 +45,6 @@ export const en: Translation = {
 	[Key.anime]: "Anime",
 	[Key.diary]: "Diary",
 
-	// Series
-	[Key.series]: "Series",
-	[Key.seriesOtherPosts]: "Other Posts in Series",
-
 	// Anime Page
 	[Key.animeTitle]: "My Anime List",
 	[Key.animeSubtitle]: "Record my二次元 journey",
@@ -63,8 +59,10 @@ export const en: Translation = {
 	[Key.animeYear]: "Year",
 	[Key.animeStudio]: "Studio",
 	[Key.animeEmpty]: "No anime data",
-	[Key.animeEmptyBangumi]: "Please check Bangumi configuration or network connection",
-	[Key.animeEmptyLocal]: "Please add anime information in src/data/anime.ts file",
+	[Key.animeEmptyBangumi]:
+		"Please check Bangumi configuration or network connection",
+	[Key.animeEmptyLocal]:
+		"Please add anime information in src/data/anime.ts file",
 
 	// Diary Page
 	[Key.diarySubtitle]: "Share life anytime, anywhere",
@@ -79,7 +77,8 @@ export const en: Translation = {
 	// 404 Page
 	[Key.notFound]: "404",
 	[Key.notFoundTitle]: "Page Not Found",
-	[Key.notFoundDescription]: "Sorry, the page you visited does not exist or has been moved.",
+	[Key.notFoundDescription]:
+		"Sorry, the page you visited does not exist or has been moved.",
 	[Key.backToHome]: "Back to Home",
 
 	// Music Player
@@ -89,7 +88,8 @@ export const en: Translation = {
 	[Key.albums]: "Albums",
 	[Key.albumsSubtitle]: "Record beautiful moments in life",
 	[Key.albumsEmpty]: "No content",
-	[Key.albumsEmptyDesc]: "No albums have been created yet. Go add some beautiful memories!",
+	[Key.albumsEmptyDesc]:
+		"No albums have been created yet. Go add some beautiful memories!",
 	[Key.albumsBackToList]: "Back to Albums",
 	[Key.albumsPhotoCount]: "photo",
 	[Key.albumsPhotosCount]: "photos",
@@ -122,7 +122,8 @@ export const en: Translation = {
 	// RSS Page
 	[Key.rss]: "RSS Feed",
 	[Key.rssDescription]: "Subscribe to get latest updates",
-	[Key.rssSubtitle]: "Subscribe via RSS to get the latest articles and updates第一时间",
+	[Key.rssSubtitle]:
+		"Subscribe via RSS to get the latest articles and updates第一时间",
 	[Key.rssLink]: "RSS Link",
 	[Key.rssCopyToReader]: "Copy link to your RSS reader",
 	[Key.rssCopyLink]: "Copy Link",
@@ -130,11 +131,13 @@ export const en: Translation = {
 	[Key.rssWhatIsRSS]: "What is RSS?",
 	[Key.rssWhatIsRSSDescription]:
 		"RSS (Really Simple Syndication) is a standard format for publishing frequently updated content. With RSS, you can:",
-	[Key.rssBenefit1]: "Get the latest website content及时 without manually visiting",
+	[Key.rssBenefit1]:
+		"Get the latest website content及时 without manually visiting",
 	[Key.rssBenefit2]: "Manage subscriptions to multiple websites in one place",
 	[Key.rssBenefit3]: "Avoid missing important updates and articles",
 	[Key.rssBenefit4]: "Enjoy an ad-free, clean reading experience",
-	[Key.rssHowToUse]: "It is recommended to use Feedly, Inoreader or other RSS readers to subscribe to this site.",
+	[Key.rssHowToUse]:
+		"It is recommended to use Feedly, Inoreader or other RSS readers to subscribe to this site.",
 	[Key.rssCopied]: "RSS link copied to clipboard!",
 	[Key.rssCopyFailed]: "Copy failed, please copy the link manually",
 
@@ -195,12 +198,14 @@ export const en: Translation = {
 	// Password Protection
 	[Key.passwordProtected]: "Password Protected",
 	[Key.passwordProtectedTitle]: "This content is password protected",
-	[Key.passwordProtectedDescription]: "Please enter the password to view the protected content",
+	[Key.passwordProtectedDescription]:
+		"Please enter the password to view the protected content",
 	[Key.passwordPlaceholder]: "Enter password",
 	[Key.passwordUnlock]: "Unlock",
 	[Key.passwordUnlocking]: "Unlocking...",
 	[Key.passwordIncorrect]: "Incorrect password, please try again",
-	[Key.passwordDecryptError]: "Decryption failed, please check if the password is correct",
+	[Key.passwordDecryptError]:
+		"Decryption failed, please check if the password is correct",
 	[Key.passwordRequired]: "Please enter the password",
 	[Key.passwordVerifying]: "Verifying...",
 	[Key.passwordDecryptFailed]: "Decryption failed, please check the password",

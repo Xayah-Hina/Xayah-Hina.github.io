@@ -6,7 +6,6 @@ image: "./cover.jpeg"
 tags: ["Mizuki", "Blogging", "Customization"]
 category: Guides
 draft: false
-series: "Mizuki"
 ---
 
 
@@ -24,7 +23,6 @@ image: ./cover.jpg
 tags: [Foo, Bar]
 category: Front-end
 draft: false
-series: "Mizuki"
 ---
 ```
 
