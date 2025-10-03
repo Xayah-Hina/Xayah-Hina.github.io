@@ -5,8 +5,7 @@
 /* 导入动画样式 */
 @import './transition.css';
 @import './animation-enhancements.css';
-/* 导入加密内容样式 */
-@import './encrypted-content.css';
+/* 加密内容样式已移除，现在直接使用非加密文章的样式 */
 
 /* 导入 ZenMaruGothic-Medium 字体 */
 @font-face {

@@ -8,6 +8,7 @@ import MusicPlayer from "@components/widget/MusicPlayer.svelte";
 import Pio from "@components/widget/Pio.svelte"; // 使用 Svelte 版本的 Pio 组件
 import { profileConfig, siteConfig } from "@/config";
 import { widgetConfigs } from "../config";
+import { umamiConfig } from "../config.ts";
 import {
 	AUTO_MODE,
 	BANNER_HEIGHT,
@@ -21,8 +22,6 @@ import {
 import { defaultFavicons } from "../constants/icon";
 import type { Favicon, SakuraConfig } from "../types/config";
 import { pathsEqual, url } from "../utils/url-utils";
-
-import { umamiConfig } from '../config.ts';
 
 import "katex/dist/katex.css";
 import "../styles/mobile-navbar.css";
@@ -178,20 +177,29 @@ const umamiScripts = umamiConfig.scripts || ""; // 获取Umami scripts配置
 		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, AUTO_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>
 			// Load the theme from local storage
 			const theme = localStorage.getItem('theme') || DEFAULT_THEME;
+			let isDark = false;
 			switch (theme) {
 				case LIGHT_MODE:
 					document.documentElement.classList.remove('dark');
+					isDark = false;
 					break
 				case DARK_MODE:
 					document.documentElement.classList.add('dark');
+					isDark = true;
 					break
 				case AUTO_MODE:
 					if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
 						document.documentElement.classList.add('dark');
+						isDark = true;
 					} else {
 						document.documentElement.classList.remove('dark');
+						isDark = false;
 					}
 			}
+			
+			// Set the theme for Expressive Code based on current mode
+			const expressiveTheme = isDark ? "github-dark" : "github-light";
+			document.documentElement.setAttribute("data-theme", expressiveTheme);
 
 			// Load the hue from local storage
 			const hue = localStorage.getItem('hue') || configHue;
