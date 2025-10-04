@@ -3,8 +3,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { footerConfig, profileConfig } from "../config";
-import { url } from "../utils/url-utils";
 import { navigateToPage } from "../utils/navigation-utils";
+import { url } from "../utils/url-utils";
 
 const currentYear = new Date().getFullYear();
 
@@ -39,7 +39,7 @@ if (footerConfig.enable) {
         <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('sitemap-index.xml')}>Sitemap</a><br>
         Powered by
         <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://astro.build">Astro</a> &
-        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://github.com/matsuzaka-yuki/mizuki">Mizuki</a>&nbsp; Version <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://github.com/matsuzaka-yuki/mizuki">5.0.0</a><br>
+        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://github.com/matsuzaka-yuki/mizuki">Mizuki</a>&nbsp; Version <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://github.com/matsuzaka-yuki/mizuki">5.1</a><br>
         
 
     </div>
