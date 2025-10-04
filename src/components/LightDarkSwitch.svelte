@@ -1,20 +1,14 @@
 <script lang="ts">
 import { DARK_MODE, LIGHT_MODE } from "@constants/constants.ts";
-import I18nKey from "@i18n/i18nKey";
-import { i18n } from "@i18n/translation";
 import Icon from "@iconify/svelte";
 import {
-	applyThemeToDocument,
 	getStoredTheme,
 	setTheme,
 } from "@utils/setting-utils.ts";
-import { onMount } from "svelte";
 import type { LIGHT_DARK_MODE } from "@/types/config.ts";
 
 const seq: LIGHT_DARK_MODE[] = [LIGHT_MODE, DARK_MODE];
 let mode: LIGHT_DARK_MODE = $state(getStoredTheme());
-
-// Removed onMount as we're now initializing mode with getStoredTheme() directly
 
 function switchScheme(newMode: LIGHT_DARK_MODE) {
 	mode = newMode;
@@ -35,8 +29,8 @@ function toggleScheme() {
 if (typeof window !== 'undefined') {
   // 监听Swup的内容替换事件
   const handleContentReplace = () => {
-    // 使用微任务确保在下一渲染周期更新状态
-    queueMicrotask(() => {
+    // 使用requestAnimationFrame确保在下一帧更新状态，避免渲染冲突
+    requestAnimationFrame(() => {
       const newMode = getStoredTheme();
       if (mode !== newMode) {
         mode = newMode;
@@ -48,13 +42,22 @@ if (typeof window !== 'undefined') {
   if ((window as any).swup && (window as any).swup.hooks) {
     (window as any).swup.hooks.on('content:replace', handleContentReplace);
   } else {
-    // 如果Swup尚未加载，监听其启用事件
     document.addEventListener('swup:enable', () => {
       if ((window as any).swup && (window as any).swup.hooks) {
         (window as any).swup.hooks.on('content:replace', handleContentReplace);
       }
     });
   }
+  
+  // 页面加载完成后也同步一次状态
+  document.addEventListener('DOMContentLoaded', () => {
+    requestAnimationFrame(() => {
+      const newMode = getStoredTheme();
+      if (mode !== newMode) {
+        mode = newMode;
+      }
+    });
+  });
 }
 </script>
 
