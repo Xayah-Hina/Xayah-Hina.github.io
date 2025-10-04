@@ -315,8 +315,14 @@
   }
 }
 
-/* 移动端始终不显示语言角标（加密模式） */
+/* 所有设备始终不显示语言角标（加密模式） */
 @media (hover: none) {
+  #decrypted-content .frame.has-language-badge [data-language]::before {
+    display: none !important;
+  }
+}
+
+@media (hover: hover) {
   #decrypted-content .frame.has-language-badge [data-language]::before {
     display: none !important;
   }
