@@ -21,11 +21,7 @@ This website is built with the **Astro** framework using the [Mizuki](https://gi
 - **Reading Time Estimation** - Know how long articles take to read
 - **Post Categorization** - Organize content with tags and categories
 
-### 🌐 Internationalization
-- **Multi-language Support** - Real-time translation capabilities
-- **Auto Language Detection** - Detects user preferences automatically
-- **Client-side Translation** - Powered by Edge Translate technology
-- **10+ Languages Supported** - EN, ZH-CN, ZH-TW, JA, KO, ES, TH, VI, ID, TR
+
 
 ### 📱 Special Pages
 - **Anime Tracking Page** - Track your anime watching progress with ratings

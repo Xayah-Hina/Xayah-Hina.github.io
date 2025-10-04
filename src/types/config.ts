@@ -32,15 +32,7 @@ export type SiteConfig = {
 		};
 	};
 
-	translate?: {
-		enable: boolean; // 是否启用翻译功能
-		service?: string; // 翻译服务类型，如 'client.edge'
-		defaultLanguage?: string; // 默认语言
-		showSelectTag?: boolean; // 是否显示语言选择下拉框
-		autoDiscriminate?: boolean; // 是否自动识别用户语言
-		ignoreClasses?: string[]; // 忽略翻译的CSS类名
-		ignoreTags?: string[]; // 忽略翻译的HTML标签
-	};
+
 
 	// 添加bangumi配置
 	bangumi?: {

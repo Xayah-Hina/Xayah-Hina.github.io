@@ -31,7 +31,7 @@
 [**日本語**](./docs/README.ja.md) /
 [**中文繁体**](./docs/README.tw.md) /
 
-## 🆕 v4.9 版本更新
+## 🆕 v5.0 版本更新
 - **Pio 看板娘集成**：集成了 Pio 看板娘，提供可爱的互动角色，增强用户互动体验。
 - **高度可配置**：支持在 `src/config.ts` 中进行详细配置，包括模型路径、位置、尺寸、对话内容等，满足个性化需求。
 - **无刷新跳转**：看板娘的返回首页功能现在使用主题自带的 Swup 无刷新跳转，提供更流畅、无缝的页面切换体验。
@@ -97,11 +97,7 @@
 - [x] 阅读时间估算
 - [x] 文章分类和标签系统
 
-### 🌐 国际化支持
-- [x] **多语言支持**，实时翻译功能
-- [x] **自动语言检测**，基于用户偏好
-- [x] **客户端翻译**，由 Edge Translate 驱动
-- [x] 支持 10+ 种语言（中文、英文、日文、韩文、西班牙文等）
+
 
 ### 📱 特色页面
 - [x] **追番页面** - 追踪动画观看进度和评分
@@ -140,7 +136,7 @@
 3. **配置博客：**
    - 编辑 `src/config.ts` 自定义博客设置
    - 更新站点信息、主题色彩、横幅图片和社交链接
-   - 配置翻译设置和特色页面功能
+   - 配置特色页面功能
 
 4. **启动开发服务器：**
    ```bash
@@ -259,11 +255,6 @@ export const siteConfig: SiteConfig = {
     hue: 210, // 0-360，主题色调
     fixed: false, // 隐藏主题色选择器
   },
-  translate: {
-    enable: true, // 启用翻译功能
-    service: "client.edge", // 翻译服务
-    defaultLanguage: "chinese_simplified",
-  },
   banner: {
     enable: true,
     src: ["assets/banner/1.webp"], // 横幅图片
@@ -301,13 +292,11 @@ export const siteConfig: SiteConfig = {
 - 基于原始 [Fuwari](https://github.com/saicaca/fuwari) 模板
 - 使用 [Astro](https://astro.build) 和 [Tailwind CSS](https://tailwindcss.com) 构建
 - 灵感来源于 [Yukina](https://github.com/WhitePaper233/yukina) - 一个美丽优雅的博客模板
-- 翻译功能由 [translate](https://gitee.com/mail_osc/translate) 提供支持 - AI i18n 自动HTML翻译解决方案
 - 图标来自 [Iconify](https://iconify.design/)
 
 ### 特别感谢
 
 - **[Yukina](https://github.com/WhitePaper233/yukina)** - 感谢提供设计灵感和创意，帮助塑造了这个项目。Yukina 是一个优雅的博客模板，展现了出色的设计原则和用户体验。
-- **[translate](https://gitee.com/mail_osc/translate)** - 感谢提供创新的AI驱动i18n解决方案，仅需两行JavaScript代码即可实现HTML自动翻译。这个开源工具让多语言支持变得极其简单高效。
 
 ---
 

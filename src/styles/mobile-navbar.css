@@ -261,14 +261,7 @@
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
     }
     
-    /* 翻译组件面板半透明效果 */
-    #banner-wrapper ~ * #translate-panel,
-    body:has(#banner-wrapper) #translate-panel {
-        backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
-    }
+    
     
     /* 手机端MD导航菜单面板半透明效果 */
     #banner-wrapper ~ * #mobile-toc-panel,
@@ -319,13 +312,7 @@
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
     }
     
-    /* 翻译组件面板半透明效果 */
-    body:has(#banner-wrapper) #navbar[data-is-home="true"] #translate-panel {
-        backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
-    }
+    
     
     /* 手机端MD导航菜单面板半透明效果 */
     body:has(#banner-wrapper) #navbar[data-is-home="true"] #mobile-toc-panel {
@@ -381,13 +368,7 @@
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
     }
     
-    /* 翻译组件面板暗色主题半透明效果 */
-    :root.dark #banner-wrapper ~ * #translate-panel,
-    :root.dark body:has(#banner-wrapper) #translate-panel {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
-    }
+    
     
     /* 手机端MD导航菜单面板暗色主题半透明效果 */
     :root.dark #banner-wrapper ~ * #mobile-toc-panel,
@@ -433,12 +414,7 @@
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
     }
     
-    /* 翻译组件面板暗色主题半透明效果 */
-    :root.dark body:has(#banner-wrapper) #navbar[data-is-home="true"] #translate-panel {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
-    }
+    
     
     /* 手机端MD导航菜单面板暗色主题半透明效果 */
     :root.dark body:has(#banner-wrapper) #navbar[data-is-home="true"] #mobile-toc-panel {

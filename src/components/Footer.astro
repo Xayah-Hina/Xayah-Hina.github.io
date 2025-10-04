@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { footerConfig, profileConfig } from "../config";
 import { url } from "../utils/url-utils";
+import { navigateToPage } from "../utils/navigation-utils";
 
 const currentYear = new Date().getFullYear();
 
@@ -34,7 +35,7 @@ if (footerConfig.enable) {
             <div class="mb-2" set:html={customFooterHtml}></div>
         )}
         &copy; <span id="copyright-year">{currentYear}</span> {profileConfig.name}. All Rights Reserved. /
-        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('rss/')}>RSS</a> /
+        <a class="transition link text-[var(--primary)] font-medium" href={url('rss/')} onclick={`event.preventDefault(); navigateToPage('${url('rss/')}')`}>RSS</a> /
         <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('sitemap-index.xml')}>Sitemap</a><br>
         Powered by
         <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://astro.build">Astro</a> &

@@ -206,29 +206,7 @@ export const timelineData: TimelineItem[] = [
 		icon: "material-symbols:code",
 		color: "#7C3AED",
 	},
-	{
-		id: "english-certificate",
-		title: "English CET-4 Certificate",
-		description:
-			"Passed the College English Test Band 4, acquired basic English reading and writing skills.",
-		type: "achievement",
-		startDate: "2023-06-15",
-		organization: "National College English Test Committee",
-		achievements: [
-			"CET-4 score: 550",
-			"Improved English technical documentation reading ability",
-			"Laid foundation for future study of foreign technical materials",
-		],
-		links: [
-			{
-				name: "CET-4 Certificate",
-				url: "https://certificates.example.com/cet4",
-				type: "certificate",
-			},
-		],
-		icon: "material-symbols:translate",
-		color: "#059669",
-	},
+
 ];
 
 // Get timeline statistics

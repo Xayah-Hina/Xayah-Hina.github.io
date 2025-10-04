@@ -31,7 +31,7 @@
 [**日本語**](./README.ja.md) /
 [**中文繁体**](./README.tw.md) /
 
-## 🆕 v4.9 アップデート
+## 🆕 v5.0 アップデート
 - **Pio Live2D統合**: Pio Live2Dキャラクターを統合し、可愛らしいインタラクティブな仲間を提供してユーザーエンゲージメントを向上させます。
 - **高度な設定**: モデルパス、位置、サイズ、会話内容など、`src/config.ts`で詳細な設定をサポートし、パーソナライズされたニーズに対応します。
 - **シームレスなナビゲーション**: 「ホームに戻る」機能は、テーマに組み込まれたSwupを使用して、スムーズでリフレッシュなしのページ遷移を提供します。
@@ -94,11 +94,7 @@
 - [x] 読書時間の推定
 - [x] 記事のカテゴリ化とタグシステム
 
-### 🌐 国際化
-- [x] **多言語サポート**とリアルタイム翻訳
-- [x] ユーザー設定に基づく**自動言語検出**
-- [x] Edge Translateによる**クライアントサイド翻訳**
-- [x] 10以上の言語をサポート（中国語、英語、日本語、韓国語、スペイン語など）
+
 
 ### 📱 特別ページ
 - [x] **アニメトラッキングページ** - アニメの視聴進捗と評価を追跡
@@ -137,7 +133,7 @@
 3. **ブログを設定：**
    - `src/config.ts`を編集してブログ設定をカスタマイズ
    - サイト情報、テーマカラー、バナー画像、ソーシャルリンクを更新
-   - 翻訳設定と機能ページの機能を設定
+   - 機能ページの機能を設定
 
 4. **開発サーバーを起動：**
    ```bash
@@ -256,11 +252,6 @@ export const siteConfig: SiteConfig = {
     hue: 210, // 0-360、テーマの色相
     fixed: false, // テーマカラーピッカーを非表示
   },
-  translate: {
-    enable: true, // 翻訳を有効化
-    service: "client.edge", // 翻訳サービス
-    defaultLanguage: "japanese",
-  },
   banner: {
     enable: true,
     src: ["assets/banner/1.webp"], // バナー画像
@@ -298,13 +289,11 @@ export const siteConfig: SiteConfig = {
 - オリジナルの[Fuwari](https://github.com/saicaca/fuwari)テンプレートをベースにしています
 - [Astro](https://astro.build)と[Tailwind CSS](https://tailwindcss.com)で構築
 - [Yukina](https://github.com/WhitePaper233/yukina) - 美しくエレガントなブログテンプレートにインスパイアされました
-- 翻訳機能は[translate](https://gitee.com/mail_osc/translate)によって提供 - AI i18n自動HTML翻訳ソリューション
 - アイコンは[Iconify](https://iconify.design/)から
 
 ### 特別な感謝
 
 - **[Yukina](https://github.com/WhitePaper233/yukina)** - このプロジェクトの形成に役立ったデザインのインスピレーションと創造性を提供してくれたことに感謝します。Yukinaは優れたデザイン原則とユーザーエクスペリエンスを示す、エレガントなブログテンプレートです。
-- **[translate](https://gitee.com/mail_osc/translate)** - JavaScriptコードたった2行で自動HTML翻訳を可能にする革新的なAI駆動のi18nソリューションを提供してくれたことに感謝します。このオープンソースツールは、多言語サポートを非常にシンプルかつ効率的にします。
 
 ---
 
