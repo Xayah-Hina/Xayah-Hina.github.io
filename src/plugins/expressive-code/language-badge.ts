@@ -36,7 +36,7 @@ export function pluginLanguageBadge() {
         }
       }
       
-      /* 移动端优化：使用触摸事件而不是始终显示，与复制按钮行为一致 */
+      /* Mobile optimization: use touch events instead of always showing, consistent with copy button behavior */
       @media (hover: none) {
         .frame:not(.has-title):not(.is-terminal).touch-active [data-language]::before {
           opacity: 1;
@@ -47,15 +47,15 @@ export function pluginLanguageBadge() {
 			// Language badge touch functionality
 			document.addEventListener('DOMContentLoaded', function() {
 				function initializeLanguageBadges() {
-					// 在移动端添加触摸事件支持
+					// Add touch event support on mobile
 					if (window.matchMedia('(hover: none)').matches) {
 						const frames = document.querySelectorAll('.frame:not(.has-title):not(.is-terminal):not([data-language-events-initialized])');
 						frames.forEach(frame => {
-							// 添加触摸开始事件
+							// Add touch start event
 							frame.addEventListener('touchstart', function() {
 								this.classList.add('touch-active');
 								
-								// 3秒后自动隐藏按钮（除非处于成功状态）
+								// Hide after 3 seconds (unless in success state)
 								setTimeout(() => {
 									const copyBtn = this.querySelector('.copy-btn');
 									if (copyBtn && !copyBtn.classList.contains('success')) {
