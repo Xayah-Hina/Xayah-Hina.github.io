@@ -11,24 +11,24 @@ export function pluginCustomCopyButton() {
 				right: 0.5rem;
 				z-index: 10;
 				padding: 0.25rem;
-				background: ${cssVar("frames.copyButtonBackground")};
+				background: ${cssVar("frames.copyButtonBackground" as any)};
 				border: none;
 				border-radius: 0.25rem;
 				cursor: pointer;
 				opacity: 0;
 				transition: all 0.2s ease;
-				color: ${cssVar("frames.copyButtonForeground")};
+				color: ${cssVar("frames.copyButtonForeground" as any)};
 				pointer-events: auto !important;
 				display: block !important;
 			}
 			
 			.copy-btn:hover {
-				background: ${cssVar("frames.copyButtonBackgroundHover")};
+				background: ${cssVar("frames.copyButtonBackgroundHover" as any)};
 				opacity: 1;
 			}
 			
 			.copy-btn:active {
-				background: ${cssVar("frames.copyButtonBackgroundActive")};
+				background: ${cssVar("frames.copyButtonBackgroundActive" as any)};
 			}
 			
 			.frame:hover .copy-btn {
@@ -216,11 +216,11 @@ export function pluginCustomCopyButton() {
 						const lineText = line.textContent || '';
 						lineTexts.push(lineText);
 					}
-					// 使用 \n 连接所有行，确保每行之间只有一个换行符
-					let result = lineTexts.join('\n');
+					// 使用 \\n 连接所有行，确保每行之间只有一个换行符
+					let result = lineTexts.join('\\n');
 					
 					// 改进的空行处理逻辑
-					result = result.replace(/\n\n\n+/g, function(match) {
+					result = result.replace(/\\n\\n\\n+/g, function(match) {
 						// 计算连续换行符的数量
 						const newlineCount = match.length;
 						// 计算空行数量（换行符数量减1）
@@ -241,7 +241,7 @@ export function pluginCustomCopyButton() {
 						if (resultEmptyLines < 1) resultEmptyLines = 1;
 						
 						// 返回对应数量的换行符
-						return '\n'.repeat(resultEmptyLines + 1);
+						return '\\n'.repeat(resultEmptyLines + 1);
 					});
 					
 					return result;
@@ -249,11 +249,11 @@ export function pluginCustomCopyButton() {
 					// 对于没有行结构的简单代码块
 					// 使用 textContent 并手动处理换行
 					let text = codeElement.textContent || '';
-					// 规范化换行符，确保统一使用 \n
-					text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+					// 规范化换行符，确保统一使用 \\n
+					text = text.replace(/\\r\\n/g, '\\n').replace(/\\r/g, '\\n');
 					
 					// 改进的空行处理逻辑
-					text = text.replace(/\n\n\n+/g, function(match) {
+					text = text.replace(/\\n\\n\\n+/g, function(match) {
 						// 计算连续换行符的数量
 						const newlineCount = match.length;
 						// 计算空行数量（换行符数量减1）
@@ -274,7 +274,7 @@ export function pluginCustomCopyButton() {
 						if (resultEmptyLines < 1) resultEmptyLines = 1;
 						
 						// 返回对应数量的换行符
-						return '\n'.repeat(resultEmptyLines + 1);
+						return '\\n'.repeat(resultEmptyLines + 1);
 					});
 					
 					return text;
