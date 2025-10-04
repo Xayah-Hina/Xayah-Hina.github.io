@@ -39,22 +39,13 @@
   font-family: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   font-size: 0.875rem;
   line-height: 1.5rem;
-}
-
-/* 白天模式下的pre元素颜色 */
-:root:not(.dark) #decrypted-content .frame pre {
-  color: #000000; /* 更接近黑色 */
-}
-
-/* 夜间模式下的pre元素颜色 */
-:root.dark #decrypted-content .frame pre {
-  color: white;
+  color: white; /* 确保代码块内文字是白色 */
 }
 
 /* 复制按钮样式 - 与markdown.css保持完全一致 */
 #decrypted-content .copy-btn {
   all: initial;
-  @apply opacity-0 absolute active:scale-90 h-6 w-6 top-2 right-2 text-xs rounded transition-all ease-in-out z-20 cursor-pointer bg-[var(--btn-regular-bg)] hover:bg-[var(--btn-regular-bg-hover)] border border-black/10 dark:border-white/10;
+  @apply opacity-0 shadow-lg shadow-black/50 absolute active:scale-90 h-8 w-8 top-3 right-3 text-sm rounded-lg transition-all ease-in-out z-20 cursor-pointer bg-gray-700 hover:bg-gray-600;
 }
 
 #decrypted-content .frame:hover .copy-btn {
@@ -62,11 +53,11 @@
 }
 
 #decrypted-content .copy-btn-icon {
-  @apply absolute top-1/2 left-1/2 transition -translate-x-1/2 -translate-y-1/2 w-3 h-3 fill-black dark:fill-white pointer-events-none;
+  @apply absolute top-1/2 left-1/2 transition -translate-x-1/2 -translate-y-1/2 w-4 h-4 fill-white pointer-events-none;
 }
 
 #decrypted-content .copy-btn .copy-icon {
-  @apply opacity-100 fill-black dark:fill-white;
+  @apply opacity-100 fill-white dark:fill-white/75;
 }
 
 #decrypted-content .copy-btn.success .copy-icon {
@@ -74,25 +65,11 @@
 }
 
 #decrypted-content .copy-btn .success-icon {
-  @apply opacity-0 fill-black dark:fill-white;
+  @apply opacity-0 fill-white;
 }
 
 #decrypted-content .copy-btn.success .success-icon {
   @apply opacity-100;
-}
-
-/* 移动端始终不显示复制按钮（加密模式） */
-@media (hover: none) {
-  #decrypted-content .copy-btn {
-    display: none !important;
-  }
-}
-
-/* 电脑端始终不显示复制按钮（加密模式） */
-@media (hover: hover) {
-  #decrypted-content .copy-btn {
-    display: none !important;
-  }
 }
 
 /* 代码元素样式 */
@@ -111,16 +88,7 @@
   padding: 0 !important;
   border-radius: 0 !important;
   counter-reset: line; /* 重置行号计数器 */
-}
-
-/* 白天模式下的代码块内code元素颜色 */
-:root:not(.dark) #decrypted-content .astro-code code {
-  color: #000000; /* 更接近黑色 */
-}
-
-/* 夜间模式下的代码块内code元素颜色 */
-:root.dark #decrypted-content .astro-code code {
-  color: white;
+  /* 移除强制白色，让语法高亮颜色显示 */
 }
 
 /* 代码行样式 - 与markdown.css保持一致 */
@@ -129,112 +97,56 @@
 }
 
 /* highlight.js 语法高亮样式支持 - 让highlight.js的颜色能够正确显示 */
-/* 白天模式下的颜色 */
-:root:not(.dark) #decrypted-content .astro-code code .hljs-comment,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-quote {
-  color: #1a1a1a !important; /* 更加深色 */
-}
-
-:root:not(.dark) #decrypted-content .astro-code code .hljs-variable,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-template-variable,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-tag,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-name,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-selector-id,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-selector-class,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-regexp,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-deletion {
-  color: #700a32 !important; /* 更加深色 */
-}
-
-:root:not(.dark) #decrypted-content .astro-code code .hljs-number,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-built_in,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-builtin-name,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-literal,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-type,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-params,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-meta,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-link {
-  color: #522d90 !important; /* 更加深色 */
-}
-
-:root:not(.dark) #decrypted-content .astro-code code .hljs-attribute {
-  color: #4a7c0c !important; /* 更加深色 */
-}
-
-:root:not(.dark) #decrypted-content .astro-code code .hljs-string,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-symbol,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-bullet,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-addition {
-  color: #8a721a !important; /* 更加深色 */
-}
-
-:root:not(.dark) #decrypted-content .astro-code code .hljs-title,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-section {
-  color: #1a7a90 !important; /* 更加深色 */
-}
-
-:root:not(.dark) #decrypted-content .astro-code code .hljs-keyword,
-:root:not(.dark) #decrypted-content .astro-code code .hljs-selector-tag {
-  color: #700a32 !important; /* 更加深色 */
-}
-
-/* 夜间模式下的颜色保持不变 */
-:root.dark #decrypted-content .astro-code code .hljs-comment,
-:root.dark #decrypted-content .astro-code code .hljs-quote {
+#decrypted-content .astro-code code .hljs-comment,
+#decrypted-content .astro-code code .hljs-quote {
   color: #7c7c7c !important;
 }
 
-:root.dark #decrypted-content .astro-code code .hljs-variable,
-:root.dark #decrypted-content .astro-code code .hljs-template-variable,
-:root.dark #decrypted-content .astro-code code .hljs-tag,
-:root.dark #decrypted-content .astro-code code .hljs-name,
-:root.dark #decrypted-content .astro-code code .hljs-selector-id,
-:root.dark #decrypted-content .astro-code code .hljs-selector-class,
-:root.dark #decrypted-content .astro-code code .hljs-regexp,
-:root.dark #decrypted-content .astro-code code .hljs-deletion {
+#decrypted-content .astro-code code .hljs-variable,
+#decrypted-content .astro-code code .hljs-template-variable,
+#decrypted-content .astro-code code .hljs-tag,
+#decrypted-content .astro-code code .hljs-name,
+#decrypted-content .astro-code code .hljs-selector-id,
+#decrypted-content .astro-code code .hljs-selector-class,
+#decrypted-content .astro-code code .hljs-regexp,
+#decrypted-content .astro-code code .hljs-deletion {
   color: #f92672 !important;
 }
 
-:root.dark #decrypted-content .astro-code code .hljs-number,
-:root.dark #decrypted-content .astro-code code .hljs-built_in,
-:root.dark #decrypted-content .astro-code code .hljs-builtin-name,
-:root.dark #decrypted-content .astro-code code .hljs-literal,
-:root.dark #decrypted-content .astro-code code .hljs-type,
-:root.dark #decrypted-content .astro-code code .hljs-params,
-:root.dark #decrypted-content .astro-code code .hljs-meta,
-:root.dark #decrypted-content .astro-code code .hljs-link {
+#decrypted-content .astro-code code .hljs-number,
+#decrypted-content .astro-code code .hljs-built_in,
+#decrypted-content .astro-code code .hljs-builtin-name,
+#decrypted-content .astro-code code .hljs-literal,
+#decrypted-content .astro-code code .hljs-type,
+#decrypted-content .astro-code code .hljs-params,
+#decrypted-content .astro-code code .hljs-meta,
+#decrypted-content .astro-code code .hljs-link {
   color: #ae81ff !important;
 }
 
-:root.dark #decrypted-content .astro-code code .hljs-attribute {
+#decrypted-content .astro-code code .hljs-attribute {
   color: #a6e22e !important;
 }
 
-:root.dark #decrypted-content .astro-code code .hljs-string,
-:root.dark #decrypted-content .astro-code code .hljs-symbol,
-:root.dark #decrypted-content .astro-code code .hljs-bullet,
-:root.dark #decrypted-content .astro-code code .hljs-addition {
+#decrypted-content .astro-code code .hljs-string,
+#decrypted-content .astro-code code .hljs-symbol,
+#decrypted-content .astro-code code .hljs-bullet,
+#decrypted-content .astro-code code .hljs-addition {
   color: #e6db74 !important;
 }
 
-:root.dark #decrypted-content .astro-code code .hljs-title,
-:root.dark #decrypted-content .astro-code code .hljs-section {
+#decrypted-content .astro-code code .hljs-title,
+#decrypted-content .astro-code code .hljs-section {
   color: #66d9ef !important;
 }
 
-:root.dark #decrypted-content .astro-code code .hljs-keyword,
-:root.dark #decrypted-content .astro-code code .hljs-selector-tag {
+#decrypted-content .astro-code code .hljs-keyword,
+#decrypted-content .astro-code code .hljs-selector-tag {
   color: #f92672 !important;
 }
 
 /* 默认文本颜色 */
-/* 白天模式下的默认文本颜色 */
-:root:not(.dark) #decrypted-content .astro-code code {
-  color: #000000 !important; /* 更接近黑色 */
-}
-
-/* 夜间模式下的默认文本颜色 */
-:root.dark #decrypted-content .astro-code code {
+#decrypted-content .astro-code code {
   color: #f8f8f2 !important;
 }
 
@@ -245,9 +157,10 @@
 
 /* 行号样式 - 与markdown.css保持一致 */
 #decrypted-content .astro-code code span.line:before {
-  @apply text-black/25 dark:text-white/25 mr-4 w-8 inline-block text-right border-r border-black/10 dark:border-white/10 pr-2;
+  @apply text-white/25 mr-4 w-4 inline-block;
   content: counter(line);
   counter-increment: line;
+  direction: rtl;
 }
 
 /* 隐藏最后的空行 */
@@ -279,19 +192,12 @@
   font-size: 0.75rem;
   font-weight: bold;
   text-transform: uppercase;
-  color: var(--btn-content);
-  background: var(--btn-regular-bg);
+  color: oklch(0.75 0.1 var(--hue));
+  background: oklch(0.33 0.035 var(--hue));
   border-radius: 0.5rem;
   pointer-events: none;
   transition: opacity 0.3s;
-  opacity: 0;
-  border: 1px solid black(0.1);
-}
-
-/* 夜间模式下的语言角标样式保持不变 */
-:root.dark #decrypted-content .frame.has-language-badge [data-language]::before {
-  color: var(--btn-content);
-  background: var(--btn-regular-bg);
+  opacity: 1;
 }
 
 /* 在触摸设备上的行为 */
@@ -312,18 +218,5 @@
   }
   #decrypted-content .frame.has-language-badge:hover [data-language]::before {
     opacity: 0;
-  }
-}
-
-/* 所有设备始终不显示语言角标（加密模式） */
-@media (hover: none) {
-  #decrypted-content .frame.has-language-badge [data-language]::before {
-    display: none !important;
-  }
-}
-
-@media (hover: hover) {
-  #decrypted-content .frame.has-language-badge [data-language]::before {
-    display: none !important;
   }
 }

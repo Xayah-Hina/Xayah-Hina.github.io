@@ -15,6 +15,7 @@ import remarkDirective from "remark-directive"; /* Handle directives */
 import remarkGithubAdmonitionsToDirectives from "remark-github-admonitions-to-directives";
 import remarkMath from "remark-math";
 import remarkSectionize from "remark-sectionize";
+import { expressiveCodeConfig } from "./src/config.ts";
 import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-copy-button.js";
 import { pluginLanguageBadge } from "./src/plugins/expressive-code/language-badge.ts";
 import { AdmonitionComponent } from "./src/plugins/rehype-component-admonition.mjs";
@@ -41,7 +42,7 @@ export default defineConfig({
 			// when the Tailwind class `transition-all` is used
 			containers: ["main"],
 			smoothScrolling: false, // 禁用平滑滚动以提升性能，避免与锚点导航冲突
-			cache: false, // 禁用缓存以确保组件状态正确更新
+			cache: true,
 			preload: false, // 禁用预加载以减少网络请求
 			accessibility: true,
 			updateHead: true,
@@ -52,7 +53,7 @@ export default defineConfig({
 			animateHistoryBrowsing: false,
 			skipPopStateHandling: (event) => {
 				// 跳过锚点链接的处理，让浏览器原生处理
-				return event.state?.url?.includes("#");
+				return event.state && event.state.url && event.state.url.includes("#");
 			},
 		}),
 		icon({
@@ -65,8 +66,7 @@ export default defineConfig({
 			},
 		}),
 		expressiveCode({
-			themes: ["github-light", "github-dark"],
-			themeCSSSelector: (theme) => `[data-theme="${theme}"]`,
+			themes: [expressiveCodeConfig.theme, expressiveCodeConfig.theme],
 			plugins: [
 				pluginCollapsibleSections(),
 				pluginLineNumbers(),
@@ -99,10 +99,6 @@ export default defineConfig({
 					editorActiveTabIndicatorTopColor: "none",
 					editorTabBarBorderBottomColor: "var(--codeblock-topbar-bg)",
 					terminalTitlebarBorderBottomColor: "none",
-					copyButtonBackground: "var(--btn-regular-bg)",
-					copyButtonBackgroundHover: "var(--btn-regular-bg-hover)",
-					copyButtonBackgroundActive: "var(--btn-regular-bg-active)",
-					copyButtonForeground: "var(--btn-content)",
 				},
 				textMarkers: {
 					delHue: 0,
