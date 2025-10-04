@@ -1,4 +1,4 @@
-import type { AUTO_MODE, DARK_MODE, LIGHT_MODE } from "../constants/constants";
+import type { DARK_MODE, LIGHT_MODE } from "../constants/constants";
 
 export type SiteConfig = {
 	title: string;
@@ -161,8 +161,7 @@ type TwikooConfig = {
 
 export type LIGHT_DARK_MODE =
 	| typeof LIGHT_MODE
-	| typeof DARK_MODE
-	| typeof AUTO_MODE;
+	| typeof DARK_MODE;
 
 export type BlogPostData = {
 	body: string;
