@@ -88,6 +88,13 @@
   }
 }
 
+/* 电脑端始终不显示复制按钮（加密模式） */
+@media (hover: hover) {
+  #decrypted-content .copy-btn {
+    display: none !important;
+  }
+}
+
 /* 代码元素样式 */
 #decrypted-content code {
   font-family: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
