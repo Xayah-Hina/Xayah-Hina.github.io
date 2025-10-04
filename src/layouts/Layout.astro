@@ -1392,6 +1392,8 @@ function initFancybox() {
       transition: "slide",
       preload: 2,
     },
+    // 禁用标题显示
+    caption: false
   });
   
   // 为相册中的链接添加 Fancybox 支持
@@ -1446,7 +1448,9 @@ function initFancybox() {
     // 自定义源获取
     source: (el) => {
       return el.getAttribute("data-src") || el.getAttribute("href");
-    }
+    },
+    // 禁用标题显示
+    caption: false
   });
   
   // 为单独的 fancybox 图片添加支持
@@ -1499,6 +1503,8 @@ function initFancybox() {
       maxScale: 3,
       minScale: 1,
     },
+    // 禁用标题显示
+    caption: false
   });
 }
 
