@@ -89,7 +89,8 @@ if (!album) {
         {album.photos.map((photo, index) => (
           <figure class="photo-item group relative overflow-hidden rounded-lg">
             <a 
-              href={photo.src}
+              href="javascript:void(0)"
+              data-src={photo.src}
               data-fancybox="gallery"
               data-caption={photo.title || photo.alt}
               class="block"

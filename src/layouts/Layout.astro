@@ -1387,10 +1387,70 @@ function initFancybox() {
       maxScale: 3,
       minScale: 1,
     },
+    // 幻灯片设置
+    Carousel: {
+      transition: "slide",
+      preload: 2,
+    },
+  });
+  
+  // 为相册中的链接添加 Fancybox 支持
+  Fancybox.bind(".moment-images a[data-fancybox]", {
+    Thumbs: {
+      autoStart: true,
+      showOnStart: "yes",
+    },
+    // 工具栏配置
+    Toolbar: {
+      display: {
+        left: ["infobar"],
+        middle: [
+          "zoomIn",
+          "zoomOut",
+          "toggle1to1",
+          "rotateCCW",
+          "rotateCW",
+          "flipX",
+          "flipY",
+        ],
+        right: ["slideshow", "thumbs", "close"],
+      },
+    },
+    // 动画效果
+    animated: true,
+    // 是否支持拖拽
+    dragToClose: true,
+    // 是否支持键盘导航
+    keyboard: {
+      Escape: "close",
+      Delete: "close",
+      Backspace: "close",
+      PageUp: "next",
+      PageDown: "prev",
+      ArrowUp: "next",
+      ArrowDown: "prev",
+      ArrowRight: "next",
+      ArrowLeft: "prev",
+    },
+    // 自适应图片大小
+    fitToView: true,
+    // 图片预加载
+    preload: 3,
+    // 循环浏览
+    infinite: true,
+    // 智能图片适配
+    Panzoom: {
+      maxScale: 3,
+      minScale: 1,
+    },
+    // 自定义源获取
+    source: (el) => {
+      return el.getAttribute("data-src") || el.getAttribute("href");
+    }
   });
   
   // 为单独的 fancybox 图片添加支持
-  Fancybox.bind("[data-fancybox]", {
+  Fancybox.bind("[data-fancybox]:not(.moment-images a)", {
     // 自定义选项
     Thumbs: {
       autoStart: true,
