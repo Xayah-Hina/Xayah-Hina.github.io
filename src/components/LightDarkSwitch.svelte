@@ -30,6 +30,32 @@ function toggleScheme() {
 	}
 	switchScheme(seq[(i + 1) % seq.length]);
 }
+
+// 添加Swup钩子监听，确保在页面切换后同步主题状态
+if (typeof window !== 'undefined') {
+  // 监听Swup的内容替换事件
+  const handleContentReplace = () => {
+    // 使用微任务确保在下一渲染周期更新状态
+    queueMicrotask(() => {
+      const newMode = getStoredTheme();
+      if (mode !== newMode) {
+        mode = newMode;
+      }
+    });
+  };
+  
+  // 检查Swup是否已经加载
+  if ((window as any).swup && (window as any).swup.hooks) {
+    (window as any).swup.hooks.on('content:replace', handleContentReplace);
+  } else {
+    // 如果Swup尚未加载，监听其启用事件
+    document.addEventListener('swup:enable', () => {
+      if ((window as any).swup && (window as any).swup.hooks) {
+        (window as any).swup.hooks.on('content:replace', handleContentReplace);
+      }
+    });
+  }
+}
 </script>
 
 <div class="relative z-50">
