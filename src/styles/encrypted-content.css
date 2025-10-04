@@ -81,6 +81,13 @@
   @apply opacity-100;
 }
 
+/* 移动端始终不显示复制按钮（加密模式） */
+@media (hover: none) {
+  #decrypted-content .copy-btn {
+    display: none !important;
+  }
+}
+
 /* 代码元素样式 */
 #decrypted-content code {
   font-family: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
@@ -280,7 +287,18 @@
   background: var(--btn-regular-bg);
 }
 
-/* 在支持悬停的设备上的行为 - 默认显示 */
+/* 在触摸设备上的行为 */
+@media (hover: none) {
+  #decrypted-content .frame.has-language-badge [data-language]::before {
+    opacity: 1;
+    margin-right: 3rem;
+  }
+  #decrypted-content .frame.has-language-badge [data-language]:active::before {
+    opacity: 0;
+  }
+}
+
+/* 在支持悬停的设备上的行为 */
 @media (hover: hover) {
   #decrypted-content .frame.has-language-badge [data-language]::before {
     opacity: 1;
@@ -290,13 +308,9 @@
   }
 }
 
-/* 在触摸设备上的行为 - 默认不显示，只有在touch-active状态下才显示 */
+/* 移动端始终不显示语言角标（加密模式） */
 @media (hover: none) {
-  #decrypted-content .frame.has-language-badge:not(.touch-active) [data-language]::before {
-    opacity: 0;
-  }
-  
-  #decrypted-content .frame.has-language-badge.touch-active [data-language]::before {
-    opacity: 1;
+  #decrypted-content .frame.has-language-badge [data-language]::before {
+    display: none !important;
   }
 }
