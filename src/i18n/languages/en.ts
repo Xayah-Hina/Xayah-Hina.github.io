@@ -225,4 +225,10 @@ export const en: Translation = {
 	[Key.hour]: "H ",
 	[Key.minute]: "Min ",
 	[Key.second]: "Sec",
+	[Key.year]: "y",
+	[Key.month]: "m",
+	[Key.day]: "d",
+	[Key.hour]: "h",
+	[Key.minute]: "min",
+	[Key.second]: "s",
 };
