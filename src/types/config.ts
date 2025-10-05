@@ -272,10 +272,13 @@ export type SakuraConfig = {
 
 export type FullscreenWallpaperConfig = {
 	enable: boolean; // 是否启用全屏壁纸功能
-	src: {
-		desktop?: string | string[]; // 桌面端壁纸图片
-		mobile?: string | string[]; // 移动端壁纸图片
-	};
+	src:
+		| string
+		| string[]
+		| {
+				desktop?: string | string[];
+				mobile?: string | string[];
+		  }; // 支持单个图片、图片数组或分别设置桌面端和移动端图片
 	position?: "top" | "center" | "bottom"; // 壁纸位置，等同于 object-position
 	carousel?: {
 		enable: boolean; // 是否启用轮播
