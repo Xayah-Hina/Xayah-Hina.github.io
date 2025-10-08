@@ -110,8 +110,8 @@ const {
 {!isHome && umamiEnabled && slug && (
     <script define:vars={{ slug, umamiBaseUrl, umamiApiKey, umamiWebsiteId, umamiConfig }}>
         // 客户端统计文案生成函数
-        function generateStatsText(pageViews, visits) {
-            return `浏览量 ${pageViews} · 访问次数 ${visits}`;
+        function generateStatsText(pageViews, visitors) {
+            return `浏览量 ${pageViews} · 访客 ${visitors}`;
         }
         
         // 获取访问量统计
@@ -121,17 +121,19 @@ const {
             }
             
             try {
-                // 调用全局工具获取 Umami 统计数据
-                const stats = await getUmamiWebsiteStats(umamiBaseUrl, umamiApiKey, umamiWebsiteId);
+                // 构造文章页面的URL路径
+                const pageUrl = `/posts/${slug}/`;
                 
-                // 对于文章页面，我们暂时显示网站总浏览量
-                // 因为 Umami API 不直接提供单个页面的浏览量
+                // 调用全局工具获取特定页面的 Umami 统计数据
+                const stats = await getUmamiPageStats(umamiBaseUrl, umamiApiKey, umamiWebsiteId, pageUrl);
+                
+                // 从返回的数据中提取页面浏览量和访客数
                 const pageViews = stats.pageviews || 0;
-                const visits = stats.visits || 0;
+                const visitors = stats.visitors || 0;
                 
                 const displayElement = document.getElementById('page-views-display');
                 if (displayElement) {
-                    displayElement.textContent = generateStatsText(pageViews, visits);
+                    displayElement.textContent = generateStatsText(pageViews, visitors);
                 }
             } catch (error) {
                 console.error('Error fetching page views:', error);
