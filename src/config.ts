@@ -492,7 +492,6 @@ export const widgetConfigs = {
 
 export const umamiConfig = {
 	enabled: false, // 是否显示Umami统计
-	websiteId: "abcd", // 你的网站ID
 	apiKey: "api_XXXXXXXXXX", // 你的API密钥
 	baseUrl: "https://api.umami.is", // Umami Cloud API地址
 	scripts: `
