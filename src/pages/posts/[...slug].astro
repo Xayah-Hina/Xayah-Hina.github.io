@@ -167,7 +167,7 @@ const jsonLd = {
                 />
                 {
                     !entry.data.image && (
-                        <div class="border-[var(--line-divider)] border-dashed border-b-[1px] mb-5" />
+                        <div class="mt-4 border-[var(--line-divider)] border-dashed border-b-[1px] mb-5" />
                     )
                 }
             </div>
@@ -176,12 +176,15 @@ const jsonLd = {
 
             {
                 entry.data.image && (
-                    <ImageWrapper
-                        id="post-cover"
-                        src={entry.data.image}
-                        basePath={path.join("content/posts/", getDir(entry.id))}
-                        class="mb-8 rounded-xl banner-container onload-animation"
-                    />
+                    <>
+                        <div class="mt-4" />
+                        <ImageWrapper
+                            id="post-cover"
+                            src={entry.data.image}
+                            basePath={path.join("content/posts/", getDir(entry.id))}
+                            class="mb-8 rounded-xl banner-container onload-animation"
+                        />
+                    </>
                 )
             }
 
