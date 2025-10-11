@@ -140,12 +140,7 @@ export async function GET(context: APIContext) {
 	return new Response(atomFeed, {
 		headers: {
 			"Content-Type": "application/atom+xml; charset=utf-8",
-			// 添加CORS头，允许所有域名访问
-			"Access-Control-Allow-Origin": "*",
-			// 可选：允许的请求方法
-			"Access-Control-Allow-Methods": "GET",
-			// 可选：缓存CORS响应时间（秒）
-			"Access-Control-Max-Age": "86400"
+			
 		},
 	});
 }
