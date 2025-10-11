@@ -134,6 +134,25 @@ export const zh_TW: Translation = {
 	[Key.rssCopied]: "RSS 鏈接已複製到剪貼板！",
 	[Key.rssCopyFailed]: "複製失敗，請手動複製鏈接",
 
+	//Atom Feed 頁面
+	[Key.atom]: "Atom 訂閱",
+	[Key.atomDescription]: "訂閱獲取最新更新",
+	[Key.atomSubtitle]: "通過 Atom 訂閱，第一時間獲取最新文章和動態",
+	[Key.atomLink]: "Atom 鏈接",
+	[Key.atomCopyToReader]: "複製鏈接到你的 Atom 閱讀器",
+	[Key.atomCopyLink]: "複製鏈接",
+	[Key.atomLatestPosts]: "最新文章",
+	[Key.atomWhatIsAtom]: "什麼是 Atom？",
+	[Key.atomWhatIsAtomDescription]:
+		"Atom聯合格式（Atom Syndication Format）是一個基於XML的標準，用於描述訂閱源及其信息項。通過 Atom，你可以：",
+	[Key.atomBenefit1]: "及時獲取網站最新內容，無需手動訪問",
+	[Key.atomBenefit2]: "在一個地方管理多個網站的訂閱",
+	[Key.atomBenefit3]: "避免錯過重要更新和文章",
+	[Key.atomBenefit4]: "享受無廣告的純淨閱讀體驗",
+	[Key.atomHowToUse]: "推薦使用 Feedly、Inoreader 或其他 Atom 閱讀器來訂閱本站。",
+	[Key.atomCopied]: "Atom 鏈接已複製到剪貼板！",
+	[Key.atomCopyFailed]: "複製失敗，請手動複製鏈接",
+
 	// 技能展示頁面
 	[Key.skills]: "技能展示",
 	[Key.skillsSubtitle]: "我的技術技能和專業知識",
