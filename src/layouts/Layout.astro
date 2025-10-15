@@ -8,8 +8,8 @@ import MusicPlayer from "@components/widget/MusicPlayer.svelte";
 import Pio from "@components/widget/Pio.svelte"; // 使用 Svelte 版本的 Pio 组件
 import { profileConfig, siteConfig } from "@/config";
 import { widgetConfigs } from "../config";
+import { umamiConfig } from "../config.ts";
 import {
-	AUTO_MODE,
 	BANNER_HEIGHT,
 	BANNER_HEIGHT_EXTEND,
 	BANNER_HEIGHT_HOME,
@@ -22,11 +22,10 @@ import { defaultFavicons } from "../constants/icon";
 import type { Favicon, SakuraConfig } from "../types/config";
 import { pathsEqual, url } from "../utils/url-utils";
 
-import { umamiConfig } from '../config.ts';
-
 import "katex/dist/katex.css";
 import "../styles/mobile-navbar.css";
 import "../styles/wallpaper-navbar-transparent.css";
+import "../styles/fancybox-custom.css";
 
 interface Props {
 	title?: string;
@@ -134,11 +133,16 @@ const umamiScripts = umamiConfig.scripts || ""; // 获取Umami scripts配置
 	  data-overlayscrollbars-initialize
 >
 	<head>
+		<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-KRX3XGVH');</script>
+		<script type="text/javascript">(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "tjr3vkhj8i");</script>
 
 		<title>{pageTitle}</title>
 
 		<meta charset="UTF-8" />
 		<meta name="description" content={description || pageTitle}>
+		{siteConfig.keywords && siteConfig.keywords.length > 0 && (
+			<meta name="keywords" content={siteConfig.keywords.join(', ')} />
+		)}
 		<meta name="author" content={profileConfig.name}>
 
 		<meta property="og:site_name" content={siteConfig.title}>
@@ -170,23 +174,33 @@ const umamiScripts = umamiConfig.scripts || ""; // 获取Umami scripts配置
 		))}
 
 		<!-- Set the theme before the page is rendered to avoid a flash -->
-		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, AUTO_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>
+		<script is:inline define:vars={{DEFAULT_THEME, LIGHT_MODE, DARK_MODE, BANNER_HEIGHT_EXTEND, PAGE_WIDTH, configHue}}>
 			// Load the theme from local storage
 			const theme = localStorage.getItem('theme') || DEFAULT_THEME;
+			let isDark = false;
 			switch (theme) {
 				case LIGHT_MODE:
 					document.documentElement.classList.remove('dark');
+					isDark = false;
 					break
 				case DARK_MODE:
 					document.documentElement.classList.add('dark');
+					isDark = true;
 					break
-				case AUTO_MODE:
-					if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-						document.documentElement.classList.add('dark');
-					} else {
-						document.documentElement.classList.remove('dark');
-					}
 			}
+			
+			// Set the theme for Expressive Code based on current mode
+			const expressiveTheme = isDark ? "github-dark" : "github-light";
+			document.documentElement.setAttribute("data-theme", expressiveTheme);
+			
+			// 确保主题正确应用 - 解决代码块渲染问题
+			// 使用 requestAnimationFrame 确保在下一帧检查主题状态
+			requestAnimationFrame(() => {
+				const currentTheme = document.documentElement.getAttribute('data-theme');
+				if (currentTheme !== expressiveTheme) {
+					document.documentElement.setAttribute('data-theme', expressiveTheme);
+				}
+			});
 
 			// Load the hue from local storage
 			const hue = localStorage.getItem('hue') || configHue;
@@ -214,10 +228,12 @@ const umamiScripts = umamiConfig.scripts || ""; // 获取Umami scripts配置
 		<!-- Umami Analytics -->
 		{umamiEnabled && umamiScripts && <Fragment set:html={umamiScripts} />}
 
-	</head>
+</head>
 	<body class=" min-h-screen " class:list={[{"lg:is-home": isHomePage, "enable-banner": enableBanner, "zen-maru-gothic-enabled": siteConfig.font.zenMaruGothic.enable, "hanalei-enabled": siteConfig.font.hanalei.enable}]}
 		  data-overlayscrollbars-initialize
 	>
+		<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-KRX3XGVH" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+		
 		<!-- 页面顶部渐变高光效果 - 只在full和semifull模式下显示 -->
 		{shouldShowTopHighlight && <div class="top-gradient-highlight"></div>}
 		<ConfigCarrier></ConfigCarrier>
@@ -565,33 +581,7 @@ const umamiScripts = umamiConfig.scripts || ""; // 获取Umami scripts配置
 			</script>
 		)}
 		
-		<!-- Translate.js integration - lazy loading -->
-		{siteConfig.translate?.enable && (
-			<script>
-				// 懒加载translate.js，只有在需要时才加载
-				window.loadTranslateScript = function() {
-					if (window.translate || document.getElementById('translate-script')) {
-						return Promise.resolve();
-					}
-					
-					return new Promise((resolve, reject) => {
-						const script = document.createElement('script');
-						script.src = '/translate.js';
-						script.id = 'translate-script';
-						script.async = true;
-						script.onload = () => {
-							if (typeof window.translate !== 'undefined') {
-								resolve();
-							} else {
-								reject(new Error('translate.js loaded but window.translate not available'));
-							}
-						};
-						script.onerror = reject;
-						document.head.appendChild(script);
-					});
-				};
-			</script>
-		)}
+		
 	</body>
 </html>
 
@@ -967,65 +957,7 @@ function initCarousel() {
 	}
 }
 
-function initTranslate() {
-	if (!siteConfig.translate?.enable || typeof window.translate === 'undefined') return;
-	
-	// 配置translate.js
-	if (siteConfig.translate.service && window.translate) {
-		window.translate.service.use(siteConfig.translate.service);
-	}
-	
-	if (siteConfig.translate.defaultLanguage && window.translate) {
-		window.translate.language.setLocal(siteConfig.translate.defaultLanguage);
-	}
-	
-	if (siteConfig.translate.autoDiscriminate && window.translate) {
-		window.translate.setAutoDiscriminateLocalLanguage();
-	}
-	
-	// 设置忽略的类名和标签
-	if (siteConfig.translate.ignoreClasses && window.translate) {
-		siteConfig.translate.ignoreClasses.forEach(className => {
-			window.translate.ignore.class.push(className);
-		});
-	}
-	
-	if (siteConfig.translate.ignoreTags && window.translate) {
-		siteConfig.translate.ignoreTags.forEach(tagName => {
-			window.translate.ignore.tag.push(tagName);
-		});
-	}
-	
-	// 不显示默认的select选择框
-	if (siteConfig.translate.showSelectTag === false && window.translate) {
-		window.translate.selectLanguageTag.show = false;
-	}
-	
-	// 禁用自动保存翻译状态到localStorage
-	if (window.translate) {
-		window.translate.storage.set = function() {
-			// 空函数，阻止保存状态
-		};
-	
-		// 启动翻译监听
-		window.translate.listener.start();
-	
-		// 执行翻译初始化
-		window.translate.execute();
-	}
-}
 
-// 懒加载并初始化翻译功能
-async function loadAndInitTranslate() {
-	if (!siteConfig.translate?.enable) return;
-	
-	try {
-		await window.loadTranslateScript();
-		initTranslate();
-	} catch (error) {
-		console.error('Failed to load translate.js:', error);
-	}
-}
 
 
 
@@ -1082,12 +1014,7 @@ const setup = () => {
 			}
 		}
 		
-		// 页面内容替换后重新执行翻译（仅在翻译已加载时）
-		setTimeout(() => {
-			if (siteConfig.translate?.enable && typeof (window as any).translate !== 'undefined') {
-				(window as any).translate.execute();
-			}
-		}, 100);
+		
 		
 		// 重新初始化semifull模式的滚动检测
 		const navbar = document.getElementById('navbar')
@@ -1185,6 +1112,21 @@ const setup = () => {
 			top: 0,
 			behavior: 'instant'
 		});
+		
+		// 同步主题状态 - 解决从首页进入文章页面时代码块渲染问题
+		const storedTheme = localStorage.getItem('theme') || 'LIGHT_MODE';
+		const isDark = storedTheme === 'DARK_MODE';
+		const expectedTheme = isDark ? 'github-dark' : 'github-light';
+		const currentTheme = document.documentElement.getAttribute('data-theme');
+		
+		// 如果主题不匹配，强制重新应用
+		if (currentTheme !== expectedTheme) {
+			document.documentElement.setAttribute('data-theme', expectedTheme);
+			// 触发代码块重新渲染
+			setTimeout(() => {
+				window.dispatchEvent(new CustomEvent('theme-change'));
+			}, 50);
+		}
 		
 		// 检查当前页面是否为文章页面，如果是则触发自定义事件用于初始化评论系统
 		setTimeout(() => {
@@ -1298,65 +1240,208 @@ if (document.readyState === 'loading') {
 </script>
 
 <script>
-import PhotoSwipeLightbox from "photoswipe/lightbox"
-import "photoswipe/style.css"
+import { Fancybox } from "@fancyapps/ui";
+import "@fancyapps/ui/dist/fancybox/fancybox.css";
 
-let lightbox: PhotoSwipeLightbox
-
-function createPhotoSwipe() {
-	lightbox = new PhotoSwipeLightbox({
-		gallery: ".custom-md img, #post-cover img, .moment-images img",
-		pswpModule: () => import("photoswipe"),
-		closeSVG: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M480-424 284-228q-11 11-28 11t-28-11q-11-11-11-28t11-28l196-196-196-196q-11-11-11-28t11-28q11-11 28-11t28 11l196 196 196-196q11-11 11-28t-11-28q-11-11-28-11t-28 11L480-424Z"/></svg>',
-		zoomSVG: '<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#ffffff"><path d="M340-540h-40q-17 0-28.5-11.5T260-580q0-17 11.5-28.5T300-620h40v-40q0-17 11.5-28.5T380-700q17 0 28.5 11.5T420-660v40h40q17 0 28.5 11.5T500-580q0 17-11.5 28.5T460-540h-40v40q0 17-11.5 28.5T380-460q-17 0-28.5-11.5T340-500v-40Zm0-80q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>',
-		padding: { top: 20, bottom: 20, left: 20, right: 20 },
-		wheelToZoom: true,
-		arrowPrev: false,
-		arrowNext: false,
-		imageClickAction: 'close',
-		tapAction: 'close',
-		doubleTapAction: 'zoom',
-	})
-
-	// Add filter BEFORE lightbox is initialized
-	lightbox.addFilter("domItemData", (itemData, element) => {
-		if (element instanceof HTMLImageElement) {
-			itemData.src = element.src
-
-			itemData.w = Number(element.naturalWidth || window.innerWidth)
-			itemData.h = Number(element.naturalHeight || window.innerHeight)
-
-			itemData.msrc = element.src
-		}
-
-		return itemData
-	})
-
-	// Initialize lightbox AFTER adding filters
-	lightbox.init()
+function initFancybox() {
+  // 销毁现有的 Fancybox 实例（如果存在）
+  Fancybox.close();
+  
+  // 为相册图片添加 Fancybox 支持
+  Fancybox.bind(".custom-md img, #post-cover img, .moment-images img", {
+    groupAll: true,
+    Thumbs: {
+      autoStart: true,
+      showOnStart: "yes",
+    },
+    // 添加自定义按钮
+    Toolbar: {
+      display: {
+        left: ["infobar"],
+        middle: [
+          "zoomIn",
+          "zoomOut",
+          "toggle1to1",
+          "rotateCCW",
+          "rotateCW",
+          "flipX",
+          "flipY",
+        ],
+        right: ["slideshow", "thumbs", "close"],
+      },
+    },
+    // 动画效果
+    animated: true,
+    // 是否支持拖拽
+    dragToClose: true,
+    // 是否支持键盘导航
+    keyboard: {
+      Escape: "close",
+      Delete: "close",
+      Backspace: "close",
+      PageUp: "next",
+      PageDown: "prev",
+      ArrowUp: "next",
+      ArrowDown: "prev",
+      ArrowRight: "next",
+      ArrowLeft: "prev",
+    },
+    // 自适应图片大小
+    fitToView: true,
+    // 图片预加载
+    preload: 3,
+    // 循环浏览
+    infinite: true,
+    // 智能图片适配
+    Panzoom: {
+      maxScale: 3,
+      minScale: 1,
+    },
+    // 幻灯片设置
+    Carousel: {
+      transition: "slide",
+      preload: 2,
+    },
+    // 禁用标题显示
+    caption: false
+  });
+  
+  // 为相册中的链接添加 Fancybox 支持
+  Fancybox.bind(".moment-images a[data-fancybox]", {
+    Thumbs: {
+      autoStart: true,
+      showOnStart: "yes",
+    },
+    // 工具栏配置
+    Toolbar: {
+      display: {
+        left: ["infobar"],
+        middle: [
+          "zoomIn",
+          "zoomOut",
+          "toggle1to1",
+          "rotateCCW",
+          "rotateCW",
+          "flipX",
+          "flipY",
+        ],
+        right: ["slideshow", "thumbs", "close"],
+      },
+    },
+    // 动画效果
+    animated: true,
+    // 是否支持拖拽
+    dragToClose: true,
+    // 是否支持键盘导航
+    keyboard: {
+      Escape: "close",
+      Delete: "close",
+      Backspace: "close",
+      PageUp: "next",
+      PageDown: "prev",
+      ArrowUp: "next",
+      ArrowDown: "prev",
+      ArrowRight: "next",
+      ArrowLeft: "prev",
+    },
+    // 自适应图片大小
+    fitToView: true,
+    // 图片预加载
+    preload: 3,
+    // 循环浏览
+    infinite: true,
+    // 智能图片适配
+    Panzoom: {
+      maxScale: 3,
+      minScale: 1,
+    },
+    // 自定义源获取
+    source: (el) => {
+      return el.getAttribute("data-src") || el.getAttribute("href");
+    },
+    // 禁用标题显示
+    caption: false
+  });
+  
+  // 为单独的 fancybox 图片添加支持
+  Fancybox.bind("[data-fancybox]:not(.moment-images a)", {
+    // 自定义选项
+    Thumbs: {
+      autoStart: true,
+      showOnStart: "yes",
+    },
+    // 工具栏配置
+    Toolbar: {
+      display: {
+        left: ["infobar"],
+        middle: [
+          "zoomIn",
+          "zoomOut",
+          "toggle1to1",
+          "rotateCCW",
+          "rotateCW",
+          "flipX",
+          "flipY",
+        ],
+        right: ["slideshow", "thumbs", "close"],
+      },
+    },
+    // 动画效果
+    animated: true,
+    // 是否支持拖拽
+    dragToClose: true,
+    // 是否支持键盘导航
+    keyboard: {
+      Escape: "close",
+      Delete: "close",
+      Backspace: "close",
+      PageUp: "next",
+      PageDown: "prev",
+      ArrowUp: "next",
+      ArrowDown: "prev",
+      ArrowRight: "next",
+      ArrowLeft: "prev",
+    },
+    // 自适应图片大小
+    fitToView: true,
+    // 图片预加载
+    preload: 3,
+    // 循环浏览
+    infinite: true,
+    // 智能图片适配
+    Panzoom: {
+      maxScale: 3,
+      minScale: 1,
+    },
+    // 禁用标题显示
+    caption: false
+  });
 }
 
 const setup = () => {
-	if (!lightbox) {
-		createPhotoSwipe()
-	}
-	window.swup.hooks.on("page:view", () => {
-		createPhotoSwipe()
-	})
-
-	window.swup.hooks.on(
-		"content:replace",
-		() => {
-			lightbox?.destroy?.()
-		},
-		{ before: true },
-	)
+  // 初始化 Fancybox
+  initFancybox();
+  
+  // 在页面视图更改时重新初始化
+  window.swup.hooks.on("page:view", () => {
+    // 等待 DOM 更新后初始化
+    setTimeout(() => {
+      initFancybox();
+    }, 100);
+  });
 }
 
 if (window.swup) {
-	setup()
+  setup()
 } else {
-	document.addEventListener("swup:enable", setup)
+  document.addEventListener("swup:enable", setup)
+  
+  // 如果 swup 尚未初始化，则直接初始化
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initFancybox);
+  } else {
+    initFancybox();
+  }
 }
 </script>
 

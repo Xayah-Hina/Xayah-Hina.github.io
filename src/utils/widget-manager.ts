@@ -1,9 +1,9 @@
+import { sidebarLayoutConfig } from "../config";
 import type {
+	SidebarLayoutConfig,
 	WidgetComponentConfig,
 	WidgetComponentType,
-	SidebarLayoutConfig,
 } from "../types/config";
-import { sidebarLayoutConfig } from "../config";
 
 /**
  * 组件映射表 - 将组件类型映射到实际的组件路径
@@ -30,6 +30,13 @@ export class WidgetManager {
 	constructor(config: SidebarLayoutConfig = sidebarLayoutConfig) {
 		this.config = config;
 		this.enabledComponents = this.getEnabledComponents();
+	}
+
+	/**
+	 * 获取配置
+	 */
+	getConfig(): SidebarLayoutConfig {
+		return this.config;
 	}
 
 	/**
@@ -76,7 +83,7 @@ export class WidgetManager {
 	 * @param component 组件配置
 	 * @param index 组件在列表中的索引
 	 */
-	getComponentClass(component: WidgetComponentConfig, index: number): string {
+	getComponentClass(component: WidgetComponentConfig, _index: number): string {
 		const classes: string[] = [];
 
 		// 添加基础类名
@@ -247,7 +254,9 @@ export const widgetManager = new WidgetManager();
 export function getComponentConfig(
 	componentType: WidgetComponentType,
 ): WidgetComponentConfig | undefined {
-	return widgetManager.config.components.find((c) => c.type === componentType);
+	return widgetManager
+		.getConfig()
+		.components.find((c) => c.type === componentType);
 }
 
 /**
@@ -265,5 +274,8 @@ export function isComponentEnabled(
  * 工具函数：获取所有启用的组件类型
  */
 export function getEnabledComponentTypes(): WidgetComponentType[] {
-	return widgetManager.enabledComponents.map((c) => c.type);
+	const enabledComponents = widgetManager
+		.getComponentsByPosition("top")
+		.concat(widgetManager.getComponentsByPosition("sticky"));
+	return enabledComponents.map((c) => c.type);
 }

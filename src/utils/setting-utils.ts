@@ -1,5 +1,4 @@
 import {
-	AUTO_MODE,
 	DARK_MODE,
 	DEFAULT_THEME,
 	LIGHT_MODE,
@@ -33,7 +32,7 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 	const currentTheme = document.documentElement.getAttribute("data-theme");
 
 	// 计算目标主题状态
-	let targetIsDark: boolean;
+	let targetIsDark: boolean = false; // 初始化默认值
 	switch (theme) {
 		case LIGHT_MODE:
 			targetIsDark = false;
@@ -41,8 +40,9 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 		case DARK_MODE:
 			targetIsDark = true;
 			break;
-		case AUTO_MODE:
-			targetIsDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+		default:
+			// 处理默认情况，使用当前主题状态
+			targetIsDark = currentIsDark;
 			break;
 	}
 
@@ -50,7 +50,8 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 	// 1. dark类状态是否改变
 	// 2. expressiveCode主题是否需要更新
 	const needsThemeChange = currentIsDark !== targetIsDark;
-	const needsCodeThemeUpdate = currentTheme !== expressiveCodeConfig.theme;
+	const expectedTheme = targetIsDark ? "github-dark" : "github-light";
+	const needsCodeThemeUpdate = currentTheme !== expectedTheme;
 
 	// 如果既不需要主题切换也不需要代码主题更新，直接返回
 	if (!needsThemeChange && !needsCodeThemeUpdate) {
@@ -62,7 +63,7 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 		document.documentElement.classList.add("is-theme-transitioning");
 	}
 
-	// 使用 requestAnimationFrame 确保 DOM 更新的时序
+	// 使用 requestAnimationFrame 确保在下一帧执行，避免闪屏
 	requestAnimationFrame(() => {
 		// 应用主题变化
 		if (needsThemeChange) {
@@ -73,16 +74,25 @@ export function applyThemeToDocument(theme: LIGHT_DARK_MODE) {
 			}
 		}
 
-		// Set the theme for Expressive Code (always update this)
+		// Set the theme for Expressive Code based on current mode
+		const expressiveTheme = targetIsDark ? "github-dark" : "github-light";
 		document.documentElement.setAttribute(
 			"data-theme",
-			expressiveCodeConfig.theme,
+			expressiveTheme,
 		);
 
-		// 在同一帧内快速移除保护类，使用微任务确保DOM更新完成
+		// 强制重新渲染代码块 - 解决从首页进入文章页面时的渲染问题
+		if (needsCodeThemeUpdate) {
+			// 触发 expressice code 重新渲染
+			setTimeout(() => {
+				window.dispatchEvent(new CustomEvent('theme-change'));
+			}, 0);
+		}
+
+		// 在下一帧快速移除保护类，使用微任务确保DOM更新完成
 		if (needsThemeChange) {
-			// 使用微任务在同一帧内处理，避免额外的帧延迟
-			Promise.resolve().then(() => {
+			// 使用 requestAnimationFrame 确保在下一帧移除过渡保护类
+			requestAnimationFrame(() => {
 				document.documentElement.classList.remove("is-theme-transitioning");
 			});
 		}

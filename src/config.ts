@@ -13,7 +13,7 @@ import type {
 	SiteConfig,
 } from "./types/config";
 import { LinkPreset } from "./types/config";
-import { getTranslateLanguageFromConfig } from "./utils/language-utils";
+
 
 // 移除i18n导入以避免循环依赖
 
@@ -21,8 +21,8 @@ import { getTranslateLanguageFromConfig } from "./utils/language-utils";
 const SITE_LANG = "en"; // 语言代码，例如：'en', 'zh_CN', 'ja' 等。
 
 export const siteConfig: SiteConfig = {
-	title: "Xayah",
-	subtitle: "In solitude, where we are least alone.",
+	title: "Mizuki",
+	subtitle: "One demo website",
 
 	lang: SITE_LANG,
 
@@ -31,15 +31,15 @@ export const siteConfig: SiteConfig = {
 		fixed: false, // 对访问者隐藏主题色选择器
 	},
 
-	translate: {
-		enable: false, // 启用翻译功能
-		service: "client.edge", // 使用 Edge 浏览器翻译服务
-		defaultLanguage: getTranslateLanguageFromConfig(SITE_LANG), // 根据站点语言自动设置默认翻译语言
-		showSelectTag: false, // 不显示默认语言选择下拉菜单，使用自定义按钮
-		autoDiscriminate: true, // 自动检测用户语言
-		ignoreClasses: ["ignore", "banner-title", "banner-subtitle"], // 翻译时忽略的 CSS 类名
-		ignoreTags: ["script", "style", "code", "pre"], // 翻译时忽略的 HTML 标签
+	
+	bangumi: {
+		userId: "your-bangumi-id", // 在此处设置你的Bangumi用户ID，可以设置为 "sai" 测试
 	},
+
+	anime: {
+		mode: "local", // 番剧页面模式："bangumi" 使用Bangumi API，"local" 使用本地配置
+	},
+
 	banner: {
 		enable: true, // 是否启动Banner壁纸模式
 
@@ -56,7 +56,6 @@ export const siteConfig: SiteConfig = {
 				"/assets/desktop-banner/d8.webp",
 			], // 桌面横幅图片
 			mobile: [
-				"/assets/mobile-banner/1.webp",
 				"/assets/mobile-banner/m1.webp",
 				"/assets/mobile-banner/m2.webp",
 				"/assets/mobile-banner/m3.webp",
@@ -86,7 +85,7 @@ export const siteConfig: SiteConfig = {
 		// 请自行搭建API
 
 		homeText: {
-			enable: false, // 在主页显示自定义文本
+			enable: true, // 在主页显示自定义文本
 			title: "Beautiful Mizuki!", // 主页横幅主标题
 
 			subtitle: [
@@ -138,12 +137,12 @@ export const siteConfig: SiteConfig = {
 			enable: false, // 启用 Hanalei 字体作为全局字体，适合中文去使用
 		},
 	},
+	showLastModified: true, // 控制“上次编辑”卡片显示的开关
 };
 export const fullscreenWallpaperConfig: FullscreenWallpaperConfig = {
 	enable: true, // 启用全屏壁纸功能,非Banner模式下生效
 	src: {
 		desktop: [
-			"/assets/desktop-banner/1.webp",
 			"/assets/desktop-banner/d1.webp",
 			"/assets/desktop-banner/d2.webp",
 			"/assets/desktop-banner/d3.webp",
@@ -154,7 +153,6 @@ export const fullscreenWallpaperConfig: FullscreenWallpaperConfig = {
 			"/assets/desktop-banner/d8.webp",
 		], // 桌面横幅图片
 		mobile: [
-			"/assets/mobile-banner/1.webp",
 			"/assets/mobile-banner/m1.webp",
 			"/assets/mobile-banner/m2.webp",
 			"/assets/mobile-banner/m3.webp",
@@ -180,88 +178,94 @@ export const navBarConfig: NavBarConfig = {
 		LinkPreset.Home,
 		LinkPreset.Archive,
 		// 支持自定义导航栏链接,并且支持多级菜单,3.1版本新加
-		// {
-		// 	name: "Links",
-		// 	url: "/links/",
-		// 	icon: "material-symbols:link",
-		// 	children: [
-		// 		{
-		// 			name: "GitHub",
-		// 			url: "https://github.com/matsuzaka-yuki/Mizuki",
-		// 			external: true,
-		// 			icon: "fa6-brands:github",
-		// 		},
-		// 		{
-		// 			name: "Bilibili",
-		// 			url: "https://space.bilibili.com/701864046",
-		// 			external: true,
-		// 			icon: "fa6-brands:bilibili",
-		// 		},
-		// 		{
-		// 			name: "Gitee",
-		// 			url: "https://gitee.com/matsuzakayuki/Mizuki",
-		// 			external: true,
-		// 			icon: "mdi:git",
-		// 		},
-		// 	],
-		// },
-		// {
-		// 	name: "My",
-		// 	url: "/content/",
-		// 	icon: "material-symbols:person",
-		// 	children: [
-		// 		LinkPreset.Anime,
-		// 		LinkPreset.Diary,
-		// 		{
-		// 			name: "Gallery",
-		// 			url: "/albums/",
-		// 			icon: "material-symbols:photo-library",
-		// 		},
-		// 	],
-		// },
+		{
+			name: "Links",
+			url: "/links/",
+			icon: "material-symbols:link",
+			children: [
+				{
+					name: "GitHub",
+					url: "https://github.com/matsuzaka-yuki/Mizuki",
+					external: true,
+					icon: "fa6-brands:github",
+				},
+				{
+					name: "Bilibili",
+					url: "https://space.bilibili.com/701864046",
+					external: true,
+					icon: "fa6-brands:bilibili",
+				},
+				{
+					name: "Gitee",
+					url: "https://gitee.com/matsuzakayuki/Mizuki",
+					external: true,
+					icon: "mdi:git",
+				},
+			],
+		},
+		{
+			name: "My",
+			url: "/content/",
+			icon: "material-symbols:person",
+			children: [
+				LinkPreset.Anime,
+				LinkPreset.Diary,
+				{
+					name: "Gallery",
+					url: "/albums/",
+					icon: "material-symbols:photo-library",
+				},
+			],
+		},
 		{
 			name: "About",
 			url: "/content/",
 			icon: "material-symbols:info",
-			// children: [LinkPreset.About, LinkPreset.Friends],
+			children: [LinkPreset.About, LinkPreset.Friends],
 		},
-		// {
-		// 	name: "Others",
-		// 	url: "#",
-		// 	icon: "material-symbols:more-horiz",
-		// 	children: [
-		// 		{
-		// 			name: "Projects",
-		// 			url: "/projects/",
-		// 			icon: "material-symbols:work",
-		// 		},
-		// 		{
-		// 			name: "Skills",
-		// 			url: "/skills/",
-		// 			icon: "material-symbols:psychology",
-		// 		},
-		// 		{
-		// 			name: "Timeline",
-		// 			url: "/timeline/",
-		// 			icon: "material-symbols:timeline",
-		// 		},
-		// 	],
-		// },
+		{
+			name: "Others",
+			url: "#",
+			icon: "material-symbols:more-horiz",
+			children: [
+				{
+					name: "Projects",
+					url: "/projects/",
+					icon: "material-symbols:work",
+				},
+				{
+					name: "Skills",
+					url: "/skills/",
+					icon: "material-symbols:psychology",
+				},
+				{
+					name: "Timeline",
+					url: "/timeline/",
+					icon: "material-symbols:timeline",
+				},
+			],
+		},
 	],
 };
 
 export const profileConfig: ProfileConfig = {
-	avatar: "assets/images/avatar.JPG", // 相对于 /src 目录。如果以 '/' 开头，则相对于 /public 目录
-	name: "Xayah Hina",
-	bio: "Graphics & VOCALOID",
 	avatar: "assets/images/avatar.png", // 相对于 /src 目录。如果以 '/' 开头，则相对于 /public 目录
 	name: "Mizuki",
 	bio: "The world is big, you have to go and see",
 	links: [
 		{
+			name: "Bilibli",
+			icon: "fa6-brands:bilibili",
+			url: "https://space.bilibili.com/701864046",
+		},
+		{
+			name: "Gitee",
+			icon: "mdi:git",
+			url: "https://gitee.com/matsuzakayuki",
+		},
+		{
 			name: "GitHub",
 			icon: "fa6-brands:github",
-			url: "https://github.com/Xayah-Hina",
 			url: "https://github.com/matsuzaka-yuki",
 		},
 		{
@@ -270,11 +274,10 @@ export const profileConfig: ProfileConfig = {
 			url: "https://discord.gg/MqW6TcQtVM",
 		},
 	],
-
 };
 
 export const licenseConfig: LicenseConfig = {
-	enable: false,
+	enable: true,
 	name: "CC BY-NC-SA 4.0",
 	url: "https://creativecommons.org/licenses/by-nc-sa/4.0/",
 };
@@ -296,7 +299,7 @@ export const commentConfig: CommentConfig = {
 export const announcementConfig: AnnouncementConfig = {
 	title: "Announcement", // 公告标题
 	content: "Welcome to my blog! This is a sample announcement.", // 公告内容
-	closable: false, // 允许用户关闭公告
+	closable: true, // 允许用户关闭公告
 	link: {
 		enable: true, // 启用链接
 		text: "Learn More", // 链接文本
@@ -306,7 +309,7 @@ export const announcementConfig: AnnouncementConfig = {
 };
 
 export const musicPlayerConfig: MusicPlayerConfig = {
-	enable: false, // 启用音乐播放器功能
+	enable: true, // 启用音乐播放器功能
 };
 
 export const footerConfig: FooterConfig = {
@@ -324,7 +327,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 	enable: true,
 
 	// 侧边栏位置：左侧或右侧
-	position: "right",
+	position: "left",
 
 	// 侧边栏组件配置列表
 	components: [
@@ -381,13 +384,13 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 是否启用该组件
 			enable: true,
 			// 组件显示顺序
-			order: 4,
+			order: 5,
 			// 组件位置："sticky" 表示粘性定位
 			position: "sticky",
 			// CSS 类名
 			class: "onload-animation",
 			// 动画延迟时间
-			animationDelay: 200,
+			animationDelay: 250,
 			// 响应式配置
 			responsive: {
 				// 折叠阈值：当标签数量超过20个时自动折叠
@@ -454,7 +457,7 @@ export const sakuraConfig: SakuraConfig = {
 
 // Pio 看板娘配置
 export const pioConfig: import("./types/config").PioConfig = {
-	enable: false, // 启用看板娘
+	enable: true, // 启用看板娘
 	models: ["/pio/models/pio/model.json"], // 默认模型路径
 	position: "left", // 默认位置在右侧
 	width: 280, // 默认宽度
@@ -488,9 +491,10 @@ export const widgetConfigs = {
 } as const;
 
 export const umamiConfig = {
-  enabled: false, // 是否显示Umami统计
-  shareURL: "https://us.umami.is/api/share/ABCD1234", //你的分享API,支持自建服务
-  scripts: `
+	enabled: false, // 是否显示Umami统计
+	apiKey: "api_XXXXXXXXXX", // 你的API密钥
+	baseUrl: "https://api.umami.is", // Umami Cloud API地址
+	scripts: `
 <script defer src="XXXX.XXX" data-website-id="ABCD1234"></script>
-  `.trim() //上面填你要插入的Script,不用再去Layout中插入
+  `.trim(), // 上面填你要插入的Script,不用再去Layout中插入
 } as const;

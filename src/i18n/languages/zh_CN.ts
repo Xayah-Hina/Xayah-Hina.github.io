@@ -58,6 +58,9 @@ export const zh_CN: Translation = {
 	[Key.animeStatusPlanned]: "计划中",
 	[Key.animeYear]: "年份",
 	[Key.animeStudio]: "制作",
+	[Key.animeEmpty]: "暂无追番数据",
+	[Key.animeEmptyBangumi]: "请检查 Bangumi 配置或网络连接",
+	[Key.animeEmptyLocal]: "请在 src/data/anime.ts 文件中添加番剧信息",
 
 	// 短文页面
 	[Key.diarySubtitle]: "随时随地，分享生活",
@@ -81,7 +84,7 @@ export const zh_CN: Translation = {
 	// 相册页面
 	[Key.albums]: "相册",
 	[Key.albumsSubtitle]: "记录生活中的美好瞬间",
-	[Key.albumsEmpty]: "暂无相册",
+	[Key.albumsEmpty]: "暂无内容",
 	[Key.albumsEmptyDesc]: "还没有创建任何相册，快去添加一些美好的回忆吧！",
 	[Key.albumsBackToList]: "返回相册",
 	[Key.albumsPhotoCount]: "张照片",
@@ -130,6 +133,25 @@ export const zh_CN: Translation = {
 	[Key.rssHowToUse]: "推荐使用 Feedly、Inoreader 或其他 RSS 阅读器来订阅本站。",
 	[Key.rssCopied]: "RSS 链接已复制到剪贴板！",
 	[Key.rssCopyFailed]: "复制失败，请手动复制链接",
+
+	//Atom 页面
+	[Key.atom]: "Atom 订阅",
+	[Key.atomDescription]: "订阅获取最新更新",
+	[Key.atomSubtitle]: "通过 Atom 订阅，第一时间获取最新文章和动态",
+	[Key.atomLink]: "Atom 链接",
+	[Key.atomCopyToReader]: "复制链接到你的 Atom 阅读器",
+	[Key.atomCopyLink]: "复制链接",
+	[Key.atomLatestPosts]: "最新文章",
+	[Key.atomWhatIsAtom]: "什么是 Atom？",
+	[Key.atomWhatIsAtomDescription]:
+		"Atom联合格式（Atom Syndication Format）是一个基于XML的标准，用于描述订阅源及其信息项。通过 Atom，你可以：",
+	[Key.atomBenefit1]: "及时获取网站最新内容，无需手动访问",
+	[Key.atomBenefit2]: "在一个地方管理多个网站的订阅",
+	[Key.atomBenefit3]: "避免错过重要更新和文章",
+	[Key.atomBenefit4]: "享受无广告的纯净阅读体验",
+	[Key.atomHowToUse]: "推荐使用 Feedly、Inoreader 或其他 Atom 阅读器来订阅本站。",
+	[Key.atomCopied]: "Atom 链接已复制到剪贴板！",
+	[Key.atomCopyFailed]: "复制失败，请手动复制链接",
 
 	// 技能展示页面
 	[Key.skills]: "技能展示",
@@ -203,4 +225,14 @@ export const zh_CN: Translation = {
 	[Key.syntaxHighlightFailed]: "语法高亮失败:",
 	[Key.autoSyntaxHighlightFailed]: "自动语法高亮也失败:",
 	[Key.decryptionError]: "解密过程中发生错误:",
+
+	//最后编辑时间卡片
+	[Key.lastModifiedPrefix]: "距离上次编辑: ",
+	[Key.lastModifiedOutdated]: "部分信息可能已经过时",
+	[Key.year]: "年",
+	[Key.month]: "月",
+	[Key.day]: "天",
+	[Key.hour]: "小时",
+	[Key.minute]: "分",
+	[Key.second]: "秒",
 };

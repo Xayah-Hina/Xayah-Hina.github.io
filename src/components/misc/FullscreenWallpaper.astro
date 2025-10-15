@@ -42,10 +42,33 @@ const getImageSources = async () => {
 		}
 	}
 
-	const { desktop, mobile } = srcConfig;
+	const toArray = (src: string | string[] | undefined): string[] => {
+		if (Array.isArray(src)) return src;
+		if (typeof src === "string") return [src];
+		return [];
+	};
+	if (
+		typeof srcConfig === "object" &&
+		srcConfig !== null &&
+		!Array.isArray(srcConfig) &&
+		("desktop" in srcConfig || "mobile" in srcConfig)
+	) {
+		const srcObj = srcConfig as {
+			desktop?: string | string[];
+			mobile?: string | string[]
+		};
+		const desktop = toArray(srcObj.desktop);
+		const mobile = toArray(srcObj.mobile);
+		return {
+			desktop: desktop.length > 0 ? desktop : mobile,
+			mobile: mobile.length > 0 ? mobile : desktop,
+		};
+	}
+	// 如果是字符串或字符串数组，同时用于桌面端和移动端
+	const allImages = toArray(srcConfig as string | string[]);
 	return {
-		desktop: Array.isArray(desktop) ? desktop : desktop ? [desktop] : [],
-		mobile: Array.isArray(mobile) ? mobile : mobile ? [mobile] : [],
+		desktop: allImages,
+		mobile: allImages,
 	};
 };
 

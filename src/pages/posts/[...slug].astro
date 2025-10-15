@@ -10,13 +10,15 @@ import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getSortedPosts } from "@utils/content-utils";
 import { getDir, getPostUrlBySlug } from "@utils/url-utils";
 import { Icon } from "astro-icon/components";
+import bcryptjs from "bcryptjs";
+import CryptoJS from "crypto-js";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import { licenseConfig } from "src/config";
 import ImageWrapper from "../../components/misc/ImageWrapper.astro";
 import PostMetadata from "../../components/PostMeta.astro";
 import { profileConfig, siteConfig } from "../../config";
 import { formatDateToYYYYMMDD } from "../../utils/date-utils";
-import CryptoJS from "crypto-js";
-import bcryptjs from "bcryptjs";
 export async function getStaticPaths() {
 	const blogEntries = await getSortedPosts();
 	return blogEntries.map((entry) => ({
@@ -50,6 +52,11 @@ if (isEncrypted) {
 	const saltRounds = 10;
 	passwordHash = bcryptjs.hashSync(entry.data.password, saltRounds);
 }
+
+dayjs.extend(utc);
+const lastModified = dayjs(entry.data.updated || entry.data.published)
+	.utc()
+	.format("YYYY-MM-DDTHH:mm:ss");
 
 const jsonLd = {
 	"@context": "https://schema.org",
@@ -160,7 +167,7 @@ const jsonLd = {
                 />
                 {
                     !entry.data.image && (
-                        <div class="border-[var(--line-divider)] border-dashed border-b-[1px] mb-5" />
+                        <div class="mt-4 border-[var(--line-divider)] border-dashed border-b-[1px] mb-5" />
                     )
                 }
             </div>
@@ -169,12 +176,15 @@ const jsonLd = {
 
             {
                 entry.data.image && (
-                    <ImageWrapper
-                        id="post-cover"
-                        src={entry.data.image}
-                        basePath={path.join("content/posts/", getDir(entry.id))}
-                        class="mb-8 rounded-xl banner-container onload-animation"
-                    />
+                    <>
+                        <div class="mt-4" />
+                        <ImageWrapper
+                            id="post-cover"
+                            src={entry.data.image}
+                            basePath={path.join("content/posts/", getDir(entry.id))}
+                            class="mb-8 rounded-xl banner-container onload-animation"
+                        />
+                    </>
                 )
             }
 
@@ -209,6 +219,95 @@ const jsonLd = {
 
     <!-- 评论 -->
     <Comment post={entry} />
+
+    {siteConfig.showLastModified && (
+        <>
+            <div 
+                id="last-modified" 
+                data-last-modified={lastModified}
+                data-prefix={i18n(I18nKey.lastModifiedPrefix)}
+                data-year={i18n(I18nKey.year)}
+                data-month={i18n(I18nKey.month)}
+                data-day={i18n(I18nKey.day)}
+                data-hour={i18n(I18nKey.hour)}
+                data-minute={i18n(I18nKey.minute)}
+                data-second={i18n(I18nKey.second)}
+                style="display: none;"
+            ></div>
+
+            <div class="card-base p-6 mb-4">
+                <script is:inline>
+                    function runtime() {
+                        const lastModifiedElement = document.getElementById('last-modified');
+                        const startDate = new Date(lastModifiedElement.dataset.lastModified);
+                        const currentDate = new Date();
+                        const diff = currentDate - startDate;
+
+                        const seconds = Math.floor(diff / 1000);
+                        const days = Math.floor(seconds / 86400);
+                        const hours = Math.floor((seconds % 86400) / 3600);
+                        const minutes = Math.floor((seconds % 3600) / 60);
+                        const secs = seconds % 60;
+
+                        const years = Math.floor(days / 365);
+                        const months = Math.floor((days % 365) / 30);
+                        const remainingDays = days % 30;
+
+                        const prefix = lastModifiedElement.dataset.prefix;
+                        const yearKey = lastModifiedElement.dataset.year;
+                        const monthKey = lastModifiedElement.dataset.month;
+                        const dayKey = lastModifiedElement.dataset.day;
+                        const hourKey = lastModifiedElement.dataset.hour;
+                        const minuteKey = lastModifiedElement.dataset.minute;
+                        const secondKey = lastModifiedElement.dataset.second;
+
+                        let runtimeString = prefix + ' ';
+                        
+                        if (years > 0) {
+                            runtimeString += `${years} ${yearKey} `;
+                        }
+                        if (months > 0) {
+                            runtimeString += `${months} ${monthKey} `;
+                        }
+                        if (remainingDays > 0) {
+                            runtimeString += `${remainingDays} ${dayKey} `;
+                        }
+                        runtimeString += `${hours} ${hourKey} `;
+                        if (minutes < 10) {
+                            runtimeString += `0${minutes} ${minuteKey} `;
+                        } else {
+                            runtimeString += `${minutes} ${minuteKey} `;
+                        }
+                        if (secs < 10) {
+                            runtimeString += `0${secs} ${secondKey}`;
+                        } else {
+                            runtimeString += `${secs} ${secondKey}`;
+                        }
+
+                        document.getElementById("modifiedtime").innerHTML = runtimeString;
+                    }
+                    setInterval(runtime, 1000);
+                </script>
+                <div class="card-base p-1 mb-0.1">
+                    <div class="flex items-center gap-2">
+                        <div class="transition h-9 w-9 rounded-lg overflow-hidden relative flex items-center justify-center mr-0">
+                            <Icon
+                                name="material-symbols:history-rounded"
+                                class="text-4xl text-[var(--primary)] transition-transform group-hover:translate-x-0.5 bg-[var(--enter-btn-bg)] p-2 rounded-md"
+                            />
+                        </div>
+                       
+                        <div class="flex flex-col gap-0.1">
+                            <div id="modifiedtime" class="text-[1.0rem] leading-tight text-black/75 dark:text-white/75"></div>
+                            <p class="text-[0.8rem] leading-tight text-black/75 dark:text-white/75">
+                                {i18n(I18nKey.lastModifiedOutdated)}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </>
+    )}
 
     <div
         class="flex flex-col md:flex-row justify-between mb-4 gap-4 overflow-hidden w-full"

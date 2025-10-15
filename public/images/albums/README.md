@@ -6,7 +6,7 @@
 
 ```
 public/images/albums/
-├── travel-2024/                 # 相册ID对应的文件夹
+├── travel-2024/                # 相册ID对应的文件夹
 │   ├── cover.webp              # 相册封面图
 │   ├── sakura-01.webp          # 原图
 │   ├── temple-01.webp          # 原图
@@ -40,7 +40,7 @@ public/images/albums/
 
 ## 配置说明
 
-1. 在 `src/data/albums.ts` 中配置相册信息
+1. 在相册ID对应的文件夹中的`info.json`中配置相册信息
 2. 确保图片路径与配置文件中的路径一致
 3. 如果不提供缩略图，系统会使用原图作为缩略图
 
@@ -122,7 +122,7 @@ public/images/albums/
 
 ## 示例配置
 
-```typescript
+```json
 {
   id: "your-album-id",
   title: "相册标题",
@@ -137,3 +137,4 @@ public/images/albums/
     }
   ]
 }
+```

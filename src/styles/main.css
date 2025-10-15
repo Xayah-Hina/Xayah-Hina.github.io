@@ -5,8 +5,7 @@
 /* 导入动画样式 */
 @import './transition.css';
 @import './animation-enhancements.css';
-/* 导入加密内容样式 */
-@import './encrypted-content.css';
+/* 加密内容样式已移除，现在直接使用非加密文章的样式 */
 
 /* 导入 ZenMaruGothic-Medium 字体 */
 @font-face {
@@ -16,13 +15,7 @@
   font-display: swap;
 }
 
-/* 导入 GenEiGothic 字体 */
-@font-face {
-	font-family: "GenEiGothic";
-	src: url("/assets/font/GenEiGothicP.ttf") format("truetype");
-	font-weight: normal;
-	font-display: swap;
-}
+
 
 /* 导入 Hanalei 字体 */
 @font-face {
@@ -225,9 +218,9 @@ html {
         @apply opacity-0 pointer-events-none
     }
 
-    #toc-inner-wrapper {
+    /* #toc-inner-wrapper {
         mask-image: linear-gradient(to bottom, transparent 0%, black 2rem, black calc(100% - 2rem), transparent 100%);
-    }
+    } */
 
     .hide-scrollbar {
         scrollbar-width: none;

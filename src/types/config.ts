@@ -1,8 +1,9 @@
-import type { AUTO_MODE, DARK_MODE, LIGHT_MODE } from "../constants/constants";
+import type { DARK_MODE, LIGHT_MODE } from "../constants/constants";
 
 export type SiteConfig = {
 	title: string;
 	subtitle: string;
+	keywords?: string[]; // 站点关键词，用于生成 <meta name="keywords">
 
 	lang:
 		| "en"
@@ -31,15 +32,18 @@ export type SiteConfig = {
 		};
 	};
 
-	translate?: {
-		enable: boolean; // 是否启用翻译功能
-		service?: string; // 翻译服务类型，如 'client.edge'
-		defaultLanguage?: string; // 默认语言
-		showSelectTag?: boolean; // 是否显示语言选择下拉框
-		autoDiscriminate?: boolean; // 是否自动识别用户语言
-		ignoreClasses?: string[]; // 忽略翻译的CSS类名
-		ignoreTags?: string[]; // 忽略翻译的HTML标签
+
+
+	// 添加bangumi配置
+	bangumi?: {
+		userId?: string; // Bangumi用户ID
 	};
+
+	// 添加番剧页面配置
+	anime?: {
+		mode?: "bangumi" | "local"; // 番剧页面模式
+	};
+
 	banner: {
 		enable: boolean;
 		src:
@@ -84,6 +88,7 @@ export type SiteConfig = {
 	};
 	generateOgImages: boolean;
 	favicon: Favicon[];
+	showLastModified: boolean; // 控制“上次编辑”卡片显示的开关
 };
 
 export type Favicon = {
@@ -126,7 +131,6 @@ export type ProfileConfig = {
 		url: string;
 		icon: string;
 	}[];
-
 };
 
 export type LicenseConfig = {
@@ -149,8 +153,7 @@ type TwikooConfig = {
 
 export type LIGHT_DARK_MODE =
 	| typeof LIGHT_MODE
-	| typeof DARK_MODE
-	| typeof AUTO_MODE;
+	| typeof DARK_MODE;
 
 export type BlogPostData = {
 	body: string;
@@ -269,10 +272,13 @@ export type SakuraConfig = {
 
 export type FullscreenWallpaperConfig = {
 	enable: boolean; // 是否启用全屏壁纸功能
-	src: {
-		desktop?: string | string[]; // 桌面端壁纸图片
-		mobile?: string | string[]; // 移动端壁纸图片
-	};
+	src:
+		| string
+		| string[]
+		| {
+				desktop?: string | string[];
+				mobile?: string | string[];
+		  }; // 支持单个图片、图片数组或分别设置桌面端和移动端图片
 	position?: "top" | "center" | "bottom"; // 壁纸位置，等同于 object-position
 	carousel?: {
 		enable: boolean; // 是否启用轮播
