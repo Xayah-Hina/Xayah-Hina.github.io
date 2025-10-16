@@ -6,10 +6,12 @@ class Sakura {
 	y: number;
 	s: number;
 	r: number;
+	a: number;
 	fn: {
 		x: (x: number, y: number) => number;
 		y: (x: number, y: number) => number;
 		r: (r: number) => number;
+		a: (a: number) => number;
 	};
 	idx: number;
 	img: HTMLImageElement;
@@ -21,10 +23,12 @@ class Sakura {
 		y: number,
 		s: number,
 		r: number,
+		a: number,
 		fn: {
 			x: (x: number, y: number) => number;
 			y: (x: number, y: number) => number;
 			r: (r: number) => number;
+			a: (a: number) => number;
 		},
 		idx: number,
 		img: HTMLImageElement,
@@ -35,6 +39,7 @@ class Sakura {
 		this.y = y;
 		this.s = s;
 		this.r = r;
+		this.a = a;
 		this.fn = fn;
 		this.idx = idx;
 		this.img = img;
@@ -46,6 +51,7 @@ class Sakura {
 		cxt.save();
 		cxt.translate(this.x, this.y);
 		cxt.rotate(this.r);
+		cxt.globalAlpha = this.a;
 		cxt.drawImage(this.img, 0, 0, 40 * this.s, 40 * this.s);
 		cxt.restore();
 	}
@@ -54,13 +60,15 @@ class Sakura {
 		this.x = this.fn.x(this.x, this.y);
 		this.y = this.fn.y(this.y, this.y);
 		this.r = this.fn.r(this.r);
+		this.a = this.fn.a(this.a);
 
-		// 如果樱花越界，重新调整位置
+		// 如果樱花越界或完全透明，重新调整位置
 		if (
 			this.x > window.innerWidth ||
 			this.x < 0 ||
 			this.y > window.innerHeight ||
-			this.y < 0
+			this.y < 0 ||
+			this.a <= 0
 		) {
 			// 如果樱花不做限制
 			if (this.limitArray[this.idx] === -1) {
@@ -83,11 +91,13 @@ class Sakura {
 			this.y = 0;
 			this.s = getRandom("s", this.config);
 			this.r = getRandom("r", this.config);
+			this.a = getRandom('a', this.config);
 		} else {
 			this.x = window.innerWidth;
 			this.y = getRandom("y", this.config);
 			this.s = getRandom("s", this.config);
 			this.r = getRandom("r", this.config);
+			this.a = getRandom('a', this.config);
 		}
 	}
 }
@@ -144,6 +154,9 @@ function getRandom(option: string, config: SakuraConfig): any {
 		case "r":
 			ret = Math.random() * 6;
 			break;
+		case 'a':
+			ret = config.opacity.min + Math.random() * (config.opacity.max - config.opacity.min);
+			break;
 		case "fnx":
 			random =
 				config.speed.horizontal.min +
@@ -164,6 +177,11 @@ function getRandom(option: string, config: SakuraConfig): any {
 		case "fnr":
 			ret = function (r: number) {
 				return r + config.speed.rotation;
+			};
+			break;
+		case 'fna':
+			ret = function (alpha: number) {
+				return alpha - config.speed.fadeSpeed * 0.01;
 			};
 			break;
 	}
@@ -238,21 +256,25 @@ export class SakuraManager {
 		for (let i = 0; i < this.config.sakuraNum; i++) {
 			const randomX = getRandom("x", this.config);
 			const randomY = getRandom("y", this.config);
-			const randomR = getRandom("r", this.config);
 			const randomS = getRandom("s", this.config);
+			const randomR = getRandom("r", this.config);
+			const randomA = getRandom("a", this.config);
 			const randomFnx = getRandom("fnx", this.config);
 			const randomFny = getRandom("fny", this.config);
 			const randomFnR = getRandom("fnr", this.config);
+			const randomFnA = getRandom("fna", this.config);
 
 			const sakura = new Sakura(
 				randomX,
 				randomY,
 				randomS,
 				randomR,
+				randomA,
 				{
 					x: randomFnx,
 					y: randomFny,
 					r: randomFnR,
+					a: randomFnA,
 				},
 				i,
 				this.img,

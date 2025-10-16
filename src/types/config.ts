@@ -256,6 +256,10 @@ export type SakuraConfig = {
 		min: number; // 樱花最小尺寸倍数
 		max: number; // 樱花最大尺寸倍数
 	};
+	opacity: {
+		min: number; // 樱花最小不透明度
+		max: number; // 樱花最大不透明度
+	};
 	speed: {
 		horizontal: {
 			min: number; // 水平移动速度最小值
@@ -266,6 +270,7 @@ export type SakuraConfig = {
 			max: number; // 垂直移动速度最大值
 		};
 		rotation: number; // 旋转速度
+		fadeSpeed: number; // 消失速度
 	};
 	zIndex: number; // 层级，确保樱花在合适的层级显示
 };
