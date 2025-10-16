@@ -366,7 +366,7 @@ html {
   --_spoiler-mask: var(--primary);
   @apply hover:bg-transparent px-1 py-0.5 overflow-hidden rounded-md transition-all duration-150;
   background-color: var(--_spoiler-mask);
-
+  box-decoration-break: clone;
   &:not(:hover) {
     color: var(--_spoiler-mask);
     * {
