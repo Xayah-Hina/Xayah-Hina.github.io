@@ -392,7 +392,7 @@ const transparentClass = shouldEnableTransparency
 </div>
 
 <!-- The things that should be under the banner, only the TOC for now -->
-<div class="absolute w-full z-0 hidden xl:block">
+<div class="absolute w-full z-0 hidden 2xl:block">
     <div class="relative max-w-[var(--page-width)] mx-auto">
         <!-- TOC component -->
         {siteConfig.toc.enable && <div id="toc-wrapper" class:list={["hidden lg:block transition absolute top-0 w-[var(--toc-width)] items-center",
@@ -747,8 +747,10 @@ const transparentClass = shouldEnableTransparency
         transition: top 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.1s;
         /* 硬件加速优化 */
         will-change: top;
+        /* 禁用transform以保证back to top 按钮可以显示
         transform: translateZ(0);
         -webkit-transform: translateZ(0);
+        */
     }
     
     .absolute.w-full.z-30.mobile-main-no-banner {
