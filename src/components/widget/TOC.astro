@@ -316,3 +316,17 @@ if (!customElements.get("table-of-contents")) {
     customElements.define("table-of-contents", TableOfContents);
 }
 </script>
+
+<style>
+  table-of-contents#toc {
+      max-height: 100%;
+      overflow: auto;
+      position: relative;
+      scroll-behavior: smooth;
+      display: block;
+  }
+
+  table-of-contents#toc::-webkit-scrollbar {
+      display: none;
+  }
+</style>
