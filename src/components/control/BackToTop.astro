@@ -52,6 +52,11 @@ import {Icon} from "astro-icon/components";
               0 0 0 1px var(--btn-regular-bg) ,
               0 0 1em var(--btn-regular-bg) ;
 
+  // 手机端隐藏返回顶部按钮
+  @media (max-width: 768px)
+    .back-to-top-wrapper
+      display: none
+
 </style>
 
 <script is:raw is:inline>
