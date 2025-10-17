@@ -7,7 +7,6 @@ image: ''
 tags: [Demo, Example, Markdown, mizuki]
 category: 'Examples'
 draft: false 
-series: "Mizuki"
 ---
 
 ## GitHub Repository Cards
