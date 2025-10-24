@@ -63,6 +63,7 @@ export default defineConfig({
 				"fa6-regular": ["*"],
 				"fa6-solid": ["*"],
 				mdi: ["*"],
+				"simple-icons": ["*"],
 			},
 		}),
 		expressiveCode({

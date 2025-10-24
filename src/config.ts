@@ -304,6 +304,11 @@ export const profileConfig: ProfileConfig = {
 			url: "https://github.com/matsuzaka-yuki",
 		},
 		{
+			name: "Codeberg",
+			icon: "simple-icons:codeberg",
+			url: "https://codeberg.org",
+		},
+		{
 			name: "Discord",
 			icon: "fa6-brands:discord",
 			url: "https://discord.gg/MqW6TcQtVM",
