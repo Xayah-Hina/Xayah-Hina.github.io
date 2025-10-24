@@ -1,17 +1,23 @@
 ---
-import MainGridLayout from "../layouts/MainGridLayout.astro";
-import {
-	timelineData,
-	getTimelineStats,
-	getTimelineByType,
-	getFeaturedTimeline,
-	getCurrentItems,
-	getTotalWorkExperience,
-} from "../data/timeline";
-import { i18n } from "../i18n/translation";
-import I18nKey from "../i18n/i18nKey";
-import IconifyLoader from "../components/misc/IconifyLoader.astro";
+import { siteConfig } from "../config";
 import Icon from "../components/misc/Icon.astro";
+import IconifyLoader from "../components/misc/IconifyLoader.astro";
+import {
+	getCurrentItems,
+	getFeaturedTimeline,
+	getTimelineByType,
+	getTimelineStats,
+	getTotalWorkExperience,
+	timelineData,
+} from "../data/timeline";
+import I18nKey from "../i18n/i18nKey";
+import { i18n } from "../i18n/translation";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+// 检查时间线页面是否启用
+if (!siteConfig.featurePages.timeline) {
+	return Astro.redirect("/404/");
+}
 
 const { lang } = Astro.props;
 
@@ -45,6 +51,22 @@ const getTypeIcon = (type: string) => {
 	}
 };
 
+// 类型颜色映射
+const getTypeColor = (type: string) => {
+	switch (type) {
+		case "education":
+			return "bg-blue-500";
+		case "work":
+			return "bg-green-500";
+		case "project":
+			return "bg-purple-500";
+		case "achievement":
+			return "bg-orange-500";
+		default:
+			return "bg-gray-500";
+	}
+};
+
 // 格式化日期
 const formatDate = (dateString: string) => {
 	const date = new Date(dateString);
@@ -60,15 +82,13 @@ const getDuration = (startDate: string, endDate?: string) => {
 
 	if (diffMonths < 12) {
 		return `${diffMonths} ${i18n(I18nKey.timelineMonths)}`;
-	} else {
-		const years = Math.floor(diffMonths / 12);
-		const months = diffMonths % 12;
-		if (months === 0) {
-			return `${years} ${i18n(I18nKey.timelineYears)}`;
-		} else {
-			return `${years} ${i18n(I18nKey.timelineYears)} ${months} ${i18n(I18nKey.timelineMonths)}`;
-		}
 	}
+	const years = Math.floor(diffMonths / 12);
+	const months = diffMonths % 12;
+	if (months === 0) {
+		return `${years} ${i18n(I18nKey.timelineYears)}`;
+	}
+	return `${years} ${i18n(I18nKey.timelineYears)} ${months} ${i18n(I18nKey.timelineMonths)}`;
 };
 
 const title = i18n(I18nKey.timeline);
@@ -79,33 +99,35 @@ const subtitle = i18n(I18nKey.timelineSubtitle);
   <!-- 图标加载器，预加载所有时间线图标 -->
   <IconifyLoader preloadIcons={allIcons} />
   <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
-    <div class="card-base z-10 px-9 py-6 relative w-full">
+    <div class="card-base z-10 px-6 py-8 md:px-9 md:py-10 relative w-full">
       <!-- 页面标题 -->
-      <div class="flex flex-col items-start justify-center mb-8">
-        <h1 class="text-4xl font-bold text-black/90 dark:text-white/90 mb-2">
+      <div class="flex flex-col items-start justify-center mb-10">
+        <h1 class="text-3xl md:text-4xl font-bold text-black/90 dark:text-white/90 mb-3 relative
+                  before:w-1 before:h-8 before:rounded-md before:bg-[var(--primary)]
+                  before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-4 before:hidden md:before:block">
           {i18n(I18nKey.timeline)}
         </h1>
-        <p class="text-lg text-black/60 dark:text-white/60">
+        <p class="text-base md:text-lg text-black/60 dark:text-white/60">
           {i18n(I18nKey.timelineSubtitle)}
         </p>
       </div>
 
-      <!-- 统计信息 -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg p-4">
-          <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.total}</div>
+      <!-- 统计信息卡片 -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-5 border border-blue-100 dark:border-blue-900/30 hover:shadow-lg transition-shadow duration-300">
+          <div class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-1">{stats.total}</div>
           <div class="text-sm text-blue-600/70 dark:text-blue-400/70">{i18n(I18nKey.timelineTotal)}</div>
         </div>
-        <div class="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg p-4">
-          <div class="text-2xl font-bold text-green-600 dark:text-green-400">{stats.byType.work}</div>
+        <div class="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-5 border border-green-100 dark:border-green-900/30 hover:shadow-lg transition-shadow duration-300">
+          <div class="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">{stats.byType.work}</div>
           <div class="text-sm text-green-600/70 dark:text-green-400/70">{i18n(I18nKey.timelineWork)}</div>
         </div>
-        <div class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg p-4">
-          <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.byType.project}</div>
+        <div class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-xl p-5 border border-purple-100 dark:border-purple-900/30 hover:shadow-lg transition-shadow duration-300">
+          <div class="text-2xl font-bold text-purple-600 dark:text-purple-400 mb-1">{stats.byType.project}</div>
           <div class="text-sm text-purple-600/70 dark:text-purple-400/70">{i18n(I18nKey.timelineProjects)}</div>
         </div>
-        <div class="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-lg p-4">
-          <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">
+        <div class="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-xl p-5 border border-orange-100 dark:border-orange-900/30 hover:shadow-lg transition-shadow duration-300">
+          <div class="text-2xl font-bold text-orange-600 dark:text-orange-400 mb-1">
             {workExperience.years}+
           </div>
           <div class="text-sm text-orange-600/70 dark:text-orange-400/70">{i18n(I18nKey.timelineExperience)}</div>
@@ -114,15 +136,16 @@ const subtitle = i18n(I18nKey.timelineSubtitle);
 
       <!-- 当前进行中的项目 -->
       {currentItems.length > 0 && (
-        <div class="mb-8">
-          <h2 class="text-2xl font-bold text-black/90 dark:text-white/90 mb-4">
+        <div class="mb-12">
+          <h2 class="text-2xl font-bold text-black/90 dark:text-white/90 mb-6 flex items-center">
+            <span class="w-3 h-3 rounded-full bg-green-500 mr-3"></span>
             {i18n(I18nKey.timelineCurrent)}
           </h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 gap-6">
             {currentItems.map((item) => (
-              <div class="bg-white dark:bg-gray-800 rounded-lg border border-black/10 dark:border-white/10 p-6 hover:shadow-lg transition-shadow duration-300">
-                <div class="flex items-start gap-4">
-                  <div class="w-12 h-12 rounded-lg flex items-center justify-center" style={`background-color: ${item.color || 'rgb(99 102 241)'}20`}>
+              <div class="bg-white dark:bg-transparent rounded-xl border border-black/10 dark:border-white/10 p-6 hover:shadow-lg transition-shadow duration-300">
+                <div class="flex flex-col md:flex-row md:items-start gap-5">
+                  <div class="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0" style={`background-color: ${item.color || 'rgb(99 102 241)'}20`}>
                     <Icon 
                       icon={item.icon || getTypeIcon(item.type)} 
                       class="text-2xl" 
@@ -132,48 +155,64 @@ const subtitle = i18n(I18nKey.timelineSubtitle);
                     />
                   </div>
                   <div class="flex-1">
-                    <div class="flex items-start justify-between mb-2">
-                      <h3 class="text-xl font-semibold text-black/90 dark:text-white/90">
-                        {item.title}
-                      </h3>
-                      <span class="px-2 py-1 text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3">
+                      <div>
+                        <h3 class="text-xl font-semibold text-black/90 dark:text-white/90 mb-1">
+                          {item.title}
+                        </h3>
+                        {item.organization && (
+                          <div class="text-sm text-black/70 dark:text-white/70">
+                            {item.organization} {item.position && `• ${item.position}`}
+                          </div>
+                        )}
+                      </div>
+                      <span class="px-3 py-1.5 text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded-full self-start">
                         {i18n(I18nKey.timelineCurrent)}
                       </span>
                     </div>
-                    {item.organization && (
-                      <div class="text-sm text-black/70 dark:text-white/70 mb-1">
-                        {item.organization} {item.position && `• ${item.position}`}
-                      </div>
-                    )}
+                    
                     {item.location && (
-                      <div class="text-sm text-black/60 dark:text-white/60 mb-2">
-                        📍 {item.location}
+                      <div class="flex items-center text-sm text-black/60 dark:text-white/60 mb-3">
+                        <span class="mr-2">📍</span>
+                        <span>{item.location}</span>
                       </div>
                     )}
-                    <p class="text-black/60 dark:text-white/60 mb-3 text-sm">
+                    
+                    <p class="text-black/70 dark:text-white/70 mb-4">
                       {item.description}
                     </p>
-                    <div class="text-sm text-black/70 dark:text-white/70 mb-3">
-                      {formatDate(item.startDate)} - {i18n(I18nKey.timelinePresent)} ({getDuration(item.startDate)})
+                    
+                    <div class="flex flex-wrap items-center gap-4 mb-4">
+                      <div class="text-sm text-black/70 dark:text-white/70">
+                        <span class="font-medium">{i18n(I18nKey.timelineStartDate)}:</span> {formatDate(item.startDate)}
+                      </div>
+                      <div class="text-sm text-black/70 dark:text-white/70">
+                        <span class="font-medium">{i18n(I18nKey.timelineDuration)}:</span> {getDuration(item.startDate)}
+                      </div>
                     </div>
+                    
                     {item.skills && item.skills.length > 0 && (
-                      <div class="flex flex-wrap gap-1 mb-3">
+                      <div class="flex flex-wrap gap-2 mb-4">
                         {item.skills.map((skill) => (
-                          <span class="px-2 py-1 text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 rounded">
+                          <span class="px-3 py-1.5 text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-full">
                             {skill}
                           </span>
                         ))}
                       </div>
                     )}
+                    
                     {item.links && item.links.length > 0 && (
-                      <div class="flex gap-3">
+                      <div class="flex flex-wrap gap-4 pt-2">
                         {item.links.map((link) => (
                           <a 
                             href={link.url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium"
+                            class="text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium flex items-center gap-1"
                           >
+                            {link.type === 'certificate' && '🏆'}
+                            {link.type === 'project' && '🔗'}
+                            {link.type === 'website' && '🌐'}
                             {link.name}
                           </a>
                         ))}
@@ -188,192 +227,91 @@ const subtitle = i18n(I18nKey.timelineSubtitle);
       )}
 
       <!-- 时间线 -->
-      <div class="mb-8">
-        <h2 class="text-2xl font-bold text-black/90 dark:text-white/90 mb-6">
+      <div class="mb-12">
+        <h2 class="text-2xl font-bold text-black/90 dark:text-white/90 mb-8 flex items-center">
+          <span class="w-3 h-3 rounded-full bg-indigo-500 mr-3"></span>
           {i18n(I18nKey.timelineHistory)}
         </h2>
-        <div class="relative">
-          <!-- 时间线主轴 -->
-          <div class="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700"></div>
-          
-          <div class="space-y-8">
-            {allTimelineItems.map((item, index) => (
-              <div class="relative flex items-start gap-6">
-                <!-- 时间线节点 -->
-                <div class="relative z-10 w-12 h-12 rounded-full flex items-center justify-center" style={`background-color: ${item.color || 'rgb(99 102 241)'}`}>
-                  <Icon 
-                    icon={item.icon || getTypeIcon(item.type)} 
-                    class="text-xl text-white" 
-                    color="white"
-                    fallback={item.title.charAt(0)}
-                    loading="eager"
-                  />
-                </div>
-                
-                <!-- 内容卡片 -->
-                <div class="flex-1 bg-white dark:bg-gray-800 rounded-lg border border-black/10 dark:border-white/10 p-6 hover:shadow-lg transition-shadow duration-300">
-                  <div class="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 class="text-xl font-semibold text-black/90 dark:text-white/90 mb-1">
-                        {item.title}
-                      </h3>
-                      {item.organization && (
-                        <div class="text-sm text-black/70 dark:text-white/70">
-                          {item.organization} {item.position && `• ${item.position}`}
+        
+        <!-- 横向时间线容器 -->
+        <div class="relative overflow-hidden rounded-xl bg-white dark:bg-transparent border border-black/10 dark:border-white/10 p-6 hover:shadow-lg transition-shadow duration-300">
+          <!-- 水平滚动区域 -->
+          <div class="flex overflow-x-auto pb-6 -mx-2 px-2 timeline-horizontal-scroll" id="timeline-scrollbar">
+            
+            <div class="flex space-x-8 min-w-max">
+              {allTimelineItems.map((item, index) => (
+                <div class="flex flex-col items-center flex-shrink-0 w-72" data-key={index}>
+                  {/* 时间线节点 */}
+                  <div class="relative z-10 w-16 h-16 rounded-xl flex items-center justify-center mb-6" style={`background-color: ${item.color || 'rgb(99 102 241)'}`}>
+                    <Icon 
+                      icon={item.icon || getTypeIcon(item.type)} 
+                      class="text-2xl text-white" 
+                      color="white"
+                      fallback={item.title.charAt(0)}
+                      loading="eager"
+                    />
+                    {/* 节点外圈装饰 */}
+                    <div class="absolute inset-0 rounded-xl border-2 border-white/30"></div>
+                  </div>
+                  
+                  {/* 时间点 */}
+                  <div class="text-xs text-black/50 dark:text-white/50 mb-2">
+                    {formatDate(item.startDate)}
+                  </div>
+                  
+                  {/* 内容卡片 */}
+                  <div class="flex-1 bg-white dark:bg-transparent rounded-xl border border-black/10 dark:border-white/10 p-5 w-full">
+                    <div class="flex flex-col gap-3">
+                      <div>
+                        <h3 class="text-lg font-semibold text-black/90 dark:text-white/90 line-clamp-2">
+                          {item.title}
+                        </h3>
+                        {item.organization && (
+                          <div class="text-xs text-black/70 dark:text-white/70 mt-1">
+                            {item.organization} {item.position && `• ${item.position}`}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <span class={`px-2 py-1 text-xs rounded-full self-start ${
+                        item.type === 'education' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                        item.type === 'work' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                        item.type === 'project' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+                        'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                      }`}>
+                        {i18n(item.type === 'education' ? I18nKey.timelineEducation :
+                              item.type === 'work' ? I18nKey.timelineWork :
+                              item.type === 'project' ? I18nKey.timelineProject :
+                              I18nKey.timelineAchievement)}
+                      </span>
+                      
+                      <p class="text-sm text-black/70 dark:text-white/70 line-clamp-3">
+                        {item.description}
+                      </p>
+                      
+                      <div class="flex items-center justify-between text-xs text-black/60 dark:text-white/60 mt-2">
+                        <div>
+                          {getDuration(item.startDate, item.endDate)}
                         </div>
-                      )}
-                    </div>
-                    <span class={`px-2 py-1 text-xs rounded-full ${
-                      item.type === 'education' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                      item.type === 'work' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                      item.type === 'project' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
-                      'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                    }`}>
-                      {i18n(item.type === 'education' ? I18nKey.timelineEducation :
-                            item.type === 'work' ? I18nKey.timelineWork :
-                            item.type === 'project' ? I18nKey.timelineProject :
-                            I18nKey.timelineAchievement)}
-                    </span>
-                  </div>
-                  
-                  <div class="flex items-center gap-4 mb-3 text-sm text-black/60 dark:text-white/60">
-                    <div>
-                      {formatDate(item.startDate)} - {item.endDate ? formatDate(item.endDate) : i18n(I18nKey.timelinePresent)}
-                    </div>
-                    <div>•</div>
-                    <div>{getDuration(item.startDate, item.endDate)}</div>
-                    {item.location && (
-                      <>
-                        <div>•</div>
-                        <div>📍 {item.location}</div>
-                      </>
-                    )}
-                  </div>
-                  
-                  <p class="text-black/70 dark:text-white/70 mb-4">
-                    {item.description}
-                  </p>
-                  
-                  {item.achievements && item.achievements.length > 0 && (
-                    <div class="mb-4">
-                      <h4 class="text-sm font-semibold text-black/80 dark:text-white/80 mb-2">
-                        {i18n(I18nKey.timelineAchievements)}
-                      </h4>
-                      <ul class="space-y-1">
-                        {item.achievements.map((achievement) => (
-                          <li class="text-sm text-black/70 dark:text-white/70 flex items-start gap-2">
-                            <span class="text-green-500 mt-1">•</span>
-                            <span>{achievement}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  
-                  {item.skills && item.skills.length > 0 && (
-                    <div class="mb-4">
-                      <div class="flex flex-wrap gap-1">
-                        {item.skills.map((skill) => (
-                          <span class="px-2 py-1 text-xs bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 rounded">
-                            {skill}
-                          </span>
-                        ))}
+                        {item.location && (
+                          <div class="flex items-center">
+                            <span class="mr-1">📍</span>
+                            <span class="truncate max-w-[80px]">{item.location}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )}
-                  
-                  {item.links && item.links.length > 0 && (
-                    <div class="flex gap-4">
-                      {item.links.map((link) => (
-                        <a 
-                          href={link.url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          class="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium flex items-center gap-1"
-                        >
-                          {link.type === 'certificate' && '🏆'}
-                          {link.type === 'project' && '🔗'}
-                          {link.type === 'website' && '🌐'}
-                          {link.name}
-                        </a>
-                      ))}
-                    </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+          
+          {/* 滚动指示器 */}
+          <div class="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white dark:from-transparent to-transparent pointer-events-none hidden md:block"></div>
         </div>
       </div>
 
-      <!-- 类型统计 -->
-      <div class="mt-12 pt-8 border-t border-black/10 dark:border-white/10">
-        <h2 class="text-2xl font-bold text-black/90 dark:text-white/90 mb-6">
-          {i18n(I18nKey.timelineStatistics)}
-        </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <!-- 按类型分布 -->
-          <div>
-            <h3 class="text-lg font-semibold text-black/80 dark:text-white/80 mb-4">
-              {i18n(I18nKey.timelineByType)}
-            </h3>
-            <div class="space-y-3">
-              {Object.entries(stats.byType).map(([type, count]) => {
-                const percentage = Math.round((count / stats.total) * 100);
-                return (
-                  <div class="flex items-center gap-3">
-                    <div class="w-20 text-sm text-black/70 dark:text-white/70">
-                      {i18n(type === 'education' ? I18nKey.timelineEducation :
-                            type === 'work' ? I18nKey.timelineWork :
-                            type === 'project' ? I18nKey.timelineProject :
-                            I18nKey.timelineAchievement)}
-                    </div>
-                    <div class="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div 
-                        class={`h-2 rounded-full transition-all duration-500 ${
-                          type === 'education' ? 'bg-blue-500' :
-                          type === 'work' ? 'bg-green-500' :
-                          type === 'project' ? 'bg-purple-500' :
-                          'bg-orange-500'
-                        }`}
-                        style={`width: ${percentage}%`}
-                      ></div>
-                    </div>
-                    <div class="w-12 text-sm text-black/70 dark:text-white/70 text-right">
-                      {count}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          
-          <!-- 工作经验详情 -->
-          <div>
-            <h3 class="text-lg font-semibold text-black/80 dark:text-white/80 mb-4">
-              {i18n(I18nKey.timelineWorkExperience)}
-            </h3>
-            <div class="space-y-3">
-              <div class="flex justify-between items-center">
-                <span class="text-black/70 dark:text-white/70">{i18n(I18nKey.timelineTotalExperience)}</span>
-                <span class="font-semibold text-black/90 dark:text-white/90">
-                  {workExperience.years} {i18n(I18nKey.timelineYears)} {workExperience.months} {i18n(I18nKey.timelineMonths)}
-                </span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-black/70 dark:text-white/70">{i18n(I18nKey.timelineWorkPositions)}</span>
-                <span class="font-semibold text-black/90 dark:text-white/90">{stats.byType.work}</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-black/70 dark:text-white/70">{i18n(I18nKey.timelineCurrentRole)}</span>
-                <span class="font-semibold text-black/90 dark:text-white/90">
-                  {currentItems.filter(item => item.type === 'work').length > 0 ? i18n(I18nKey.timelineEmployed) : i18n(I18nKey.timelineAvailable)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 </MainGridLayout>
@@ -385,35 +323,98 @@ const subtitle = i18n(I18nKey.timelineSubtitle);
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+  
+  /* 时间线节点动画 */
+  @keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+  }
+  
+  .timeline-node {
+    animation: pulse 2s infinite;
+  }
+  
+  /* 优化夜间模式下的原生滚动条样式 */
+
+  .timeline-horizontal-scroll::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  .timeline-horizontal-scroll::-webkit-scrollbar-track {
+    background: #e5e7eb;
+    border-radius: 4px;
+  }
+  
+  .timeline-horizontal-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--hue), 70%, 60%); /* 使用动态主题色 */
+    border-radius: 4px;
+  }
+  
+
+
+
+
 </style>
 
 <script>
   // 确保图标库已加载，并处理页面导航
-  document.addEventListener('DOMContentLoaded', () => {
+  function initTimelinePage() {
     // 如果图标加载器存在，确保图标已加载
     if (window.__iconifyLoader) {
-      window.__iconifyLoader.load().then(() => {
+      window.__iconifyLoader.load().then(function() {
         // 图标加载完成后，触发时间线项目的重新渲染
-        const timelineItems = document.querySelectorAll('.timeline-item');
-        timelineItems.forEach(item => {
+        var timelineItems = document.querySelectorAll('.timeline-item');
+        timelineItems.forEach(function(item) {
           item.dispatchEvent(new CustomEvent('iconify-ready'));
         });
-      }).catch(error => {
+      }).catch(function(error) {
         console.error('Failed to load icons on timeline page:', error);
       });
     }
+    
+    // 添加时间线节点动画效果
+    var timelineNodes = document.querySelectorAll('.timeline-node');
+    timelineNodes.forEach(function(node, index) {
+      // 添加延迟，使动画依次出现
+      node.style.animationDelay = (index * 0.2) + 's';
+    });
+  }
+  
+  // 页面加载完成后初始化
+  document.addEventListener('DOMContentLoaded', function() {
+    initTimelinePage();
   });
-
+  
   // 处理页面导航时的图标重新加载
   if (typeof window !== 'undefined') {
     // 监听页面显示事件（包括前进/后退导航）
-    window.addEventListener('pageshow', (event) => {
+    window.addEventListener('pageshow', function(event) {
       if (event.persisted && window.__iconifyLoader) {
         // 页面从缓存恢复，重新检查图标状态
-        setTimeout(() => {
+        setTimeout(function() {
           window.__iconifyLoader.load().catch(console.error);
         }, 100);
       }
     });
+    
+    // 增强对 Astro 导航的支持
+    document.addEventListener('astro:page-load', function() {
+      setTimeout(initTimelinePage, 100);
+    });
+    
+    document.addEventListener('astro:after-swap', function() {
+      setTimeout(initTimelinePage, 100);
+    });
+    
+    // 监听 SWUP 事件
+    document.addEventListener('swup:contentReplaced', function() {
+      setTimeout(initTimelinePage, 100);
+    });
+    
+    document.addEventListener('swup:pageView', function() {
+      setTimeout(initTimelinePage, 100);
+    });
   }
 </script>
+

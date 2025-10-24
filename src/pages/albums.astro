@@ -1,8 +1,14 @@
 ---
+import { siteConfig } from "../config";
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { scanAlbums } from "../utils/album-scanner";
+
+// 检查相册页面是否启用
+if (!siteConfig.featurePages.albums) {
+	return Astro.redirect("/404/");
+}
 
 // 获取所有相册
 const albumsData = await scanAlbums();
@@ -14,7 +20,9 @@ const albumsData = await scanAlbums();
       
       <!-- 页面标题 -->
       <header class="mb-8">
-        <h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-3">
+        <h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-3 relative
+                  before:w-1 before:h-8 before:rounded-md before:bg-[var(--primary)]
+                  before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-4 before:hidden md:before:block">
           {i18n(I18nKey.albums)}
         </h1>
         <p class="text-neutral-600 dark:text-neutral-400">

@@ -9,14 +9,14 @@
 
 <table>
   <tr>
-    <td><img alt="" src="image/1.png"></td>
-    <td><img alt="" src="image/2.png"></td>
-    <td><img alt="" src="image/3.png"></td>
+    <td><img alt="" src="image/1.webp"></td>
+    <td><img alt="" src="image/2.webp"></td>
+    <td><img alt="" src="image/3.webp"></td>
   <tr>
   <tr>
-    <td><img alt="" src="image/4.png"></td>
-    <td><img alt="" src="image/5.png"></td>
-    <td><img alt="" src="image/6.png"></td>
+    <td><img alt="" src="image/4.webp"></td>
+    <td><img alt="" src="image/5.webp"></td>
+    <td><img alt="" src="image/6.webp"></td>
   <tr>
 </table>
 
@@ -30,6 +30,13 @@
 [**中文**](../README.zh.md) /
 [**日本語**](./README.ja.md) /
 [**中文繁体**](./README.tw.md) /
+
+
+## 🆕 v6.0 版本更新
+- **頁面重構**：完全重構了番劇、時間線、項目、技能、相冊、友情連結、日記、關於頁面，提升性能和用戶體驗。
+- **頁面開關功能**：添加了頁面開關功能和SEO優化模組，可以控制特色頁面的顯示與隱藏。
+- **新的網格佈局**：添加了新的網格文章列表佈局，改善內容展示效果。
+- **水波紋管理**：添加了水波紋管理模組，增強視覺交互效果。
 
 ## 🆕 v5.0 版本更新
 - **Pio 看板娘整合**：整合了 Pio 看板娘，提供可愛的互動角色，增強使用者互動體驗。

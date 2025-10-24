@@ -61,6 +61,11 @@
   #dynamic-sidebar {
     width: var(--sidebar-width-mobile);
     padding: 0.5rem;
+    /* 移动端优化：添加硬件加速 */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
   
   .sidebar-top-section,
@@ -70,6 +75,8 @@
   
   .widget-container {
     max-height: var(--widget-max-height-mobile);
+    /* 移动端优化：减少过渡效果，避免闪烁 */
+    transition: all 0.2s ease-in-out;
   }
   
   /* 移动端隐藏的组件 */

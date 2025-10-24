@@ -22,6 +22,29 @@ export type SiteConfig = {
 		fixed: boolean;
 	};
 
+	// 特色页面开关配置
+	featurePages: {
+		anime: boolean; // 番剧页面开关
+		diary: boolean; // 日记页面开关
+		friends: boolean; // 友链页面开关
+		projects: boolean; // 项目页面开关
+		skills: boolean; // 技能页面开关
+		timeline: boolean; // 时间线页面开关
+		albums: boolean; // 相册页面开关
+	};
+
+	// 文章列表布局配置
+	postListLayout: {
+		defaultMode: "list" | "grid"; // 默认布局模式：list=列表模式，grid=网格模式
+		allowSwitch: boolean; // 是否允许用户切换布局
+	};
+
+	// 顶栏标题配置
+	navbarTitle?: {
+		text: string; // 顶栏标题文本
+		icon?: string; // 顶栏标题图标路径
+	};
+
 	// 添加字体配置
 	font: {
 		zenMaruGothic: {
@@ -31,8 +54,6 @@ export type SiteConfig = {
 			enable: boolean; // 是否使用 Hanalei 作为全局字体
 		};
 	};
-
-
 
 	// 添加bangumi配置
 	bangumi?: {
@@ -57,6 +78,11 @@ export type SiteConfig = {
 		carousel?: {
 			enable: boolean; // 是否启用轮播
 			interval: number; // 轮播间隔时间（秒）
+		};
+		waves?: {
+			enable: boolean; // 是否启用水波纹效果
+			performanceMode?: boolean; // 性能模式：减少动画复杂度
+			mobileDisable?: boolean; // 移动端禁用
 		};
 		imageApi?: {
 			enable: boolean; // 是否启用图片API
@@ -131,6 +157,10 @@ export type ProfileConfig = {
 		url: string;
 		icon: string;
 	}[];
+	typewriter?: {
+		enable: boolean; // 是否启用打字机效果
+		speed?: number; // 打字速度（毫秒）
+	};
 };
 
 export type LicenseConfig = {
@@ -151,9 +181,7 @@ type TwikooConfig = {
 	lang?: string;
 };
 
-export type LIGHT_DARK_MODE =
-	| typeof LIGHT_MODE
-	| typeof DARK_MODE;
+export type LIGHT_DARK_MODE = typeof LIGHT_MODE | typeof DARK_MODE;
 
 export type BlogPostData = {
 	body: string;

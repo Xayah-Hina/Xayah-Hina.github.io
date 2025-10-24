@@ -67,7 +67,7 @@ const localAnimeList: AnimeItem[] = [
 	},
 	{
 		title: "Is the Order a Rabbit?",
-		status: "completed",
+		status: "planned",
 		rating: 9.0,
 		cover: "/assets/anime/tz1.webp",
 		description: "A group of girls' warm daily life",

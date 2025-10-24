@@ -146,20 +146,35 @@ html.is-animating .transition-swup-fade {
 
 /* 响应式调整 */
 @media (max-width: 768px) {
+    /* 移动端优化：减少动画幅度，避免闪烁 */
     html.is-animating .transition-main {
-        transform: translateY(1rem) translateX(0.3rem);
+        transform: translateY(0.5rem) translateX(0.2rem);
     }
     
     html.is-animating.is-leaving .transition-leaving {
-        transform: translateY(-0.8rem) translateX(-0.3rem);
+        transform: translateY(-0.4rem) translateX(-0.2rem);
     }
     
     .transition-slide-in {
-        transform: translateY(15px) translateX(5px);
+        transform: translateY(8px) translateX(3px);
     }
     
     .card-animation {
-        transform: translateY(20px) translateX(6px) scale(0.99);
+        transform: translateY(10px) translateX(3px) scale(0.99);
+    }
+    
+    /* 移动端优化：添加硬件加速和性能优化 */
+    .transition-main,
+    .transition-leaving,
+    .onload-animation,
+    .transition-slide-in,
+    .card-animation {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        -webkit-perspective: 1000;
+        perspective: 1000;
     }
 }
 

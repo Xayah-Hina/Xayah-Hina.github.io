@@ -64,12 +64,16 @@ export class AnimationManager {
 		this.isAnimating = true;
 		document.documentElement.classList.add("is-leaving");
 
+		// 移动端优化：减少动画延迟，避免闪烁
+		const isMobile = window.innerWidth <= 768;
+		const delay = isMobile ? 10 : 30;
+
 		// 添加离开动画类到主要元素
 		const mainElements = document.querySelectorAll(".transition-leaving");
 		mainElements.forEach((element, index) => {
 			setTimeout(() => {
 				element.classList.add("animate-leave");
-			}, index * 30); // 30ms 的错开延迟
+			}, index * delay);
 		});
 	}
 

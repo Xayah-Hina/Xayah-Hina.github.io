@@ -48,14 +48,12 @@ export const zh_TW: Translation = {
 	// 番劇頁面
 	[Key.animeTitle]: "我的追番記錄",
 	[Key.animeSubtitle]: "記錄我的二次元之旅",
-	[Key.animeList]: "追番列表",
-	[Key.animeTotal]: "總數",
-	[Key.animeWatching]: "追番中",
-	[Key.animeCompleted]: "已追完",
-	[Key.animeAvgRating]: "平均評分",
-	[Key.animeStatusWatching]: "追番中",
-	[Key.animeStatusCompleted]: "已追完",
-	[Key.animeStatusPlanned]: "計劃中",
+	[Key.animeStatusWatching]: "在看",
+	[Key.animeStatusCompleted]: "看過",
+	[Key.animeStatusPlanned]: "想看",
+	[Key.animeStatusOnHold]: "擱置",
+	[Key.animeStatusDropped]: "拋棄",
+	[Key.animeFilterAll]: "全部",
 	[Key.animeYear]: "年份",
 	[Key.animeStudio]: "製作",
 	[Key.animeEmpty]: "暫無追番數據",
@@ -112,10 +110,13 @@ export const zh_TW: Translation = {
 	[Key.projectsTechStack]: "技術棧統計",
 	[Key.projectsFeatured]: "精選項目",
 	[Key.projectsPlanned]: "計劃中",
-	[Key.projectsDemo]: "在線演示",
-	[Key.projectsSource]: "源代碼",
+	[Key.projectsDemo]: "線上展示",
+	[Key.projectsSource]: "原始碼",
+	[Key.projectsVisit]: "前往專案",
+	[Key.projectsGitHub]: "GitHub",
+	// [Key.projectsGitee]: "Gitee",  // 移除 Gitee 支援
 
-	// RSS頁面
+	// RSS 頁面
 	[Key.rss]: "RSS 訂閱",
 	[Key.rssDescription]: "訂閱獲取最新更新",
 	[Key.rssSubtitle]: "通過 RSS 訂閱，第一時間獲取最新文章和動態",
@@ -198,14 +199,16 @@ export const zh_TW: Translation = {
 	[Key.timelineCurrent]: "當前狀態",
 	[Key.timelineHistory]: "歷史記錄",
 	[Key.timelineAchievements]: "成就榮譽",
-	[Key.timelineStatistics]: "統計信息",
-	[Key.timelineByType]: "按類型分組",
-	[Key.timelineWorkExperience]: "工作經驗",
-	[Key.timelineTotalExperience]: "總工作經驗",
-	[Key.timelineWorkPositions]: "工作崗位數",
-	[Key.timelineCurrentRole]: "當前狀態",
-	[Key.timelineEmployed]: "在職",
-	[Key.timelineAvailable]: "可入職",
+	[Key.timelineStartDate]: "開始日期",
+	[Key.timelineDuration]: "持續時間",
+
+	// 项目展示页面
+	[Key.projectsVisit]: "前往項目",
+	[Key.projectsGitHub]: "GitHub",
+	[Key.projectsGitee]: "Gitee",
+	
+	// 其他
+	[Key.noData]: "暫無數據",
 
 	// 密碼保護
 	[Key.passwordProtected]: "密碼保護",

@@ -9,14 +9,14 @@
 
 <table>
   <tr>
-    <td><img alt="" src="docs/image/1.png"></td>
-    <td><img alt="" src="docs/image/2.png"></td>
-    <td><img alt="" src="docs/image/3.png"></td>
+    <td><img alt="" src="docs/image/1.webp"></td>
+    <td><img alt="" src="docs/image/2.webp"></td>
+    <td><img alt="" src="docs/image/3.webp"></td>
   <tr>
   <tr>
-    <td><img alt="" src="docs/image/4.png"></td>
-    <td><img alt="" src="docs/image/5.png"></td>
-    <td><img alt="" src="docs/image/6.png"></td>
+    <td><img alt="" src="docs/image/4.webp"></td>
+    <td><img alt="" src="docs/image/5.webp"></td>
+    <td><img alt="" src="docs/image/6.webp"></td>
   <tr>
 </table>
 
@@ -30,6 +30,13 @@
 [**中文**](../README.zh.md) /
 [**日本語**](./README.ja.md) /
 [**中文繁体**](./README.tw.md) /
+
+
+## 🆕 v6.0 アップデート
+- **ページリファクタリング**: アニメ、タイムライン、プロジェクト、スキル、アルバム、フレンドリンク、日記、アバウトページを完全にリファクタリングし、パフォーマンスとユーザーエクスペリエンスを向上させました。
+- **ページ切り替え機能**: ページ切り替え機能とSEO最適化モジュールを追加し、機能ページの表示/非表示を制御できるようになりました。
+- **新しいグリッドレイアウト**: 新しいグリッド記事リストレイアウトを導入し、コンテンツ表示効果を改善しました。
+- **リップル管理**: リップル効果管理モジュールを追加し、視覚的なインタラクション効果を強化しました。
 
 ## 🆕 v5.0 アップデート
 - **Pio Live2D統合**: Pio Live2Dキャラクターを統合し、可愛らしいインタラクティブな仲間を提供してユーザーエンゲージメントを向上させます。

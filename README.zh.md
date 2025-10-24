@@ -9,14 +9,14 @@
 
 <table>
   <tr>
-    <td><img alt="" src="docs/image/1.png"></td>
-    <td><img alt="" src="docs/image/2.png"></td>
-    <td><img alt="" src="docs/image/3.png"></td>
+    <td><img alt="" src="docs/image/1.webp"></td>
+    <td><img alt="" src="docs/image/2.webp"></td>
+    <td><img alt="" src="docs/image/3.webp"></td>
   <tr>
   <tr>
-    <td><img alt="" src="docs/image/4.png"></td>
-    <td><img alt="" src="docs/image/5.png"></td>
-    <td><img alt="" src="docs/image/6.png"></td>
+    <td><img alt="" src="docs/image/4.webp"></td>
+    <td><img alt="" src="docs/image/5.webp"></td>
+    <td><img alt="" src="docs/image/6.webp"></td>
   <tr>
 </table>
 
@@ -30,6 +30,12 @@
 [**中文**](./README.zh.md) /
 [**日本語**](./docs/README.ja.md) /
 [**中文繁体**](./docs/README.tw.md) /
+
+## 🆕 v6.0 版本更新
+- **页面重构**：完全重构了番剧、时间线、项目、技能、相册、友情链接、日记、关于页面，提升性能和用户体验。
+- **页面开关功能**：添加了页面关闭功能和SEO优化模块，可以控制特色页面的显示与隐藏。
+- **新的网格布局**：添加了新的网格文章列表布局，改善内容展示效果。
+- **水波纹管理**：添加了水波纹管理模块，增强视觉交互效果。
 
 ## 🆕 v5.0 版本更新
 - **Pio 看板娘集成**：集成了 Pio 看板娘，提供可爱的互动角色，增强用户互动体验。

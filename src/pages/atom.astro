@@ -108,8 +108,15 @@ const recentPosts = posts.slice(0, 6);
         const url = this.getAttribute('data-url');
         if (url) {
             navigator.clipboard.writeText(url).then(() => {
-                const originalText = this.textContent;
-                this.textContent = 'Copied!';
+                const originalText = this.textContent || "Copy Link";
+                this.textContent = "Atom link copied to clipboard!";
+                setTimeout(() => {
+                    this.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('复制失败:', err);
+                const originalText = this.textContent || "Copy Link";
+                this.textContent = "Copy failed, please copy the link manually";
                 setTimeout(() => {
                     this.textContent = originalText;
                 }, 2000);

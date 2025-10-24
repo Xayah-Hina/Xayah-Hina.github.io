@@ -1,18 +1,30 @@
 ---
+import { siteConfig } from "../config";
 import { getCollection } from "astro:content";
-import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { UNCATEGORIZED } from "../constants/constants";
 import {
-	projectsData,
+	getAllTechStack,
+	getFeaturedProjects,
 	getProjectStats,
 	getProjectsByCategory,
-	getFeaturedProjects,
-	getAllTechStack,
+	projectsData,
 } from "../data/projects";
-import { i18n } from "../i18n/translation";
 import I18nKey from "../i18n/i18nKey";
-import { UNCATEGORIZED } from "../constants/constants";
+import { i18n } from "../i18n/translation";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { loadIconify } from "../utils/icon-loader";
+
+// 检查项目页面是否启用
+if (!siteConfig.featurePages.projects) {
+	return Astro.redirect("/404/");
+}
 
 const { lang } = Astro.props;
+
+// 加载Iconify图标库
+loadIconify().catch((error) => {
+	console.error("Failed to load Iconify:", error);
+});
 
 // 获取项目统计信息
 const stats = getProjectStats();
@@ -60,7 +72,9 @@ const getCategoryText = (category: string) => {
     <div class="card-base z-10 px-9 py-6 relative w-full">
       <!-- 页面标题 -->
       <div class="flex flex-col items-start justify-center mb-8">
-        <h1 class="text-4xl font-bold text-black/90 dark:text-white/90 mb-2">
+        <h1 class="text-4xl font-bold text-black/90 dark:text-white/90 mb-2 relative
+                  before:w-1 before:h-8 before:rounded-md before:bg-[var(--primary)]
+                  before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-4 before:hidden md:before:block">
           {i18n(I18nKey.projects)}
         </h1>
         <p class="text-lg text-black/60 dark:text-white/60">
@@ -91,12 +105,14 @@ const getCategoryText = (category: string) => {
       <!-- 特色项目 -->
       {featuredProjects.length > 0 && (
         <div class="mb-8">
-          <h2 class="text-2xl font-bold text-black/90 dark:text-white/90 mb-4">
+          <h2 class="text-2xl font-bold text-black/90 dark:text-white/90 mb-4 relative
+                    before:w-1 before:h-6 before:rounded-md before:bg-[var(--primary)]
+                    before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-4 before:hidden md:before:block">
             {i18n(I18nKey.projectsFeatured)}
           </h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             {featuredProjects.map((project) => (
-              <div class="bg-white dark:bg-gray-800 rounded-lg border border-black/10 dark:border-white/10 overflow-hidden hover:shadow-lg transition-shadow duration-300">
+              <div class="bg-white dark:bg-transparent rounded-lg border border-black/10 dark:border-white/10 overflow-hidden hover:shadow-lg transition-shadow duration-300">
                 {project.image && (
                   <div class="aspect-video overflow-hidden">
                     <img 
@@ -138,25 +154,27 @@ const getCategoryText = (category: string) => {
                       </span>
                     )}
                   </div>
-                  <div class="flex gap-3">
-                    {project.demoUrl && (
+                  <div class="flex flex-wrap gap-2 text-sm">
+                    {project.visitUrl && (
                       <a 
-                        href={project.demoUrl} 
+                        href={project.visitUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        class="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium"
+                        class="btn-gradient btn-gradient-primary btn-gradient-md"
                       >
-                        {i18n(I18nKey.projectsDemo)}
+                        <iconify-icon icon="material-symbols:open-in-new" width="18" height="18"></iconify-icon>
+                        {i18n(I18nKey.projectsVisit)}
                       </a>
                     )}
-                    {project.sourceUrl && (
+                    {project.sourceCode && (
                       <a 
-                        href={project.sourceUrl} 
+                        href={project.sourceCode} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        class="text-gray-600 dark:text-gray-400 hover:underline text-sm font-medium"
+                        class="btn-gradient btn-github btn-gradient-md"
                       >
-                        {i18n(I18nKey.projectsSource)}
+                        <iconify-icon icon="mdi:github" width="18" height="18"></iconify-icon>
+                        {i18n(I18nKey.projectsGitHub)}
                       </a>
                     )}
                   </div>
@@ -175,7 +193,9 @@ const getCategoryText = (category: string) => {
           
           return (
             <div>
-              <h2 class="text-2xl font-bold text-black/90 dark:text-white/90 mb-4">
+              <h2 class="text-2xl font-bold text-black/90 dark:text-white/90 mb-4 relative
+                        before:w-1 before:h-6 before:rounded-md before:bg-[var(--primary)]
+                        before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-4 before:hidden md:before:block">
                 {getCategoryText(category)}
                 <span class="text-lg font-normal text-black/60 dark:text-white/60 ml-2">
                   ({categoryProjects.length})
@@ -183,7 +203,7 @@ const getCategoryText = (category: string) => {
               </h2>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {categoryProjects.map((project) => (
-                  <div class="bg-white dark:bg-gray-800 rounded-lg border border-black/10 dark:border-white/10 overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                  <div class="bg-white dark:bg-transparent rounded-lg border border-black/10 dark:border-white/10 overflow-hidden hover:shadow-lg transition-shadow duration-300">
                     {project.image && (
                       <div class="aspect-video overflow-hidden">
                         <img 
@@ -225,25 +245,27 @@ const getCategoryText = (category: string) => {
                           </span>
                         )}
                       </div>
-                      <div class="flex gap-3 text-sm">
-                        {project.demoUrl && (
+                      <div class="flex flex-wrap gap-2 text-sm">
+                        {project.visitUrl && (
                           <a 
-                            href={project.demoUrl} 
+                            href={project.visitUrl} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            class="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                            class="btn-gradient btn-gradient-primary btn-gradient-md"
                           >
-                            {i18n(I18nKey.projectsDemo)}
+                            <iconify-icon icon="material-symbols:open-in-new" width="18" height="18"></iconify-icon>
+                            {i18n(I18nKey.projectsVisit)}
                           </a>
                         )}
-                        {project.sourceUrl && (
+                        {project.sourceCode && (
                           <a 
-                            href={project.sourceUrl} 
+                            href={project.sourceCode} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            class="text-gray-600 dark:text-gray-400 hover:underline font-medium"
+                            class="btn-gradient btn-github btn-gradient-md"
                           >
-                            {i18n(I18nKey.projectsSource)}
+                            <iconify-icon icon="mdi:github" width="18" height="18"></iconify-icon>
+                            {i18n(I18nKey.projectsGitHub)}
                           </a>
                         )}
                       </div>

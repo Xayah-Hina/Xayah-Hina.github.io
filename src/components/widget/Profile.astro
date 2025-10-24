@@ -3,6 +3,7 @@ import { Icon } from "astro-icon/components";
 import { profileConfig } from "../../config";
 import { url } from "../../utils/url-utils";
 import ImageWrapper from "../misc/ImageWrapper.astro";
+import TypewriterText from "../TypewriterText.astro";
 
 import { umamiConfig } from '../../config';
 
@@ -28,7 +29,17 @@ const umamiBaseUrl = umamiConfig.baseUrl || "";
     <div class="px-2">
         <div class="font-bold text-xl text-center mb-1 dark:text-neutral-50 transition">{profileConfig.name}</div>
         <div class="h-1 w-5 bg-[var(--primary)] mx-auto rounded-full mb-2 transition"></div>
-        <div class="text-center text-neutral-400 mb-2.5 transition">{profileConfig.bio}</div>
+        <div class="text-center text-neutral-400 mb-2.5 transition">
+            {profileConfig.typewriter?.enable ? (
+                <TypewriterText 
+                    text={profileConfig.bio}
+                    speed={profileConfig.typewriter.speed}
+                    class="inline-block"
+                />
+            ) : (
+                profileConfig.bio
+            )}
+        </div>
         <div class="flex gap-2 justify-center mb-1">
             {profileConfig.links.length > 1 && profileConfig.links.map(item =>
                     <a rel="me" aria-label={item.name} href={item.url} target="_blank" class="btn-regular rounded-lg h-10 w-10 active:scale-90">

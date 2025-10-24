@@ -1,10 +1,15 @@
 ---
-
+import { siteConfig } from "../config";
 import { getEntry, render } from "astro:content";
 import Markdown from "@components/misc/Markdown.astro";
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+// 检查友链页面是否启用
+if (!siteConfig.featurePages.friends) {
+	return Astro.redirect("/404/");
+}
 
 const friendsPost = await getEntry("spec", "friends");
 

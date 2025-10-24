@@ -1,7 +1,13 @@
 ---
+import { siteConfig } from "../config";
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+// 检查日记页面是否启用
+if (!siteConfig.featurePages.diary) {
+	return Astro.redirect("/404/");
+}
 
 // 示例即刻短文数据
 const moments = [

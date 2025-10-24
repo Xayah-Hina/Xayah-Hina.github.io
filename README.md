@@ -9,14 +9,14 @@
 
 <table>
   <tr>
-    <td><img alt="" src="docs/image/1.png"></td>
-    <td><img alt="" src="docs/image/2.png"></td>
-    <td><img alt="" src="docs/image/3.png"></td>
+    <td><img alt="" src="docs/image/1.webp"></td>
+    <td><img alt="" src="docs/image/2.webp"></td>
+    <td><img alt="" src="docs/image/3.webp"></td>
   <tr>
   <tr>
-    <td><img alt="" src="docs/image/4.png"></td>
-    <td><img alt="" src="docs/image/5.png"></td>
-    <td><img alt="" src="docs/image/6.png"></td>
+    <td><img alt="" src="docs/image/4.webp"></td>
+    <td><img alt="" src="docs/image/5.webp"></td>
+    <td><img alt="" src="docs/image/6.webp"></td>
   <tr>
 </table>
 
@@ -31,6 +31,12 @@ A modern, feature-rich static blog template built with [Astro](https://astro.bui
 [**中文**](./README.zh.md) /
 [**日本語**](./docs/README.ja.md) /
 [**中文繁体**](./docs/README.tw.md) /
+
+## 🆕 v6.0 Update
+- **Page Refactoring**: Completely refactored anime, timeline, projects, skills, albums, friends, diary, and about pages for better performance and user experience.
+- **Page Toggle Feature**: Added page toggle functionality with SEO optimization modules, allowing control over feature page visibility.
+- **New Grid Layout**: Introduced new grid article list layout for improved content presentation.
+- **Ripple Management**: Added ripple effect management module for enhanced visual interactions.
 
 ## 🆕 v5.0 Update
 - **Pio Live2D Integration**: Added Pio Live2D character, providing a cute interactive companion to enhance user engagement.

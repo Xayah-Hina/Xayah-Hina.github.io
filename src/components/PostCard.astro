@@ -1,10 +1,10 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import path from "node:path";
+import * as path from "node:path";
 import { Icon } from "astro-icon/components";
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
-import { getDir } from "../utils/url-utils";
+import { getDir, getTagUrl } from "../utils/url-utils";
 import ImageWrapper from "./misc/ImageWrapper.astro";
 import PostMetadata from "./PostMeta.astro";
 
@@ -44,6 +44,7 @@ const coverWidth = "28%";
 
 const { remarkPluginFrontmatter } = await entry.render();
 ---
+
 <div class:list={["card-base flex flex-col-reverse md:flex-col w-full rounded-[var(--radius-large)] overflow-hidden relative", className]} style={style}>
     <div class:list={["pl-6 md:pl-9 pr-6 md:pr-2 pt-6 md:pt-7 pb-6 relative", {"w-full md:w-[calc(100%_-_52px_-_12px)]": !hasCover, "w-full md:w-[calc(100%_-_var(--coverWidth)_-_12px)]": hasCover}]}>
         <a href={url}
@@ -59,25 +60,29 @@ const { remarkPluginFrontmatter } = await entry.render();
             <Icon class="text-[var(--primary)] text-[2rem] transition hidden md:inline absolute translate-y-0.5 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0" name="material-symbols:chevron-right-rounded"></Icon>
         </a>
 
-        <!-- metadata -->
-        <PostMetadata published={published} updated={updated} tags={tags} category={category} hideTagsForMobile={true} hideUpdateDate={true} class="mb-4"></PostMetadata>
+        <!-- metadata (without tags) -->
+        <PostMetadata published={published} updated={updated} tags={tags} category={category || ''} hideTagsForMobile={true} hideUpdateDate={true} className="mb-4" showOnlyBasicMeta={true} words={remarkPluginFrontmatter.words} showWordCount={true}></PostMetadata>
 
         <!-- description -->
         <div class:list={["transition text-75 mb-3.5 pr-4", {"line-clamp-2 md:line-clamp-1": !description}]}>
             { description || remarkPluginFrontmatter.excerpt }
         </div>
 
-        <!-- word count and read time  -->
-        <div class="text-sm text-black/30 dark:text-white/30 flex gap-4 transition">
-            <div>
-                {remarkPluginFrontmatter.words} {" " + i18n(remarkPluginFrontmatter.words === 1 ? I18nKey.wordCount : I18nKey.wordsCount)}
-            </div>
-            <div>|</div>
-            <div>
-                {remarkPluginFrontmatter.minutes} {" " + i18n(remarkPluginFrontmatter.minutes === 1 ? I18nKey.minuteCount : I18nKey.minutesCount)}
-            </div>
+        <!-- tags (moved to bottom) -->
+        <div class="flex flex-wrap gap-2 mt-2">
+            {tags && tags.length > 0 ? (
+                tags.map((tag) => (
+                    <a 
+                        href={getTagUrl(tag)} 
+                        class="btn-regular h-6 text-xs px-2 rounded-lg"
+                    >
+                        # {tag.trim()}
+                    </a>
+                ))
+            ) : (
+                <span class="text-xs text-50">{i18n(I18nKey.noTags)}</span>
+            )}
         </div>
-
     </div>
 
     {hasCover && <a href={url} aria-label={title}

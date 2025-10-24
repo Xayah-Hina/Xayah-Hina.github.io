@@ -206,7 +206,16 @@ html.is-entering .transition-main {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+    }
+    
+    /* 保留TOC的平滑滚动，但减少其他滚动动画 */
+    html {
         scroll-behavior: auto !important;
+    }
+    
+    /* 确保TOC组件仍然有平滑滚动 */
+    table-of-contents#toc {
+        scroll-behavior: smooth !important;
     }
 }
 

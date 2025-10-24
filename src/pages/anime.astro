@@ -1,11 +1,20 @@
 ---
 import ImageWrapper from "../components/misc/ImageWrapper.astro";
-import { siteConfig } from "../config";
+import { siteConfig, siteConfig } from "../config";
 import localAnimeList from "../data/anime";
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
-import { siteConfig } from "../config";
+
+// 检查番剧页面是否启用
+if (!siteConfig.featurePages.anime) {
+	return Astro.redirect("/404/");
+}
+
+// 检查番剧页面是否启用
+if (!siteConfig.featurePages.anime) {
+	return Astro.redirect("/404/");
+}
 
 // Bangumi API配置
 const BANGUMI_USER_ID = siteConfig.bangumi?.userId || "your-user-id"; // 用户ID
@@ -204,56 +213,33 @@ const stats = {
       <!-- 页面标题 -->
       <div class="relative w-full mb-8">
         <div class="mb-6">
-          <h1 class="text-4xl font-bold text-black/90 dark:text-white/90 mb-2">{i18n(I18nKey.animeTitle)}</h1>
+          <h1 class="text-4xl font-bold text-black/90 dark:text-white/90 mb-2 relative
+                    before:w-1 before:h-8 before:rounded-md before:bg-[var(--primary)]
+                    before:absolute before:top-1/2 before:-translate-y-1/2 before:-left-4 before:hidden md:before:block">
+            {i18n(I18nKey.animeTitle)}
+          </h1>
           <p class="text-black/75 dark:text-white/75">{i18n(I18nKey.animeSubtitle)}</p>
         </div>
         
-        <!-- 统计卡片 -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg p-4">
-            <div class="flex items-center gap-3">
-              <div class="text-2xl">📊</div>
-              <div>
-                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.total}</div>
-                <div class="text-sm text-blue-600/70 dark:text-blue-400/70">{i18n(I18nKey.animeTotal)}</div>
-              </div>
-            </div>
-          </div>
-          <div class="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg p-4">
-            <div class="flex items-center gap-3">
-              <div class="text-2xl">▶️</div>
-              <div>
-                <div class="text-2xl font-bold text-green-600 dark:text-green-400">{stats.watching}</div>
-                <div class="text-sm text-green-600/70 dark:text-green-400/70">{i18n(I18nKey.animeWatching)}</div>
-              </div>
-            </div>
-          </div>
-          <div class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg p-4">
-            <div class="flex items-center gap-3">
-              <div class="text-2xl">✅</div>
-              <div>
-                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.completed}</div>
-                <div class="text-sm text-purple-600/70 dark:text-purple-400/70">{i18n(I18nKey.animeCompleted)}</div>
-              </div>
-            </div>
-          </div>
-          <div class="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-lg p-4">
-            <div class="flex items-center gap-3">
-              <div class="text-2xl">⭐</div>
-              <div>
-                <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.avgRating}</div>
-                <div class="text-sm text-orange-600/70 dark:text-orange-400/70">{i18n(I18nKey.animeAvgRating)}</div>
-              </div>
-            </div>
+        <!-- 过滤按钮 - 参考Firefly设计 -->
+        <div class="mb-6">
+          <div class="filter-container flex flex-wrap gap-2">
+            <button class="filter-tag active" data-status="all">{i18n(I18nKey.animeFilterAll)}</button>
+            <button class="filter-tag" data-status="watching">{i18n(I18nKey.animeStatusWatching)}</button>
+            <button class="filter-tag" data-status="completed">{i18n(I18nKey.animeStatusCompleted)}</button>
+            <button class="filter-tag" data-status="planned">{i18n(I18nKey.animeStatusPlanned)}</button>
+            {ANIME_MODE === 'bangumi' && (
+              <>
+                <button class="filter-tag" data-status="onhold">{i18n(I18nKey.animeStatusOnHold)}</button>
+                <button class="filter-tag" data-status="dropped">{i18n(I18nKey.animeStatusDropped)}</button>
+              </>
+            )}
           </div>
         </div>
       </div>
 
       <!-- 动漫列表 -->
       <div class="mb-8">
-        <h2 class="text-2xl font-bold text-black/90 dark:text-white/90 mb-4">
-          {i18n(I18nKey.animeList)}
-        </h2>
         
         {ANIME_MODE !== 'local' && BANGUMI_USER_ID === 'your-user-id' ? (
           <div class="text-center py-12">
@@ -272,7 +258,7 @@ const stats = {
               const progressPercent = anime.totalEpisodes > 0 ? (anime.progress / anime.totalEpisodes) * 100 : 0;
               
               return (
-                <div class="group relative bg-[var(--card-bg)] border border-[var(--line-divider)] rounded-[var(--radius-large)] overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02]">
+                <div class="group relative bg-[var(--card-bg)] border border-[var(--line-divider)] rounded-[var(--radius-large)] overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02]" data-anime-status={anime.status}>
                   <!-- 封面区域 - 竖屏比例 -->
                   <div class="relative aspect-[2/3] overflow-hidden">
                     <a href={anime.link} target="_blank" rel="noopener noreferrer" class="block w-full h-full">
@@ -359,4 +345,145 @@ const stats = {
       </div>
     </div>
   </div>
+
+  <!-- 过滤按钮样式 -->
+  <style>
+    .filter-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    
+    .filter-tag {
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--line-divider);
+      border-radius: var(--radius-large);
+      background: var(--btn-regular-bg);
+      color: var(--btn-content);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    
+    .filter-tag:hover:not(.active) {
+      background: var(--btn-hover-bg);
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+    
+    .filter-tag.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    
+    .filter-tag.active:hover {
+      background: var(--primary) !important;
+      color: white !important;
+      border-color: var(--primary) !important;
+      transform: translateY(-1px);
+    }
+    
+    /* 隐藏动画 */
+    .anime-item {
+      transition: all 0.3s ease;
+    }
+    
+    .anime-item.hidden {
+      opacity: 0;
+      transform: scale(0.95);
+      pointer-events: none;
+    }
+  </style>
+
+  <!-- 过滤功能脚本 -->
+  <script is:inline>
+    // 事件监听器存储，用于防止重复绑定
+    let filterEventListeners = [];
+    
+    // 初始化过滤功能
+    function initFilterButtons() {
+      const filterTags = document.querySelectorAll('.filter-tag');
+      
+      // 移除之前的事件监听器
+      filterEventListeners.forEach(listener => {
+        const [element, type, handler] = listener;
+        element.removeEventListener(type, handler);
+      });
+      filterEventListeners = [];
+      
+      // 过滤功能
+      filterTags.forEach(tag => {
+        const clickHandler = function() {
+          // 移除所有active类
+          filterTags.forEach(t => t.classList.remove('active'));
+          // 添加active类到当前点击的标签
+          this.classList.add('active');
+          
+          const status = this.getAttribute('data-status');
+          
+          // 获取所有动漫项
+          const animeItems = document.querySelectorAll('[data-anime-status]');
+          
+          // 过滤动漫项
+          animeItems.forEach(item => {
+            if (status === 'all') {
+              item.classList.remove('hidden');
+            } else {
+              const itemStatus = item.getAttribute('data-anime-status');
+              if (itemStatus === status) {
+                item.classList.remove('hidden');
+              } else {
+                item.classList.add('hidden');
+              }
+            }
+          });
+        };
+        
+        tag.addEventListener('click', clickHandler);
+        filterEventListeners.push([tag, 'click', clickHandler]);
+      });
+      
+      console.log('Filter buttons initialized with', filterTags.length, 'buttons');
+    }
+    
+    // 页面加载时初始化
+    document.addEventListener('DOMContentLoaded', initFilterButtons);
+    
+    // Swup页面切换后重新初始化
+    function setupSwupListeners() {
+      if (window.swup) {
+        // 使用Swup hooks监听页面切换事件
+        window.swup.hooks.on('content:replace', function() {
+          console.log('Swup content replaced - reinitializing filter buttons');
+          setTimeout(initFilterButtons, 150);
+        });
+        
+        window.swup.hooks.on('page:view', function() {
+          console.log('Swup page view - reinitializing filter buttons');
+          setTimeout(initFilterButtons, 150);
+        });
+        
+        window.swup.hooks.on('animation:in:end', function() {
+          console.log('Swup animation ended - reinitializing filter buttons');
+          setTimeout(initFilterButtons, 200);
+        });
+      }
+    }
+    
+    // 初始化Swup监听器
+    if (typeof window !== 'undefined') {
+      if (window.swup) {
+        setupSwupListeners();
+      } else {
+        // 如果Swup尚未初始化，监听启用事件
+        document.addEventListener('swup:enable', function() {
+          console.log('Swup enabled - setting up listeners');
+          setupSwupListeners();
+        });
+      }
+    }
+  </script>
 </MainGridLayout>
