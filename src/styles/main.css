@@ -494,6 +494,55 @@ html {
 .post-list-container {
   transition: all 0.3s ease-in-out;
 }
+
+/* 手机端文章列表布局预加载优化 - 防止刷新时布局太分开 */
+@media (max-width: 767px) {
+  #post-list-container {
+    /* 预加载样式：确保在JavaScript执行前就有正确的布局 */
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    
+    /* 防止网格模式在移动端显示 */
+    grid-template-columns: 1fr !important;
+    grid-gap: 1rem !important;
+  }
+  
+  /* 确保文章卡片在移动端有正确的间距 */
+  #post-list-container .post-card-item {
+    width: 100% !important;
+    margin-bottom: 0 !important;
+    padding: 1rem !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* 防止网格模式在移动端造成布局问题 */
+  #post-list-container.grid-mode {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* 移动端网格模式强制使用单列布局 */
+@media (max-width: 767px) {
+  .post-list-container.grid-mode {
+    grid-template-columns: repeat(1, 1fr) !important;
+  }
+}
+
+/* 文章列表容器初始化样式 - 防止布局抖动 */
+#post-list-container:not(.list-mode):not(.grid-mode) {
+  /* 未初始化时的默认样式 */
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1rem !important;
+}
+
 :root:not(.dark) .custom-md spoiler {
   --_spoiler-mask: color-mix(in oklch, var(--primary) 55%, white 45%);
 }
