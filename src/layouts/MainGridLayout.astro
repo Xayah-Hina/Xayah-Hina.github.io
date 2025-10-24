@@ -278,18 +278,20 @@ const transparentClass = shouldEnableTransparency
                     )}
                     {siteConfig.banner.homeText?.subtitle && (
                         <h2 class="banner-subtitle text-xl lg:text-3xl text-white/90 drop-shadow-md">
-                            {siteConfig.banner.homeText.typewriter?.enable ? (
-                                <TypewriterText 
-                                    text={siteConfig.banner.homeText.subtitle}
-                                    speed={siteConfig.banner.homeText.typewriter.speed}
-                                    deleteSpeed={siteConfig.banner.homeText.typewriter.deleteSpeed}
-                                    pauseTime={siteConfig.banner.homeText.typewriter.pauseTime}
-                                />
-                            ) : (
-                                Array.isArray(siteConfig.banner.homeText.subtitle) 
-                                    ? siteConfig.banner.homeText.subtitle[0] 
-                                    : siteConfig.banner.homeText.subtitle
-                            )}
+                            <span class="inline-block min-h-[1.2em]">
+                                {siteConfig.banner.homeText.typewriter?.enable ? (
+                                    <TypewriterText 
+                                        text={siteConfig.banner.homeText.subtitle}
+                                        speed={siteConfig.banner.homeText.typewriter.speed}
+                                        deleteSpeed={siteConfig.banner.homeText.typewriter.deleteSpeed}
+                                        pauseTime={siteConfig.banner.homeText.typewriter.pauseTime}
+                                    />
+                                ) : (
+                                    Array.isArray(siteConfig.banner.homeText.subtitle) 
+                                        ? siteConfig.banner.homeText.subtitle[0] 
+                                        : siteConfig.banner.homeText.subtitle
+                                )}
+                            </span>
                         </h2>
                     )}
                 </div>
@@ -427,6 +429,8 @@ const transparentClass = shouldEnableTransparency
 .banner-subtitle {
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
     animation: fadeInUp 1s ease-out 0.3s both;
+    min-height: 1.5em; /* 确保副标题容器有最小高度 */
+    line-height: 1.2; /* 确保一致的行高 */
 }
 
 @keyframes fadeInUp {
