@@ -11,7 +11,7 @@ const interval = 50;
 ---
 <div 
   id="post-list-container"
-  class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-1 md:py-0 md:bg-transparent md:gap-4 mb-4 list-mode"
+  class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-0 md:py-0 md:bg-transparent gap-2 md:gap-4 mb-4 list-mode"
   data-default-layout={siteConfig.postListLayout.defaultMode}
 >
     {page.data.map((entry: CollectionEntry<"posts">) => (
