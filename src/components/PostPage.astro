@@ -11,7 +11,7 @@ const interval = 50;
 ---
 <div 
   id="post-list-container"
-  class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-0 md:py-0 md:bg-transparent gap-2 md:gap-4 mb-4 list-mode"
+  class="transition flex flex-col rounded-[var(--radius-large)] bg-[var(--card-bg)] py-0 md:py-0 md:bg-transparent gap-2 md:gap-4 mb-4 list-mode md:list-mode"
   data-default-layout={siteConfig.postListLayout.defaultMode}
 >
     {page.data.map((entry: CollectionEntry<"posts">) => (
@@ -53,8 +53,14 @@ const interval = 50;
 
       console.log("Initializing layout:", { savedLayout, defaultLayout, currentLayout });
 
-      // 应用布局
-      updatePostListLayout(currentLayout);
+      // 移动端由CSS处理，桌面端才需要JavaScript初始化
+      const isDesktop = window.innerWidth >= 769;
+      if (isDesktop) {
+        updatePostListLayout(currentLayout);
+      } else {
+        // 移动端：只添加初始化标记，不更改布局（CSS已处理）
+        postListContainer.classList.add("js-initialized");
+      }
       
       // 发布布局初始化事件
       publishLayoutInit();
@@ -80,6 +86,9 @@ const interval = 50;
       postListContainer.classList.add("flex", "flex-col");
       postListContainer.classList.remove("grid", "grid-cols-1", "md:grid-cols-2", "gap-6");
     }
+    
+    // 添加初始化完成标记，用于移除闪烁保护
+    postListContainer.classList.add("js-initialized");
   }
 
   // 监听布局变化事件
@@ -87,18 +96,17 @@ const interval = 50;
     updatePostListLayout(event.detail.layout);
   });
 
-  // 监听窗口大小变化，在小屏幕上强制使用列表模式
+  // 监听窗口大小变化，调整布局（CSS已处理移动端，这里只处理桌面端切换）
   window.addEventListener("resize", () => {
-    const isSmallScreen = window.innerWidth < 1200;
+    const isDesktop = window.innerWidth >= 769;
     const savedLayout = localStorage.getItem("postListLayout");
     const defaultLayout = document.getElementById("post-list-container")?.getAttribute("data-default-layout") || "list";
     const currentLayout = savedLayout || defaultLayout;
     
-    if (isSmallScreen) {
-      updatePostListLayout("list");
-    } else {
+    if (isDesktop) {
       updatePostListLayout(currentLayout);
     }
+    // 移动端由CSS处理，不需要JavaScript干预
   });
 
   // 页面加载时初始化布局

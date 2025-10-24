@@ -431,16 +431,45 @@ html {
   margin-bottom: 0.5rem;
 }
 
-/* 列表模式下的样式 */
-.post-list-container.list-mode {
-  display: flex !important;
-  flex-direction: column;
-  gap: 0.75rem;
+/* CSS-only移动端优化 - 避免JavaScript闪烁 */
+@media (max-width: 768px) {
+  /* 移动端强制列表模式，避免初始化闪烁 */
+  #post-list-container {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+  
+  /* 移动端网格模式也显示为列表 */
+  #post-list-container.grid-mode {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* 移动端文章卡片间距优化 */
+  #post-list-container .post-card-item {
+    margin-bottom: 0 !important;
+  }
 }
 
-@media (max-width: 768px) {
+/* 桌面端样式 */
+@media (min-width: 769px) {
+  /* 列表模式下的样式 */
   .post-list-container.list-mode {
-    gap: 0.5rem;
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  /* 网格模式下的样式 */
+  .post-list-container.grid-mode {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 }
 
