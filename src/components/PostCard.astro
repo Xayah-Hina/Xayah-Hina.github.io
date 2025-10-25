@@ -74,9 +74,15 @@ const { remarkPluginFrontmatter } = await entry.render();
                 tags.map((tag) => (
                     <a 
                         href={getTagUrl(tag)} 
-                        class="btn-regular h-6 text-xs px-2 rounded-lg"
+                        class="link-lg transition text-50 text-xs font-medium px-2 py-1 rounded-lg
+                               hover:text-[var(--primary)] dark:hover:text-[var(--primary)]
+                               active:text-[var(--primary)] dark:active:text-[var(--primary)]
+                               group/tag whitespace-nowrap"
+                        aria-label={`View all posts tagged with ${tag.trim()}`}
                     >
-                        # {tag.trim()}
+                        <span class="transition-transform group-hover/tag:translate-x-0.5">
+                            # {tag.trim()}
+                        </span>
                     </a>
                 ))
             ) : (
