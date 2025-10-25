@@ -67,7 +67,7 @@ export const siteConfig: SiteConfig = {
 
 	// 标签样式配置
 	tagStyle: {
-		// 使用新样式（link-lg）还是旧样式（btn-regular）
+		// 是否使用新样式（悬停高亮样式）还是旧样式（外框常亮样式）
 		useNewStyle: false,
 	},
 
