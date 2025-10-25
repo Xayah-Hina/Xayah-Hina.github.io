@@ -65,6 +65,12 @@ export const siteConfig: SiteConfig = {
 		allowSwitch: true,
 	},
 
+	// 标签样式配置
+	tagStyle: {
+		// 使用新样式（link-lg）还是旧样式（btn-regular）
+		useNewStyle: false,
+	},
+
 	banner: {
 		enable: true, // 是否启动Banner壁纸模式
 
