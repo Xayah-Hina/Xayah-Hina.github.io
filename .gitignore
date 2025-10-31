@@ -32,5 +32,3 @@ yarn.lock
 
 cache/
 fuwari/
-src/data/myself.ts
-src/pages/myself.astro

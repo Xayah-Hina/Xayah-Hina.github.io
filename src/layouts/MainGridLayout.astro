@@ -173,75 +173,10 @@ const transparentClass = shouldEnableTransparency
 
 <Layout title={title} banner={banner} description={description} lang={lang} setOGTypeArticle={setOGTypeArticle} postSlug={postSlug}>
 
-<script is:inline>
-	// 根据壁纸模式动态设置 banner 和全屏壁纸的显示
-	const wallpaperMode = localStorage.getItem('wallpaperMode') || 'banner';
-	
-	// 在 DOM 加载后执行
-	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', applyWallpaperMode);
-	} else {
-		applyWallpaperMode();
-	}
-	
-	function applyWallpaperMode() {
-		const wallpaperMode = localStorage.getItem('wallpaperMode') || 'banner';
-		const bannerWrapper = document.getElementById('banner-wrapper');
-		const fullscreenWallpaper = document.querySelector('[data-fullscreen-wallpaper]');
-		const body = document.body;
-		
-		switch(wallpaperMode) {
-			case 'banner':
-				// 显示 banner，隐藏全屏壁纸
-				if (bannerWrapper) {
-					bannerWrapper.style.display = 'block';
-				}
-				if (fullscreenWallpaper) {
-					fullscreenWallpaper.style.display = 'none';
-				}
-				body.classList.add('enable-banner');
-				body.classList.remove('wallpaper-transparent');
-				break;
-				
-			case 'fullscreen':
-				// 隐藏 banner，显示全屏壁纸
-				if (bannerWrapper) {
-					bannerWrapper.style.display = 'none';
-				}
-				if (fullscreenWallpaper) {
-					fullscreenWallpaper.style.display = 'block';
-				}
-				body.classList.remove('enable-banner');
-				body.classList.add('wallpaper-transparent');
-				break;
-				
-			case 'none':
-				// 隐藏所有壁纸
-				if (bannerWrapper) {
-					bannerWrapper.style.display = 'none';
-				}
-				if (fullscreenWallpaper) {
-					fullscreenWallpaper.style.display = 'none';
-				}
-				body.classList.remove('enable-banner');
-				body.classList.remove('wallpaper-transparent');
-				break;
-		}
-	}
-	
-	// 监听壁纸模式变化，立即应用（不重载页面）
-	window.addEventListener('wallpaper-mode-change', function(event) {
-		applyWallpaperMode();
-	});
-	
-	// 支持 Swup 页面过渡
-	document.addEventListener('swup:page:view', function() {
-		applyWallpaperMode();
-	});
-</script>
 
-<!-- 全屏壁纸 - 始终渲染，通过 JS 控制显社隐藏 -->
-{fullscreenWallpaperConfig.enable && (
+
+<!-- 全屏壁纸 - 仅在banner关闭且全屏壁纸启用时显示 -->
+{!siteConfig.banner.enable && fullscreenWallpaperConfig.enable && (
 	<FullscreenWallpaper config={fullscreenWallpaperConfig} />
 )}
 

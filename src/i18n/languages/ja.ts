@@ -210,6 +210,11 @@ export const ja: Translation = {
 	[Key.timelineStartDate]: "開始日",
 	[Key.timelineDuration]: "期間",
 
+	// プロジェクト展示ページ
+	[Key.projectsVisit]: "プロジェクトへ",
+	[Key.projectsGitHub]: "GitHub",
+	[Key.projectsGitee]: "Gitee",
+	
 	// その他
 	[Key.noData]: "データなし",
 
@@ -244,9 +249,4 @@ export const ja: Translation = {
 	[Key.hour]: "時間",
 	[Key.minute]: "分",
 	[Key.second]: "秒",
-
-	// 壁紙モード
-	[Key.wallpaperBanner]: "バナーモード",
-	[Key.wallpaperFullscreen]: "全画面モード",
-	[Key.wallpaperNone]: "壁紙を非表示",
 };
