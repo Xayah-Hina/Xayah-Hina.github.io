@@ -225,6 +225,11 @@ enum I18nKey {
 	atomHowToUse = "atomHowToUse",
 	atomCopied = "atomCopied",
 	atomCopyFailed = "atomCopyFailed",
+
+	// Wallpaper mode
+	wallpaperBanner = "wallpaperBanner",
+	wallpaperFullscreen = "wallpaperFullscreen",
+	wallpaperNone = "wallpaperNone",
 }
 
 export default I18nKey;

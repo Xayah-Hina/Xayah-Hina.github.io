@@ -202,11 +202,6 @@ export const zh_TW: Translation = {
 	[Key.timelineStartDate]: "開始日期",
 	[Key.timelineDuration]: "持續時間",
 
-	// 项目展示页面
-	[Key.projectsVisit]: "前往項目",
-	[Key.projectsGitHub]: "GitHub",
-	[Key.projectsGitee]: "Gitee",
-	
 	// 其他
 	[Key.noData]: "暫無數據",
 
@@ -238,4 +233,9 @@ export const zh_TW: Translation = {
 	[Key.hour]: "小時",
 	[Key.minute]: "分",
 	[Key.second]: "秒",
+
+	// 壁紙模式
+	[Key.wallpaperBanner]: "橫幅模式",
+	[Key.wallpaperFullscreen]: "全屏模式",
+	[Key.wallpaperNone]: "隱藏壁紙",
 };
