@@ -201,6 +201,7 @@ const transparentClass = shouldEnableTransparency
 				}
 				body.classList.add('enable-banner');
 				body.classList.remove('wallpaper-transparent');
+				body.classList.remove('no-banner-mode');
 				break;
 				
 			case 'fullscreen':
@@ -213,6 +214,7 @@ const transparentClass = shouldEnableTransparency
 				}
 				body.classList.remove('enable-banner');
 				body.classList.add('wallpaper-transparent');
+				body.classList.add('no-banner-mode');
 				break;
 				
 			case 'none':
@@ -225,6 +227,7 @@ const transparentClass = shouldEnableTransparency
 				}
 				body.classList.remove('enable-banner');
 				body.classList.remove('wallpaper-transparent');
+				body.classList.add('no-banner-mode');
 				break;
 		}
 	}
@@ -508,6 +511,12 @@ const transparentClass = shouldEnableTransparency
         transform: translateY(0);
     }
 }
+
+/* 当没有 banner 时，主内容区域移到顶部 */
+body.no-banner-mode .absolute.w-full.z-30 {
+    top: 5.5rem !important;
+}
+
 /* 移动端无侧边栏布局优化 */
 @media (max-width: 768px) {
     .mobile-no-sidebar {
