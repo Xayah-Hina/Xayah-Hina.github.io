@@ -173,7 +173,7 @@ const transparentClass = shouldEnableTransparency
 
 <Layout title={title} banner={banner} description={description} lang={lang} setOGTypeArticle={setOGTypeArticle} postSlug={postSlug}>
 
-<script is:inline>
+<script is:inline define:vars={{navbarTransparentMode: siteConfig.banner?.navbar?.transparentMode || "semi"}}>
 	// 根据壁纸模式动态设置 banner 和全屏壁纸的显示
 	const wallpaperMode = localStorage.getItem('wallpaperMode') || 'banner';
 	
@@ -188,6 +188,7 @@ const transparentClass = shouldEnableTransparency
 		const wallpaperMode = localStorage.getItem('wallpaperMode') || 'banner';
 		const bannerWrapper = document.getElementById('banner-wrapper');
 		const fullscreenWallpaper = document.querySelector('[data-fullscreen-wallpaper]');
+		const navbar = document.getElementById('navbar');
 		const body = document.body;
 		
 		switch(wallpaperMode) {
@@ -198,6 +199,16 @@ const transparentClass = shouldEnableTransparency
 				}
 				if (fullscreenWallpaper) {
 					fullscreenWallpaper.style.display = 'none';
+				}
+				// navbar 恢复原始透明模式（从 config 读取）
+				if (navbar) {
+					navbar.removeAttribute('data-dynamic-transparent');
+					// 恢复 config 中设置的 data-transparent-mode
+					navbar.setAttribute('data-transparent-mode', navbarTransparentMode);
+					// 如果是 semifull 模式，重新初始化滚动检测
+					if (navbarTransparentMode === 'semifull' && window.initSemifullScrollDetection) {
+						window.initSemifullScrollDetection();
+					}
 				}
 				body.classList.add('enable-banner');
 				body.classList.remove('wallpaper-transparent');
@@ -212,6 +223,12 @@ const transparentClass = shouldEnableTransparency
 				if (fullscreenWallpaper) {
 					fullscreenWallpaper.style.display = 'block';
 				}
+				// navbar 强制设置为 semi 透明模式（忽略 config 配置）
+				if (navbar) {
+					navbar.setAttribute('data-dynamic-transparent', 'semi');
+					// 强制移除 config 中的 data-transparent-mode 影响
+					navbar.removeAttribute('data-transparent-mode');
+				}
 				body.classList.remove('enable-banner');
 				body.classList.add('wallpaper-transparent');
 				body.classList.add('no-banner-mode');
@@ -224,6 +241,12 @@ const transparentClass = shouldEnableTransparency
 				}
 				if (fullscreenWallpaper) {
 					fullscreenWallpaper.style.display = 'none';
+				}
+				// navbar 强制设置为不透明（忽略 config 配置）
+				if (navbar) {
+					navbar.setAttribute('data-dynamic-transparent', 'none');
+					// 强制移除 config 中的 data-transparent-mode 影响
+					navbar.removeAttribute('data-transparent-mode');
 				}
 				body.classList.remove('enable-banner');
 				body.classList.remove('wallpaper-transparent');
@@ -243,20 +266,13 @@ const transparentClass = shouldEnableTransparency
 	});
 </script>
 
-<!-- 全屏壁纸 - 始终渲染，通过 JS 控制显社隐藏 -->
+<!-- 全屏壁纸 - 始终渲染，通过 JS 控制显示隐藏 -->
 {fullscreenWallpaperConfig.enable && (
 	<FullscreenWallpaper config={fullscreenWallpaperConfig} />
 )}
 
 <!-- 全局图标加载器 -->
 <IconifyLoader />
-
-<!-- 为全屏壁纸模式添加body类 -->
-{shouldEnableTransparency && (
-	<script>
-		document.body.classList.add('wallpaper-transparent');
-	</script>
-)}
 
 <!-- Navbar -->
 <slot slot="head" name="head"></slot>

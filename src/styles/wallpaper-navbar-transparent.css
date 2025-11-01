@@ -1,56 +1,78 @@
-/**
- * 全屏壁纸模式下的导航栏半透明效果样式
- * Navbar Translucent Effects Styles for Wallpaper Mode
- * 只有当页面关闭banner且启用全屏壁纸时才应用半透明效果
- */
-
-/* 无壁纸时使用原始card-base样式，不添加额外的透明效果 */
-/* 确保导航栏在没有壁纸时有基本的背景色和圆角（低优先级，不覆盖card-base） */
-#navbar > div {
-    background: var(--card-bg);
-    border-radius: var(--radius-large);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* 优先覆盖：壁纸为none时navbar为纯色（与PostCard一致），壁纸为fullscreen时navbar透明度与PostCard一致 */
+/* 动态透明模式支持 - 最高优先级，用于壁纸模式切换，完全忽略 config.ts 配置 */
+/* 全屏壁纸模式：使用 semi 透明效果，与PostCard保持一致 */
+#navbar[data-dynamic-transparent="semi"] > div {
+    backdrop-filter: blur(8px) !important;
+    background: var(--card-bg-transparent) !important;
+    border: 1px solid var(--card-bg-transparent) !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* 半透明模式 - 桌面端在有壁纸时启用，移动端仅在有壁纸且为首页时启用 */
+:root.dark #navbar[data-dynamic-transparent="semi"] > div {
+    background: var(--card-bg-transparent) !important;
+    border: 1px solid var(--card-bg-transparent) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* 无壁纸模式：完全不透明，使用 var(--card-bg) */
+#navbar[data-dynamic-transparent="none"] > div {
+    backdrop-filter: none !important;
+    background: var(--card-bg) !important;
+    border: 1px solid var(--line-divider) !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+:root.dark #navbar[data-dynamic-transparent="none"] > div {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--line-divider) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 以下规则仅在 banner 模式下生效（当 data-dynamic-transparent 不存在时，由 config.ts 控制） */
+
+/* 全屏壁纸模式下的半透明背景 - 使用CSS变量与PostCard保持一致 */
 @media (min-width: 1024px) {
     body.wallpaper-transparent #navbar[data-transparent-mode="semi"] > div {
-        backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
+        backdrop-filter: blur(8px) !important;
+        background: var(--card-bg-transparent) !important;
+        border: 1px solid var(--card-bg-transparent) !important;
         border-radius: 0.75rem !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 }
 
-/* 移动端半透明模式 - 仅在有壁纸且为首页时启用 */
+/* 移动端半透明模式 - 仅在有壁纸且为首页时启用，使用CSS变量 */
 @media (max-width: 1023px) {
     body.wallpaper-transparent #navbar[data-transparent-mode="semi"][data-is-home="true"] > div {
-        backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
+        backdrop-filter: blur(8px) !important;
+        background: var(--card-bg-transparent) !important;
+        border: 1px solid var(--card-bg-transparent) !important;
         border-radius: 0.75rem !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 }
 
-/* 桌面端暗色主题下的半透明模式 - 在有壁纸时启用 */
+/* 桌面端暗色主题下的半透明模式 - 在有壁纸时启用，使用CSS变量 */
 @media (min-width: 1024px) {
     :root.dark body.wallpaper-transparent #navbar[data-transparent-mode="semi"] > div {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: var(--card-bg-transparent) !important;
+        border: 1px solid var(--card-bg-transparent) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
 }
 
-/* 移动端暗色主题下的半透明模式 - 仅在有壁纸且为首页时启用 */
+/* 移动端暗色主题下的半透明模式 - 仅在有壁纸且为首页时启用，使用CSS变量 */
 @media (max-width: 1023px) {
     :root.dark body.wallpaper-transparent #navbar[data-transparent-mode="semi"][data-is-home="true"] > div {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: var(--card-bg-transparent) !important;
+        border: 1px solid var(--card-bg-transparent) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
 }
 
@@ -66,25 +88,25 @@
     }
 }
 
-/* 桌面端半完全透明模式 - 在有壁纸时启用 */
+/* 桌面端半完全透明模式 - 在有壁纸时启用，使用CSS变量与PostCard保持一致 */
 @media (min-width: 1024px) {
     /* 默认状态：页面顶部时半透明圆角 */
     body.wallpaper-transparent #navbar[data-transparent-mode="semifull"] > div {
-        backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
+        backdrop-filter: blur(8px) !important;
+        background: var(--card-bg-transparent) !important;
+        border: 1px solid var(--card-bg-transparent) !important;
         border-radius: 0.75rem !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
     
     /* 滚动状态：下滑后变为半透明圆角 */
     body.wallpaper-transparent #navbar[data-transparent-mode="semifull"].scrolled > div {
-        backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
+        backdrop-filter: blur(8px) !important;
+        background: var(--card-bg-transparent) !important;
+        border: 1px solid var(--card-bg-transparent) !important;
         border-radius: 0.75rem !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 }
@@ -101,25 +123,25 @@
     }
 }
 
-/* 移动端半完全透明模式 - 仅在有壁纸且为首页时启用 */
+/* 移动端半完全透明模式 - 仅在有壁纸且为首页时启用，使用CSS变量 */
 @media (max-width: 1023px) {
     /* 默认状态：页面顶部时半透明圆角 */
     body.wallpaper-transparent #navbar[data-transparent-mode="semifull"][data-is-home="true"] > div {
-        backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
+        backdrop-filter: blur(8px) !important;
+        background: var(--card-bg-transparent) !important;
+        border: 1px solid var(--card-bg-transparent) !important;
         border-radius: 0.75rem !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
     
     /* 滚动状态：下滑后变为半透明圆角 */
     body.wallpaper-transparent #navbar[data-transparent-mode="semifull"][data-is-home="true"].scrolled > div {
-        backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
+        backdrop-filter: blur(8px) !important;
+        background: var(--card-bg-transparent) !important;
+        border: 1px solid var(--card-bg-transparent) !important;
         border-radius: 0.75rem !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 }
@@ -133,33 +155,33 @@
     }
 }
 
-/* 桌面端暗色主题下的半完全透明模式 - 在有壁纸时启用 */
+/* 桌面端暗色主题下的半完全透明模式 - 在有壁纸时启用，使用CSS变量 */
 @media (min-width: 1024px) {
     /* 默认状态：页面顶部时半透明圆角 */
     :root.dark body.wallpaper-transparent #navbar[data-transparent-mode="semifull"] > div {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: var(--card-bg-transparent) !important;
+        border: 1px solid var(--card-bg-transparent) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
     
     /* 滚动状态：下滑后变为半透明圆角 */
     :root.dark body.wallpaper-transparent #navbar[data-transparent-mode="semifull"].scrolled > div {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: var(--card-bg-transparent) !important;
+        border: 1px solid var(--card-bg-transparent) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
 }
 
 /* 移动端暗色主题下的完全透明模式 - 仅在有壁纸且为首页时启用 */
 @media (max-width: 1023px) {
-    :root.dark body.wallpaper-transparent #navbar[data-transparent-mode="full"][data-is-home="true"] > div {
+    :root.dark body.wallpaper-transparent #navbar[data-is-home="true"] > div {
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
     }
 }
 
-/* 移动端暗色主题下的半完全透明模式 - 仅在有壁纸且为首页时启用 */
+/* 移动端暗色主题下的半完全透明模式 - 仅在有壁纸且为首页时启用，使用CSS变量 */
 @media (max-width: 1023px) {
     /* 默认状态：页面顶部时完全透明 */
     :root.dark body.wallpaper-transparent #navbar[data-transparent-mode="semifull"][data-is-home="true"] > div {
@@ -170,9 +192,9 @@
     
     /* 滚动状态：下滑后变为半透明圆角 */
     :root.dark body.wallpaper-transparent #navbar[data-transparent-mode="semifull"][data-is-home="true"].scrolled > div {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: var(--card-bg-transparent) !important;
+        border: 1px solid var(--card-bg-transparent) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
 }
 
@@ -213,25 +235,25 @@
     /* 二级菜单半透明效果 */
     body.wallpaper-transparent .dropdown-content {
         backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
     }
     
     /* 主题色设置面板半透明效果 */
     body.wallpaper-transparent #display-setting {
         backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
     }
     
     /* 手机端导航菜单半透明效果 */
     body.wallpaper-transparent #nav-menu-panel {
         backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
     }
     
     
@@ -239,17 +261,17 @@
     /* 手机端MD导航菜单面板半透明效果 */
     body.wallpaper-transparent #mobile-toc-panel {
         backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
     }
     
     /* 搜索面板半透明效果 */
     body.wallpaper-transparent #search-panel {
         backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
     }
 }
 
@@ -258,25 +280,25 @@
     /* 二级菜单半透明效果 */
     body.wallpaper-transparent #navbar[data-is-home="true"] .dropdown-content {
         backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
     }
     
     /* 主题色设置面板半透明效果 */
     body.wallpaper-transparent #navbar[data-is-home="true"] ~ * #display-setting {
         backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
     }
     
     /* 手机端导航菜单半透明效果 */
     body.wallpaper-transparent #navbar[data-is-home="true"] #nav-menu-panel {
         backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
     }
     
     
@@ -284,25 +306,25 @@
     /* 手机端MD导航菜单面板半透明效果 */
     body.wallpaper-transparent #navbar[data-is-home="true"] #mobile-toc-panel {
         backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
     }
     
     /* 搜索面板半透明效果 */
     body.wallpaper-transparent #navbar[data-is-home="true"] #search-panel {
         backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
     }
     
     /* 主题色设置面板半透明效果 */
     body.wallpaper-transparent #navbar[data-is-home="true"] #display-setting {
         backdrop-filter: blur(20px) !important;
-        background: rgba(255, 255, 255, 0.55) !important;
-        border: 1px solid rgba(255, 255, 255, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+        background: rgba(255, 255, 255, 0.85) !important;
+        border: 1px solid rgba(255, 255, 255, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
     }
 }
 
@@ -311,39 +333,39 @@
 @media (min-width: 1024px) {
     /* 二级菜单暗色主题半透明效果 */
     :root.dark body.wallpaper-transparent .dropdown-content {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(24, 25, 38, 0.85) !important;
+        border: 1px solid rgba(24, 25, 38, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
     
     /* 主题色设置面板暗色主题半透明效果 */
     :root.dark body.wallpaper-transparent #display-setting {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(24, 25, 38, 0.85) !important;
+        border: 1px solid rgba(24, 25, 38, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
     
     /* 手机端导航菜单暗色主题半透明效果 */
     :root.dark body.wallpaper-transparent #nav-menu-panel {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(24, 25, 38, 0.85) !important;
+        border: 1px solid rgba(24, 25, 38, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
     
     
     
     /* 手机端MD导航菜单面板暗色主题半透明效果 */
     :root.dark body.wallpaper-transparent #mobile-toc-panel {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(24, 25, 38, 0.85) !important;
+        border: 1px solid rgba(24, 25, 38, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
     
     /* 搜索面板暗色主题半透明效果 */
     :root.dark body.wallpaper-transparent #search-panel {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(24, 25, 38, 0.85) !important;
+        border: 1px solid rgba(24, 25, 38, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
 }
 
@@ -351,45 +373,45 @@
 @media (max-width: 1023px) {
     /* 二级菜单暗色主题半透明效果 */
     :root.dark body.wallpaper-transparent #navbar[data-is-home="true"] .dropdown-content {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(24, 25, 38, 0.85) !important;
+        border: 1px solid rgba(24, 25, 38, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
     
     /* 主题色设置面板暗色主题半透明效果 */
     :root.dark body.wallpaper-transparent #navbar[data-is-home="true"] ~ * #display-setting {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(24, 25, 38, 0.85) !important;
+        border: 1px solid rgba(24, 25, 38, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
     
     /* 手机端导航菜单暗色主题半透明效果 */
     :root.dark body.wallpaper-transparent #navbar[data-is-home="true"] #nav-menu-panel {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(24, 25, 38, 0.85) !important;
+        border: 1px solid rgba(24, 25, 38, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
     
     
     
     /* 手机端MD导航菜单面板暗色主题半透明效果 */
     :root.dark body.wallpaper-transparent #navbar[data-is-home="true"] #mobile-toc-panel {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(24, 25, 38, 0.85) !important;
+        border: 1px solid rgba(24, 25, 38, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
     
     /* 搜索面板暗色主题半透明效果 */
     :root.dark body.wallpaper-transparent #navbar[data-is-home="true"] #search-panel {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(24, 25, 38, 0.85) !important;
+        border: 1px solid rgba(24, 25, 38, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
     
     /* 主题色设置面板暗色主题半透明效果 */
     :root.dark body.wallpaper-transparent #navbar[data-is-home="true"] #display-setting {
-        background: rgba(0, 0, 0, 0.55) !important;
-        border: 1px solid rgba(0, 0, 0, 0.55) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        background: rgba(24, 25, 38, 0.85) !important;
+        border: 1px solid rgba(24, 25, 38, 0.85) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
     }
 }
