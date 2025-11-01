@@ -150,6 +150,9 @@ export const siteConfig: SiteConfig = {
 		navbar: {
 			transparentMode: "semifull", // 导航栏透明模式："semi" 半透明加圆角，"full" 完全透明，"semifull" 动态透明
 		},
+
+		// 是否在移动端显示壁纸模式切换按钮（默认：false）
+		showModeSwitchOnMobile: false,
 	},
 	toc: {
 		enable: true, // 启用目录功能

@@ -112,6 +112,7 @@ export type SiteConfig = {
 		navbar?: {
 			transparentMode?: "semi" | "full" | "semifull"; // 导航栏透明模式
 		};
+		showModeSwitchOnMobile?: boolean; // 是否在移动端显示壁纸模式切换按钮，默认false
 	};
 	toc: {
 		enable: boolean;
