@@ -4,7 +4,7 @@ published: 2025-11-02
 description: ''
 image: ''
 tags: [sheet-music]
-category: 'music'
+category: 'Music'
 draft: false 
 lang: 'jp'
 ---
@@ -19,7 +19,7 @@ Q:1/4=97
 M:4/4
 K:E
 %%stretchlast true
-V:1 treble nm="Piano" snm="Pno."
+V:1 treble
 %%MIDI program 0
 V:2 treble 
 %%MIDI program 0
