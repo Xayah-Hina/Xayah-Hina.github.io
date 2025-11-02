@@ -11,6 +11,18 @@ import { getSortedPosts } from "@/utils/content-utils";
 
 const markdownParser = new MarkdownIt();
 
+// Ensure input is a string before passing to markdown-it
+function ensureString(input: unknown): string {
+	if (typeof input === "string") return input;
+	if (input == null) return "";
+	try {
+		return String(input);
+	} catch (e) {
+		console.warn("ensureString: unable to coerce input to string", { type: typeof input });
+		return "";
+	}
+}
+
 // get dynamic import of images as a map collection
 const imagesGlob = import.meta.glob<{ default: ImageMetadata }>(
 	"/src/content/**/*.{jpeg,jpg,png,gif,webp}", // include posts and assets
@@ -27,7 +39,7 @@ export async function GET(context: APIContext) {
 
 	for (const post of posts) {
 		// convert markdown to html string
-		const body = markdownParser.render(post.body);
+		const body = markdownParser.render(ensureString(post.body));
 		// convert html string to DOM-like structure
 		const html = htmlParser.parse(body);
 		// hold all img tags in variable images
