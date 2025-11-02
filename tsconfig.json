@@ -22,7 +22,8 @@
 			"@i18n/*": ["src/i18n/*"],
 			"@layouts/*": ["src/layouts/*"],
 			"@/*": ["src/*"]
-		}
-	},
+		},
+      "allowSyntheticDefaultImports": true
+    },
 	"include": ["src/**/*"]
 }

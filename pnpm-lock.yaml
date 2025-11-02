@@ -65,6 +65,9 @@ importers:
       '@tailwindcss/typography':
         specifier: ^0.5.19
         version: 0.5.19(tailwindcss@3.4.18(yaml@2.8.1))
+      abcjs:
+        specifier: ^6.5.2
+        version: 6.5.2
       astro:
         specifier: 5.15.1
         version: 5.15.1(@types/node@24.8.1)(jiti@1.21.7)(lightningcss@1.29.3)(rollup@2.79.2)(sass@1.80.4)(stylus@0.64.0)(terser@5.44.0)(typescript@5.9.3)(yaml@2.8.1)
@@ -1983,6 +1986,9 @@ packages:
 
   '@vscode/l10n@0.0.18':
     resolution: {integrity: sha512-KYSIHVmslkaCDyw013pphY+d7x1qV8IZupYfeIfzNA+nsaWHbn5uPuQRvdRFsa9zFzGeudPuoGoZ1Op4jrJXIQ==}
+
+  abcjs@6.5.2:
+    resolution: {integrity: sha512-XLDZPy/4TZbOqPsLwuu0Umsl79NTAcObEkboPxdYZXI8/fU6PNh59SAnkZOnEPVbyT8EXfBUjgNoe/uKd3T0xQ==}
 
   acorn@8.15.0:
     resolution: {integrity: sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==}
@@ -7370,6 +7376,8 @@ snapshots:
       vscode-uri: 3.1.0
 
   '@vscode/l10n@0.0.18': {}
+
+  abcjs@6.5.2: {}
 
   acorn@8.15.0: {}
 

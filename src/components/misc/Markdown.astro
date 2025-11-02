@@ -27,11 +27,11 @@ document.addEventListener("click", function (e: MouseEvent) {
             const lineElements = codeEle.querySelectorAll('span.line');
             if (lineElements.length > 0) {
                 // 对于有行结构的代码块，精确处理每一行
-                const lines = [];
+                const lines: string[] = [];
                 for (let i = 0; i < lineElements.length; i++) {
                     const lineElement = lineElements[i];
                     // 直接获取文本内容，不添加额外处理
-                    const lineText = lineElement.textContent || '';
+                    const lineText = (lineElement.textContent || '');
                     lines.push(lineText);
                 }
                 // 重要：使用 \n 连接行，而不是 \n\n 或其他方式
@@ -40,10 +40,10 @@ document.addEventListener("click", function (e: MouseEvent) {
                 // 对于没有行结构的代码块
                 const codeElements = codeEle.querySelectorAll('.code:not(summary *)');
                 if (codeElements.length > 0) {
-                    const lines = [];
+                    const lines: string[] = [];
                     for (let i = 0; i < codeElements.length; i++) {
                         const el = codeElements[i];
-                        const lineText = el.textContent || '';
+                        const lineText = (el.textContent || '');
                         lines.push(lineText);
                     }
                     code = lines.join('\n');
@@ -63,7 +63,7 @@ document.addEventListener("click", function (e: MouseEvent) {
             
             // 偶数空行：除以2
             // 奇数空行：(空行数+1)/2 向下取整
-            let resultEmptyLines;
+            let resultEmptyLines: number;
             if (emptyLineCount % 2 === 0) {
                 // 偶数
                 resultEmptyLines = emptyLineCount / 2;
@@ -100,6 +100,7 @@ document.addEventListener("click", function (e: MouseEvent) {
                 try {
                     const successful = document.execCommand('copy');
                     if (!successful) {
+                        // eslint-disable-next-line no-throw-literal
                         throw new Error('execCommand 返回 false');
                     }
                 } catch (execErr) {
@@ -131,4 +132,179 @@ document.addEventListener("click", function (e: MouseEvent) {
         });
     }
 });
+
+// ABC notation rendering: find code blocks with language `abc` and render via abcjs
+(async function setupAbcRenderer() {
+    // extract function similar to copy logic to preserve fidelity
+    function extractCodeText(codeEle: Element | null): string {
+        if (!codeEle) return '';
+        const el = codeEle as Element;
+        const lineElements = el.querySelectorAll('span.line');
+        if (lineElements.length > 0) {
+            const lines: string[] = [];
+            for (let i = 0; i < lineElements.length; i++) {
+                lines.push(lineElements[i].textContent || '');
+            }
+            return lines.join('\n');
+        }
+        const codeElements = el.querySelectorAll('.code:not(summary *)');
+        if (codeElements.length > 0) {
+            const lines: string[] = [];
+            for (let i = 0; i < codeElements.length; i++) {
+                lines.push(codeElements[i].textContent || '');
+            }
+            return lines.join('\n');
+        }
+        return el.textContent || '';
+    }
+
+    function normalizeEmptyLines(code: string): string {
+        return code.replace(/\n\n\n+/g, function(match) {
+            const newlineCount = match.length;
+            const emptyLineCount = newlineCount - 1;
+            let resultEmptyLines: number;
+            if (emptyLineCount % 2 === 0) {
+                resultEmptyLines = emptyLineCount / 2;
+            } else {
+                resultEmptyLines = Math.floor((emptyLineCount + 1) / 2);
+            }
+            if (resultEmptyLines < 1) resultEmptyLines = 1;
+            return '\n'.repeat(resultEmptyLines + 1);
+        });
+    }
+
+    // Wait for DOM to be ready; the markdown content is rendered server-side into the DOM already,
+    // but run this after a small delay to be safe (and to allow any syntax-highlighting transforms to run)
+    const run = async () => {
+        const codeSelectors = [
+            'pre > code.language-abc',
+            'pre > code[class*="language-abc"]',
+            'pre > code.lang-abc',
+            'code.language-abc',
+            // expressive-code may put the language on the <pre> as data-language="abc" (no class on <code>)
+            'pre[data-language="abc"]',
+            'pre[data-language*="abc"]',
+            '.expressive-code pre[data-language]',
+        ];
+        const codeEls = Array.from(document.querySelectorAll(codeSelectors.join(',')));
+        if (codeEls.length === 0) return; // nothing to do
+
+        let abcjsModule: any = undefined;
+        try {
+            abcjsModule = await import(/* webpackChunkName: "abcjs" */ 'abcjs');
+        } catch (err) {
+            console.error('无法加载 abcjs 模块，请确认已安装 abcjs：', err);
+            return;
+        }
+
+        if (!abcjsModule) return;
+
+        // try to resolve render function
+        const renderAbc: any = (abcjsModule.renderAbc || abcjsModule.default?.renderAbc || abcjsModule.default || abcjsModule.ABCJS?.renderAbc || abcjsModule.ABCJS) || null;
+
+        for (const codeEl of codeEls) {
+            const codeElement = codeEl as Element;
+            const pre = codeElement.closest('pre');
+            if (!pre) continue;
+            if ((pre as HTMLElement).dataset.abcProcessed) continue; // avoid double-processing
+
+            let abcText = extractCodeText(codeElement);
+            abcText = normalizeEmptyLines(abcText);
+            if (!abcText.trim()) {
+                (pre as HTMLElement).dataset.abcProcessed = 'true';
+                continue;
+            }
+
+            // create container for rendering
+            const container = document.createElement('div');
+            container.className = 'abcjs-render-container';
+            // insert before the pre and optionally hide the source
+            if (pre.parentNode) pre.parentNode.insertBefore(container, pre);
+            (pre as HTMLElement).style.display = 'none';
+
+            try {
+                if (typeof renderAbc === 'function') {
+                    // Many abcjs builds accept (element, abcString, params)
+                    try {
+                        renderAbc(container, abcText, { responsive: 'resize' });
+                    } catch (innerErr) {
+                        // fallback: some builds expose a top-level renderAbc that takes (id, abc, opts)
+                        try {
+                            renderAbc((container.id || container), abcText, { responsive: 'resize' });
+                        } catch (e2) {
+                            console.error('abcjs 渲染失败（两次尝试）：', e2);
+                        }
+                    }
+                } else if (abcjsModule && typeof abcjsModule.render === 'function') {
+                    // other possible API
+                    abcjsModule.render(container, abcText);
+                } else if (abcjsModule && abcjsModule.default && typeof abcjsModule.default === 'function') {
+                    // some modern builds default-export a function
+                    abcjsModule.default(container, abcText);
+                } else {
+                    console.warn('找不到 abcjs 的渲染函数，跳过渲染');
+                }
+
+                (pre as HTMLElement).dataset.abcProcessed = 'true';
+            } catch (err) {
+                console.error('abcjs 渲染出错：', err);
+                // restore visibility of source on error
+                (pre as HTMLElement).style.display = '';
+            }
+        }
+    };
+
+    // run a bit later to allow syntax highlighting to finish (if any)
+    const scheduleRun = () => {
+        const tryRun = async () => {
+            try {
+                await run();
+                return true;
+            } catch (e) {
+                console.warn('abcjs initial run failed or no blocks yet, will retry', e);
+                return false;
+            }
+        };
+
+        // First attempt after small delay
+        setTimeout(async () => {
+            const ok = await tryRun();
+            if (ok) return;
+
+            // If nothing found, observe DOM for additions (expressive-code may hydrate later)
+            const observer = new MutationObserver(async (mutations, obs) => {
+                const codeSelectors = [
+                    'pre > code.language-abc',
+                    'pre > code[class*="language-abc"]',
+                    'pre > code.lang-abc',
+                    'code.language-abc',
+                    'pre[data-language="abc"]',
+                    'pre[data-language*="abc"]',
+                    '.expressive-code pre[data-language]',
+                ];
+                if (document.querySelector(codeSelectors.join(','))) {
+                    obs.disconnect();
+                    tryRun();
+                }
+            });
+
+            observer.observe(document.body, { childList: true, subtree: true });
+
+            // Stop observing after 5s to avoid leaks
+            setTimeout(() => observer.disconnect(), 5000);
+        }, 200);
+    };
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        scheduleRun();
+    } else {
+        document.addEventListener('DOMContentLoaded', scheduleRun);
+    }
+})();
 </script>
+
+<style>
+.abcjs-render-container {
+    margin: 1rem 0;
+}
+</style>
