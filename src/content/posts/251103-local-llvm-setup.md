@@ -1,12 +1,14 @@
 ---
-title: 251103-local-llvm-setup
+title: "Local LLVM Deployment"
 published: 2025-11-03
-description: ''
+description: 'Setup From Stratch with Local LLVM and ComfyUI'
 image: ''
-tags: [LLVM, ComfyUI]
+tags: [LLVM]
 category: 'Generative AI'
 draft: false 
 lang: 'en'
 ---
 
-## Setup
+## Problem Statement: Uncensored Local LLVM Deployment
+
+- [ ] Native Idea: Local LLVM for Uncensored AI Interactions.
