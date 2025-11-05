@@ -9,9 +9,9 @@ draft: false
 lang: ''
 ---
 
-## Girl Character Identity Prompt Template
+# Girl Character Identity Prompt Template
 
-### 🧩 1️⃣ Hair Attributes
+## 🧩 1️⃣ Hair Attributes
 
 | Sub-category       | Description                                                          | Example Tags                                                      |
 | ------------------ | -------------------------------------------------------------------- | ----------------------------------------------------------------- |
@@ -25,7 +25,7 @@ lang: ''
 
 ---
 
-### 👁️ 2️⃣ Face Attributes
+## 👁️ 2️⃣ Face Attributes
 
 | Sub-category        | Description                                             | Example Tags                                   |
 | ------------------- | ------------------------------------------------------- | ---------------------------------------------- |
@@ -39,7 +39,7 @@ lang: ''
 
 ---
 
-### 💍 3️⃣ Neck / Upper Accessory
+## 💍 3️⃣ Neck / Upper Accessory
 
 | Sub-category                 | Description                  | Example Tags                                                  |
 | ---------------------------- | ---------------------------- | ------------------------------------------------------------- |
@@ -48,9 +48,9 @@ lang: ''
 
 ---
 
-### 👕 4️⃣ Outfit Structure
+## 👕 4️⃣ Outfit Structure
 
-#### (A) Upper Garment
+### (A) Upper Garment
 
 | Feature              | Description                           | Example Tags                                       |
 | -------------------- | ------------------------------------- | -------------------------------------------------- |
@@ -62,7 +62,7 @@ lang: ''
 | **Fit / Shape**      | Loose / tight / cropped.              | `slim fit blouse`, `cropped top`                   |
 | **Fabric Finish**    | Surface property.                     | `matte fabric`, `silky fabric`, `cotton texture`   |
 
-#### (B) Lower Garment
+### (B) Lower Garment
 
 | Feature        | Description                     | Example Tags                            |
 | -------------- | ------------------------------- | --------------------------------------- |
@@ -72,7 +72,7 @@ lang: ''
 | **Structure**  | Material and silhouette.        | `structured pleats`, `flowing skirt`    |
 | **Decoration** | Trim / patterns.                | `decorative hem stripe`, `floral print` |
 
-#### (C) Legwear
+### (C) Legwear
 
 | Feature               | Description                                | Example Tags                                                          |
 | --------------------- | ------------------------------------------ | --------------------------------------------------------------------- |
@@ -81,7 +81,7 @@ lang: ''
 | **Material / Finish** | Texture control.                           | `opaque`, `matte`, `sheer`, `glossy`, `not glossy`, `not see-through` |
 | **Fit**               | How tight / smooth.                        | `tight fit`, `smooth fabric`                                          |
 
-#### (D) Footwear
+### (D) Footwear
 
 | Feature     | Description             | Example Tags                              |
 | ----------- | ----------------------- | ----------------------------------------- |
@@ -91,7 +91,7 @@ lang: ''
 
 ---
 
-### 🎀 5️⃣ Additional Accessories / Props
+## 🎀 5️⃣ Additional Accessories / Props
 
 | Category          | Description                          | Example Tags                    |
 | ----------------- | ------------------------------------ | ------------------------------- |
@@ -102,7 +102,7 @@ lang: ''
 
 ---
 
-### 🧠 6️⃣ Body Structure / General Style
+## 🧠 6️⃣ Body Structure / General Style
 
 | Feature               | Description                        | Example Tags                                              |
 | --------------------- | ---------------------------------- | --------------------------------------------------------- |
@@ -114,7 +114,7 @@ lang: ''
 
 ---
 
-### 🧶 7️⃣ Color / Material Rules (Global)
+## 🧶 7️⃣ Color / Material Rules (Global)
 
 | Aspect                | Rule                                                         | Example                                                       |
 | --------------------- | ------------------------------------------------------------ | ------------------------------------------------------------- |
@@ -125,12 +125,12 @@ lang: ''
 
 ---
 
-### 🧱 8️⃣ Final Identity Prompt Block (Template)
+## 🧱 8️⃣ Final Identity Prompt Block (Template)
 
 Use this in LoRA caption or conditioning text.
 Replace placeholders `{...}` with concrete attributes.
 
-```
+```yaml
 {character_trigger}, 1girl,
 {hair_color}, {hair_length}, {hair_style}, {bangs_style},
 {head_accessory}, {side_ornaments},
@@ -146,7 +146,7 @@ Replace placeholders `{...}` with concrete attributes.
 
 Example instantiated for Ayaka:
 
-```
+```yaml
 xayahayaka, 1girl,
 silver hair, long hair, high ponytail, blunt bangs,
 big navy bow, pink ribbon hair ornaments with tassels,
@@ -159,6 +159,163 @@ opaque matte white pantyhose (no gloss, not see-through),
 black loafers,
 slender build, semi-realistic anime style, matte fabrics
 ```
+
+# Girl Character Variable Attribute Framework
+
+## 1️⃣ Pose & Body Dynamics
+
+| Sub-category               | Description                       | Example Tags                                                                |
+| -------------------------- | --------------------------------- | --------------------------------------------------------------------------- |
+| **Global Pose**            | Full-body stance variety.         | `standing`, `sitting`, `kneeling`, `lying`, `jumping`, `walking`, `running` |
+| **Upper-Body Gestures**    | Hand positions, arm orientations. | `arms crossed`, `hands on hips`, `touching hair`, `holding hand near face`  |
+| **Leg Gestures**           | Leg crossing, kneeling angles.    | `crossed legs`, `kneeling`, `one leg bent`, `sitting on knees`              |
+| **Camera-Facing**          | Viewpoint orientation.            | `front view`, `side view`, `back view`, `three-quarter view`                |
+| **Perspective Variation**  | Camera position.                  | `low angle`, `high angle`, `close-up`, `full body`                          |
+| **Balance / Weight Shift** | Adds realism and variation.       | `leaning`, `tilting head`, `resting hand`                                   |
+
+> 🔹 *Purpose:* expands the model’s body composition understanding and avoids overfitting to a single silhouette.
+
+---
+
+## 2️⃣ Facial Expressions & Emotional States
+
+| Sub-category             | Description                                                      | Example Tags                                                                              |
+| ------------------------ | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Emotion Range**        | Mild emotion shifts compatible with the character’s personality. | `smiling`, `blushing`, `surprised`, `sad`, `laughing`, `serious`, `embarrassed`, `crying` |
+| **Mouth Shape**          | Subtle variations that affect expression.                        | `open mouth`, `closed mouth`, `slight smile`, `pouting`                                   |
+| **Eye Gaze**             | Gaze direction variety.                                          | `looking at viewer`, `looking away`, `looking down`, `looking up`, `side glance`          |
+| **Blush / Tear Accents** | Adds expressiveness.                                             | `blush`, `tears`, `sweatdrop`                                                             |
+
+> 🔹 *Purpose:* trains emotional adaptability while keeping visual style stable.
+
+---
+
+## 3️⃣ Scene Context (Environment)
+
+| Sub-category                | Description                   | Example Tags                                                                    |
+| --------------------------- | ----------------------------- | ------------------------------------------------------------------------------- |
+| **Setting Category**        | General type of environment.  | `classroom`, `street`, `park`, `room`, `rooftop`, `garden`, `beach`, `cafe`     |
+| **Time / Lighting Context** | Light direction, time of day. | `sunlight`, `sunset`, `night`, `indoors lighting`, `diffuse light`, `backlight` |
+| **Seasonal Context**        | Environmental themes.         | `spring`, `summer`, `autumn leaves`, `snow`, `cherry blossoms`                  |
+| **Background Detail**       | Optional descriptive anchor.  | `under cherry blossoms`, `in classroom`, `on staircase`                         |
+| **Depth / Composition**     | Depth layering and distance.  | `close-up portrait`, `medium shot`, `full body`                                 |
+
+> 🔹 *Purpose:* enables style adaptation and environment embedding without changing identity.
+
+---
+
+## 4️⃣ Clothing Variation (Optional / Thematic)
+
+| Sub-category            | Description                               | Example Tags                                                     |
+| ----------------------- | ----------------------------------------- | ---------------------------------------------------------------- |
+| **Seasonal Versions**   | Small design changes while keeping theme. | `summer uniform`, `winter uniform`, `short sleeves`, `with coat` |
+| **Accessory Presence**  | Optional external accessories.            | `holding bag`, `wearing jacket`, `carrying umbrella`             |
+| **Fabric Behavior**     | Physical state variation.                 | `wind blowing clothes`, `wet clothes`, `wrinkled fabric`         |
+| **Partial Disassembly** | For realism, not exposure.                | `unbuttoned collar`, `rolled sleeves`                            |
+
+> 🔹 *Purpose:* teaches the LoRA how to map minor costume changes to the same identity (important for generalization).
+
+---
+
+## 5️⃣ Prop & Interaction Domain
+
+| Sub-category                    | Description                        | Example Tags                                                                           |
+| ------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------- |
+| **Held Objects**                | Items in hands.                    | `holding book`, `holding umbrella`, `carrying bag`, `holding phone`, `holding flower`  |
+| **Scene Props**                 | Objects in environment.            | `desk`, `chair`, `window`, `fence`, `bench`                                            |
+| **Interaction Type**            | Relationship with props or others. | `leaning on desk`, `sitting on chair`, `touching water`, `talking with another person` |
+| **Multi-Character Interaction** | If dataset includes pairs/groups.  | `hugging`, `hand holding`, `back to back`, `walking together`                          |
+
+> 🔹 *Purpose:* improves semantic control in text-to-image inference, e.g. “xayahayaka holding umbrella under rain.”
+
+---
+
+## 6️⃣ Lighting & Rendering Domain
+
+| Aspect                | Description                 | Example Tags                                                 |
+| --------------------- | --------------------------- | ------------------------------------------------------------ |
+| **Lighting Angle**    | Directional variations.     | `front lighting`, `rim light`, `backlight`, `top light`      |
+| **Lighting Quality**  | Hard / soft shadows.        | `soft lighting`, `diffuse lighting`, `dramatic lighting`     |
+| **Color Temperature** | Warm / cool tones for mood. | `warm light`, `cool light`, `neutral light`                  |
+| **Rendering Mood**    | Style emphasis.             | `cinematic lighting`, `moody atmosphere`, `vibrant contrast` |
+
+> 🔹 *Purpose:* helps LoRA adapt to multiple lighting distributions at inference time.
+
+---
+
+## 7️⃣ Composition & Framing
+
+| Sub-category        | Description                         | Example Tags                                    |
+| ------------------- | ----------------------------------- | ----------------------------------------------- |
+| **Framing**         | Cropping and camera field.          | `portrait`, `waist up`, `full body`, `close up` |
+| **Focus Depth**     | Use of blur for variety.            | `shallow depth of field`, `sharp focus`         |
+| **Orientation**     | Horizontal vs vertical composition. | `landscape`, `portrait orientation`             |
+| **Camera Distance** | Distance control.                   | `medium shot`, `long shot`, `close-up`          |
+
+---
+
+## 8️⃣ Art-Style & Rendering Variant (if applicable)
+
+| Sub-category            | Description                              | Example Tags                                                       |
+| ----------------------- | ---------------------------------------- | ------------------------------------------------------------------ |
+| **Rendering Style**     | Artistic look, within same model domain. | `anime style`, `semi-realistic`, `illustration`, `soft watercolor` |
+| **Brush / Line Weight** | Edge rendering.                          | `thin lines`, `painterly style`                                    |
+| **Texture Emphasis**    | Global surface treatment.                | `smooth shading`, `textured shading`                               |
+| **Color Scheme**        | Optional variation for mood.             | `pastel palette`, `vivid palette`, `monotone`                      |
+
+> 🔹 *Purpose:* for style LoRA, varying these enhances domain transfer; for identity LoRA, keep moderate diversity.
+
+---
+
+## 9️⃣ Background / Environment Effects
+
+| Feature                    | Description                | Example Tags                                           |
+| -------------------------- | -------------------------- | ------------------------------------------------------ |
+| **Particles / Atmosphere** | Environmental overlays.    | `falling petals`, `snowflakes`, `rain`, `glow`, `dust` |
+| **Weather State**          | Lighting + mood variation. | `rainy`, `sunny`, `foggy`, `clear sky`                 |
+| **Backdrop Structure**     | General spatial anchors.   | `school corridor`, `park bench`, `bridge`, `street`    |
+
+---
+
+## 🔟 Camera & Photographic Variations
+
+| Feature                | Description                | Example Tags                               |
+| ---------------------- | -------------------------- | ------------------------------------------ |
+| **Lens / Perspective** | Visual distortion variety. | `wide angle`, `telephoto`, `fisheye`       |
+| **Motion Blur**        | Dynamic feel.              | `motion blur`, `dynamic pose`              |
+| **Color Grading**      | Tone shift for atmosphere. | `film tone`, `vintage color`, `soft color` |
+
+---
+
+## ✅ Summary of Non-Fixed Domains to Cover
+
+| Domain                         | Goal                   | Typical Range                   |
+| ------------------------------ | ---------------------- | ------------------------------- |
+| **Pose & Body**                | Structural variability | 10–20 unique full-body poses    |
+| **Facial Expression**          | Emotional diversity    | 5–10 expressions                |
+| **Lighting & Time**            | Visual realism         | 3–6 conditions                  |
+| **Scene Context**              | Context adaptability   | 4–8 environments                |
+| **Clothing / Accessory State** | Limited variation      | 2–3 subtypes per outfit         |
+| **Props & Interaction**        | Gesture variety        | 5–10 object/interaction samples |
+| **Composition**                | Framing diversity      | portrait / full-body / medium   |
+| **Style & Rendering**          | Optional               | 2–3 stylistic variants          |
+
+---
+
+## 📘 Usage Guidelines
+
+1. **Diversity within control:**
+   Vary within these domains, but keep *identity attributes locked* from your invariant template.
+
+2. **Caption coverage:**
+   Include relevant variable tags in captions as they appear (e.g., `sitting on chair`, `sunset lighting`), but **never mix identity-changing tags** (e.g., hair color or clothing type not belonging to the character).
+
+3. **Dataset balance:**
+   Ensure roughly equal coverage across pose, expression, and environment to avoid over-bias toward any single pattern.
+
+4. **Generation scripting:**
+   When generating data via FluxGym or ComfyUI, systematically sample these variables (pose/lighting/context grids) to create orthogonal variation for better LoRA generalization.
+
 
 ## Kamizato Ayaka Sailor Uniform
 
