@@ -12,3 +12,10 @@ lang: 'en'
 ## Problem Statement: Uncensored Local LLVM Deployment
 
 - [ ] Native Idea: Local LLVM for Uncensored AI Interactions.
+
+## 01 Toolchains
+
+- [x] [LM Studio](https://lmstudio.ai/)
+- [x] [ChatBox](https://chatboxai.app/)
+
+## 02 Model
