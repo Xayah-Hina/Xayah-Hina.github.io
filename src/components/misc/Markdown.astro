@@ -14,12 +14,13 @@ const className = Astro.props.class;
 </div>
 
 <script>
-document.addEventListener("click", function (e: MouseEvent) {
-    const target = e.target as Element | null;
-    if (target && target.classList.contains("copy-btn")) {
+// @ts-nocheck
+document.addEventListener("click", function (e) {
+    const target = e.target;
+    if (target && target.classList && target.classList.contains("copy-btn")) {
         const preEle = target.closest("pre");
-        const codeEle = preEle?.querySelector("code");
-        
+        const codeEle = preEle && preEle.querySelector("code");
+
         // 精确的代码提取逻辑
         let code = '';
         if (codeEle) {
@@ -27,7 +28,7 @@ document.addEventListener("click", function (e: MouseEvent) {
             const lineElements = codeEle.querySelectorAll('span.line');
             if (lineElements.length > 0) {
                 // 对于有行结构的代码块，精确处理每一行
-                const lines: string[] = [];
+                const lines = [];
                 for (let i = 0; i < lineElements.length; i++) {
                     const lineElement = lineElements[i];
                     // 直接获取文本内容，不添加额外处理
@@ -40,7 +41,7 @@ document.addEventListener("click", function (e: MouseEvent) {
                 // 对于没有行结构的代码块
                 const codeElements = codeEle.querySelectorAll('.code:not(summary *)');
                 if (codeElements.length > 0) {
-                    const lines: string[] = [];
+                    const lines = [];
                     for (let i = 0; i < codeElements.length; i++) {
                         const el = codeElements[i];
                         const lineText = (el.textContent || '');
@@ -58,12 +59,12 @@ document.addEventListener("click", function (e: MouseEvent) {
         code = code.replace(/\n\n\n+/g, function(match) {
             // 计算连续换行符的数量
             const newlineCount = match.length;
-            // 计算空行数量（换行符数量减1）
+            // 计算空行数量（换行符数量减1)
             const emptyLineCount = newlineCount - 1;
             
             // 偶数空行：除以2
             // 奇数空行：(空行数+1)/2 向下取整
-            let resultEmptyLines: number;
+            let resultEmptyLines;
             if (emptyLineCount % 2 === 0) {
                 // 偶数
                 resultEmptyLines = emptyLineCount / 2;
@@ -80,7 +81,7 @@ document.addEventListener("click", function (e: MouseEvent) {
         });
         
         // 尝试多种复制方法
-        const copyToClipboard = async (text: string) => {
+        const copyToClipboard = async (text) => {
             try {
                 // 优先使用 Clipboard API
                 await navigator.clipboard.writeText(text);
@@ -118,14 +119,14 @@ document.addEventListener("click", function (e: MouseEvent) {
                 clearTimeout(parseInt(timeoutId));
             }
 
-            target.classList.add("success");
+            if (target.classList) target.classList.add("success");
 
             // 设置新的timeout并保存ID到按钮的自定义属性中
             const newTimeoutId = setTimeout(() => {
-                target.classList.remove("success");
+                if (target.classList) target.classList.remove("success");
             }, 1000);
 
-            target.setAttribute("data-timeout-id", newTimeoutId.toString());
+            try { target.setAttribute("data-timeout-id", newTimeoutId.toString()); } catch (e) {}
         }).catch(err => {
             console.error('复制失败:', err);
             // 可以在这里添加用户提示
@@ -136,12 +137,12 @@ document.addEventListener("click", function (e: MouseEvent) {
 // ABC notation rendering: find code blocks with language `abc` and render via abcjs
 (async function setupAbcRenderer() {
     // extract function similar to copy logic to preserve fidelity
-    function extractCodeText(codeEle: Element | null): string {
+    function extractCodeText(codeEle) {
         if (!codeEle) return '';
-        const el = codeEle as Element;
+        const el = codeEle;
         const lineElements = el.querySelectorAll('span.line');
         if (lineElements.length > 0) {
-            const lines: string[] = [];
+            const lines = [];
             for (let i = 0; i < lineElements.length; i++) {
                 lines.push(lineElements[i].textContent || '');
             }
@@ -149,7 +150,7 @@ document.addEventListener("click", function (e: MouseEvent) {
         }
         const codeElements = el.querySelectorAll('.code:not(summary *)');
         if (codeElements.length > 0) {
-            const lines: string[] = [];
+            const lines = [];
             for (let i = 0; i < codeElements.length; i++) {
                 lines.push(codeElements[i].textContent || '');
             }
@@ -158,11 +159,11 @@ document.addEventListener("click", function (e: MouseEvent) {
         return el.textContent || '';
     }
 
-    function normalizeEmptyLines(code: string): string {
+    function normalizeEmptyLines(code) {
         return code.replace(/\n\n\n+/g, function(match) {
             const newlineCount = match.length;
             const emptyLineCount = newlineCount - 1;
-            let resultEmptyLines: number;
+            let resultEmptyLines;
             if (emptyLineCount % 2 === 0) {
                 resultEmptyLines = emptyLineCount / 2;
             } else {
@@ -173,23 +174,58 @@ document.addEventListener("click", function (e: MouseEvent) {
         });
     }
 
+    // helper: detect the primary language string (before any hyphens/variants)
+    function detectPrimaryLang(ele) {
+        if (!ele) return null;
+        const el = ele;
+
+        // 1. data-language attribute on the element
+        const dataLang = el.getAttribute('data-language');
+        if (dataLang) return dataLang.split(/[\s\/-:]+/)[0].toLowerCase();
+
+        // 2. classList entries like language-abc or lang-abc
+        if (el.classList && el.classList.length > 0) {
+            for (let i = 0; i < el.classList.length; i++) {
+                const cls = el.classList[i];
+                if (cls.indexOf('language-') === 0) return cls.slice('language-'.length).split(/[-:\s\/]+/)[0].toLowerCase();
+                if (cls.indexOf('lang-') === 0) return cls.slice('lang-'.length).split(/[-:\s\/]+/)[0].toLowerCase();
+            }
+        }
+
+        // 3. if this is code inside a <pre>, the <pre> may have data-language or classes
+        const pre = el.closest('pre');
+        if (pre) {
+            const preData = pre.getAttribute('data-language');
+            if (preData) return preData.split(/[\s\/-:]+/)[0].toLowerCase();
+            if (pre.classList && pre.classList.length > 0) {
+                for (let i = 0; i < pre.classList.length; i++) {
+                    const cls = pre.classList[i];
+                    if (cls.indexOf('language-') === 0) return cls.slice('language-'.length).split(/[-:\s\/]+/)[0].toLowerCase();
+                    if (cls.indexOf('lang-') === 0) return cls.slice('lang-'.length).split(/[-:\s\/]+/)[0].toLowerCase();
+                }
+            }
+        }
+
+        return null;
+    }
+
     // Wait for DOM to be ready; the markdown content is rendered server-side into the DOM already,
     // but run this after a small delay to be safe (and to allow any syntax-highlighting transforms to run)
     const run = async () => {
-        const codeSelectors = [
-            'pre > code.language-abc',
-            'pre > code[class*="language-abc"]',
-            'pre > code.lang-abc',
-            'code.language-abc',
-            // expressive-code may put the language on the <pre> as data-language="abc" (no class on <code>)
-            'pre[data-language="abc"]',
-            'pre[data-language*="abc"]',
-            '.expressive-code pre[data-language]',
+        // Collect candidate code elements, then *filter* strictly by detected primary language.
+        // We do this because different highlighters put the language in different places (code.class, pre.data-language, etc.).
+        const candidateSelectors = [
+            'pre > code',            // most common
+            'pre[data-language]',    // expressive-code or similar
+            'code[data-language]',
         ];
-        const codeEls = Array.from(document.querySelectorAll(codeSelectors.join(',')));
+        const candidates = Array.from(document.querySelectorAll(candidateSelectors.join(',')));
+
+        // Only keep candidates whose primary language is exactly 'abc'
+        const codeEls = candidates.filter(c => detectPrimaryLang(c) === 'abc');
         if (codeEls.length === 0) return; // nothing to do
 
-        let abcjsModule: any = undefined;
+        let abcjsModule = undefined;
         try {
             abcjsModule = await import(/* webpackChunkName: "abcjs" */ 'abcjs');
         } catch (err) {
@@ -200,18 +236,19 @@ document.addEventListener("click", function (e: MouseEvent) {
         if (!abcjsModule) return;
 
         // try to resolve render function
-        const renderAbc: any = (abcjsModule.renderAbc || abcjsModule.default?.renderAbc || abcjsModule.default || abcjsModule.ABCJS?.renderAbc || abcjsModule.ABCJS) || null;
+        const renderAbc = (abcjsModule.renderAbc || (abcjsModule.default && abcjsModule.default.renderAbc) || abcjsModule.default || (abcjsModule.ABCJS && abcjsModule.ABCJS.renderAbc) || abcjsModule.ABCJS) || null;
 
-        for (const codeEl of codeEls) {
-            const codeElement = codeEl as Element;
+        for (let i = 0; i < codeEls.length; i++) {
+            const codeEl = codeEls[i];
+            const codeElement = codeEl;
             const pre = codeElement.closest('pre');
             if (!pre) continue;
-            if ((pre as HTMLElement).dataset.abcProcessed) continue; // avoid double-processing
+            if (pre.dataset && pre.dataset.abcProcessed) continue; // avoid double-processing
 
             let abcText = extractCodeText(codeElement);
             abcText = normalizeEmptyLines(abcText);
             if (!abcText.trim()) {
-                (pre as HTMLElement).dataset.abcProcessed = 'true';
+                if (pre.dataset) pre.dataset.abcProcessed = 'true';
                 continue;
             }
 
@@ -220,7 +257,7 @@ document.addEventListener("click", function (e: MouseEvent) {
             container.className = 'abcjs-render-container';
             // insert before the pre and optionally hide the source
             if (pre.parentNode) pre.parentNode.insertBefore(container, pre);
-            (pre as HTMLElement).style.display = 'none';
+            pre.style.display = 'none';
 
             try {
                 if (typeof renderAbc === 'function') {
@@ -238,18 +275,18 @@ document.addEventListener("click", function (e: MouseEvent) {
                 } else if (abcjsModule && typeof abcjsModule.render === 'function') {
                     // other possible API
                     abcjsModule.render(container, abcText);
-                } else if (abcjsModule && abcjsModule.default && typeof abcjsModule.default === 'function') {
+                } else if (abcjsModule && typeof abcjsModule.default === 'function') {
                     // some modern builds default-export a function
                     abcjsModule.default(container, abcText);
                 } else {
                     console.warn('找不到 abcjs 的渲染函数，跳过渲染');
                 }
 
-                (pre as HTMLElement).dataset.abcProcessed = 'true';
+                if (pre.dataset) pre.dataset.abcProcessed = 'true';
             } catch (err) {
                 console.error('abcjs 渲染出错：', err);
                 // restore visibility of source on error
-                (pre as HTMLElement).style.display = '';
+                pre.style.display = '';
             }
         }
     };
@@ -273,16 +310,17 @@ document.addEventListener("click", function (e: MouseEvent) {
 
             // If nothing found, observe DOM for additions (expressive-code may hydrate later)
             const observer = new MutationObserver(async (mutations, obs) => {
-                const codeSelectors = [
-                    'pre > code.language-abc',
-                    'pre > code[class*="language-abc"]',
-                    'pre > code.lang-abc',
-                    'code.language-abc',
-                    'pre[data-language="abc"]',
-                    'pre[data-language*="abc"]',
-                    '.expressive-code pre[data-language]',
-                ];
-                if (document.querySelector(codeSelectors.join(','))) {
+                // If any newly added element looks like an abc code block, trigger run.
+                // We do a broad check then rely on the same detectPrimaryLang filter inside tryRun.
+                const broadSelectors = ['pre > code', 'pre[data-language]', 'code[data-language]'];
+                const found = Array.from(document.querySelectorAll(broadSelectors.join(','))).some(el => {
+                    try {
+                        return detectPrimaryLang(el) === 'abc';
+                    } catch (e) {
+                        return false;
+                    }
+                });
+                if (found) {
                     obs.disconnect();
                     tryRun();
                 }
@@ -301,6 +339,7 @@ document.addEventListener("click", function (e: MouseEvent) {
         document.addEventListener('DOMContentLoaded', scheduleRun);
     }
 })();
+
 </script>
 
 <style>
