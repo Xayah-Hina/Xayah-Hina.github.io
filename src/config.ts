@@ -206,29 +206,24 @@ export const profileConfig: ProfileConfig = {
 	},
 	links: [
 		{
-			name: "Bilibli",
-			icon: "fa6-brands:bilibili",
-			url: "https://space.bilibili.com/701864046",
-		},
-		{
-			name: "Gitee",
-			icon: "mdi:git",
-			url: "https://gitee.com/matsuzakayuki",
+			name: "E-Mail",
+			icon: "fa6-solid:envelope",
+			url: "mailto:ycxiang14sep@gmail.com",
 		},
 		{
 			name: "GitHub",
 			icon: "fa6-brands:github",
-			url: "https://github.com/matsuzaka-yuki",
+			url: "https://github.com/Xayah-Hina",
 		},
 		{
-			name: "Codeberg",
-			icon: "simple-icons:codeberg",
-			url: "https://codeberg.org",
+			name: "Twitter",
+			icon: "fa6-brands:twitter",
+			url: "https://x.com/XayahHina",
 		},
 		{
-			name: "Discord",
-			icon: "fa6-brands:discord",
-			url: "https://discord.gg/MqW6TcQtVM",
+			name: "Google Scholar",
+			icon: "fa6-brands:google-scholar",
+			url: "",
 		},
 	],
 };
