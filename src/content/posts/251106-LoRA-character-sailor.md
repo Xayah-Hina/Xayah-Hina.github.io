@@ -1,10 +1,10 @@
 ---
-title: "Flux LoRA Character Identity"
+title: "LoRA Character Identity 1 - Girl Character Identity"
 published: 2025-11-06
-description: ''
+description: 'Structured LoRA training prompt and annotation guide for consistent girl character identity — includes identity templates, variable attributes, and strict output formatting for dataset captions.'
 image: ''
-tags: [AI Painting, ComfyUI, Flux]
-category: 'Generative AI'
+tags: [LoRA Character]
+category: 'AI Painting'
 draft: false 
 lang: ''
 ---

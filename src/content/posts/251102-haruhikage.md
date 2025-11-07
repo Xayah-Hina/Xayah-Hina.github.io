@@ -1,10 +1,10 @@
 ---
 title: 春日影 - BanG Dream! It's MyGO!!!!! OST
 published: 2025-11-02
-description: ''
+description: "ABC notation arrangement of 'Haruhikage' from BanG Dream! It's MyGO!!!!! OST. Four-part score (two treble, two bass) with tempo and MIDI settings — suitable for sheet music and MIDI export."
 image: ''
-tags: [sheet-music]
-category: 'Music'
+tags: [Sheet Arrangement]
+category: 'Sheet Music'
 draft: false 
 lang: 'jp'
 ---
