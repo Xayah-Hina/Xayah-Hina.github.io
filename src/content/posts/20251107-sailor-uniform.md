@@ -2,7 +2,7 @@
 title: "Comprehensive Sailor Uniform Character Generation"
 published: 2025-11-07
 description: ''
-image: ''
+image: ![xayahayaka](https://huggingface.co/datasets/XayahHina/imagebed/resolve/main/LoRA%20dataset/xayahayaka/3.jpg)
 tags: [AI Painting, ComfyUI, Flux]
 category: 'Generative AI'
 draft: false 
@@ -195,7 +195,7 @@ If a unique variation appears (e.g., “sailor top with floral embroidery”), r
 
 ---
 
-## 🔹 Example Output
+## Example Output
 
 ### Example Image Analysis Result
 
