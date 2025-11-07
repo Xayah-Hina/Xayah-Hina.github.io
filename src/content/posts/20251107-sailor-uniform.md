@@ -2,7 +2,7 @@
 title: "LoRA Character Identity 1.1 - Sailor Uniform"
 published: 2025-11-07
 description: "Comprehensive guide and prompt template for analyzing Japanese sailor uniforms, detailing core feature dimensions, vocabulary guidelines, example outputs, and an auto-formatted agent prompt for producing structured Markdown reports and combined text-to-image prompts."
-image: "https://huggingface.co/datasets/XayahHina/imagebed/resolve/main/LoRA%20dataset/xayahayaka/3.jpg"
+image: "https://huggingface.co/datasets/XayahHina/imagebed/resolve/main/ComfyUI_00590_.png"
 tags: [LoRA Character]
 category: 'AI Painting'
 draft: false 
