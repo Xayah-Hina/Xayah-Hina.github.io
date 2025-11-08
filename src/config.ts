@@ -77,7 +77,7 @@ export const siteConfig: SiteConfig = {
 		// 支持单张图片或图片数组，当数组长度 > 1 时自动启用轮播
 		src: {
 			desktop: [
-				"/assets/desktop-banner/d2.webp",
+				"/assets/desktop-banner/1137853-2k.png",
 			], // 桌面横幅图片
 			mobile: [
 				"/assets/mobile-banner/m2.webp",
@@ -170,7 +170,7 @@ export const fullscreenWallpaperConfig: FullscreenWallpaperConfig = {
 	enable: true, // 启用全屏壁纸功能,非Banner模式下生效
 	src: {
 		desktop: [
-			"/assets/desktop-banner/d2.webp",
+			"/assets/desktop-banner/1137853-2k.png",
 		], // 桌面横幅图片
 		mobile: [
 			"/assets/mobile-banner/m2.webp",
