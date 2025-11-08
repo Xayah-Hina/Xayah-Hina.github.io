@@ -208,7 +208,7 @@ export const profileConfig: ProfileConfig = {
 		{
 			name: "E-Mail",
 			icon: "fa6-solid:envelope",
-			url: "mailto:ycxiang14sep@gmail.com",
+			url: "mailto:academic@xayah.me",
 		},
 		{
 			name: "GitHub",
