@@ -10,4 +10,11 @@ draft: false
 lang: ''
 ---
 
+:::caution[ON DEVELOPMENT]
+- UPDATE 1108 - This article is currently under development and may contain incomplete sections or inaccuracies. Please check back later for the finalized version.
+:::
+
 # 1. Background & Motivation
+
+::github{repo="NVlabs/instant-ngp"}
+https://nvlabs.github.io/instant-ngp/
