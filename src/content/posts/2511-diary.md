@@ -1,14 +1,13 @@
 ---
-title: 2511-diary
+title: Daily Diary of November 2025
 published: 2025-11-08
-description: 'Diary of November 2025 — a month of quiet notes and reflections.'
+description: 'Daily diary of November 2025.'
 image: ''
-tags: [Diary Regular]
+tags: [Daily Diary]
 category: 'Diary'
 draft: false 
 lang: 'en'
 ---
 
-# November 2025
+# Nov. 8
 
-## Day 8
