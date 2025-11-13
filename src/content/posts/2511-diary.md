@@ -9,5 +9,7 @@ draft: false
 lang: 'en'
 ---
 
-# Nov. 8
+
+### Nov. 13
+Perfect is the enemy of good.
 
