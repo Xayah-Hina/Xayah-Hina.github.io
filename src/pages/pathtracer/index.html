@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGPU 路径追踪：极高密度场景 (完整修复版)</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #111;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            width: 100vw;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #e0e0e0;
+            background: rgba(30, 30, 30, 0.85);
+            padding: 20px;
+            border-radius: 12px;
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            min-width: 220px;
+            transition: opacity 0.3s;
+        }
+        #ui:hover {
+            opacity: 1;
+        }
+        h3 { margin: 0 0 15px 0; font-size: 1.2em; color: #fbbf24; font-weight: 600; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9em; }
+        .stat-label { color: #888; }
+        .stat-value { font-family: monospace; color: #fff; }
+
+        .control-group { margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; }
+        .control-title { font-size: 0.85em; color: #aaa; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: color 0.2s;
+        }
+        .checkbox-wrapper:hover { color: #fff; }
+        .checkbox-wrapper input { margin-right: 10px; accent-color: #fbbf24; cursor: pointer; }
+
+        #error {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff6b6b;
+            background: rgba(20, 0, 0, 0.95);
+            padding: 30px;
+            border: 1px solid #ff4444;
+            border-radius: 8px;
+            display: none;
+            text-align: center;
+            z-index: 20;
+            box-shadow: 0 0 50px rgba(255, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+<div id="ui">
+    <h3>Dense Scene Max</h3>
+    <div class="stat-row"><span class="stat-label">Res:</span><span id="resolution" class="stat-value">Init...</span></div>
+    <div class="stat-row"><span class="stat-label">SPP:</span><span id="sampleCount" class="stat-value">0</span></div>
+    <div class="stat-row"><span class="stat-label">FPS:</span><span id="fps" class="stat-value">0</span></div>
+
+    <div class="control-group">
+        <div class="control-title">Scene Elements</div>
+        <label class="checkbox-wrapper">
+            <input type="checkbox" id="chk-table" checked> 实木方桌 & 光源
+        </label>
+        <label class="checkbox-wrapper">
+            <input type="checkbox" id="chk-cubes" checked> 密集堆叠积木
+        </label>
+        <label class="checkbox-wrapper">
+            <input type="checkbox" id="chk-glass" checked> 玻璃球 & 弹珠
+        </label>
+        <label class="checkbox-wrapper">
+            <input type="checkbox" id="chk-metal" checked> 金属器件
+        </label>
+        <label class="checkbox-wrapper">
+            <input type="checkbox" id="chk-floor" checked> 地面散落 & 桌底光
+        </label>
+    </div>
+</div>
+<div id="error"></div>
+<canvas id="gpuCanvas"></canvas>
+
+<script type="module">
+    // --- WGSL Compute Shader ---
+    const computeShaderCode = `
+            struct Uniforms {
+                resolution: vec2f,
+                frame: f32,
+                visibilityMask: f32,
+                cameraPos: vec4f,
+                cameraTarget: vec4f,
+            };
+
+            @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+            @group(0) @binding(1) var<storage, read_write> accumulationBuffer: array<vec4f>;
+
+            struct Ray { origin: vec3f, direction: vec3f };
+            struct HitInfo {
+                hit: bool,
+                dist: f32,
+                point: vec3f,
+                normal: vec3f,
+                matType: i32,
+                albedo: vec3f,
+                emission: vec3f,
+                fuzz: f32,
+                ior: f32,
+                front_face: bool
+            };
+
+            var<private> rng_state: u32;
+            fn init_rng(pixel: vec2u, frame: u32) {
+                rng_state = pixel.x + pixel.y * u32(uniforms.resolution.x) + frame * 719393u;
+            }
+            fn rand() -> f32 {
+                let state = rng_state;
+                rng_state = state * 747796405u + 2891336453u;
+                let word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+                return f32((word >> 22u) ^ word) / 4294967296.0;
+            }
+            fn random_in_unit_sphere() -> vec3f {
+                let phi = 6.283185 * rand();
+                let costheta = 2.0 * rand() - 1.0;
+                let u = rand();
+                let theta = acos(costheta);
+                let r = pow(u, 0.333333);
+                return vec3f(r * sin(theta) * cos(phi), r * sin(theta) * sin(phi), r * cos(theta));
+            }
+            fn random_cosine_direction() -> vec3f {
+                let r1 = rand();
+                let r2 = rand();
+                let z = sqrt(1.0 - r2);
+                let phi = 6.283185 * r1;
+                return vec3f(cos(phi) * sqrt(r2), sin(phi) * sqrt(r2), z);
+            }
+
+            struct Quad { q: vec3f, u: vec3f, v: vec3f, matType: i32, color: vec3f, emission: vec3f, fuzz: f32, ior: f32 };
+            struct Box { min: vec3f, max: vec3f, color: vec3f, rotationY: f32, translation: vec3f, matType: i32, fuzz: f32, emission: vec3f };
+            struct Sphere { center: vec3f, radius: f32, matType: i32, color: vec3f, fuzz: f32, ior: f32 };
+            struct Triangle { v0: vec3f, v1: vec3f, v2: vec3f, matType: i32, color: vec3f, ior: f32 };
+            struct Cylinder { center: vec3f, radius: f32, height: f32, matType: i32, color: vec3f, fuzz: f32 };
+
+            fn hit_cylinder(r: Ray, cyl: Cylinder, t_min: f32, t_max: f32, hit: ptr<function, HitInfo>) -> bool {
+                let oc = r.origin - cyl.center;
+                let y_min = -cyl.height * 0.5;
+                let y_max = cyl.height * 0.5;
+                var valid_t = t_max;
+                var hit_found = false;
+                var surface_normal = vec3f(0.0);
+                let a = r.direction.x * r.direction.x + r.direction.z * r.direction.z;
+                let b = 2.0 * (oc.x * r.direction.x + oc.z * r.direction.z);
+                let c = oc.x * oc.x + oc.z * oc.z - cyl.radius * cyl.radius;
+                if (a > 1e-4) {
+                    let disc = b*b - 4.0*a*c;
+                    if (disc >= 0.0) {
+                        let sqrtd = sqrt(disc);
+                        var t = (-b - sqrtd) / (2.0 * a);
+                        if (t > t_min && t < valid_t) {
+                            let y = oc.y + t * r.direction.y;
+                            if (y >= y_min && y <= y_max) {
+                                valid_t = t; hit_found = true;
+                                surface_normal = vec3f((oc.x + t * r.direction.x) / cyl.radius, 0.0, (oc.z + t * r.direction.z) / cyl.radius);
+                            }
+                        }
+                        t = (-b + sqrtd) / (2.0 * a);
+                        if (t > t_min && t < valid_t) {
+                            let y = oc.y + t * r.direction.y;
+                            if (y >= y_min && y <= y_max) {
+                                valid_t = t; hit_found = true;
+                                surface_normal = vec3f((oc.x + t * r.direction.x) / cyl.radius, 0.0, (oc.z + t * r.direction.z) / cyl.radius);
+                            }
+                        }
+                    }
+                }
+                if (abs(r.direction.y) > 1e-4) {
+                    let t_top = (y_max - oc.y) / r.direction.y;
+                    if (t_top > t_min && t_top < valid_t) {
+                        let x = oc.x + t_top * r.direction.x; let z = oc.z + t_top * r.direction.z;
+                        if (x*x + z*z <= cyl.radius*cyl.radius) {
+                            valid_t = t_top; hit_found = true; surface_normal = vec3f(0.0, 1.0, 0.0);
+                        }
+                    }
+                    let t_bot = (y_min - oc.y) / r.direction.y;
+                    if (t_bot > t_min && t_bot < valid_t) {
+                        let x = oc.x + t_bot * r.direction.x; let z = oc.z + t_bot * r.direction.z;
+                        if (x*x + z*z <= cyl.radius*cyl.radius) {
+                            valid_t = t_bot; hit_found = true; surface_normal = vec3f(0.0, -1.0, 0.0);
+                        }
+                    }
+                }
+                if (hit_found) {
+                    (*hit).dist = valid_t;
+                    (*hit).point = r.origin + valid_t * r.direction;
+                    (*hit).front_face = dot(r.direction, surface_normal) < 0.0;
+                    (*hit).normal = select(-surface_normal, surface_normal, (*hit).front_face);
+                    (*hit).matType = cyl.matType;
+                    (*hit).albedo = cyl.color;
+                    (*hit).emission = vec3f(0.0);
+                    (*hit).fuzz = cyl.fuzz;
+                    (*hit).ior = 0.0;
+                    (*hit).hit = true;
+                    return true;
+                }
+                return false;
+            }
+
+            fn hit_sphere(r: Ray, s: Sphere, t_min: f32, t_max: f32, hit: ptr<function, HitInfo>) -> bool {
+                let oc = r.origin - s.center;
+                let a = dot(r.direction, r.direction);
+                let half_b = dot(oc, r.direction);
+                let c = dot(oc, oc) - s.radius * s.radius;
+                let disc = half_b * half_b - a * c;
+                if (disc < 0.0) { return false; }
+                let sqrtd = sqrt(disc);
+                var root = (-half_b - sqrtd) / a;
+                if (root < t_min || root > t_max) {
+                    root = (-half_b + sqrtd) / a;
+                    if (root < t_min || root > t_max) { return false; }
+                }
+                (*hit).dist = root;
+                (*hit).point = r.origin + root * r.direction;
+                let outward_normal = ((*hit).point - s.center) / s.radius;
+                (*hit).front_face = dot(r.direction, outward_normal) < 0.0;
+                (*hit).normal = select(-outward_normal, outward_normal, (*hit).front_face);
+                (*hit).matType = s.matType;
+                (*hit).albedo = s.color;
+                (*hit).fuzz = s.fuzz;
+                (*hit).ior = s.ior;
+                (*hit).emission = vec3f(0.0);
+                (*hit).hit = true;
+                return true;
+            }
+
+            fn hit_quad(r: Ray, q: Quad, t_min: f32, t_max: f32, hit: ptr<function, HitInfo>) -> bool {
+                let n = normalize(cross(q.u, q.v));
+                let denom = dot(n, r.direction);
+                if (abs(denom) < 1e-4) { return false; }
+                let t = (dot(n, q.q) - dot(n, r.origin)) / denom;
+                if (t < t_min || t > t_max) { return false; }
+                let intersection = r.origin + t * r.direction;
+                let planar = intersection - q.q;
+                let w_vec = n / dot(cross(q.u, q.v), n);
+                let alpha = dot(w_vec, cross(planar, q.v));
+                let beta = dot(w_vec, cross(q.u, planar));
+                if (alpha >= 0.0 && alpha <= 1.0 && beta >= 0.0 && beta <= 1.0) {
+                    (*hit).dist = t; (*hit).hit = true;
+                    (*hit).point = intersection;
+                    (*hit).front_face = dot(n, r.direction) < 0.0;
+                    (*hit).normal = select(-n, n, (*hit).front_face);
+                    (*hit).matType = q.matType; (*hit).albedo = q.color;
+                    (*hit).emission = q.emission; (*hit).fuzz = q.fuzz; (*hit).ior = q.ior;
+                    return true;
+                }
+                return false;
+            }
+
+            fn hit_box(r: Ray, b: Box, t_min: f32, t_max: f32, hit: ptr<function, HitInfo>) -> bool {
+                let cos_r = cos(-b.rotationY);
+                let sin_r = sin(-b.rotationY);
+                let origin_t = r.origin - b.translation;
+                let origin_l = vec3f(cos_r * origin_t.x - sin_r * origin_t.z, origin_t.y, sin_r * origin_t.x + cos_r * origin_t.z);
+                let dir_l = vec3f(cos_r * r.direction.x - sin_r * r.direction.z, r.direction.y, sin_r * r.direction.x + cos_r * r.direction.z);
+                let invD = 1.0 / dir_l;
+                let t0s = (b.min - origin_l) * invD;
+                let t1s = (b.max - origin_l) * invD;
+                let tsmall = min(t0s, t1s);
+                let tbig = max(t0s, t1s);
+                let tmin = max(max(tsmall.x, tsmall.y), tsmall.z);
+                let tmax = min(min(tbig.x, tbig.y), tbig.z);
+                if (tmax >= tmin && tmax > t_min && tmin < t_max) {
+                    (*hit).dist = tmin; (*hit).hit = true;
+                    (*hit).point = r.origin + tmin * r.direction;
+                    let p = origin_l + tmin * dir_l;
+                    let eps = 0.001;
+                    var ln = vec3f(0.0);
+                    if (abs(p.x - b.min.x) < eps) { ln = vec3f(-1.0, 0.0, 0.0); }
+                    else if (abs(p.x - b.max.x) < eps) { ln = vec3f(1.0, 0.0, 0.0); }
+                    else if (abs(p.y - b.min.y) < eps) { ln = vec3f(0.0, -1.0, 0.0); }
+                    else if (abs(p.y - b.max.y) < eps) { ln = vec3f(0.0, 1.0, 0.0); }
+                    else if (abs(p.z - b.min.z) < eps) { ln = vec3f(0.0, 0.0, -1.0); }
+                    else { ln = vec3f(0.0, 0.0, 1.0); }
+                    (*hit).normal = vec3f(cos(b.rotationY)*ln.x - sin(b.rotationY)*ln.z, ln.y, sin(b.rotationY)*ln.x + cos(b.rotationY)*ln.z);
+                    (*hit).front_face = dot(r.direction, (*hit).normal) < 0.0;
+                    if (!(*hit).front_face) { (*hit).normal = -(*hit).normal; }
+                    (*hit).matType = b.matType; (*hit).albedo = b.color;
+                    (*hit).fuzz = b.fuzz; (*hit).emission = b.emission; (*hit).ior = 0.0;
+                    return true;
+                }
+                return false;
+            }
+
+            fn scene_intersect(r: Ray, t_min: f32, t_max: f32, hit: ptr<function, HitInfo>) -> bool {
+                var temp_hit: HitInfo;
+                var hit_anything = false;
+                var closest = t_max;
+                let mask = u32(uniforms.visibilityMask);
+                let base_y = 220.0;
+
+                // --- Walls & Ceiling Light ---
+                if (hit_quad(r, Quad(vec3f(555.0,0.0,0.0), vec3f(0.0,555.0,0.0), vec3f(0.0,0.0,555.0), 0, vec3f(0.65,0.05,0.05), vec3f(0.0), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                if (hit_quad(r, Quad(vec3f(0.0,0.0,0.0), vec3f(0.0,555.0,0.0), vec3f(0.0,0.0,555.0), 0, vec3f(0.12,0.45,0.15), vec3f(0.0), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                if (hit_quad(r, Quad(vec3f(0.0,0.0,0.0), vec3f(555.0,0.0,0.0), vec3f(0.0,0.0,555.0), 0, vec3f(0.73,0.73,0.73), vec3f(0.0), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                if (hit_quad(r, Quad(vec3f(0.0,555.0,0.0), vec3f(555.0,0.0,0.0), vec3f(0.0,0.0,555.0), 0, vec3f(0.73,0.73,0.73), vec3f(0.0), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                if (hit_quad(r, Quad(vec3f(0.0,0.0,555.0), vec3f(555.0,0.0,0.0), vec3f(0.0,555.0,0.0), 0, vec3f(0.73,0.73,0.73), vec3f(0.0), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                if (hit_quad(r, Quad(vec3f(213.0,554.0,227.0), vec3f(130.0,0.0,0.0), vec3f(0.0,0.0,105.0), 1, vec3f(0.0), vec3f(15.0,15.0,15.0), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+
+                // --- 1. Table & Table Light ---
+                if ((mask & 1u) != 0u) {
+                    let t_col = vec3f(0.15, 0.08, 0.04);
+                    let t_h = 200.0; let t_top_th = 20.0; let t_w = 300.0;
+                    let cx = 278.0; let cz = 278.0;
+                    if (hit_box(r, Box(vec3f(-t_w*0.5, -t_top_th*0.5, -t_w*0.5), vec3f(t_w*0.5, t_top_th*0.5, t_w*0.5), t_col, 0.0, vec3f(cx, t_h + t_top_th*0.5, cz), 0, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                    let lw = 25.0; let lh = t_h; let lo = t_w*0.5 - lw*0.5;
+                    if (hit_box(r, Box(vec3f(-lw*0.5,-lh*0.5,-lw*0.5), vec3f(lw*0.5,lh*0.5,lw*0.5), t_col, 0.0, vec3f(cx-lo, lh*0.5, cz-lo), 0, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                    if (hit_box(r, Box(vec3f(-lw*0.5,-lh*0.5,-lw*0.5), vec3f(lw*0.5,lh*0.5,lw*0.5), t_col, 0.0, vec3f(cx+lo, lh*0.5, cz-lo), 0, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                    if (hit_box(r, Box(vec3f(-lw*0.5,-lh*0.5,-lw*0.5), vec3f(lw*0.5,lh*0.5,lw*0.5), t_col, 0.0, vec3f(cx-lo, lh*0.5, cz+lo), 0, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                    if (hit_box(r, Box(vec3f(-lw*0.5,-lh*0.5,-lw*0.5), vec3f(lw*0.5,lh*0.5,lw*0.5), t_col, 0.0, vec3f(cx+lo, lh*0.5, cz+lo), 0, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                    if (hit_box(r, Box(vec3f(-10.0), vec3f(10.0), vec3f(0.0), radians(20.0), vec3f(cx, base_y + 10.0, cz), 1, 0.0, vec3f(20.0, 18.0, 15.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                }
+
+                // --- 2. Ceramic Cubes ---
+                if ((mask & 2u) != 0u) {
+                    let c_w = vec3f(0.9, 0.9, 0.9); let c_b = vec3f(0.1, 0.3, 0.8); let c_r = vec3f(0.8, 0.2, 0.2);
+                    if (hit_box(r, Box(vec3f(-25.0), vec3f(25.0), c_w, radians(15.0), vec3f(200.0, base_y+25.0, 200.0), 4, 0.05, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                    if (hit_box(r, Box(vec3f(-18.0), vec3f(18.0), c_b, radians(-10.0), vec3f(200.0, base_y+50.0+18.0, 200.0), 4, 0.05, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                    if (hit_box(r, Box(vec3f(-15.0), vec3f(15.0), c_r, radians(45.0), vec3f(260.0, base_y+15.0, 180.0), 4, 0.05, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                    if (hit_box(r, Box(vec3f(-12.0), vec3f(12.0), c_w, radians(60.0), vec3f(240.0, base_y+12.0, 160.0), 4, 0.05, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                    if (hit_box(r, Box(vec3f(-10.0), vec3f(10.0), c_b, radians(0.0), vec3f(260.0, base_y+30.0+10.0, 180.0), 4, 0.05, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                }
+
+                // --- 3. Glass ---
+                if ((mask & 4u) != 0u) {
+                    if (hit_sphere(r, Sphere(vec3f(350.0, base_y+35.0, 300.0), 35.0, 3, vec3f(1.0), 0.0, 1.5), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                    if (hit_sphere(r, Sphere(vec3f(380.0, base_y+10.0, 270.0), 10.0, 3, vec3f(0.5, 1.0, 0.5), 0.0, 1.5), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                    if (hit_sphere(r, Sphere(vec3f(310.0, base_y+8.0, 330.0), 8.0, 3, vec3f(1.0, 0.5, 0.5), 0.0, 1.5), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                }
+
+                // --- 4. Metal ---
+                if ((mask & 8u) != 0u) {
+                    if (hit_cylinder(r, Cylinder(vec3f(330.0, base_y+30.0, 180.0), 25.0, 60.0, 2, vec3f(0.8, 0.6, 0.2), 0.2), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                    if (hit_box(r, Box(vec3f(-15.0), vec3f(15.0), vec3f(0.8, 0.8, 0.8), radians(30.0), vec3f(380.0, base_y+15.0, 200.0), 2, 0.1, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                }
+
+                // --- 5. Floor & Under-Table Lights ---
+                if ((mask & 16u) != 0u) {
+                   // Debris
+                   if (hit_sphere(r, Sphere(vec3f(150.0, 20.0, 400.0), 20.0, 4, vec3f(0.8, 0.2, 0.2), 0.1, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_sphere(r, Sphere(vec3f(400.0, 15.0, 450.0), 15.0, 2, vec3f(0.8, 0.8, 0.8), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_sphere(r, Sphere(vec3f(300.0, 10.0, 480.0), 10.0, 3, vec3f(1.0), 0.0, 1.5), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_sphere(r, Sphere(vec3f(100.0, 25.0, 300.0), 25.0, 0, vec3f(0.2, 0.8, 0.2), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_box(r, Box(vec3f(-12.0), vec3f(12.0), vec3f(0.5, 0.5, 0.1), radians(20.0), vec3f(200.0, 12.0, 420.0), 4, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_box(r, Box(vec3f(-10.0), vec3f(10.0), vec3f(0.1, 0.5, 0.5), radians(-40.0), vec3f(350.0, 10.0, 400.0), 0, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_box(r, Box(vec3f(-8.0), vec3f(8.0), vec3f(0.8, 0.8, 0.1), radians(80.0), vec3f(450.0, 8.0, 350.0), 2, 0.3, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_box(r, Box(vec3f(-20.0, -5.0, -5.0), vec3f(20.0, 5.0, 5.0), vec3f(0.4, 0.2, 0.1), radians(10.0), vec3f(250.0, 5.0, 350.0), 0, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+
+                   // Under Table Light (New)
+                   if (hit_sphere(r, Sphere(vec3f(200.0, 15.0, 200.0), 10.0, 1, vec3f(0.0), 0.0, 0.0), t_min, closest, &temp_hit)) {
+                        temp_hit.emission = vec3f(8.0, 6.0, 2.0); // Warm light
+                        hit_anything=true; closest=temp_hit.dist; *hit=temp_hit;
+                   }
+
+                   // Extra Clutter
+                   if (hit_sphere(r, Sphere(vec3f(220.0, 8.0, 380.0), 8.0, 3, vec3f(1.0, 0.8, 0.8), 0.0, 1.5), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_sphere(r, Sphere(vec3f(235.0, 6.0, 395.0), 6.0, 3, vec3f(0.8, 1.0, 0.8), 0.0, 1.5), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_sphere(r, Sphere(vec3f(210.0, 10.0, 400.0), 10.0, 3, vec3f(0.8, 0.8, 1.0), 0.0, 1.5), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_sphere(r, Sphere(vec3f(350.0, 12.0, 250.0), 12.0, 2, vec3f(0.9, 0.6, 0.1), 0.1, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_sphere(r, Sphere(vec3f(370.0, 8.0, 240.0), 8.0, 2, vec3f(0.8, 0.8, 0.9), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_box(r, Box(vec3f(-15.0, -10.0, -15.0), vec3f(15.0, 10.0, 15.0), vec3f(0.3, 0.3, 0.3), radians(55.0), vec3f(80.0, 10.0, 200.0), 0, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_box(r, Box(vec3f(-10.0), vec3f(10.0), vec3f(0.7, 0.1, 0.1), radians(10.0), vec3f(85.0, 30.0, 205.0), 4, 0.1, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_box(r, Box(vec3f(-20.0, -3.0, -30.0), vec3f(20.0, 3.0, 30.0), vec3f(0.2, 0.4, 0.8), radians(-20.0), vec3f(450.0, 3.0, 400.0), 0, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_sphere(r, Sphere(vec3f(80.0, 10.0, 80.0), 10.0, 2, vec3f(0.9, 0.5, 0.1), 0.1, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_sphere(r, Sphere(vec3f(120.0, 8.0, 60.0), 8.0, 0, vec3f(0.2, 0.2, 0.8), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_sphere(r, Sphere(vec3f(480.0, 15.0, 100.0), 15.0, 4, vec3f(0.1, 0.6, 0.6), 0.02, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_sphere(r, Sphere(vec3f(500.0, 12.0, 140.0), 12.0, 3, vec3f(0.9, 0.9, 1.0), 0.0, 1.5), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_sphere(r, Sphere(vec3f(50.0, 25.0, 500.0), 25.0, 2, vec3f(0.6, 0.6, 0.6), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_box(r, Box(vec3f(-8.0), vec3f(8.0), vec3f(0.9, 0.1, 0.1), radians(15.0), vec3f(400.0, 8.0, 60.0), 0, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_box(r, Box(vec3f(-10.0, -5.0, -5.0), vec3f(10.0, 5.0, 5.0), vec3f(0.1, 0.8, 0.1), radians(70.0), vec3f(380.0, 5.0, 90.0), 0, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_box(r, Box(vec3f(-6.0), vec3f(6.0), vec3f(0.5, 0.0, 0.5), radians(33.0), vec3f(420.0, 6.0, 110.0), 4, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_box(r, Box(vec3f(-20.0, -2.0, -20.0), vec3f(20.0, 2.0, 20.0), vec3f(0.8, 0.8, 0.3), radians(10.0), vec3f(180.0, 2.0, 80.0), 0, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_cylinder(r, Cylinder(vec3f(250.0, 5.0, 100.0), 15.0, 10.0, 2, vec3f(0.9, 0.8, 0.1), 0.1), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_cylinder(r, Cylinder(vec3f(255.0, 15.0, 105.0), 15.0, 10.0, 2, vec3f(0.9, 0.8, 0.1), 0.1), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_cylinder(r, Cylinder(vec3f(450.0, 10.0, 300.0), 8.0, 20.0, 4, vec3f(0.1, 0.1, 0.9), 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_box(r, Box(vec3f(-12.0), vec3f(12.0), vec3f(0.4, 0.4, 0.4), radians(25.0), vec3f(300.0, 12.0, 300.0), 0, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                   if (hit_sphere(r, Sphere(vec3f(280.0, 15.0, 320.0), 15.0, 3, vec3f(1.0), 0.0, 1.5), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                }
+                return hit_anything;
+            }
+
+            // --- Material Logic ---
+            fn build_onb(n: vec3f) -> mat3x3f {
+                let sign = select(-1.0, 1.0, n.z >= 0.0);
+                let a = -1.0 / (sign + n.z);
+                let b = n.x * n.y * a;
+                let tangent = vec3f(1.0 + sign * n.x * n.x * a, sign * b, -sign * n.x);
+                let bitangent = vec3f(b, sign + n.y * n.y * a, -n.y);
+                return mat3x3f(tangent, bitangent, n);
+            }
+            fn reflectance(cosine: f32, ref_idx: f32) -> f32 {
+                var r0 = (1.0 - ref_idx) / (1.0 + ref_idx);
+                r0 = r0 * r0;
+                return r0 + (1.0 - r0) * pow((1.0 - cosine), 5.0);
+            }
+            fn get_ray_color(r_in: Ray) -> vec3f {
+                var r = r_in;
+                var throughput = vec3f(1.0);
+                var acc_color = vec3f(0.0);
+                var rec: HitInfo;
+                for (var depth = 0; depth < 8; depth++) {
+                    if (scene_intersect(r, 0.001, 1e30, &rec)) {
+                        if (rec.matType == 1) { // Emissive
+                            acc_color += throughput * rec.emission;
+                            break;
+                        } else if (rec.matType == 0) { // Diffuse
+                            throughput *= rec.albedo;
+                            let onb = build_onb(rec.normal);
+                            r.direction = normalize(onb * random_cosine_direction());
+                            r.origin = rec.point;
+                        } else if (rec.matType == 2) { // Metal
+                            let reflected = reflect(normalize(r.direction), rec.normal);
+                            r.direction = normalize(reflected + rec.fuzz * random_in_unit_sphere());
+                            r.origin = rec.point;
+                            throughput *= rec.albedo;
+                            if (dot(r.direction, rec.normal) <= 0.0) { break; }
+                        } else if (rec.matType == 3) { // Glass
+                            throughput *= rec.albedo;
+                            let ref_ratio = select(rec.ior, 1.0/rec.ior, rec.front_face);
+                            let u_dir = normalize(r.direction);
+                            let cos_theta = min(dot(-u_dir, rec.normal), 1.0);
+                            let sin_theta = sqrt(1.0 - cos_theta * cos_theta);
+                            var dir: vec3f;
+                            if ((ref_ratio * sin_theta) > 1.0 || reflectance(cos_theta, ref_ratio) > rand()) {
+                                dir = reflect(u_dir, rec.normal);
+                            } else {
+                                dir = refract(u_dir, rec.normal, ref_ratio);
+                            }
+                            r.direction = dir; r.origin = rec.point;
+                        } else if (rec.matType == 4) { // Ceramic
+                            let u_dir = normalize(r.direction);
+                            let cos_theta = min(dot(-u_dir, rec.normal), 1.0);
+                            if (rand() < reflectance(cos_theta, 1.5)) {
+                                r.direction = normalize(reflect(u_dir, rec.normal) + rec.fuzz * random_in_unit_sphere());
+                            } else {
+                                throughput *= rec.albedo;
+                                r.direction = normalize(build_onb(rec.normal) * random_cosine_direction());
+                            }
+                            r.origin = rec.point;
+                        }
+                        if (depth > 3) {
+                            let p = max(throughput.r, max(throughput.g, throughput.b));
+                            if (rand() > p) { break; }
+                            throughput /= p;
+                        }
+                    } else { break; }
+                }
+                return acc_color;
+            }
+
+            @compute @workgroup_size(8, 8)
+            fn main(@builtin(global_invocation_id) global_id: vec3u) {
+                let width = u32(uniforms.resolution.x);
+                let height = u32(uniforms.resolution.y);
+                if (global_id.x >= width || global_id.y >= height) { return; }
+                let index = global_id.y * width + global_id.x;
+                init_rng(global_id.xy, u32(uniforms.frame));
+
+                let lookfrom = uniforms.cameraPos.xyz;
+                let lookat = uniforms.cameraTarget.xyz;
+                let vup = vec3f(0.0, 1.0, 0.0);
+                let fov = 40.0;
+                let ar = uniforms.resolution.x / uniforms.resolution.y;
+                let h = tan(radians(fov) * 0.5);
+                let vp_h = 2.0 * h;
+                let vp_w = ar * vp_h;
+                let w = normalize(lookfrom - lookat);
+                let u = normalize(cross(vup, w));
+                let v = cross(w, u);
+                let s = (f32(global_id.x) + rand()) / uniforms.resolution.x;
+                let t = 1.0 - (f32(global_id.y) + rand()) / uniforms.resolution.y;
+                let hor = vp_w * u;
+                let ver = vp_h * v;
+                let llc = lookfrom - hor*0.5 - ver*0.5 - w;
+                let r = Ray(lookfrom, normalize(llc + s*hor + t*ver - lookfrom));
+
+                var col = get_ray_color(r);
+                col = clamp(col, vec3f(0.0), vec3f(100.0));
+                let prev = accumulationBuffer[index];
+                accumulationBuffer[index] = prev + vec4f(col, 1.0);
+            }
+        `;
+
+    const displayShaderCode = `
+            struct Uniforms {
+                resolution: vec2f,
+                frame: f32,
+                mask: f32,
+                cameraPos: vec4f,
+                cameraTarget: vec4f
+            };
+            @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+            @group(0) @binding(1) var<storage, read> accumulationBuffer: array<vec4f>;
+            struct VSOutput { @builtin(position) pos: vec4f, @location(0) uv: vec2f };
+            @vertex fn vs_main(@builtin(vertex_index) vi: u32) -> VSOutput {
+                var p = array<vec2f, 3>(vec2f(-1.0, -3.0), vec2f(-1.0, 1.0), vec2f(3.0, 1.0));
+                var out: VSOutput; out.pos = vec4f(p[vi], 0.0, 1.0); return out;
+            }
+            @fragment fn fs_main(in: VSOutput) -> @location(0) vec4f {
+                let x = u32(in.pos.x); let y = u32(in.pos.y);
+                if (x >= u32(uniforms.resolution.x) || y >= u32(uniforms.resolution.y)) { discard; }
+                let acc = accumulationBuffer[y * u32(uniforms.resolution.x) + x];
+                var col = acc.rgb / max(acc.a, 1.0);
+                col = col * 0.6;
+                let a=2.51; let b=0.03; let c=2.43; let d=0.59; let e=0.14;
+                col = clamp((col*(a*col+b))/(col*(c*col+d)+e), vec3f(0.0), vec3f(1.0));
+                col = pow(col, vec3f(1.0/2.2));
+                return vec4f(col, 1.0);
+            }
+        `;
+
+    function showError(msg) {
+        const el = document.getElementById('error');
+        el.innerText = msg; el.style.display = 'block';
+        console.error(msg);
+    }
+
+    async function init() {
+        if (!navigator.gpu) return showError("您的浏览器不支持 WebGPU");
+        try {
+            const adapter = await navigator.gpu.requestAdapter();
+            if (!adapter) return showError("无法获取 GPU Adapter");
+            const maxStorageBuffer = adapter.limits.maxStorageBufferBindingSize || 134217728;
+            const device = await adapter.requestDevice();
+            const canvas = document.getElementById('gpuCanvas');
+            const context = canvas.getContext('webgpu');
+            const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
+            context.configure({ device, format: presentationFormat, alphaMode: 'premultiplied' });
+
+            let computePipeline, renderPipeline, accBuffer, uniformBuffer, computeBG, renderBG;
+            let width = 0, height = 0, frame = 0;
+            let visibilityMask = 31; // 0b11111
+
+            const computeModule = device.createShaderModule({ code: computeShaderCode });
+            const renderModule = device.createShaderModule({ code: displayShaderCode });
+
+            computePipeline = await device.createComputePipelineAsync({ layout: 'auto', compute: { module: computeModule, entryPoint: 'main' } });
+            renderPipeline = await device.createRenderPipelineAsync({ layout: 'auto', vertex: { module: renderModule, entryPoint: 'vs_main' }, fragment: { module: renderModule, entryPoint: 'fs_main', targets: [{ format: presentationFormat }] }, primitive: { topology: 'triangle-list' } });
+
+            const reset = () => {
+                frame = 0;
+                if (accBuffer) {
+                    const encoder = device.createCommandEncoder();
+                    encoder.clearBuffer(accBuffer);
+                    device.queue.submit([encoder.finish()]);
+                }
+            };
+
+            const createResources = () => {
+                const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+                let w = Math.floor(canvas.clientWidth * dpr);
+                let h = Math.floor(canvas.clientHeight * dpr);
+                if (w <= 0 || h <= 0) return false;
+                if (w * h * 16 > maxStorageBuffer) {
+                    const scale = Math.sqrt(maxStorageBuffer / (w * h * 16)) * 0.95;
+                    w = Math.floor(w * scale); h = Math.floor(h * scale);
+                }
+                if (w === width && h === height) return true;
+                width = w; height = h;
+                canvas.width = width; canvas.height = height;
+                document.getElementById('resolution').innerText = `${width}x${height}`;
+
+                if (accBuffer) accBuffer.destroy();
+                if (uniformBuffer) uniformBuffer.destroy();
+
+                accBuffer = device.createBuffer({ size: width * height * 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST });
+                uniformBuffer = device.createBuffer({ size: 64, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST });
+
+                computeBG = device.createBindGroup({ layout: computePipeline.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: uniformBuffer } }, { binding: 1, resource: { buffer: accBuffer } }] });
+                renderBG = device.createBindGroup({ layout: renderPipeline.getBindGroupLayout(0), entries: [{ binding: 0, resource: { buffer: uniformBuffer } }, { binding: 1, resource: { buffer: accBuffer } }] });
+
+                reset();
+                return true;
+            };
+
+            new ResizeObserver(() => createResources()).observe(canvas);
+
+            let camRadius = 1200, camTheta = Math.PI * 1.5, camPhi = Math.PI / 2;
+            let camTarget = [278, 278, 278];
+            let dragging = false, lx = 0, ly = 0;
+
+            canvas.addEventListener('mousedown', e => { dragging=true; lx=e.clientX; ly=e.clientY; });
+            window.addEventListener('mouseup', () => dragging=false);
+            canvas.addEventListener('mousemove', e => {
+                if(!dragging) return;
+                const sen = 0.005;
+                camTheta += (e.clientX - lx) * sen;
+                camPhi -= (e.clientY - ly) * sen;
+                camPhi = Math.max(0.01, Math.min(Math.PI - 0.01, camPhi));
+                lx = e.clientX; ly = e.clientY;
+                reset();
+            });
+            canvas.addEventListener('wheel', e => { camRadius = Math.max(100, camRadius + e.deltaY); reset(); });
+
+            const updateMask = () => {
+                let mask = 0;
+                if (document.getElementById('chk-table').checked) mask |= 1;
+                if (document.getElementById('chk-cubes').checked) mask |= 2;
+                if (document.getElementById('chk-glass').checked) mask |= 4;
+                if (document.getElementById('chk-metal').checked) mask |= 8;
+                if (document.getElementById('chk-floor').checked) mask |= 16;
+                visibilityMask = mask;
+                reset();
+            };
+            ['chk-table', 'chk-cubes', 'chk-glass', 'chk-metal', 'chk-floor'].forEach(id => {
+                document.getElementById(id).addEventListener('change', updateMask);
+            });
+
+            let lastTime = performance.now();
+            function loop(t) {
+                const dt = t - lastTime; lastTime = t;
+                if (width === 0 || height === 0 || !computeBG) { requestAnimationFrame(loop); return; }
+
+                document.getElementById('fps').innerText = (1000/dt).toFixed(0);
+                document.getElementById('sampleCount').innerText = frame;
+
+                const cx = camTarget[0] + camRadius * Math.sin(camPhi) * Math.cos(camTheta);
+                const cy = camTarget[1] + camRadius * Math.cos(camPhi);
+                const cz = camTarget[2] + camRadius * Math.sin(camPhi) * Math.sin(camTheta);
+
+                const uniData = new Float32Array([
+                    width, height, frame, visibilityMask,
+                    cx, cy, cz, 0,
+                    camTarget[0], camTarget[1], camTarget[2], 0
+                ]);
+                device.queue.writeBuffer(uniformBuffer, 0, uniData);
+
+                const enc = device.createCommandEncoder();
+                const pass = enc.beginComputePass();
+                pass.setPipeline(computePipeline);
+                pass.setBindGroup(0, computeBG);
+                pass.dispatchWorkgroups(Math.ceil(width/8), Math.ceil(height/8));
+                pass.end();
+
+                const rpass = enc.beginRenderPass({ colorAttachments: [{ view: context.getCurrentTexture().createView(), loadOp: 'clear', clearValue: { r: 0, g: 0, b: 0, a: 1 }, storeOp: 'store' }] });
+                rpass.setPipeline(renderPipeline);
+                rpass.setBindGroup(0, renderBG);
+                rpass.draw(3);
+                rpass.end();
+
+                device.queue.submit([enc.finish()]);
+                frame++;
+                requestAnimationFrame(loop);
+            }
+            requestAnimationFrame(loop);
+        } catch (e) { showError("WebGPU 初始化错误: " + e.message); }
+    }
+    init();
+</script>
+</body>
+</html>
