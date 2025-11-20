@@ -73,7 +73,7 @@
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s, filter 0.5s;
             background: #0f0f15;
             box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
-            /* 默认边框取消，由 SVG 圆环接管 */
+            /* 移除默认边框，主要依靠 SVG 圆环 */
             border: none;
         }
 
@@ -82,7 +82,6 @@
             width: 45%; height: 45%;
             transition: all 0.3s; z-index: 2;
             position: relative;
-            /* 默认暗淡 */
             opacity: 0.4;
             filter: grayscale(100%);
         }
@@ -101,34 +100,36 @@
             fill: none;
             stroke: currentColor;
             transition: all 0.5s ease-out;
-            opacity: 0; /* 默认隐藏 */
+            opacity: 0;
             transform-origin: center;
         }
 
-        /* --- 状态逻辑 (CSS Driven) --- */
+        /* --- 状态逻辑 --- */
 
         /* 1. Locked (未解锁) */
         .node-locked {
-            background: #050505; /* 很黑 */
+            background: #050505;
             box-shadow: inset 0 0 2px rgba(255,255,255,0.1);
-            /* 给一个极细的暗边框占位，防止布局跳动，或者用 ring-inset */
+            /* 细微的深色边框 */
             border: 1px solid rgba(255,255,255,0.05);
         }
         .node-locked .skill-node-icon { opacity: 0.2; }
 
-        /* 2. Available (可解锁 - 0/3) */
+        /* 2. Available (可解锁 - 0/3) - 关键修改 */
         .node-available {
             background: #0a0a10;
             cursor: pointer;
             animation: breathe-node 3s infinite alternate;
+            /* 边框保持极暗，与 Locked 一致，主要靠圆环区分 */
+            border: 1px solid rgba(255,255,255,0.05);
         }
         .node-available .skill-node-icon { opacity: 0.6; filter: grayscale(50%); }
 
-        /* 虚线圆 */
         .node-available .ring-outer {
-            opacity: 0.5;
+            opacity: 1;
             stroke-width: 2;
-            stroke-dasharray: 4, 4; /* 虚线 */
+            stroke-dasharray: none; /* 实线 */
+            stroke: rgba(255, 255, 255, 0.1); /* 深黑色/极暗灰色实线，模仿 Locked 边框感 */
         }
 
         /* 3. Level 1 (1/3) */
@@ -136,7 +137,8 @@
         .lvl-1 .ring-outer {
             opacity: 1;
             stroke-width: 3;
-            stroke-dasharray: none; /* 实线 */
+            stroke-dasharray: none;
+            /* 自动使用 currentColor (火红/冰蓝等) */
         }
 
         /* 4. Level 2 (2/3) */
@@ -144,19 +146,19 @@
         .lvl-2 .ring-outer {
             opacity: 1;
             stroke-width: 3;
-            stroke-dasharray: none; /* 外实线 */
+            stroke-dasharray: none;
         }
         .lvl-2 .ring-mid {
             opacity: 0.6;
             stroke-width: 2;
-            stroke-dasharray: 3, 3; /* 内虚线 */
+            stroke-dasharray: 3, 3;
         }
 
-        /* 5. Level 3 (Max) - 金色光晕 */
+        /* 5. Level 3 (Max) */
         .node-maxed .skill-node-icon {
             opacity: 1;
-            filter: drop-shadow(0 0 8px #ffd700); /* 金色光晕图标 */
-            fill: #fffdf0 !important; /* 接近白色 */
+            filter: drop-shadow(0 0 8px #ffd700);
+            fill: #fffdf0 !important;
         }
         .node-maxed .ring-outer {
             opacity: 1;
@@ -167,10 +169,12 @@
         .node-maxed .ring-mid {
             opacity: 1;
             stroke-width: 3;
-            stroke-dasharray: none; /* 内实线 */
+            stroke-dasharray: none;
         }
+        .lvl-3 .node-progress-rings { animation: spin-slow 20s linear infinite; }
 
-        /* 隐藏状态 */
+        @keyframes spin-slow { from { transform: rotate(-90deg); } to { transform: rotate(270deg); } }
+
         .node-hidden { opacity: 0 !important; pointer-events: none !important; transform: scale(0) !important; }
 
         /* --- Root Node Special Styles --- */
@@ -280,7 +284,7 @@
 <body class="h-screen flex flex-col overflow-hidden">
 
 <div id="loading-mask">
-    <div class="text-amber-500 magic-font text-2xl animate-pulse mb-4">Awakening Grimoire...</div>
+    <div class="text-amber-500 magic-font text-2xl animate-pulse mb-4">Summoning The Tome...</div>
     <div class="w-48 h-1 bg-gray-800 rounded overflow-hidden">
         <div id="loading-bar" class="h-full bg-amber-500 w-0 transition-all duration-75"></div>
     </div>
@@ -362,9 +366,6 @@
     const CANVAS_SIZE = 3000;
     const CENTER = CANVAS_SIZE / 2;
     const MAX_LEVEL = 3;
-
-    // --- Global Focus State ---
-    const focusContext = { active: false, valid: new Set() };
 
     const TREES = {
         root: { color: '#fbbf24', angle: 0 },
@@ -495,6 +496,7 @@
             const k_repulse = 6000, k_spring = 0.05, k_center = 0.01;
             this.nodes.forEach(n => {
                 if(n.id === 'root') { n.x = CENTER; n.y = CENTER; n.vx=0; n.vy=0; return; }
+
                 if (['fire', 'ice', 'phys'].includes(n.data.tree)) {
                     n.vx += (CENTER - n.x) * k_center;
                     n.vy += (CENTER - n.y) * k_center;
@@ -515,6 +517,7 @@
                     }
                 }
             });
+
             for(let i=0; i<this.nodes.length; i++) {
                 for(let j=i+1; j<this.nodes.length; j++) {
                     const a = this.nodes[i], b = this.nodes[j];
@@ -699,7 +702,6 @@
             const rings = el.querySelector('.root-rings');
             if(rings) rings.style.transform = `translate(-50%, -50%) rotateX(65deg) scale(${1 + intensity * 0.5})`;
         }
-
         window.currentRootIntensity = intensity;
     }
 
