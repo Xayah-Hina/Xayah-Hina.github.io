@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>星图天赋树 - 真理之书版</title>
+    <title>星图天赋树 - 完美交互版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+SC:wght@300;400;700&display=swap');
@@ -64,44 +64,37 @@
 
         /* --- Root Node Special Styles (3D Book & Rings) --- */
         .node-root {
-            /* Reset standard node styles */
             background: none !important;
             border: none !important;
             box-shadow: none !important;
-            z-index: 20; /* Lower z-index to not block close nodes */
-            perspective: 1000px; /* Deep perspective */
+            z-index: 20;
+            perspective: 800px;
             overflow: visible !important;
-            transition: all 1s ease-out; /* Smooth transition for massive glow */
         }
 
-        /* The 3D Book Container - FIXED ALIGNMENT */
         .root-book-container {
             position: absolute;
             top: 50%; left: 50%;
             width: 100%; height: 100%;
             transform-style: preserve-3d;
-            /* Align center better with rings. Less Y translate, matching rotation */
-            transform: translate(-50%, -50%) rotateX(45deg) rotateZ(-10deg);
+            transform: translate(-50%, -65%) rotateX(40deg) rotateZ(-5deg);
             transition: transform 0.5s;
             display: flex; justify-content: center; align-items: center;
         }
 
-        /* Book Icon */
         .root-book-icon {
-            width: 90% !important; height: 90% !important;
+            width: 100% !important; height: 100% !important;
             fill: #555; /* Default Gray */
-            /* Initial shadow */
-            filter: drop-shadow(0 10px 5px rgba(0,0,0,0.8));
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.8));
             transition: fill 1s, filter 1s;
             animation: book-hover 4s infinite alternate ease-in-out;
         }
 
-        /* Concentric Rings Container */
         .root-rings {
             position: absolute;
             top: 50%; left: 50%;
             width: 400%; height: 400%;
-            transform: translate(-50%, -50%) rotateX(60deg); /* Flat on ground */
+            transform: translate(-50%, -50%) rotateX(65deg);
             pointer-events: none;
             z-index: -1;
         }
@@ -115,7 +108,6 @@
             filter: drop-shadow(0 0 0px transparent);
         }
 
-        /* Ring Animations */
         .ring-fire-anim { animation: spin-right 60s linear infinite; transform-origin: center; }
         .ring-ice-anim { animation: spin-left 80s linear infinite; transform-origin: center; }
         .ring-phys-anim { animation: spin-right 100s linear infinite; transform-origin: center; }
@@ -124,7 +116,7 @@
         @keyframes spin-left { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
         @keyframes book-hover {
             0% { transform: translateY(0px); }
-            100% { transform: translateY(-8px); }
+            100% { transform: translateY(-5px); }
         }
 
         /* 普通节点状态 */
@@ -202,12 +194,18 @@
         .preset-btn { transition: all 0.2s; }
         .preset-btn:active { transform: scale(0.95); }
         .preset-btn:hover { transform: translateY(-1px); }
+
+        /* Important for Pan/Zoom: Viewport must be hidden overflow */
+        #viewport { cursor: grab; overflow: hidden; width: 100%; height: 100%; position: relative; }
+        #viewport:active { cursor: grabbing; }
+        /* Content layer needs top-left origin for matrix transforms to make sense easily */
+        #canvas-content { transform-origin: 0 0; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
 <div id="loading-mask">
-    <div class="text-amber-500 magic-font text-2xl animate-pulse mb-4">Awakening Grimoire...</div>
+    <div class="text-amber-500 magic-font text-2xl animate-pulse mb-4">Summoning The Tome...</div>
     <div class="w-48 h-1 bg-gray-800 rounded overflow-hidden">
         <div id="loading-bar" class="h-full bg-amber-500 w-0 transition-all duration-75"></div>
     </div>
@@ -241,8 +239,8 @@
     </div>
 </header>
 
-<div class="flex-1 relative overflow-hidden bg-black cursor-move" id="viewport">
-    <div id="canvas-content" class="absolute top-0 left-0 w-[3000px] h-[3000px] origin-center will-change-transform">
+<div id="viewport">
+    <div id="canvas-content" class="absolute top-0 left-0 w-[3000px] h-[3000px] origin-top-left will-change-transform">
         <div id="space-background"></div>
         <svg id="magic-hexagram" viewBox="0 0 100 100">
             <defs>
@@ -304,12 +302,8 @@
     const BASE_SIZE = 40;
 
     const ICONS = {
-        // 3D Perspective Book (Simulated path for flat book)
         root: 'M3,18 L21,18 L21,6 L3,6 L3,18 Z M3,6 L21,6 L18,4 L6,4 L3,6 Z M12,6 L12,18',
-        // Better open book path
         book_open: 'M12 3c-4.97 0-9 2-9 6v12c0 .55.45 1 1 1h6c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3zm-1 16H5V9c0-2.76 2.69-4 6-4v14zm10-16c-4.97 0-9 2-9 6v12c0 .55.45 1 1 1h6c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3zm1 16h-6c-1.66 0-3-1.34-3-3V6c3.31 0 6 1.24 6 4v10z',
-
-        // Standard Icons
         fire_basic: 'M12 23c5.52 0 10-4.48 10-10 0-4-3.25-7.41-7.1-8.93-.56-.22-.59-.98-.05-1.24 2.54-1.22 4.15-3.98 4.15-6.83 0-.55-.45-1-1-1-.34 0-.66.18-.84.47-1.5 2.46-4.31 4.24-7.5 4.5-3.18.26-6.04-1.5-7.57-4.02-.17-.29-.48-.45-.81-.45-.55 0-1 .45-1 1 0 2.85 1.61 5.61 4.15 6.83.54.26.51 1.02-.05 1.24C3.25 5.59 0 9 0 13c0 5.52 4.48 10 10 10s10-4.48 10-10c0-1.85-.51-3.58-1.4-5.06-.47-.78-1.55-.78-2.02 0C15.69 9.42 15.18 11.15 15.18 13c0 1.76-1.42 3.18-3.18 3.18-1.76 0-3.18-1.42-3.18-3.18 0-1.85.51-3.58 1.4-5.06.47-.78-.61-1.78-1.4-1.29C5.33 8.67 3.18 10.67 3.18 13c0 4.86 3.94 8.82 8.82 8.82 4.88 0 8.82-3.96 8.82-8.82 0-.68-.09-1.34-.25-1.98-.24-.96 1.05-1.62 1.68-.84C22.77 11.27 23.18 12.11 23.18 13c0 6.08-4.92 11-11 11z',
         fire_ball: 'M19.48,13.03C19.34,12.85 19.13,12.75 18.9,12.76C18.68,12.78 18.48,12.9 18.37,13.1C17.88,13.94 16.98,14.5 15.95,14.5C15.5,14.5 15.09,14.38 14.71,14.18C15.69,13.56 16.34,12.47 16.34,11.22C16.34,9.41 14.97,7.91 13.21,7.73C13.18,7.73 13.15,7.73 13.12,7.73C13.09,5.87 13.56,4.21 14.24,2.8C14.32,2.63 14.31,2.43 14.21,2.27C14.11,2.11 13.94,2 13.75,2C11.35,2 7.73,5.16 7.73,9.84C7.73,10 7.74,10.15 7.76,10.3C6.06,11.34 5,13.32 5,19.09 7.91,22 11.5,22C14.84,22 17.59,19.49 17.95,16.25C18.67,15.42 19.24,14.33 19.48,13.03M11.5,20.5C8.74,20.5 6.5,18.26 6.5,15.5C6.5,13.71 7.44,12.15 8.87,11.23L9.5,10.82L9.23,10.11C9.22,10.08 9.22,10.05 9.22,10.03C9.24,10.03 9.25,10.04 9.27,10.04C9.29,10.05 9.32,10.06 9.34,10.07C9.54,10.15 9.77,10.19 10,10.19C10.28,10.19 10.54,10.13 10.79,10.03L11.46,9.75L11.55,10.47C11.85,12.83 13.86,14.65 16.28,14.65C16.41,14.65 16.54,14.64 16.66,14.63C16.45,17.93 14.23,20.5 11.5,20.5Z',
         fire_spark: 'M11,21H13V19H11V21M15.14,18.5L16.85,20.2L18.27,18.79L16.56,17.09L15.14,18.5M8.86,18.5L7.44,17.09L5.73,18.79L7.15,20.2L8.86,18.5M12,17C14.21,17 16,15.21 16,13C16,8 12,2 12,2C12,2 8,8 8,13C8,15.21 9.79,17 12,17M12,7.41C13,10.08 14,12.06 14,13C14,14.1 13.1,15 12,15C10.9,15 10,14.1 10,13C10,12.06 11,10.08 12,7.41Z',
@@ -395,7 +389,7 @@
 
     let sys;
 
-    /* --- 物理引擎 (Concentric Force) --- */
+    /* --- 物理引擎 --- */
     class Simulation {
         constructor(nodes) {
             this.nodes = nodes.map(n => ({ id: n.id, data: n, x: CENTER, y: CENTER, vx: 0, vy: 0 }));
@@ -434,20 +428,21 @@
                 if (['fire', 'ice', 'phys'].includes(n.data.tree)) {
                     n.vx += (CENTER - n.x) * k_center;
                     n.vy += (CENTER - n.y) * k_center;
+                    const dx = n.x - CENTER; const dy = n.y - CENTER; const dist = Math.sqrt(dx*dx + dy*dy);
+                    if(dist < 120) {
+                        const push = (120 - dist) * 0.1;
+                        n.vx += (dx/dist) * push; n.vy += (dy/dist) * push;
+                    }
                 } else {
-                    // Hybrid orbital gravity
-                    const dx = n.x - CENTER;
-                    const dy = n.y - CENTER;
-                    const dist = Math.sqrt(dx*dx + dy*dy);
-                    const targetR = 900;
+                    const dx = n.x - CENTER; const dy = n.y - CENTER; const dist = Math.sqrt(dx*dx + dy*dy);
+                    const targetR = 1100;
                     if(dist > 0) {
-                        const force = (dist - targetR) * 0.005;
+                        const force = (dist - targetR) * 0.01;
                         n.vx -= (dx/dist) * force;
                         n.vy -= (dy/dist) * force;
                     }
-                    // Core Exclusion Zone
-                    if(dist < 700) {
-                        const push = (700 - dist) * 0.01;
+                    if(dist < 900) {
+                        const push = (900 - dist) * 0.05;
                         n.vx += (dx/dist) * push;
                         n.vy += (dy/dist) * push;
                     }
@@ -470,7 +465,7 @@
                 if(d > 0) {
                     let len = 90, k = k_spring;
                     const isHybrid = !['fire','ice','phys','root'].includes(l.target.data.tree);
-                    if(isHybrid) { len = 300; k = 0.005; }
+                    if(isHybrid) { len = 350; k = 0.003; }
                     const f = (d - len) * k, fx = (dx/d) * f, fy = (dy/d) * f;
                     if(l.source.id !== 'root') { l.source.vx += fx; l.source.vy += fy; }
                     if(l.target.id !== 'root') { l.target.vx -= fx; l.target.vy -= fy; }
@@ -494,7 +489,7 @@
         }, 200);
     }
 
-    /* --- Particle System (Subtler Root) --- */
+    /* --- Particle System --- */
     class FlowParticle {
         constructor(sx, sy, tx, ty, color) { this.x=sx; this.y=sy; this.sx=sx; this.sy=sy; this.tx=tx; this.ty=ty; this.color=color; this.p=0; this.life=1; this.sp=0.01+Math.random()*0.005; }
         update() { this.p+=this.sp; this.x=this.sx+(this.tx-this.sx)*this.p; this.y=this.sy+(this.ty-this.sy)*this.p; if(this.p>=1)this.life=0; }
@@ -504,14 +499,13 @@
     class Particle {
         constructor(x, y, type, isRoot=false) {
             this.x=x; this.y=y; this.type=type; this.life=1; this.isRoot=isRoot;
-            // Much subtler root particles
             const intensity = window.currentRootIntensity || 0;
             const a=Math.random()*6.28;
             const speed = isRoot ? (Math.random()*0.3+0.1) : (Math.random()*0.5+0.2);
             this.vx=Math.cos(a)*speed; this.vy=Math.sin(a)*speed;
 
             if(isRoot) {
-                this.vy -= 0.2; // Float up gently from book
+                this.vy -= 0.2;
                 this.sz = Math.random()*1.5;
             } else {
                 this.sz=(Math.random()*2+1);
@@ -596,66 +590,48 @@
     function updateRootVisuals() {
         const w = getWeights();
 
-        // Calculate opacity based on ratio
         const fireOp = w.fire / w.total;
         const iceOp = w.ice / w.total;
         const physOp = w.phys / w.total;
 
-        // Update Rings via CSS variables or direct style (DOM lookup)
         const rF = document.querySelector('.root-ring-fire');
         const rI = document.querySelector('.root-ring-ice');
         const rP = document.querySelector('.root-ring-phys');
 
-        // Base opacity 0.1 + ratio contribution
-        if(rF) { rF.style.opacity = 0.1 + fireOp * 0.9; rF.style.strokeWidth = 1.5 + fireOp * 2; }
-        if(rI) { rI.style.opacity = 0.1 + iceOp * 0.9; rI.style.strokeWidth = 1.5 + iceOp * 2; }
-        if(rP) { rP.style.opacity = 0.1 + physOp * 0.9; rP.style.strokeWidth = 1.5 + physOp * 2; }
+        if(rF) { rF.style.opacity = 0.1 + fireOp * 0.9; rF.style.strokeWidth = 1.5 + fireOp * 2; rF.style.filter = `drop-shadow(0 0 ${fireOp*10}px #f97316)`; }
+        if(rI) { rI.style.opacity = 0.1 + iceOp * 0.9; rI.style.strokeWidth = 1.5 + iceOp * 2; rI.style.filter = `drop-shadow(0 0 ${iceOp*10}px #22d3ee)`; }
+        if(rP) { rP.style.opacity = 0.1 + physOp * 0.9; rP.style.strokeWidth = 1.5 + physOp * 2; rP.style.filter = `drop-shadow(0 0 ${physOp*10}px #cbd5e1)`; }
 
-        // Update Book color & glow
         const book = document.querySelector('.root-book-icon');
 
         let r, g, b;
-        // If empty (only root), use Gray
         if(w.total <= 1) {
-            r=80; g=80; b=90; // Metallic Gray
+            r=80; g=80; b=90;
         } else {
-            // Weighted average color
             r = (w.fire * 249 + w.ice * 34 + w.phys * 226) / w.total;
             g = (w.fire * 115 + w.ice * 211 + w.phys * 232) / w.total;
             b = (w.fire * 22 + w.ice * 238 + w.phys * 240) / w.total;
         }
 
         const colorStr = `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
-
-        // Update Intensity for size/glow
         const totalIntensity = Math.min(w.total / 50, 1.0);
         const specIntensity = Math.min(w.maxSpec / 20, 1.0);
         const intensity = Math.max(totalIntensity, specIntensity);
 
-        // Apply styles
         if(book) {
             book.style.fill = colorStr;
-            // Add glow if active
             if(w.total > 1) {
-                // Dazzling White Logic
-                if (w.fire > 20 && w.ice > 20 && w.phys > 20) {
-                    book.style.fill = "#ffffff";
-                    book.style.filter = `drop-shadow(0 0 ${20 + 50 * intensity}px white) drop-shadow(0 0 10px white)`;
-                } else {
-                    book.style.filter = `drop-shadow(0 10px 10px rgba(0,0,0,0.8)) drop-shadow(0 0 ${10 + 20 * intensity}px ${colorStr})`;
-                }
+                book.style.filter = `drop-shadow(0 10px 10px rgba(0,0,0,0.8)) drop-shadow(0 0 ${10 + 30 * intensity}px ${colorStr})`;
             } else {
-                book.style.filter = `drop-shadow(0 10px 10px rgba(0,0,0,0.8))`;
+                book.style.filter = `drop-shadow(0 5px 5px rgba(0,0,0,0.8))`;
             }
         }
 
-        // Root Node container size
         const el = document.querySelector('#node-root');
         if(el) {
-            const size = 50 + (30 * intensity); // Max 80px
+            const size = 50 + (30 * intensity);
             el.style.width = `${size}px`;
             el.style.height = `${size}px`;
-            // Adjust ring container scale to match
             const rings = el.querySelector('.root-rings');
             if(rings) rings.style.transform = `translate(-50%, -50%) rotateX(65deg) scale(${1 + intensity * 0.5})`;
         }
@@ -724,9 +700,7 @@
         if(sl.innerHTML === '') {
             let lH='', nH='';
 
-            // Add Root Manually to center with dynamic size
             const r = layoutNodes.find(n=>n.id==='root');
-            // Initial small size
             nH += `
                 <div id="node-root" class="skill-node node-root" style="width:50px; height:50px; left:${r.x-25}px; top:${r.y-25}px;">
                     <div class="root-book-container">
@@ -876,8 +850,59 @@
         precomputeLayout();
 
         let d=false, sx, sy, sl, st;
-        vp.onmousedown=e=>{d=true;sx=e.pageX-vp.offsetLeft;sy=e.pageY-vp.offsetTop;sl=vp.scrollLeft;st=vp.scrollTop;};
-        window.onmouseup=()=>d=false; window.onmousemove=e=>{if(d){e.preventDefault();vp.scrollLeft=sl-(e.pageX-vp.offsetLeft-sx);vp.scrollTop=st-(e.pageY-vp.offsetTop-sy);}};
+        let scale = 1;
+        let pointX = (window.innerWidth - CANVAS_SIZE) / 2;
+        let pointY = (window.innerHeight - CANVAS_SIZE) / 2;
+        let startX = 0;
+        let startY = 0;
+        let panning = false;
+
+        const content = document.getElementById('canvas-content');
+
+        function setTransform() {
+            content.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
+        }
+
+        // Initial Transform
+        setTransform();
+
+        // --- Pan Logic ---
+        vp.onmousedown = (e) => {
+            panning = true;
+            startX = e.clientX - pointX;
+            startY = e.clientY - pointY;
+            vp.style.cursor = 'grabbing';
+        };
+
+        window.onmouseup = () => {
+            panning = false;
+            vp.style.cursor = 'grab';
+        };
+
+        window.onmousemove = (e) => {
+            if (!panning) return;
+            e.preventDefault();
+            pointX = e.clientX - startX;
+            pointY = e.clientY - startY;
+            setTransform();
+        };
+
+        // --- Zoom Logic ---
+        vp.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const xs = (e.clientX - pointX) / scale;
+            const ys = (e.clientY - pointY) / scale;
+            const delta = -Math.sign(e.deltaY) * 0.1;
+            const nextScale = Math.min(Math.max(0.2, scale + delta), 3.0);
+
+            pointX = e.clientX - xs * nextScale;
+            pointY = e.clientY - ys * nextScale;
+            scale = nextScale;
+
+            setTransform();
+        }, { passive: false });
+
+
         function loop(t) {
             const weights = getWeights();
             sys.spawnRoot(weights);
