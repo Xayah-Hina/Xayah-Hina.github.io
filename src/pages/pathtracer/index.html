@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebGPU 路径追踪：极高密度场景 (完整修复版)</title>
+    <title>WebGPU Path Tracer: Cornell Box</title>
     <style>
         body {
             margin: 0;
@@ -75,7 +75,7 @@
 </head>
 <body>
 <div id="ui">
-    <h3>Dense Scene Max</h3>
+    <h3>Path Tracer: Cornell Box</h3>
     <div class="stat-row"><span class="stat-label">Res:</span><span id="resolution" class="stat-value">Init...</span></div>
     <div class="stat-row"><span class="stat-label">SPP:</span><span id="sampleCount" class="stat-value">0</span></div>
     <div class="stat-row"><span class="stat-label">FPS:</span><span id="fps" class="stat-value">0</span></div>
@@ -83,19 +83,19 @@
     <div class="control-group">
         <div class="control-title">Scene Elements</div>
         <label class="checkbox-wrapper">
-            <input type="checkbox" id="chk-table" checked> 实木方桌 & 光源
+            <input type="checkbox" id="chk-table" checked> Wood Table & Lights
         </label>
         <label class="checkbox-wrapper">
-            <input type="checkbox" id="chk-cubes" checked> 密集堆叠积木
+            <input type="checkbox" id="chk-cubes" checked> Dense Stacked Cubes
         </label>
         <label class="checkbox-wrapper">
-            <input type="checkbox" id="chk-glass" checked> 玻璃球 & 弹珠
+            <input type="checkbox" id="chk-glass" checked> Glass Sphere & Marbles
         </label>
         <label class="checkbox-wrapper">
-            <input type="checkbox" id="chk-metal" checked> 金属器件
+            <input type="checkbox" id="chk-metal" checked> Metal Components
         </label>
         <label class="checkbox-wrapper">
-            <input type="checkbox" id="chk-floor" checked> 地面散落 & 桌底光
+            <input type="checkbox" id="chk-floor" checked> Scattered Floor & Light
         </label>
     </div>
 </div>
@@ -324,9 +324,10 @@
                 if (hit_quad(r, Quad(vec3f(0.0,0.0,0.0), vec3f(555.0,0.0,0.0), vec3f(0.0,0.0,555.0), 0, vec3f(0.73,0.73,0.73), vec3f(0.0), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
                 if (hit_quad(r, Quad(vec3f(0.0,555.0,0.0), vec3f(555.0,0.0,0.0), vec3f(0.0,0.0,555.0), 0, vec3f(0.73,0.73,0.73), vec3f(0.0), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
                 if (hit_quad(r, Quad(vec3f(0.0,0.0,555.0), vec3f(555.0,0.0,0.0), vec3f(0.0,555.0,0.0), 0, vec3f(0.73,0.73,0.73), vec3f(0.0), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
-                if (hit_quad(r, Quad(vec3f(213.0,554.0,227.0), vec3f(130.0,0.0,0.0), vec3f(0.0,0.0,105.0), 1, vec3f(0.0), vec3f(15.0,15.0,15.0), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
+                // Ceiling Light (Boosted Brightness to 50.0)
+                if (hit_quad(r, Quad(vec3f(213.0,554.0,227.0), vec3f(130.0,0.0,0.0), vec3f(0.0,0.0,105.0), 1, vec3f(0.0), vec3f(50.0,50.0,50.0), 0.0, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
 
-                // --- 1. Table & Table Light ---
+                // --- 1. Wood Table & Lights (Bit 0) ---
                 if ((mask & 1u) != 0u) {
                     let t_col = vec3f(0.15, 0.08, 0.04);
                     let t_h = 200.0; let t_top_th = 20.0; let t_w = 300.0;
@@ -340,7 +341,7 @@
                     if (hit_box(r, Box(vec3f(-10.0), vec3f(10.0), vec3f(0.0), radians(20.0), vec3f(cx, base_y + 10.0, cz), 1, 0.0, vec3f(20.0, 18.0, 15.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
                 }
 
-                // --- 2. Ceramic Cubes ---
+                // --- 2. Ceramic Cubes (Bit 1) ---
                 if ((mask & 2u) != 0u) {
                     let c_w = vec3f(0.9, 0.9, 0.9); let c_b = vec3f(0.1, 0.3, 0.8); let c_r = vec3f(0.8, 0.2, 0.2);
                     if (hit_box(r, Box(vec3f(-25.0), vec3f(25.0), c_w, radians(15.0), vec3f(200.0, base_y+25.0, 200.0), 4, 0.05, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
@@ -350,20 +351,20 @@
                     if (hit_box(r, Box(vec3f(-10.0), vec3f(10.0), c_b, radians(0.0), vec3f(260.0, base_y+30.0+10.0, 180.0), 4, 0.05, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
                 }
 
-                // --- 3. Glass ---
+                // --- 3. Glass (Bit 2) ---
                 if ((mask & 4u) != 0u) {
                     if (hit_sphere(r, Sphere(vec3f(350.0, base_y+35.0, 300.0), 35.0, 3, vec3f(1.0), 0.0, 1.5), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
                     if (hit_sphere(r, Sphere(vec3f(380.0, base_y+10.0, 270.0), 10.0, 3, vec3f(0.5, 1.0, 0.5), 0.0, 1.5), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
                     if (hit_sphere(r, Sphere(vec3f(310.0, base_y+8.0, 330.0), 8.0, 3, vec3f(1.0, 0.5, 0.5), 0.0, 1.5), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
                 }
 
-                // --- 4. Metal ---
+                // --- 4. Metal (Bit 3) ---
                 if ((mask & 8u) != 0u) {
                     if (hit_cylinder(r, Cylinder(vec3f(330.0, base_y+30.0, 180.0), 25.0, 60.0, 2, vec3f(0.8, 0.6, 0.2), 0.2), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
                     if (hit_box(r, Box(vec3f(-15.0), vec3f(15.0), vec3f(0.8, 0.8, 0.8), radians(30.0), vec3f(380.0, base_y+15.0, 200.0), 2, 0.1, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
                 }
 
-                // --- 5. Floor & Under-Table Lights ---
+                // --- 5. Floor & Under-Table Lights (Bit 4) ---
                 if ((mask & 16u) != 0u) {
                    // Debris
                    if (hit_sphere(r, Sphere(vec3f(150.0, 20.0, 400.0), 20.0, 4, vec3f(0.8, 0.2, 0.2), 0.1, 0.0), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
@@ -405,6 +406,7 @@
                    if (hit_box(r, Box(vec3f(-12.0), vec3f(12.0), vec3f(0.4, 0.4, 0.4), radians(25.0), vec3f(300.0, 12.0, 300.0), 0, 0.0, vec3f(0.0)), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
                    if (hit_sphere(r, Sphere(vec3f(280.0, 15.0, 320.0), 15.0, 3, vec3f(1.0), 0.0, 1.5), t_min, closest, &temp_hit)) { hit_anything=true; closest=temp_hit.dist; *hit=temp_hit; }
                 }
+
                 return hit_anything;
             }
 
@@ -545,10 +547,10 @@
     }
 
     async function init() {
-        if (!navigator.gpu) return showError("您的浏览器不支持 WebGPU");
+        if (!navigator.gpu) return showError("Your browser does not support WebGPU.");
         try {
             const adapter = await navigator.gpu.requestAdapter();
-            if (!adapter) return showError("无法获取 GPU Adapter");
+            if (!adapter) return showError("Cannot request GPU Adapter.");
             const maxStorageBuffer = adapter.limits.maxStorageBufferBindingSize || 134217728;
             const device = await adapter.requestDevice();
             const canvas = document.getElementById('gpuCanvas');
@@ -672,7 +674,7 @@
                 requestAnimationFrame(loop);
             }
             requestAnimationFrame(loop);
-        } catch (e) { showError("WebGPU 初始化错误: " + e.message); }
+        } catch (e) { showError("WebGPU Init Error: " + e.message); }
     }
     init();
 </script>
