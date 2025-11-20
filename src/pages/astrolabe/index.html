@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>星图天赋树 - 完美交互版</title>
+    <title>星图天赋树 - 完美视界版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+SC:wght@300;400;700&display=swap');
@@ -14,16 +14,39 @@
             color: #e0e0e0;
             overflow: hidden;
             user-select: none;
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
         }
 
         .magic-font { font-family: 'Cinzel', serif; }
+
+        /* --- 视口容器 --- */
+        #viewport {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            cursor: grab;
+            position: relative;
+            background-color: #020204;
+        }
+        #viewport:active { cursor: grabbing; }
+
+        /* --- 画布内容 --- */
+        #canvas-content {
+            transform-origin: 0 0;
+            will-change: transform;
+            position: absolute;
+            top: 0; left: 0;
+            width: 3000px;
+            height: 3000px;
+        }
 
         /* --- 背景 --- */
         #space-background {
             position: absolute;
             width: 100%; height: 100%;
             left: 0; top: 0;
-            background-color: #020204;
             background-image:
                     radial-gradient(circle at 50% 50%, rgba(20, 20, 35, 0.6) 0%, transparent 80%),
                     radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.03) 0%, transparent 50%),
@@ -48,7 +71,6 @@
             align-items: center; justify-content: center;
             border-radius: 50%; z-index: 30;
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.3s, box-shadow 0.3s, opacity 0.5s, filter 0.5s;
-            will-change: transform, left, top;
             background: #0f0f15;
             box-shadow: inset 0 0 10px rgba(0,0,0,0.9);
             border: 1px solid rgba(255,255,255,0.15);
@@ -62,7 +84,7 @@
             filter: drop-shadow(0 2px 3px rgba(0,0,0,0.8));
         }
 
-        /* --- Root Node Special Styles (3D Book & Rings) --- */
+        /* --- Root Node Special Styles --- */
         .node-root {
             background: none !important;
             border: none !important;
@@ -77,15 +99,15 @@
             top: 50%; left: 50%;
             width: 100%; height: 100%;
             transform-style: preserve-3d;
-            transform: translate(-50%, -65%) rotateX(40deg) rotateZ(-5deg);
+            transform: translate(-50%, -50%) rotateX(40deg) rotateZ(-5deg);
             transition: transform 0.5s;
             display: flex; justify-content: center; align-items: center;
         }
 
         .root-book-icon {
-            width: 100% !important; height: 100% !important;
-            fill: #555; /* Default Gray */
-            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.8));
+            width: 90% !important; height: 90% !important;
+            fill: #555;
+            filter: drop-shadow(0 15px 10px rgba(0,0,0,0.8));
             transition: fill 1s, filter 1s;
             animation: book-hover 4s infinite alternate ease-in-out;
         }
@@ -94,7 +116,7 @@
             position: absolute;
             top: 50%; left: 50%;
             width: 400%; height: 400%;
-            transform: translate(-50%, -50%) rotateX(65deg);
+            transform: translate(-50%, -50%) rotateX(60deg);
             pointer-events: none;
             z-index: -1;
         }
@@ -116,7 +138,7 @@
         @keyframes spin-left { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
         @keyframes book-hover {
             0% { transform: translateY(0px); }
-            100% { transform: translateY(-5px); }
+            100% { transform: translateY(-10px); }
         }
 
         /* 普通节点状态 */
@@ -194,18 +216,12 @@
         .preset-btn { transition: all 0.2s; }
         .preset-btn:active { transform: scale(0.95); }
         .preset-btn:hover { transform: translateY(-1px); }
-
-        /* Important for Pan/Zoom: Viewport must be hidden overflow */
-        #viewport { cursor: grab; overflow: hidden; width: 100%; height: 100%; position: relative; }
-        #viewport:active { cursor: grabbing; }
-        /* Content layer needs top-left origin for matrix transforms to make sense easily */
-        #canvas-content { transform-origin: 0 0; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
 <div id="loading-mask">
-    <div class="text-amber-500 magic-font text-2xl animate-pulse mb-4">Summoning The Tome...</div>
+    <div class="text-amber-500 magic-font text-2xl animate-pulse mb-4">Aligning Constellations...</div>
     <div class="w-48 h-1 bg-gray-800 rounded overflow-hidden">
         <div id="loading-bar" class="h-full bg-amber-500 w-0 transition-all duration-75"></div>
     </div>
@@ -240,7 +256,7 @@
 </header>
 
 <div id="viewport">
-    <div id="canvas-content" class="absolute top-0 left-0 w-[3000px] h-[3000px] origin-top-left will-change-transform">
+    <div id="canvas-content">
         <div id="space-background"></div>
         <svg id="magic-hexagram" viewBox="0 0 100 100">
             <defs>
@@ -288,6 +304,8 @@
     const CENTER = CANVAS_SIZE / 2;
     const MAX_LEVEL = 3;
 
+    let focusContext = { active: false, valid: new Set() };
+
     const TREES = {
         root: { color: '#fbbf24', angle: 0 },
         fire: { color: '#f97316', angle: -90 },
@@ -304,6 +322,7 @@
     const ICONS = {
         root: 'M3,18 L21,18 L21,6 L3,6 L3,18 Z M3,6 L21,6 L18,4 L6,4 L3,6 Z M12,6 L12,18',
         book_open: 'M12 3c-4.97 0-9 2-9 6v12c0 .55.45 1 1 1h6c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3zm-1 16H5V9c0-2.76 2.69-4 6-4v14zm10-16c-4.97 0-9 2-9 6v12c0 .55.45 1 1 1h6c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3zm1 16h-6c-1.66 0-3-1.34-3-3V6c3.31 0 6 1.24 6 4v10z',
+
         fire_basic: 'M12 23c5.52 0 10-4.48 10-10 0-4-3.25-7.41-7.1-8.93-.56-.22-.59-.98-.05-1.24 2.54-1.22 4.15-3.98 4.15-6.83 0-.55-.45-1-1-1-.34 0-.66.18-.84.47-1.5 2.46-4.31 4.24-7.5 4.5-3.18.26-6.04-1.5-7.57-4.02-.17-.29-.48-.45-.81-.45-.55 0-1 .45-1 1 0 2.85 1.61 5.61 4.15 6.83.54.26.51 1.02-.05 1.24C3.25 5.59 0 9 0 13c0 5.52 4.48 10 10 10s10-4.48 10-10c0-1.85-.51-3.58-1.4-5.06-.47-.78-1.55-.78-2.02 0C15.69 9.42 15.18 11.15 15.18 13c0 1.76-1.42 3.18-3.18 3.18-1.76 0-3.18-1.42-3.18-3.18 0-1.85.51-3.58 1.4-5.06.47-.78-.61-1.78-1.4-1.29C5.33 8.67 3.18 10.67 3.18 13c0 4.86 3.94 8.82 8.82 8.82 4.88 0 8.82-3.96 8.82-8.82 0-.68-.09-1.34-.25-1.98-.24-.96 1.05-1.62 1.68-.84C22.77 11.27 23.18 12.11 23.18 13c0 6.08-4.92 11-11 11z',
         fire_ball: 'M19.48,13.03C19.34,12.85 19.13,12.75 18.9,12.76C18.68,12.78 18.48,12.9 18.37,13.1C17.88,13.94 16.98,14.5 15.95,14.5C15.5,14.5 15.09,14.38 14.71,14.18C15.69,13.56 16.34,12.47 16.34,11.22C16.34,9.41 14.97,7.91 13.21,7.73C13.18,7.73 13.15,7.73 13.12,7.73C13.09,5.87 13.56,4.21 14.24,2.8C14.32,2.63 14.31,2.43 14.21,2.27C14.11,2.11 13.94,2 13.75,2C11.35,2 7.73,5.16 7.73,9.84C7.73,10 7.74,10.15 7.76,10.3C6.06,11.34 5,13.32 5,19.09 7.91,22 11.5,22C14.84,22 17.59,19.49 17.95,16.25C18.67,15.42 19.24,14.33 19.48,13.03M11.5,20.5C8.74,20.5 6.5,18.26 6.5,15.5C6.5,13.71 7.44,12.15 8.87,11.23L9.5,10.82L9.23,10.11C9.22,10.08 9.22,10.05 9.22,10.03C9.24,10.03 9.25,10.04 9.27,10.04C9.29,10.05 9.32,10.06 9.34,10.07C9.54,10.15 9.77,10.19 10,10.19C10.28,10.19 10.54,10.13 10.79,10.03L11.46,9.75L11.55,10.47C11.85,12.83 13.86,14.65 16.28,14.65C16.41,14.65 16.54,14.64 16.66,14.63C16.45,17.93 14.23,20.5 11.5,20.5Z',
         fire_spark: 'M11,21H13V19H11V21M15.14,18.5L16.85,20.2L18.27,18.79L16.56,17.09L15.14,18.5M8.86,18.5L7.44,17.09L5.73,18.79L7.15,20.2L8.86,18.5M12,17C14.21,17 16,15.21 16,13C16,8 12,2 12,2C12,2 8,8 8,13C8,15.21 9.79,17 12,17M12,7.41C13,10.08 14,12.06 14,13C14,14.1 13.1,15 12,15C10.9,15 10,14.1 10,13C10,12.06 11,10.08 12,7.41Z',
@@ -352,20 +371,14 @@
         const t1Nodes = skillsRaw.filter(n => n.tree === parentTree1 && n.tier >= 5);
         const t2Nodes = skillsRaw.filter(n => n.tree === parentTree2 && n.tier >= 5);
         if (t1Nodes.length === 0 || t2Nodes.length === 0) return;
-
-        let prefix = type.charAt(0);
-        if(type==='fracture') prefix='fr'; if(type==='forge') prefix='fo'; if(type==='steam') prefix='st';
-
+        let prefix = type.charAt(0); if(type==='fracture')prefix='fr'; if(type==='forge')prefix='fo'; if(type==='steam')prefix='st';
         let hybrids = []; const count = 8;
         for(let i=0; i<count; i++) {
             const p1 = t1Nodes[Math.floor(Math.random() * t1Nodes.length)];
             const p2 = t2Nodes[Math.floor(Math.random() * t2Nodes.length)];
             const id = mkId(prefix, i + 1);
             let reqs = [p1.id, p2.id]; if (i > 0 && Math.random() > 0.3) reqs = [hybrids[i-1].id, p1.id];
-            hybrids.push({
-                id: id, tree: type, name: `${namePrefix} ${i+1}`,
-                icon: 'special', tier: 99, req: reqs, desc: `Hybrid ${type} skill.`
-            });
+            hybrids.push({ id: id, tree: type, name: `${namePrefix} ${i+1}`, icon: 'special', tier: 99, req: reqs, desc: `Hybrid ${type} skill.` });
         }
         skillsRaw.push(...hybrids);
     }
@@ -386,10 +399,9 @@
     let hoveredNodeId = null;
     window.currentRootIntensity = 0;
     let revealAll = false;
-
     let sys;
 
-    /* --- 物理引擎 --- */
+    /* --- Simulation --- */
     class Simulation {
         constructor(nodes) {
             this.nodes = nodes.map(n => ({ id: n.id, data: n, x: CENTER, y: CENTER, vx: 0, vy: 0 }));
@@ -429,10 +441,7 @@
                     n.vx += (CENTER - n.x) * k_center;
                     n.vy += (CENTER - n.y) * k_center;
                     const dx = n.x - CENTER; const dy = n.y - CENTER; const dist = Math.sqrt(dx*dx + dy*dy);
-                    if(dist < 120) {
-                        const push = (120 - dist) * 0.1;
-                        n.vx += (dx/dist) * push; n.vy += (dy/dist) * push;
-                    }
+                    if(dist < 120) { const push = (120 - dist) * 0.1; n.vx += (dx/dist) * push; n.vy += (dy/dist) * push; }
                 } else {
                     const dx = n.x - CENTER; const dy = n.y - CENTER; const dist = Math.sqrt(dx*dx + dy*dy);
                     const targetR = 1100;
@@ -448,7 +457,6 @@
                     }
                 }
             });
-
             for(let i=0; i<this.nodes.length; i++) {
                 for(let j=i+1; j<this.nodes.length; j++) {
                     const a = this.nodes[i], b = this.nodes[j];
@@ -471,9 +479,7 @@
                     if(l.target.id !== 'root') { l.target.vx -= fx; l.target.vy -= fy; }
                 }
             });
-            this.nodes.forEach(n => {
-                if(n.id !== 'root') { n.x += n.vx; n.y += n.vy; n.vx *= 0.6; n.vy *= 0.6; }
-            });
+            this.nodes.forEach(n => { if(n.id !== 'root') { n.x += n.vx; n.y += n.vy; n.vx *= 0.6; n.vy *= 0.6; } });
         }
     }
 
@@ -491,35 +497,32 @@
 
     /* --- Particle System --- */
     class FlowParticle {
-        constructor(sx, sy, tx, ty, color) { this.x=sx; this.y=sy; this.sx=sx; this.sy=sy; this.tx=tx; this.ty=ty; this.color=color; this.p=0; this.life=1; this.sp=0.01+Math.random()*0.005; }
+        constructor(sx, sy, tx, ty, color, sId, tId) {
+            this.x=sx; this.y=sy; this.sx=sx; this.sy=sy; this.tx=tx; this.ty=ty;
+            this.color=color; this.p=0; this.life=1; this.sp=0.01+Math.random()*0.005;
+            this.edgeKey = `${sId}-${tId}`; // Store key for validation
+        }
         update() { this.p+=this.sp; this.x=this.sx+(this.tx-this.sx)*this.p; this.y=this.sy+(this.ty-this.sy)*this.p; if(this.p>=1)this.life=0; }
-        draw(ctx) { ctx.fillStyle=this.color; ctx.globalAlpha=0.9; ctx.beginPath(); ctx.arc(this.x,this.y,2,0,6.28); ctx.fill(); ctx.globalAlpha=1; }
+        draw(ctx) {
+            // Focus Mode Check: If active AND this particle is on a non-valid path, fade it out
+            if(focusContext.active && !focusContext.valid.has(this.edgeKey)) ctx.globalAlpha=0.05;
+            else ctx.globalAlpha=0.9;
+
+            ctx.fillStyle=this.color; ctx.beginPath(); ctx.arc(this.x,this.y,2,0,6.28); ctx.fill(); ctx.globalAlpha=1;
+        }
     }
     class Ripple { constructor(x,y,c) { this.x=x; this.y=y; this.c=c; this.r=20; this.a=1; } update() { this.r+=4; this.a-=0.02; } draw(ctx) { if(this.a<=0)return; ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,6.28); ctx.strokeStyle=`rgba(${this.c},${this.a})`; ctx.lineWidth=2; ctx.stroke(); } }
     class Particle {
         constructor(x, y, type, isRoot=false) {
             this.x=x; this.y=y; this.type=type; this.life=1; this.isRoot=isRoot;
             const intensity = window.currentRootIntensity || 0;
-            const a=Math.random()*6.28;
-            const speed = isRoot ? (Math.random()*0.3+0.1) : (Math.random()*0.5+0.2);
-            this.vx=Math.cos(a)*speed; this.vy=Math.sin(a)*speed;
-
-            if(isRoot) {
-                this.vy -= 0.2;
-                this.sz = Math.random()*1.5;
-            } else {
-                this.sz=(Math.random()*2+1);
-            }
-
+            const a=Math.random()*6.28, s=(isRoot?Math.random()*2+1:Math.random()*0.5+0.2)*(1+intensity);
+            this.vx=Math.cos(a)*s; this.vy=Math.sin(a)*s; this.sz=(Math.random()*2+1)*(1+intensity*0.5);
             if (typeof type === 'object') {
                 const roll = Math.random() * type.total;
-                if (roll < type.fire) { this.c='255,100,0'; }
-                else if (roll < type.fire + type.ice) { this.c='100,200,255'; }
-                else { this.c='200,200,220'; }
+                if (roll < type.fire) { this.c='255,100,0'; } else if (roll < type.fire + type.ice) { this.c='100,200,255'; } else { this.c='200,200,220'; }
             } else {
-                if(type==='fire') { this.c='255,100,0'; }
-                else if(type==='ice') { this.c='100,200,255'; }
-                else { this.c='200,200,220'; }
+                if(type==='fire') { this.c='255,100,0'; } else if(type==='ice') { this.c='100,200,255'; } else { this.c='200,200,220'; }
             }
         }
         update() { this.x+=this.vx; this.y+=this.vy; this.life-=0.01; }
@@ -528,7 +531,7 @@
 
     class ParticleSystem {
         constructor() { this.p=[]; this.fp=[]; this.r=[]; this.bg=[]; this.ctx=document.getElementById('effects-canvas').getContext('2d'); for(let i=0;i<800;i++)this.bg.push({x:Math.random()*3000,y:Math.random()*3000,s:Math.random()*1.5,a:Math.random(),c:Math.random()>0.9?'#a5f3fc':(Math.random()>0.8?'#fef08a':'#fff')}); }
-        spawnRoot(w) { const intensity = window.currentRootIntensity || 0; if(Math.random()>0.2) return; this.p.push(new Particle(CENTER, CENTER-20, w, true)); } // Gentle emission
+        spawnRoot(w) { const intensity = window.currentRootIntensity || 0; if(Math.random()>0.2) return; this.p.push(new Particle(CENTER, CENTER-20, w, true)); }
         spawnRipple(x,y,t) { let c=TREES[t]?TREES[t].color:'255,255,255'; if (t === 'fire') c = '249, 115, 22'; else if (t === 'ice') c = '34, 211, 238'; else if (t === 'phys') c = '226, 232, 240'; this.r.push(new Ripple(x,y,c)); }
         spawnFlow() {
             layoutNodes.forEach(node => {
@@ -538,7 +541,8 @@
                 (node.data.req||[]).forEach(pid => {
                     if(state.skills[pid]>0 && Math.random()<0.02) {
                         const pn = layoutNodes.find(x=>x.id===pid);
-                        if (pn) { let c = TREES[node.data.tree].color; this.fp.push(new FlowParticle(pn.x, pn.y, node.x, node.y, c)); }
+                        // Pass edge ID for validation during draw
+                        if (pn) { let c = TREES[node.data.tree].color; this.fp.push(new FlowParticle(pn.x, pn.y, node.x, node.y, c, pid, node.id)); }
                     }
                 });
             });
@@ -548,12 +552,12 @@
                 if(node && (req.met || state.skills[hoveredNodeId]>0)) {
                     (node.data.req||[]).forEach(pid => {
                         const pn = layoutNodes.find(n => n.id === pid);
-                        if(pn && Math.random() < 0.15) this.fp.push(new FlowParticle(pn.x, pn.y, node.x, node.y, '#fff'));
+                        if(pn && Math.random() < 0.15) this.fp.push(new FlowParticle(pn.x, pn.y, node.x, node.y, '#fff', pid, node.id));
                     });
                     layoutNodes.forEach(child => {
                         if((child.data.req||[]).includes(hoveredNodeId)) {
                             if (state.skills[child.id] === 0 && Math.random() < 0.15) {
-                                this.fp.push(new FlowParticle(node.x, node.y, child.x, child.y, 'rgba(255,255,255,0.6)'));
+                                this.fp.push(new FlowParticle(node.x, node.y, child.x, child.y, 'rgba(255,255,255,0.6)', node.id, child.id));
                             }
                         }
                     });
@@ -623,7 +627,7 @@
             if(w.total > 1) {
                 book.style.filter = `drop-shadow(0 10px 10px rgba(0,0,0,0.8)) drop-shadow(0 0 ${10 + 30 * intensity}px ${colorStr})`;
             } else {
-                book.style.filter = `drop-shadow(0 5px 5px rgba(0,0,0,0.8))`;
+                book.style.filter = `drop-shadow(0 5px 5px rgba(0,0,0,0.8)) grayscale(100%) brightness(0.5)`;
             }
         }
 
@@ -635,7 +639,6 @@
             const rings = el.querySelector('.root-rings');
             if(rings) rings.style.transform = `translate(-50%, -50%) rotateX(65deg) scale(${1 + intensity * 0.5})`;
         }
-
         window.currentRootIntensity = intensity;
     }
 
@@ -801,19 +804,34 @@
                     }
                 });
 
+                // Populate focusContext
+                focusContext.active = true;
+                focusContext.valid.clear();
+                // Add relevant nodes to context for particle filtering
+                focusContext.valid.add(id);
+                ancestors.forEach(a => focusContext.valid.add(a));
+                directUnlitChildren.forEach(c => focusContext.valid.add(c));
+
                 document.querySelectorAll('.connection-line').forEach(line => {
+                    if(line.classList.contains('line-hidden')) return;
                     const parts = line.id.split('-');
                     const pId = parts[1]; const cId = parts[2];
                     const pRel = ancestors.has(pId); const cRel = ancestors.has(cId);
                     const pIsHover = pId === id; const cIsChild = directUnlitChildren.has(cId);
                     const relevant = (pRel && (cRel || cId === id)) || (pIsHover && cIsChild);
                     if (!relevant) line.classList.add('is-dimmed');
+                    else {
+                        // Add relevant edge IDs to focusContext for particles
+                        focusContext.valid.add(`${pId}-${cId}`);
+                    }
                 });
             }
         } else {
             el.classList.remove('is-hovered');
             document.getElementById('tooltip').style.display='none';
             document.querySelectorAll('.is-dimmed').forEach(e => e.classList.remove('is-dimmed'));
+            focusContext.active = false;
+            focusContext.valid.clear();
         }
     }
 
@@ -843,42 +861,35 @@
     function resetTree() { state.points=TOTAL_POINTS; for(let k in state.skills)if(k!=='root')state.skills[k]=0; render(); }
 
     window.onload = () => {
-        const vp = document.getElementById('viewport'); vp.scrollLeft=(CANVAS_SIZE-window.innerWidth)/2; vp.scrollTop=(CANVAS_SIZE-window.innerHeight)/2;
+        const vp = document.getElementById('viewport');
 
-        // Initialization Order Fix
-        sys = new ParticleSystem(); // Init sys first
+        sys = new ParticleSystem();
         precomputeLayout();
 
         let d=false, sx, sy, sl, st;
         let scale = 1;
-        let pointX = (window.innerWidth - CANVAS_SIZE) / 2;
-        let pointY = (window.innerHeight - CANVAS_SIZE) / 2;
+        let pointX = (window.innerWidth / 2) - (CENTER * scale);
+        let pointY = (window.innerHeight / 2) - (CENTER * scale);
         let startX = 0;
         let startY = 0;
         let panning = false;
 
         const content = document.getElementById('canvas-content');
-
         function setTransform() {
             content.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
         }
-
-        // Initial Transform
         setTransform();
 
-        // --- Pan Logic ---
         vp.onmousedown = (e) => {
             panning = true;
             startX = e.clientX - pointX;
             startY = e.clientY - pointY;
             vp.style.cursor = 'grabbing';
         };
-
         window.onmouseup = () => {
             panning = false;
             vp.style.cursor = 'grab';
         };
-
         window.onmousemove = (e) => {
             if (!panning) return;
             e.preventDefault();
@@ -886,22 +897,17 @@
             pointY = e.clientY - startY;
             setTransform();
         };
-
-        // --- Zoom Logic ---
         vp.addEventListener('wheel', (e) => {
             e.preventDefault();
             const xs = (e.clientX - pointX) / scale;
             const ys = (e.clientY - pointY) / scale;
             const delta = -Math.sign(e.deltaY) * 0.1;
             const nextScale = Math.min(Math.max(0.2, scale + delta), 3.0);
-
             pointX = e.clientX - xs * nextScale;
             pointY = e.clientY - ys * nextScale;
             scale = nextScale;
-
             setTransform();
         }, { passive: false });
-
 
         function loop(t) {
             const weights = getWeights();
