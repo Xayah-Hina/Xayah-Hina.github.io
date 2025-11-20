@@ -84,7 +84,7 @@
             filter: drop-shadow(0 2px 3px rgba(0,0,0,0.8));
         }
 
-        /* --- Root Node Special Styles --- */
+        /* --- Root Node Special Styles (3D Book & Rings) --- */
         .node-root {
             background: none !important;
             border: none !important;
@@ -92,8 +92,11 @@
             z-index: 20;
             perspective: 800px;
             overflow: visible !important;
+            /* 关键：添加 left/top/width/height 的过渡，确保变大时平滑居中 */
+            transition: width 0.5s, height 0.5s, left 0.5s, top 0.5s;
         }
 
+        /* The 3D Book Container */
         .root-book-container {
             position: absolute;
             top: 50%; left: 50%;
@@ -104,6 +107,7 @@
             display: flex; justify-content: center; align-items: center;
         }
 
+        /* Book Icon */
         .root-book-icon {
             width: 90% !important; height: 90% !important;
             fill: #555;
@@ -112,11 +116,12 @@
             animation: book-hover 4s infinite alternate ease-in-out;
         }
 
+        /* Concentric Rings Container */
         .root-rings {
             position: absolute;
             top: 50%; left: 50%;
             width: 400%; height: 400%;
-            transform: translate(-50%, -50%) rotateX(60deg);
+            transform: translate(-50%, -50%) rotateX(60deg); /* Flat on ground */
             pointer-events: none;
             z-index: -1;
         }
@@ -304,8 +309,6 @@
     const CENTER = CANVAS_SIZE / 2;
     const MAX_LEVEL = 3;
 
-    let focusContext = { active: false, valid: new Set() };
-
     const TREES = {
         root: { color: '#fbbf24', angle: 0 },
         fire: { color: '#f97316', angle: -90 },
@@ -320,6 +323,7 @@
     const BASE_SIZE = 40;
 
     const ICONS = {
+        // 3D Perspective Book (Simulated path for flat book)
         root: 'M3,18 L21,18 L21,6 L3,6 L3,18 Z M3,6 L21,6 L18,4 L6,4 L3,6 Z M12,6 L12,18',
         book_open: 'M12 3c-4.97 0-9 2-9 6v12c0 .55.45 1 1 1h6c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3zm-1 16H5V9c0-2.76 2.69-4 6-4v14zm10-16c-4.97 0-9 2-9 6v12c0 .55.45 1 1 1h6c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3zm1 16h-6c-1.66 0-3-1.34-3-3V6c3.31 0 6 1.24 6 4v10z',
 
@@ -405,7 +409,6 @@
     class Simulation {
         constructor(nodes) {
             this.nodes = nodes.map(n => ({ id: n.id, data: n, x: CENTER, y: CENTER, vx: 0, vy: 0 }));
-            // Guided Init
             this.nodes.forEach(n => {
                 if (n.id==='root') { n.x=CENTER; n.y=CENTER; return; }
                 const t = n.data.tree;
@@ -495,34 +498,38 @@
         }, 200);
     }
 
-    /* --- Particle System --- */
+    /* --- Particle System (Subtler Root) --- */
     class FlowParticle {
-        constructor(sx, sy, tx, ty, color, sId, tId) {
-            this.x=sx; this.y=sy; this.sx=sx; this.sy=sy; this.tx=tx; this.ty=ty;
-            this.color=color; this.p=0; this.life=1; this.sp=0.01+Math.random()*0.005;
-            this.edgeKey = `${sId}-${tId}`; // Store key for validation
-        }
+        constructor(sx, sy, tx, ty, color) { this.x=sx; this.y=sy; this.sx=sx; this.sy=sy; this.tx=tx; this.ty=ty; this.color=color; this.p=0; this.life=1; this.sp=0.01+Math.random()*0.005; }
         update() { this.p+=this.sp; this.x=this.sx+(this.tx-this.sx)*this.p; this.y=this.sy+(this.ty-this.sy)*this.p; if(this.p>=1)this.life=0; }
-        draw(ctx) {
-            // Focus Mode Check: If active AND this particle is on a non-valid path, fade it out
-            if(focusContext.active && !focusContext.valid.has(this.edgeKey)) ctx.globalAlpha=0.05;
-            else ctx.globalAlpha=0.9;
-
-            ctx.fillStyle=this.color; ctx.beginPath(); ctx.arc(this.x,this.y,2,0,6.28); ctx.fill(); ctx.globalAlpha=1;
-        }
+        draw(ctx) { ctx.fillStyle=this.color; ctx.globalAlpha=0.9; ctx.beginPath(); ctx.arc(this.x,this.y,2,0,6.28); ctx.fill(); ctx.globalAlpha=1; }
     }
     class Ripple { constructor(x,y,c) { this.x=x; this.y=y; this.c=c; this.r=20; this.a=1; } update() { this.r+=4; this.a-=0.02; } draw(ctx) { if(this.a<=0)return; ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,6.28); ctx.strokeStyle=`rgba(${this.c},${this.a})`; ctx.lineWidth=2; ctx.stroke(); } }
     class Particle {
         constructor(x, y, type, isRoot=false) {
             this.x=x; this.y=y; this.type=type; this.life=1; this.isRoot=isRoot;
+            // Much subtler root particles
             const intensity = window.currentRootIntensity || 0;
-            const a=Math.random()*6.28, s=(isRoot?Math.random()*2+1:Math.random()*0.5+0.2)*(1+intensity);
-            this.vx=Math.cos(a)*s; this.vy=Math.sin(a)*s; this.sz=(Math.random()*2+1)*(1+intensity*0.5);
+            const a=Math.random()*6.28;
+            const speed = isRoot ? (Math.random()*0.3+0.1) : (Math.random()*0.5+0.2);
+            this.vx=Math.cos(a)*speed; this.vy=Math.sin(a)*speed;
+
+            if(isRoot) {
+                this.vy -= 0.2; // Float up gently from book
+                this.sz = Math.random()*1.5;
+            } else {
+                this.sz=(Math.random()*2+1);
+            }
+
             if (typeof type === 'object') {
                 const roll = Math.random() * type.total;
-                if (roll < type.fire) { this.c='255,100,0'; } else if (roll < type.fire + type.ice) { this.c='100,200,255'; } else { this.c='200,200,220'; }
+                if (roll < type.fire) { this.c='255,100,0'; }
+                else if (roll < type.fire + type.ice) { this.c='100,200,255'; }
+                else { this.c='200,200,220'; }
             } else {
-                if(type==='fire') { this.c='255,100,0'; } else if(type==='ice') { this.c='100,200,255'; } else { this.c='200,200,220'; }
+                if(type==='fire') { this.c='255,100,0'; }
+                else if(type==='ice') { this.c='100,200,255'; }
+                else { this.c='200,200,220'; }
             }
         }
         update() { this.x+=this.vx; this.y+=this.vy; this.life-=0.01; }
@@ -531,7 +538,7 @@
 
     class ParticleSystem {
         constructor() { this.p=[]; this.fp=[]; this.r=[]; this.bg=[]; this.ctx=document.getElementById('effects-canvas').getContext('2d'); for(let i=0;i<800;i++)this.bg.push({x:Math.random()*3000,y:Math.random()*3000,s:Math.random()*1.5,a:Math.random(),c:Math.random()>0.9?'#a5f3fc':(Math.random()>0.8?'#fef08a':'#fff')}); }
-        spawnRoot(w) { const intensity = window.currentRootIntensity || 0; if(Math.random()>0.2) return; this.p.push(new Particle(CENTER, CENTER-20, w, true)); }
+        spawnRoot(w) { const intensity = window.currentRootIntensity || 0; if(Math.random()>0.2) return; this.p.push(new Particle(CENTER, CENTER-20, w, true)); } // Gentle emission
         spawnRipple(x,y,t) { let c=TREES[t]?TREES[t].color:'255,255,255'; if (t === 'fire') c = '249, 115, 22'; else if (t === 'ice') c = '34, 211, 238'; else if (t === 'phys') c = '226, 232, 240'; this.r.push(new Ripple(x,y,c)); }
         spawnFlow() {
             layoutNodes.forEach(node => {
@@ -541,8 +548,7 @@
                 (node.data.req||[]).forEach(pid => {
                     if(state.skills[pid]>0 && Math.random()<0.02) {
                         const pn = layoutNodes.find(x=>x.id===pid);
-                        // Pass edge ID for validation during draw
-                        if (pn) { let c = TREES[node.data.tree].color; this.fp.push(new FlowParticle(pn.x, pn.y, node.x, node.y, c, pid, node.id)); }
+                        if (pn) { let c = TREES[node.data.tree].color; this.fp.push(new FlowParticle(pn.x, pn.y, node.x, node.y, c)); }
                     }
                 });
             });
@@ -552,12 +558,12 @@
                 if(node && (req.met || state.skills[hoveredNodeId]>0)) {
                     (node.data.req||[]).forEach(pid => {
                         const pn = layoutNodes.find(n => n.id === pid);
-                        if(pn && Math.random() < 0.15) this.fp.push(new FlowParticle(pn.x, pn.y, node.x, node.y, '#fff', pid, node.id));
+                        if(pn && Math.random() < 0.15) this.fp.push(new FlowParticle(pn.x, pn.y, node.x, node.y, '#fff'));
                     });
                     layoutNodes.forEach(child => {
                         if((child.data.req||[]).includes(hoveredNodeId)) {
                             if (state.skills[child.id] === 0 && Math.random() < 0.15) {
-                                this.fp.push(new FlowParticle(node.x, node.y, child.x, child.y, 'rgba(255,255,255,0.6)', node.id, child.id));
+                                this.fp.push(new FlowParticle(node.x, node.y, child.x, child.y, 'rgba(255,255,255,0.6)'));
                             }
                         }
                     });
@@ -594,51 +600,73 @@
     function updateRootVisuals() {
         const w = getWeights();
 
+        // Calculate opacity based on ratio
         const fireOp = w.fire / w.total;
         const iceOp = w.ice / w.total;
         const physOp = w.phys / w.total;
 
+        // Update Rings via CSS variables or direct style (DOM lookup)
         const rF = document.querySelector('.root-ring-fire');
         const rI = document.querySelector('.root-ring-ice');
         const rP = document.querySelector('.root-ring-phys');
 
+        // Base opacity 0.1 + ratio contribution
         if(rF) { rF.style.opacity = 0.1 + fireOp * 0.9; rF.style.strokeWidth = 1.5 + fireOp * 2; rF.style.filter = `drop-shadow(0 0 ${fireOp*10}px #f97316)`; }
         if(rI) { rI.style.opacity = 0.1 + iceOp * 0.9; rI.style.strokeWidth = 1.5 + iceOp * 2; rI.style.filter = `drop-shadow(0 0 ${iceOp*10}px #22d3ee)`; }
         if(rP) { rP.style.opacity = 0.1 + physOp * 0.9; rP.style.strokeWidth = 1.5 + physOp * 2; rP.style.filter = `drop-shadow(0 0 ${physOp*10}px #cbd5e1)`; }
 
+        // Update Book color & glow
         const book = document.querySelector('.root-book-icon');
 
         let r, g, b;
+        // If empty (only root), use Gray
         if(w.total <= 1) {
-            r=80; g=80; b=90;
+            r=80; g=80; b=90; // Metallic Gray
         } else {
+            // Weighted average color
             r = (w.fire * 249 + w.ice * 34 + w.phys * 226) / w.total;
             g = (w.fire * 115 + w.ice * 211 + w.phys * 232) / w.total;
             b = (w.fire * 22 + w.ice * 238 + w.phys * 240) / w.total;
         }
 
         const colorStr = `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+
+        // Update Intensity for size/glow
         const totalIntensity = Math.min(w.total / 50, 1.0);
         const specIntensity = Math.min(w.maxSpec / 20, 1.0);
         const intensity = Math.max(totalIntensity, specIntensity);
 
+        // Apply styles
         if(book) {
             book.style.fill = colorStr;
+            // Add glow if active
             if(w.total > 1) {
-                book.style.filter = `drop-shadow(0 10px 10px rgba(0,0,0,0.8)) drop-shadow(0 0 ${10 + 30 * intensity}px ${colorStr})`;
+                // Dazzling White Logic
+                if (w.fire > 20 && w.ice > 20 && w.phys > 20) {
+                    book.style.fill = "#ffffff";
+                    book.style.filter = `drop-shadow(0 0 ${20 + 50 * intensity}px white) drop-shadow(0 0 10px white)`;
+                } else {
+                    book.style.filter = `drop-shadow(0 10px 10px rgba(0,0,0,0.8)) drop-shadow(0 0 ${10 + 20 * intensity}px ${colorStr})`;
+                }
             } else {
                 book.style.filter = `drop-shadow(0 5px 5px rgba(0,0,0,0.8)) grayscale(100%) brightness(0.5)`;
             }
         }
 
+        // Root Node container size
         const el = document.querySelector('#node-root');
         if(el) {
+            // Smaller sizes: 50 -> 80
             const size = 50 + (30 * intensity);
             el.style.width = `${size}px`;
             el.style.height = `${size}px`;
+            // Adjust position to keep centered
+            el.style.left = `${CENTER - size/2}px`;
+            el.style.top = `${CENTER - size/2}px`;
             const rings = el.querySelector('.root-rings');
             if(rings) rings.style.transform = `translate(-50%, -50%) rotateX(65deg) scale(${1 + intensity * 0.5})`;
         }
+
         window.currentRootIntensity = intensity;
     }
 
@@ -654,7 +682,9 @@
         } else {
             skillsRaw.forEach(s => {
                 if (s.id === 'root') return;
+                // Only enable the specific tree
                 if (s.tree === type) state.skills[s.id] = MAX_LEVEL;
+                // Hybrids are NOT enabled by single tree preset, as per logic
             });
         }
         const used = Object.values(state.skills).reduce((a, b) => a + b, 0) - 1;
@@ -703,7 +733,9 @@
         if(sl.innerHTML === '') {
             let lH='', nH='';
 
+            // Add Root Manually to center
             const r = layoutNodes.find(n=>n.id==='root');
+            // Initial small size
             nH += `
                 <div id="node-root" class="skill-node node-root" style="width:50px; height:50px; left:${r.x-25}px; top:${r.y-25}px;">
                     <div class="root-book-container">
@@ -804,34 +836,19 @@
                     }
                 });
 
-                // Populate focusContext
-                focusContext.active = true;
-                focusContext.valid.clear();
-                // Add relevant nodes to context for particle filtering
-                focusContext.valid.add(id);
-                ancestors.forEach(a => focusContext.valid.add(a));
-                directUnlitChildren.forEach(c => focusContext.valid.add(c));
-
                 document.querySelectorAll('.connection-line').forEach(line => {
-                    if(line.classList.contains('line-hidden')) return;
                     const parts = line.id.split('-');
                     const pId = parts[1]; const cId = parts[2];
                     const pRel = ancestors.has(pId); const cRel = ancestors.has(cId);
                     const pIsHover = pId === id; const cIsChild = directUnlitChildren.has(cId);
                     const relevant = (pRel && (cRel || cId === id)) || (pIsHover && cIsChild);
                     if (!relevant) line.classList.add('is-dimmed');
-                    else {
-                        // Add relevant edge IDs to focusContext for particles
-                        focusContext.valid.add(`${pId}-${cId}`);
-                    }
                 });
             }
         } else {
             el.classList.remove('is-hovered');
             document.getElementById('tooltip').style.display='none';
             document.querySelectorAll('.is-dimmed').forEach(e => e.classList.remove('is-dimmed'));
-            focusContext.active = false;
-            focusContext.valid.clear();
         }
     }
 
@@ -868,6 +885,7 @@
 
         let d=false, sx, sy, sl, st;
         let scale = 1;
+        // Center calculation for initial Transform
         let pointX = (window.innerWidth / 2) - (CENTER * scale);
         let pointY = (window.innerHeight / 2) - (CENTER * scale);
         let startX = 0;
