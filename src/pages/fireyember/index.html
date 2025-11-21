@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>火焰系技能图标 - 炽烈余烬 (炎夏完全体)</title>
+    <style>
+        /* --- 全局变量定义：火焰主题 --- */
+        :root {
+            /* 颜色定义 */
+            --fire-core: #fff7ed;    /* 核心亮白 */
+            --fire-inner: #fde047;   /* 内层金黄 */
+            --fire-mid: #fb923c;     /* 中层橙红 */
+            --fire-outer: #dc2626;   /* 外层深红 */
+            --ember-glow: #7f1d1d;   /* 余烬暗红 */
+
+            /* 基础状态：缓慢上升、余烬微弱 */
+            --ember-duration-base: 15s;
+            --heat-duration-base: 60s;
+
+            /* 基础火星 (常驻) */
+            --ember-opacity: 0.4;
+
+            /* 风暴火星 (Hover时才出现) */
+            --extra-ember-opacity: 0;
+
+            /* 热浪透明度 */
+            --heat-opacity: 0.3;
+
+            /* 全局火星大小缩放倍率 */
+            --global-scale: 1;
+        }
+
+        /* Hover 状态：改变透明度、大小和光影 */
+        body:has(.icon-wrapper:hover) {
+            --ember-opacity: 1;         /* 常驻火星变亮 */
+            --extra-ember-opacity: 0.8; /* 隐藏的火星显现 */
+            --heat-opacity: 0.6;        /* 热浪更明显 */
+            --global-scale: 1.4;        /* 火星整体变大 */
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* 背景：深红到焦黑的径向渐变，模拟火山口或熔岩 */
+            background: radial-gradient(circle at center, #450a0a 0%, #1c0303 100%);
+            font-family: "Times New Roman", serif;
+            color: #ffffff;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.8s ease;
+        }
+
+        /* --- 1. 背景层：热浪扰动 --- */
+        .heat-wave-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: var(--heat-opacity);
+            transition: opacity 1s ease;
+            /* 使用 SVG滤镜模拟空气热浪 */
+            filter: url(#heatWaveFilter);
+        }
+
+        /* 热浪的纹理层 */
+        .heat-texture {
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                    45deg,
+                    rgba(220, 38, 38, 0.1),
+                    rgba(220, 38, 38, 0.1) 10px,
+                    rgba(251, 146, 60, 0.1) 10px,
+                    rgba(251, 146, 60, 0.1) 20px
+            );
+            /* 缓慢移动纹理 */
+            animation: heat-flow var(--heat-duration-base) linear infinite;
+        }
+
+        @keyframes heat-flow {
+            from { background-position: 0 0; }
+            to { background-position: 100% 100%; }
+        }
+
+
+        /* --- 2. 背景层：动态火星/余烬 --- */
+        .ember-storm-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .ember-particle {
+            position: absolute;
+            /* 使用 SVG 绘制的火星/余烬形状（不规则的菱形/火苗） */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0 Q 6.5 2.5 9 5 Q 6.5 7.5 5 10 Q 3.5 7.5 1 5 Q 3.5 2.5 5 0 Z' fill='%23fb923c' /%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+
+            visibility: hidden;
+
+            /* 动画：上升 + 摇摆 + 闪烁 */
+            animation-name: ember-rise, ember-flicker;
+            animation-timing-function: linear, ease-in-out;
+            animation-iteration-count: infinite, infinite;
+            animation-duration: var(--ember-duration-base), 2s;
+
+            transition: opacity 0.8s ease;
+            will-change: transform, opacity;
+
+            /* 混合模式：让火星看起来更亮 */
+            mix-blend-mode: screen;
+        }
+
+        /* 常驻火星 */
+        .ember-particle.base {
+            opacity: var(--ember-opacity);
+        }
+
+        /* 额外风暴火星 */
+        .ember-particle.extra {
+            opacity: var(--extra-ember-opacity);
+        }
+
+        /* 火星上升动画：从下到上，带有随机的左右漂移和旋转 */
+        @keyframes ember-rise {
+            0% {
+                visibility: visible;
+                transform: translate(0, 110vh) rotate(0deg) scale(calc(var(--scale-start) * var(--global-scale)));
+                opacity: 0;
+            }
+            10% { opacity: var(--current-max-opacity); }
+            80% { opacity: var(--current-max-opacity); }
+            100% {
+                transform: translate(var(--drift-x), -10vh) rotate(var(--rot-end)) scale(calc(var(--scale-end) * var(--global-scale)));
+                opacity: 0;
+            }
+        }
+
+        /* 火星闪烁动画 */
+        @keyframes ember-flicker {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.5); }
+        }
+
+
+        /* --- 3. 主体容器 --- */
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .icon-wrapper {
+            width: 360px;
+            height: 360px;
+            margin: 0 auto 20px;
+            position: relative;
+            /* 火焰主题的光晕 */
+            filter: drop-shadow(0 0 20px rgba(251, 146, 60, 0.6))
+            drop-shadow(0 0 50px rgba(220, 38, 38, 0.3));
+            transition: transform 0.5s ease, filter 0.5s ease;
+            cursor: pointer;
+        }
+
+        .icon-wrapper:hover {
+            transform: scale(1.05) translateZ(0);
+            /* Hover 时光晕变得更强烈、更热 */
+            filter: drop-shadow(0 0 40px rgba(253, 224, 71, 0.8))
+            drop-shadow(0 0 100px rgba(251, 146, 60, 0.5));
+        }
+
+        /* --- 4. On Hover 含蓄火焰法阵底座 --- */
+        .hover-magic-array {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 480px;
+            height: 480px;
+            transform: translate(-50%, -50%) scale(0.8);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: -1;
+            /* 底座光晕：深红色的余烬感 */
+            filter: drop-shadow(0 0 15px rgba(220, 38, 38, 0.4));
+        }
+
+        .icon-wrapper:hover .hover-magic-array {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* 法阵线条：燃烧的轨迹 */
+        .hover-magic-array path,
+        .hover-magic-array circle {
+            fill: none;
+            stroke: url(#emberGradient); /* 使用余烬渐变 */
+            stroke-width: 1.5;
+            stroke-dasharray: 5 5; /* 虚线，模拟断续的燃烧 */
+            stroke-linecap: round;
+            vector-effect: non-scaling-stroke;
+        }
+
+        /* 符文点：燃烧的火星 */
+        .magic-rune {
+            fill: var(--fire-inner);
+            filter: drop-shadow(0 0 5px var(--fire-mid));
+        }
+
+        .outer-ring-group {
+            transform-origin: 200px 200px;
+            transform-box: view-box;
+            animation: subtle-spin 60s linear infinite reverse;
+        }
+
+        .inner-rune-group {
+            transform-origin: 200px 200px;
+            transform-box: view-box;
+            animation: subtle-spin 60s linear infinite normal;
+        }
+
+        /* --- 5. 文字与动画 --- */
+        h1 {
+            font-weight: 100;
+            letter-spacing: 8px;
+            margin-bottom: 5px;
+            color: var(--fire-core);
+            text-shadow: 0 0 20px rgba(251, 146, 60, 0.8);
+        }
+
+        p.subtitle {
+            color: var(--fire-mid);
+            font-size: 0.8rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        @keyframes subtle-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 火焰主体的呼吸动画 */
+        @keyframes fire-breath {
+            0%, 100% { filter: url(#fireGlow) brightness(1); }
+            50% { filter: url(#fireGlow) brightness(1.2); }
+        }
+
+        .fire-body {
+            transition: filter 0.5s ease;
+            animation: fire-breath 4s ease-in-out infinite;
+        }
+
+        .center-core-dot {
+            transition: filter 0.5s ease;
+            animation: fire-breath 4s ease-in-out infinite reverse;
+        }
+
+        .icon-wrapper:hover .fire-body,
+        .icon-wrapper:hover .center-core-dot {
+            /* Hover 时应用更强烈的金色光晕 */
+            filter: url(#goldFireGlow) brightness(1.3);
+            animation: none; /* Hover 时停止呼吸，保持高亮 */
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- 1. 背景层：热浪扰动 SVG 滤镜定义 & 应用 -->
+<div class="heat-wave-bg">
+    <div class="heat-texture"></div>
+</div>
+<svg width="0" height="0">
+    <defs>
+        <filter id="heatWaveFilter">
+            <!-- 生成湍流噪声 -->
+            <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="3" result="noise" seed="1">
+                <animate attributeName="baseFrequency" values="0.01;0.015;0.01" dur="20s" repeatCount="indefinite"/>
+            </feTurbulence>
+            <!-- 使用噪声扭曲图像 -->
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+    </defs>
+</svg>
+
+<!-- 2. 背景层：动态火星/余烬粒子 -->
+<div class="ember-storm-bg" id="emberStorm"></div>
+
+<div class="container">
+    <div class="icon-wrapper">
+
+        <!-- 3. On Hover 底座：燃烧符文法阵 -->
+        <svg class="hover-magic-array" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="emberGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:var(--fire-mid);stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:var(--fire-outer);stop-opacity:0.5" />
+                </linearGradient>
+            </defs>
+
+            <!-- 外圈：燃烧的符文环 (反向慢转) -->
+            <g class="outer-ring-group">
+                <circle cx="200" cy="200" r="190" />
+                <path d="M200,10 Q 210,30 230,40 T 260,70" transform="rotate(0 200 200)" />
+                <path d="M200,10 Q 210,30 230,40 T 260,70" transform="rotate(90 200 200)" />
+                <path d="M200,10 Q 210,30 230,40 T 260,70" transform="rotate(180 200 200)" />
+                <path d="M200,10 Q 210,30 230,40 T 260,70" transform="rotate(270 200 200)" />
+            </g>
+
+            <!-- 内圈：八角星符文 (正向慢转) -->
+            <g class="inner-rune-group">
+                <!-- 简化的八角星路径 -->
+                <path d="M200,50 L235,165 L350,200 L235,235 L200,350 L165,235 L50,200 L165,165 Z" />
+                <!-- 符文火星点 -->
+                <g>
+                    <circle class="magic-rune" cx="200" cy="50" r="4" />
+                    <circle class="magic-rune" cx="350" cy="200" r="4" />
+                    <circle class="magic-rune" cx="200" cy="350" r="4" />
+                    <circle class="magic-rune" cx="50" cy="200" r="4" />
+                </g>
+            </g>
+        </svg>
+
+        <!-- 主体火焰图标 -->
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <!-- 火焰路径渐变：核心白 -> 金黄 -> 橙红 -->
+                <linearGradient id="firePathGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:var(--fire-core);stop-opacity:1" />
+                    <stop offset="40%" style="stop-color:var(--fire-inner);stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:var(--fire-mid);stop-opacity:1" />
+                </linearGradient>
+
+                <!-- 默认火焰光晕滤镜 -->
+                <filter id="fireGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="blur"/>
+                    <!-- 调色矩阵：增强红黄色调 -->
+                    <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.2   0 0.8 0 0 0   0 0 0.2 0 0  0 0 0 1 0" result="fireBlur"/>
+                    <feMerge>
+                        <feMergeNode in="fireBlur" opacity="0.8"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+
+                <!-- Hover时的强烈金色光晕滤镜 -->
+                <filter id="goldFireGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="5" result="blur"/>
+                    <!-- 调色矩阵：极强的金黄色 -->
+                    <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.5   0 1 0 0 0   0 0 0.2 0 0  0 0 0 1 0" result="goldBlur"/>
+                    <feGaussianBlur in="goldBlur" stdDeviation="8" result="softGoldBlur"/>
+                    <feMerge>
+                        <feMergeNode in="softGoldBlur" opacity="0.7"/>
+                        <feMergeNode in="goldBlur" opacity="0.9"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+
+                <!-- 单个火焰分型分支 (替代冰系分支) -->
+                <g id="fractalFireBranch">
+                    <!-- 主火舌路径：带有波浪感 -->
+                    <path d="M0,0 Q 10,-50 -5,-100 T 0,-190" stroke="url(#firePathGrad)" stroke-width="5" stroke-linecap="round" fill="none" />
+
+                    <!-- 一级分叉火舌 -->
+                    <g transform="translate(0, -60)">
+                        <path d="M0,0 Q 15,-20 45,-50" stroke="url(#firePathGrad)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                        <path d="M0,0 Q -15,-20 -45,-50" stroke="url(#firePathGrad)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                        <!-- 节点替换为燃烧的余烬点 -->
+                        <circle cx="-45" cy="-50" r="5" fill="var(--fire-core)" filter="drop-shadow(0 0 5px var(--fire-inner))" />
+                        <circle cx="45" cy="-50" r="5" fill="var(--fire-core)" filter="drop-shadow(0 0 5px var(--fire-inner))" />
+                    </g>
+
+                    <!-- 二级分叉火舌 -->
+                    <g transform="translate(0, -130)">
+                        <path d="M0,0 Q 10,-15 35,-40" stroke="url(#firePathGrad)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                        <path d="M0,0 Q -10,-15 -35,-40" stroke="url(#firePathGrad)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                        <!-- 末端火星 -->
+                        <path d="M-35,-40 L-45,-50" stroke="var(--fire-inner)" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M35,-40 L45,-50" stroke="var(--fire-inner)" stroke-width="2" stroke-linecap="round"/>
+                    </g>
+
+                    <!-- 主火舌末端 -->
+                    <g transform="translate(0, -190)">
+                        <!-- 火苗形状 -->
+                        <path d="M0,0 Q 5,-10 0,-25 Q -5,-10 0,0 Z" fill="var(--fire-core)" filter="drop-shadow(0 0 8px var(--fire-inner))" />
+                    </g>
+                </g>
+
+                <!-- 内部连接线：燃烧的细丝 -->
+                <g id="subtleFireLinks">
+                    <path d="M0,-160 L138.5,-80 L138.5,80 L0,160 L-138.5,80 L-138.5,-80 Z"
+                          fill="none" stroke="var(--fire-mid)" stroke-width="1" stroke-dasharray="10,5" opacity="0.5" />
+                    <path d="M0,-60 Q 30,-30 43.3,-25 Q 30,0 43.3,25 Q 0,30 0,60 Q -30,30 -43.3,25 Q -30,0 -43.3,-25 Q 0,-30 0,-60 Z"
+                          fill="none" stroke="var(--fire-inner)" stroke-width="1.5" opacity="0.4" />
+                </g>
+            </defs>
+
+            <!-- 中心热核光晕 -->
+            <radialGradient id="coreHeatGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" style="stop-color:var(--fire-core);stop-opacity:0.6" />
+                <stop offset="40%" style="stop-color:var(--fire-inner);stop-opacity:0.4" />
+                <stop offset="100%" style="stop-color:var(--fire-mid);stop-opacity:0" />
+            </radialGradient>
+
+            <circle class="center-glow-circle" cx="256" cy="256" r="130" fill="url(#coreHeatGlow)" opacity="0.8" />
+
+            <g transform="translate(256, 256)">
+                <g class="spin-slow">
+                    <g class="magic-connectors">
+                        <use href="#subtleFireLinks" />
+                    </g>
+                    <!-- 火焰主体，应用呼吸动画和光晕 -->
+                    <g class="fire-body" filter="url(#fireGlow)">
+                        <use href="#fractalFireBranch" transform="rotate(0)" />
+                        <use href="#fractalFireBranch" transform="rotate(60)" />
+                        <use href="#fractalFireBranch" transform="rotate(120)" />
+                        <use href="#fractalFireBranch" transform="rotate(180)" />
+                        <use href="#fractalFireBranch" transform="rotate(240)" />
+                        <use href="#fractalFireBranch" transform="rotate(300)" />
+                    </g>
+                    <!-- 中心核心点 -->
+                    <circle class="center-core-dot" r="8" fill="var(--fire-core)" filter="url(#fireGlow)" />
+                </g>
+            </g>
+        </svg>
+    </div>
+
+    <h1>炽烈余烬</h1>
+    <p class="subtitle">FIERY EMBER</p>
+
+</div>
+
+<!-- JS 用于生成动态火星背景及控制速度 -->
+<script>
+    let emberAnimations = [];
+    let targetRate = 1;
+    let currentRate = 1;
+
+    // 生成火星：baseCount (常驻) + extraCount (风暴时出现)
+    function createEmberStorm() {
+        const emberContainer = document.getElementById('emberStorm');
+        const baseCount = 80;
+        const extraCount = 120; // 额外增加的火星
+
+        const totalCount = baseCount + extraCount;
+
+        for (let i = 0; i < totalCount; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('ember-particle');
+
+            // 区分常驻和额外
+            if (i >= baseCount) {
+                particle.classList.add('extra');
+                particle.style.setProperty('--current-max-opacity', 'var(--extra-ember-opacity)');
+            } else {
+                particle.classList.add('base');
+                particle.style.setProperty('--current-max-opacity', 'var(--ember-opacity)');
+            }
+
+            // 随机大小
+            const sizeScale = Math.random() * 1.5 + 0.5;
+            particle.style.width = sizeScale * 12 + 'px';
+            particle.style.height = sizeScale * 12 + 'px';
+
+            // 随机起始位置 (屏幕底部下方)
+            particle.style.left = Math.random() * 100 + 'vw';
+            particle.style.bottom = -Math.random() * 20 + 'vh';
+
+            // 设置动画变量
+            particle.style.setProperty('--scale-start', Math.random() * 0.8 + 0.2);
+            particle.style.setProperty('--scale-end', Math.random() * 0.5 + 0.1); // 上升后变小消失
+            particle.style.setProperty('--drift-x', (Math.random() * 30 - 15) + 'vw'); // 随机左右漂移
+            particle.style.setProperty('--rot-end', (Math.random() * 720 - 360) + 'deg'); // 随机旋转
+
+            // 随机延迟
+            particle.style.animationDelay = Math.random() * 15 + 's';
+
+            // 随机模糊
+            if (Math.random() > 0.6) {
+                particle.style.filter = `blur(${Math.random() * 3}px)`;
+            }
+
+            emberContainer.appendChild(particle);
+        }
+    }
+
+    // 平滑速度控制
+    function animateSpeed() {
+        currentRate += (targetRate - currentRate) * 0.05;
+
+        if (Math.abs(targetRate - currentRate) > 0.01) {
+            emberAnimations.forEach(anim => {
+                anim.playbackRate = currentRate;
+            });
+        }
+        requestAnimationFrame(animateSpeed);
+    }
+
+    window.addEventListener('load', () => {
+        createEmberStorm();
+
+        const emberParticles = document.querySelectorAll('.ember-particle');
+        emberParticles.forEach(el => {
+            // 获取所有动画 (上升 + 闪烁)
+            const anims = el.getAnimations();
+            emberAnimations.push(...anims);
+        });
+
+        requestAnimationFrame(animateSpeed);
+
+        const wrapper = document.querySelector('.icon-wrapper');
+        wrapper.addEventListener('mouseenter', () => {
+            targetRate = 6.0; // 6倍速火海
+        });
+        wrapper.addEventListener('mouseleave', () => {
+            targetRate = 1.0; // 恢复慢速
+        });
+    });
+</script>
+
+</body>
+</html>
