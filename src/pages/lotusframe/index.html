@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>火焰系技能图标 - 红莲业火 (线构版)</title>
+    <style>
+        /* --- 全局变量 --- */
+        :root {
+            /* 颜色：高能霓虹 */
+            --fire-core: #ffffff;    /* 核心白 */
+            --fire-inner: #fde047;   /* 内层电光黄 */
+            --fire-mid: #fb923c;     /* 中层亮橙 */
+            --fire-outer: #ef4444;   /* 外层激光红 */
+            --fire-dark: #7f1d1d;    /* 暗部 */
+
+            /* 动画参数 */
+            --ember-duration-base: 8s;
+            --star-duration-base: 180s;
+            --spin-speed-normal: 60s; /* 正常慢转 */
+
+            --ember-opacity: 0.5;
+            --extra-ember-opacity: 0;
+            --star-opacity: 0.3;
+
+            --global-scale: 1;
+        }
+
+        /* Hover 状态：加速旋转，亮度爆发 */
+        body:has(.icon-wrapper:hover) {
+            --ember-opacity: 0.9;
+            --extra-ember-opacity: 0.8;
+            --star-opacity: 0.7;
+            --global-scale: 1.15;
+            --spin-speed-normal: 10s; /* 涡轮加速 */
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* 背景：深渊黑红 */
+            background: radial-gradient(circle at center, #1a0505 0%, #000000 100%);
+            font-family: "Times New Roman", serif;
+            color: #ffffff;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.5s ease;
+        }
+
+        /* --- 背景层 --- */
+        .constellation-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: var(--star-opacity);
+            transition: opacity 1s ease;
+            mix-blend-mode: screen;
+        }
+        .star-rail-layer {
+            transform-origin: center;
+            animation: star-rail-spin var(--star-duration-base) linear infinite;
+        }
+        @keyframes star-rail-spin {
+            from { transform: rotate(0deg) scale(1.2); }
+            to { transform: rotate(360deg) scale(1.2); }
+        }
+        .constellation-group path, .constellation-group line, .constellation-group polyline {
+            fill: none !important;
+            stroke: rgba(251, 146, 60, 0.2);
+            stroke-width: 0.5;
+            stroke-dasharray: 3 6;
+            stroke-linecap: round;
+            vector-effect: non-scaling-stroke;
+        }
+        .scattered-star { fill: #ffedd5; opacity: 0.6; }
+
+        /* 粒子层 */
+        .ember-storm-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+        .ember-particle {
+            position: absolute;
+            /* 粒子改为线框风格的小圈 */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Ccircle cx='5' cy='5' r='3' fill='none' stroke='%23fb923c' stroke-width='1' /%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+            visibility: hidden;
+            animation-name: ember-rise;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            animation-duration: var(--ember-duration-base);
+            transition: opacity 0.8s ease;
+            will-change: transform;
+            mix-blend-mode: screen;
+        }
+        .ember-particle.base { opacity: var(--ember-opacity); }
+        .ember-particle.extra { opacity: var(--extra-ember-opacity); }
+
+        @keyframes ember-rise {
+            0% { visibility: visible; transform: translate(0, 110vh) rotate(0deg) scale(calc(var(--scale-start) * var(--global-scale))); opacity: 0; }
+            20% { opacity: var(--current-max-opacity); }
+            80% { opacity: var(--current-max-opacity); }
+            100% { transform: translate(var(--drift-x), -10vh) rotate(var(--rot-end)) scale(calc(var(--scale-end) * var(--global-scale))); opacity: 0; }
+        }
+
+        /* --- 主体容器 --- */
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .icon-wrapper {
+            width: 420px;
+            height: 420px;
+            margin: 0 auto 20px;
+            position: relative;
+            /* 光晕：霓虹线条感 */
+            filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.5))
+            drop-shadow(0 0 40px rgba(234, 88, 12, 0.3));
+            transition: transform 0.3s ease, filter 0.3s ease;
+            cursor: pointer;
+        }
+
+        .icon-wrapper:hover {
+            transform: scale(1.05) translateZ(0);
+            filter: drop-shadow(0 0 30px rgba(253, 224, 71, 0.9))
+            drop-shadow(0 0 80px rgba(234, 88, 12, 0.7));
+        }
+
+        /* --- On Hover 六芒星底座 (回归) --- */
+        .hover-magic-array {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 550px;
+            height: 550px;
+            transform: translate(-50%, -50%) scale(0.9);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.5s ease;
+            z-index: -1;
+            filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.4));
+        }
+
+        .icon-wrapper:hover .hover-magic-array {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .hover-magic-array path, .hover-magic-array circle, .hover-magic-array polygon {
+            fill: none;
+            stroke: rgba(253, 186, 116, 0.35);
+            stroke-width: 1;
+            vector-effect: non-scaling-stroke;
+        }
+
+        /* 底座反向旋转 */
+        .magic-base-group {
+            transform-origin: 200px 200px;
+            transform-box: view-box;
+            animation: spin-slow 80s linear infinite reverse;
+        }
+
+        h1 {
+            font-weight: 100;
+            letter-spacing: 10px;
+            margin-bottom: 5px;
+            color: var(--fire-core);
+            text-shadow: 0 0 20px rgba(234, 88, 12, 0.8);
+            font-family: "Impact", sans-serif;
+            font-style: italic;
+        }
+
+        p.subtitle {
+            color: var(--fire-mid);
+            font-size: 0.9rem;
+            font-weight: bold;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 火焰旋转动画 */
+        .flame-spin {
+            transform-origin: 0px 0px;
+            animation: spin-slow var(--spin-speed-normal) linear infinite;
+            will-change: transform;
+            transition: animation-duration 1s ease;
+        }
+
+        /* 呼吸动画 */
+        @keyframes flame-pulse {
+            0%, 100% { filter: url(#fireGlow) brightness(1); stroke-width: 2; }
+            50% { filter: url(#fireGlow) brightness(1.3); stroke-width: 2.5; }
+        }
+
+        .flame-body {
+            transform-origin: 0px 0px;
+            transition: filter 0.3s ease;
+            animation: flame-pulse 3s ease-in-out infinite;
+        }
+
+        .icon-wrapper:hover .flame-body {
+            filter: url(#goldFireGlow) brightness(1.2);
+            animation: none;
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- 1. 背景层：星座 SVG -->
+<svg class="constellation-bg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <g class="star-rail-layer">
+        <g id="scatteredStarsGroup"></g>
+        <g class="constellation-group" transform="rotate(180 960 540)">
+            <!-- 沿用星座 -->
+            <g transform="translate(200, 250) scale(0.5) rotate(-10)">
+                <polyline points="0,0 50,10 100,40 120,100 180,120 240,110 280,60" />
+                <circle cx="0" cy="0" r="3" fill="#fff" /><circle cx="50" cy="10" r="3" fill="#fff" /><circle cx="100" cy="40" r="3" fill="#fff" />
+                <circle cx="120" cy="100" r="4" fill="#fff" /><circle cx="180" cy="120" r="3" fill="#fff" /><circle cx="240" cy="110" r="4" fill="#fff" />
+                <circle cx="280" cy="60" r="3" fill="#fff" />
+            </g>
+            <g transform="translate(1500, 800) scale(0.5) rotate(15)">
+                <polyline points="0,0 40,100 120,100 160,0 80,-40 0,0" />
+                <line x1="40" y1="50" x2="120" y2="50" />
+                <circle cx="0" cy="0" r="4" fill="#fff" /><circle cx="160" cy="0" r="4" fill="#fff" /><circle cx="40" cy="100" r="4" fill="#fff" />
+                <circle cx="120" cy="100" r="4" fill="#fff" /><circle cx="60" cy="50" r="3" fill="#fff" /><circle cx="80" cy="50" r="3" fill="#fff" />
+                <circle cx="100" cy="50" r="3" fill="#fff" />
+            </g>
+        </g>
+    </g>
+</svg>
+
+<!-- 2. 背景层：动态火星 -->
+<div class="ember-storm-bg" id="emberStorm"></div>
+
+<div class="container">
+    <div class="icon-wrapper">
+
+        <!-- 3. On Hover 底座：六芒星阵 (恢复) -->
+        <svg class="hover-magic-array" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+            <g class="magic-base-group">
+                <!-- 外圈 -->
+                <circle cx="200" cy="200" r="190" stroke-dasharray="10 10" opacity="0.6"/>
+                <circle cx="200" cy="200" r="170" stroke-dasharray="5 5" opacity="0.4"/>
+
+                <!-- 六芒星 (正三角 + 倒三角) -->
+                <polygon points="200,40 338.5,280 61.5,280" stroke-width="1.5" />
+                <polygon points="200,360 338.5,120 61.5,120" stroke-width="1.5" />
+
+                <!-- 内部装饰 -->
+                <circle cx="200" cy="200" r="60" stroke-dasharray="2 2" opacity="0.3"/>
+            </g>
+        </svg>
+
+        <!-- 主体：红莲业火 (线构版) -->
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <!-- 线条渐变 -->
+                <linearGradient id="flameLineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:var(--fire-core);stop-opacity:1" />
+                    <stop offset="40%" style="stop-color:var(--fire-inner);stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:var(--fire-mid);stop-opacity:1" />
+                </linearGradient>
+
+                <!-- 光晕滤镜 -->
+                <filter id="fireGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="2" result="blur"/>
+                    <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.2   0 0.6 0 0 0   0 0 0.1 0 0  0 0 0 1 0" result="fireBlur"/>
+                    <feMerge>
+                        <feMergeNode in="fireBlur" opacity="0.8"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+
+                <filter id="goldFireGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="blur"/>
+                    <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.3   0 0.9 0 0 0   0 0 0.1 0 0  0 0 0 1 0" result="goldBlur"/>
+                    <feMerge>
+                        <feMergeNode in="goldBlur" opacity="0.9"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+
+                <!-- 线构火舌 (Wireframe Flame) -->
+                <g id="wireFlame">
+                    <!-- 使用 Stroke 勾勒，Fill 为 none -->
+                    <!-- 路径描述：保持红莲的 S 型卷曲，但只画轮廓 -->
+                    <path d="M0,0
+                                 Q 25,-20 35,-60
+                                 Q 40,-100 15,-140
+                                 Q -5,-170 -5,-210
+                                 Q -25,-150 -45,-110
+                                 Q -60,-70 -40,-25
+                                 Q -15,0 0,0 Z"
+                          fill="none" stroke="url(#flameLineGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+
+                    <!-- 内部纹理线 -->
+                    <path d="M0,-20 Q 15,-70 10,-130" stroke="var(--fire-inner)" stroke-width="1.5" fill="none" opacity="0.6" stroke-linecap="round"/>
+                    <path d="M0,-20 Q -15,-70 -10,-110" stroke="var(--fire-mid)" stroke-width="1.5" fill="none" opacity="0.6" stroke-linecap="round"/>
+                </g>
+
+                <!-- 内层小火苗 (线构) -->
+                <g id="innerWireFlame">
+                    <path d="M0,0 Q 15,-30 5,-70 Q -15,-30 0,0 Z"
+                          fill="none" stroke="var(--fire-inner)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+            </defs>
+
+            <!-- 核心背景：不再是实心圆，而是径向线条光 -->
+            <radialGradient id="coreHeatGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" style="stop-color:var(--fire-core);stop-opacity:0.6" />
+                <stop offset="50%" style="stop-color:var(--fire-mid);stop-opacity:0.2" />
+                <stop offset="100%" style="stop-color:var(--fire-outer);stop-opacity:0" />
+            </radialGradient>
+            <circle cx="256" cy="256" r="130" fill="url(#coreHeatGlow)" opacity="0.7" />
+
+            <!-- 主体结构 -->
+            <g transform="translate(256, 256)">
+
+                <!-- 动画层 -->
+                <g class="flame-body">
+
+                    <!-- 旋转层 -->
+                    <g class="flame-spin" filter="url(#fireGlow)">
+
+                        <!-- 第一层：8簇大火舌 (中心对称) -->
+                        <g>
+                            <use href="#wireFlame" transform="rotate(0) scale(0.9)" />
+                            <use href="#wireFlame" transform="rotate(45) scale(0.9)" />
+                            <use href="#wireFlame" transform="rotate(90) scale(0.9)" />
+                            <use href="#wireFlame" transform="rotate(135) scale(0.9)" />
+                            <use href="#wireFlame" transform="rotate(180) scale(0.9)" />
+                            <use href="#wireFlame" transform="rotate(225) scale(0.9)" />
+                            <use href="#wireFlame" transform="rotate(270) scale(0.9)" />
+                            <use href="#wireFlame" transform="rotate(315) scale(0.9)" />
+                        </g>
+
+                        <!-- 第二层：8簇小火苗 (交错) -->
+                        <g transform="rotate(22.5) scale(0.6)">
+                            <use href="#innerWireFlame" transform="rotate(0)" />
+                            <use href="#innerWireFlame" transform="rotate(45)" />
+                            <use href="#innerWireFlame" transform="rotate(90)" />
+                            <use href="#innerWireFlame" transform="rotate(135)" />
+                            <use href="#innerWireFlame" transform="rotate(180)" />
+                            <use href="#innerWireFlame" transform="rotate(225)" />
+                            <use href="#innerWireFlame" transform="rotate(270)" />
+                            <use href="#innerWireFlame" transform="rotate(315)" />
+                        </g>
+
+                        <!-- 中心极亮核心：空心光圈 -->
+                        <circle r="12" fill="none" stroke="var(--fire-core)" stroke-width="2" filter="drop-shadow(0 0 5px var(--fire-mid))"/>
+                        <circle r="5" fill="var(--fire-core)" />
+                    </g>
+                </g>
+            </g>
+        </svg>
+    </div>
+
+    <h1>红莲业火</h1>
+    <p class="subtitle">CRIMSON LOTUS FLAME</p>
+
+</div>
+
+<!-- JS -->
+<script>
+    let emberAnimations = [];
+    let starAnimations = [];
+    let targetRate = 1;
+    let currentRate = 1;
+
+    function createEmberStorm() {
+        const emberContainer = document.getElementById('emberStorm');
+        const count = 120;
+
+        for (let i = 0; i < count; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('ember-particle');
+
+            if (i >= 60) {
+                particle.classList.add('extra');
+                particle.style.setProperty('--current-max-opacity', 'var(--extra-ember-opacity)');
+            } else {
+                particle.classList.add('base');
+                particle.style.setProperty('--current-max-opacity', 'var(--ember-opacity)');
+            }
+
+            const sizeScale = Math.random() * 1.5 + 0.5;
+            particle.style.width = sizeScale * 12 + 'px';
+            particle.style.height = sizeScale * 12 + 'px';
+            particle.style.left = Math.random() * 100 + 'vw';
+            particle.style.bottom = -Math.random() * 20 + 'vh';
+
+            particle.style.setProperty('--scale-start', Math.random() * 0.8 + 0.2);
+            particle.style.setProperty('--scale-end', Math.random() * 0.5 + 0.1);
+            particle.style.setProperty('--drift-x', (Math.random() * 30 - 15) + 'vw');
+            particle.style.setProperty('--rot-end', (Math.random() * 720 - 360) + 'deg');
+            particle.style.setProperty('--global-scale', Math.random());
+
+            particle.style.animationDelay = Math.random() * 15 + 's';
+
+            if (Math.random() > 0.6) {
+                particle.style.filter = `blur(${Math.random() * 3}px)`;
+            }
+
+            emberContainer.appendChild(particle);
+        }
+    }
+
+    function createScatteredStars() {
+        const starsContainer = document.getElementById('scatteredStarsGroup');
+        const starCount = 300;
+
+        for (let i = 0; i < starCount; i++) {
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            const cx = Math.random() * 1920;
+            const cy = Math.random() * 1080;
+            const r = Math.random() * 1.5 + 0.5;
+            const opacity = Math.random() * 0.7 + 0.2;
+
+            circle.setAttribute("cx", cx);
+            circle.setAttribute("cy", cy);
+            circle.setAttribute("r", r);
+            circle.classList.add("scattered-star");
+            circle.style.opacity = opacity;
+
+            starsContainer.appendChild(circle);
+        }
+    }
+
+    function animateSpeed() {
+        currentRate += (targetRate - currentRate) * 0.05;
+
+        if (Math.abs(targetRate - currentRate) > 0.01) {
+            emberAnimations.forEach(anim => {
+                anim.playbackRate = currentRate;
+            });
+            starAnimations.forEach(anim => {
+                anim.playbackRate = 1 + (currentRate - 1) * 0.6;
+            });
+        }
+        requestAnimationFrame(animateSpeed);
+    }
+
+    window.addEventListener('load', () => {
+        createEmberStorm();
+        createScatteredStars();
+
+        const emberParticles = document.querySelectorAll('.ember-particle');
+        emberParticles.forEach(el => {
+            const anims = el.getAnimations();
+            emberAnimations.push(...anims);
+        });
+
+        const starLayer = document.querySelector('.star-rail-layer');
+        if (starLayer) {
+            const anims = starLayer.getAnimations();
+            starAnimations.push(...anims);
+        }
+
+        requestAnimationFrame(animateSpeed);
+
+        const wrapper = document.querySelector('.icon-wrapper');
+        wrapper.addEventListener('mouseenter', () => {
+            targetRate = 6.0;
+        });
+        wrapper.addEventListener('mouseleave', () => {
+            targetRate = 1.0;
+        });
+    });
+</script>
+
+</body>
+</html>

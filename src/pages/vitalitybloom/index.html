@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>治疗系技能图标 - 生命之息 (圣莲形态)</title>
+    <style>
+        /* --- 全局变量定义：自然/治疗主题 --- */
+        :root {
+            /* 颜色定义：更偏向温润的玉色和金光 */
+            --life-core: #fafffd;    /* 核心极白 */
+            --life-inner: #d9f99d;   /* 内层嫩黄绿 */
+            --life-mid: #86efac;     /* 中层清透绿 */
+            --life-outer: #166534;   /* 外层深邃绿 */
+            --spore-glow: #bef264;   /* 灵子微光 */
+
+            /* 基础状态 */
+            --spore-duration-base: 25s;
+            --star-duration-base: 180s;
+
+            --spore-opacity: 0.4;
+            --extra-spore-opacity: 0;
+            --star-opacity: 0.3;
+
+            --global-scale: 1;
+        }
+
+        /* Hover 状态：生命爆发 */
+        body:has(.icon-wrapper:hover) {
+            --spore-opacity: 1;
+            --extra-spore-opacity: 0.8;
+            --star-opacity: 0.8;
+            --global-scale: 1.2;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #022c22 0%, #020617 100%);
+            font-family: "Times New Roman", serif;
+            color: #ffffff;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.8s ease;
+        }
+
+        /* --- 1. 背景层：星座与星轨 --- */
+        .constellation-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: var(--star-opacity);
+            transition: opacity 1s ease;
+        }
+
+        .star-rail-layer {
+            transform-origin: center;
+            animation: star-rail-spin var(--star-duration-base) linear infinite;
+            will-change: transform;
+        }
+
+        @keyframes star-rail-spin {
+            from { transform: rotate(0deg) scale(1.2); }
+            to { transform: rotate(360deg) scale(1.2); }
+        }
+
+        .constellation-group path,
+        .constellation-group line,
+        .constellation-group polyline {
+            fill: none !important;
+            stroke: rgba(134, 239, 172, 0.15);
+            stroke-width: 0.5;
+            stroke-dasharray: 3 6;
+            stroke-linecap: round;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .scattered-star {
+            fill: #ecfccb;
+            opacity: 0.6;
+        }
+
+
+        /* --- 2. 背景层：动态灵子/花瓣 --- */
+        .spore-storm-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .spore-particle {
+            position: absolute;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0 Q 9 4 5 10 Q 1 4 5 0 Z' fill='%23d9f99d' /%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+
+            visibility: hidden;
+
+            animation-name: spore-fall;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            animation-duration: var(--spore-duration-base);
+
+            transition: opacity 0.8s ease;
+            will-change: transform;
+        }
+
+        .spore-particle.base { opacity: var(--spore-opacity); }
+        .spore-particle.extra { opacity: var(--extra-spore-opacity); }
+
+        @keyframes spore-fall {
+            0% {
+                visibility: visible;
+                transform: translate(0, -10vh) rotate(0deg) scale(calc(var(--scale-start) * var(--global-scale)));
+                opacity: 0;
+            }
+            10% { opacity: var(--current-max-opacity); }
+            90% { opacity: var(--current-max-opacity); }
+            100% {
+                transform: translate(var(--drift-x), 110vh) rotate(var(--rot-end)) scale(calc(var(--scale-end) * var(--global-scale)));
+                opacity: 0;
+            }
+        }
+
+
+        /* --- 3. 主体容器 --- */
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .icon-wrapper {
+            width: 380px;
+            height: 380px;
+            margin: 0 auto 20px;
+            position: relative;
+            filter: drop-shadow(0 0 20px rgba(134, 239, 172, 0.4))
+            drop-shadow(0 0 60px rgba(20, 83, 45, 0.3));
+            transition: transform 0.5s ease, filter 0.5s ease;
+            cursor: pointer;
+        }
+
+        .icon-wrapper:hover {
+            transform: scale(1.05) translateZ(0);
+            filter: drop-shadow(0 0 30px rgba(217, 249, 157, 0.8))
+            drop-shadow(0 0 80px rgba(134, 239, 172, 0.6));
+        }
+
+        /* --- 4. On Hover 含蓄法阵底座 --- */
+        .hover-magic-array {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 500px;
+            height: 500px;
+            transform: translate(-50%, -50%) scale(0.8);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: -1;
+            filter: drop-shadow(0 0 10px rgba(134, 239, 172, 0.2));
+        }
+
+        .icon-wrapper:hover .hover-magic-array {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .hover-magic-array circle,
+        .hover-magic-array path {
+            fill: none;
+            stroke: rgba(217, 249, 157, 0.3);
+            stroke-width: 1;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .lotus-base-group {
+            transform-origin: 200px 200px;
+            transform-box: view-box;
+            animation: subtle-spin 80s linear infinite normal;
+        }
+
+        /* --- 5. 文字与动画 --- */
+        h1 {
+            font-weight: 100;
+            letter-spacing: 8px;
+            margin-bottom: 5px;
+            color: var(--life-core);
+            text-shadow: 0 0 20px rgba(134, 239, 172, 0.8);
+        }
+
+        p.subtitle {
+            color: var(--life-mid);
+            font-size: 0.8rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        @keyframes subtle-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes bloom-breath {
+            0%, 100% { filter: url(#lifeGlow) brightness(1); transform: scale(1); }
+            50% { filter: url(#lifeGlow) brightness(1.1); transform: scale(1.02); }
+        }
+
+        /* 修复：动画 transform 覆盖了 SVG transform 导致位移丢失
+           解决：在 HTML 中用外层 Group 负责位移，CSS 只负责缩放
+        */
+        .lotus-body {
+            /* 指定变换中心为原点 (因为 SVG 内的路径是围绕 0,0 绘制的) */
+            transform-origin: 0px 0px;
+            transition: filter 0.5s ease;
+            animation: bloom-breath 6s ease-in-out infinite;
+        }
+
+        .icon-wrapper:hover .lotus-body {
+            filter: url(#goldLifeGlow) brightness(1.2);
+            animation: none;
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- 1. 背景层：星座与星轨 SVG -->
+<svg class="constellation-bg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <g class="star-rail-layer">
+        <g id="scatteredStarsGroup"></g>
+        <!-- 星座 -->
+        <g class="constellation-group" transform="rotate(90 960 540)">
+            <g transform="translate(200, 250) scale(0.5) rotate(-10)">
+                <polyline points="0,0 50,10 100,40 120,100 180,120 240,110 280,60" />
+                <circle cx="0" cy="0" r="3" fill="#fff" /><circle cx="50" cy="10" r="3" fill="#fff" /><circle cx="100" cy="40" r="3" fill="#fff" />
+                <circle cx="120" cy="100" r="4" fill="#fff" /><circle cx="180" cy="120" r="3" fill="#fff" /><circle cx="240" cy="110" r="4" fill="#fff" />
+                <circle cx="280" cy="60" r="3" fill="#fff" />
+            </g>
+            <g transform="translate(1500, 800) scale(0.5) rotate(15)">
+                <polyline points="0,0 40,100 120,100 160,0 80,-40 0,0" />
+                <line x1="40" y1="50" x2="120" y2="50" />
+                <circle cx="0" cy="0" r="4" fill="#fff" /><circle cx="160" cy="0" r="4" fill="#fff" /><circle cx="40" cy="100" r="4" fill="#fff" />
+                <circle cx="120" cy="100" r="4" fill="#fff" /><circle cx="60" cy="50" r="3" fill="#fff" /><circle cx="80" cy="50" r="3" fill="#fff" />
+                <circle cx="100" cy="50" r="3" fill="#fff" />
+            </g>
+        </g>
+    </g>
+</svg>
+
+<!-- 2. 背景层：动态灵子/花瓣粒子 -->
+<div class="spore-storm-bg" id="sporeStorm"></div>
+
+<div class="container">
+    <div class="icon-wrapper">
+
+        <!-- 3. On Hover 底座：曼陀罗花纹 -->
+        <svg class="hover-magic-array" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+            <g class="lotus-base-group">
+                <circle cx="200" cy="200" r="190" stroke-dasharray="2 4" opacity="0.5"/>
+                <circle cx="200" cy="200" r="180" stroke-width="0.5" opacity="0.3"/>
+                <g opacity="0.4">
+                    <path d="M200,20 Q 230,80 200,140 Q 170,80 200,20" />
+                    <path d="M200,20 Q 230,80 200,140 Q 170,80 200,20" transform="rotate(45 200 200)" />
+                    <path d="M200,20 Q 230,80 200,140 Q 170,80 200,20" transform="rotate(90 200 200)" />
+                    <path d="M200,20 Q 230,80 200,140 Q 170,80 200,20" transform="rotate(135 200 200)" />
+                    <path d="M200,20 Q 230,80 200,140 Q 170,80 200,20" transform="rotate(180 200 200)" />
+                    <path d="M200,20 Q 230,80 200,140 Q 170,80 200,20" transform="rotate(225 200 200)" />
+                    <path d="M200,20 Q 230,80 200,140 Q 170,80 200,20" transform="rotate(270 200 200)" />
+                    <path d="M200,20 Q 230,80 200,140 Q 170,80 200,20" transform="rotate(315 200 200)" />
+                </g>
+            </g>
+        </svg>
+
+        <!-- 主体：神圣莲华图标 -->
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="lotusGrad" cx="50%" cy="80%" r="80%">
+                    <stop offset="0%" style="stop-color:var(--life-core);stop-opacity:1" />
+                    <stop offset="40%" style="stop-color:var(--life-inner);stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:var(--life-mid);stop-opacity:1" />
+                </radialGradient>
+
+                <filter id="lifeGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="blur"/>
+                    <feColorMatrix in="blur" type="matrix" values="0.5 0 0 0 0   0 1 0 0 0   0 0 0.6 0 0  0 0 0 1 0" result="greenBlur"/>
+                    <feMerge>
+                        <feMergeNode in="greenBlur" opacity="0.7"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+
+                <filter id="goldLifeGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="5" result="blur"/>
+                    <feColorMatrix in="blur" type="matrix" values="0.9 0 0 0 0   0 1 0 0 0   0 0 0.3 0 0  0 0 0 1 0" result="goldBlur"/>
+                    <feMerge>
+                        <feMergeNode in="goldBlur" opacity="0.8"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+
+                <g id="outerPetal">
+                    <path d="M0,0 C 50,-60 70,-120 0,-190 C -70,-120 -50,-60 0,0"
+                          stroke="url(#lotusGrad)" stroke-width="2.5" fill="none" />
+                    <path d="M0,-20 L0,-150" stroke="var(--life-inner)" stroke-width="1" opacity="0.6"/>
+                    <path d="M0,-50 Q 20,-80 25,-110" stroke="var(--life-mid)" stroke-width="1" fill="none" opacity="0.4"/>
+                    <path d="M0,-50 Q -20,-80 -25,-110" stroke="var(--life-mid)" stroke-width="1" fill="none" opacity="0.4"/>
+                    <circle cx="0" cy="-190" r="3" fill="var(--life-core)" />
+                </g>
+
+                <g id="innerPetal">
+                    <path d="M0,0 C 30,-40 40,-80 0,-110 C -40,-80 -30,-40 0,0"
+                          stroke="var(--life-inner)" stroke-width="2" fill="none" />
+                    <circle cx="0" cy="-110" r="2" fill="var(--life-core)" />
+                </g>
+            </defs>
+
+            <radialGradient id="coreLifeGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" style="stop-color:var(--life-core);stop-opacity:0.6" />
+                <stop offset="60%" style="stop-color:var(--life-inner);stop-opacity:0.2" />
+                <stop offset="100%" style="stop-color:var(--life-outer);stop-opacity:0" />
+            </radialGradient>
+            <circle cx="256" cy="256" r="140" fill="url(#coreLifeGlow)" opacity="0.6" />
+
+            <!-- 主体：圣莲结构 -->
+            <!-- 修复：外层 <g> 负责定位 translate(256, 256) -->
+            <g transform="translate(256, 256)">
+                <!-- 内层 <g> 负责动画 (filter, animation)，transform-origin 设为 0 0 -->
+                <g class="lotus-body" filter="url(#lifeGlow)">
+
+                    <!-- 第一层：8个大花瓣 -->
+                    <g>
+                        <use href="#outerPetal" transform="rotate(0)" />
+                        <use href="#outerPetal" transform="rotate(45)" />
+                        <use href="#outerPetal" transform="rotate(90)" />
+                        <use href="#outerPetal" transform="rotate(135)" />
+                        <use href="#outerPetal" transform="rotate(180)" />
+                        <use href="#outerPetal" transform="rotate(225)" />
+                        <use href="#outerPetal" transform="rotate(270)" />
+                        <use href="#outerPetal" transform="rotate(315)" />
+                    </g>
+
+                    <!-- 第二层：8个小花瓣 (交错旋转 22.5度) -->
+                    <g transform="rotate(22.5) scale(0.9)">
+                        <use href="#innerPetal" transform="rotate(0)" />
+                        <use href="#innerPetal" transform="rotate(45)" />
+                        <use href="#innerPetal" transform="rotate(90)" />
+                        <use href="#innerPetal" transform="rotate(135)" />
+                        <use href="#innerPetal" transform="rotate(180)" />
+                        <use href="#innerPetal" transform="rotate(225)" />
+                        <use href="#innerPetal" transform="rotate(270)" />
+                        <use href="#innerPetal" transform="rotate(315)" />
+                    </g>
+
+                    <!-- 中心花蕊 -->
+                    <circle r="12" fill="none" stroke="var(--life-core)" stroke-width="2" />
+                    <circle r="6" fill="var(--life-core)" />
+
+                    <g transform="rotate(0)">
+                        <circle cx="0" cy="-20" r="2" fill="var(--life-inner)" />
+                        <circle cx="0" cy="20" r="2" fill="var(--life-inner)" />
+                        <circle cx="20" cy="0" r="2" fill="var(--life-inner)" />
+                        <circle cx="-20" cy="0" r="2" fill="var(--life-inner)" />
+                    </g>
+
+                </g>
+            </g>
+        </svg>
+    </div>
+
+    <h1>生命之息</h1>
+    <p class="subtitle">VITALITY BLOOM</p>
+
+</div>
+
+<!-- JS 用于生成动态背景及控制速度 -->
+<script>
+    let sporeAnimations = [];
+    let starAnimations = [];
+    let targetRate = 1;
+    let currentRate = 1;
+
+    function createSporeStorm() {
+        const sporeContainer = document.getElementById('sporeStorm');
+        const baseCount = 100;
+        const extraCount = 100;
+
+        const totalCount = baseCount + extraCount;
+
+        for (let i = 0; i < totalCount; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('spore-particle');
+
+            if (i >= baseCount) {
+                particle.classList.add('extra');
+                particle.style.setProperty('--current-max-opacity', 'var(--extra-spore-opacity)');
+            } else {
+                particle.classList.add('base');
+                particle.style.setProperty('--current-max-opacity', 'var(--spore-opacity)');
+            }
+
+            const sizeScale = Math.random() * 1.2 + 0.6;
+            particle.style.width = sizeScale * 10 + 'px';
+            particle.style.height = sizeScale * 10 + 'px';
+            particle.style.left = Math.random() * 100 + 'vw';
+            particle.style.top = -Math.random() * 50 + 'vh';
+
+            particle.style.setProperty('--scale-start', Math.random() * 0.5 + 0.5);
+            particle.style.setProperty('--scale-end', Math.random() * 0.5 + 0.8);
+            particle.style.setProperty('--drift-x', (Math.random() * 30 - 15) + 'vw');
+            particle.style.setProperty('--rot-end', (Math.random() * 360) + 'deg');
+
+            particle.style.animationDelay = Math.random() * 20 + 's';
+
+            if (Math.random() > 0.5) {
+                particle.style.filter = `blur(${Math.random() * 2}px)`;
+            }
+
+            sporeContainer.appendChild(particle);
+        }
+    }
+
+    function createScatteredStars() {
+        const starsContainer = document.getElementById('scatteredStarsGroup');
+        const starCount = 300;
+
+        for (let i = 0; i < starCount; i++) {
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            const cx = Math.random() * 1920;
+            const cy = Math.random() * 1080;
+            const r = Math.random() * 1.5 + 0.5;
+            const opacity = Math.random() * 0.7 + 0.2;
+
+            circle.setAttribute("cx", cx);
+            circle.setAttribute("cy", cy);
+            circle.setAttribute("r", r);
+            circle.classList.add("scattered-star");
+            circle.style.opacity = opacity;
+
+            starsContainer.appendChild(circle);
+        }
+    }
+
+    function animateSpeed() {
+        currentRate += (targetRate - currentRate) * 0.05;
+
+        if (Math.abs(targetRate - currentRate) > 0.01) {
+            sporeAnimations.forEach(anim => {
+                anim.playbackRate = currentRate;
+            });
+            starAnimations.forEach(anim => {
+                anim.playbackRate = 1 + (currentRate - 1) * 0.6;
+            });
+        }
+        requestAnimationFrame(animateSpeed);
+    }
+
+    window.addEventListener('load', () => {
+        createSporeStorm();
+        createScatteredStars();
+
+        const sporeParticles = document.querySelectorAll('.spore-particle');
+        sporeParticles.forEach(el => {
+            const anims = el.getAnimations();
+            sporeAnimations.push(...anims);
+        });
+
+        const starLayer = document.querySelector('.star-rail-layer');
+        if (starLayer) {
+            const anims = starLayer.getAnimations();
+            starAnimations.push(...anims);
+        }
+
+        requestAnimationFrame(animateSpeed);
+
+        const wrapper = document.querySelector('.icon-wrapper');
+        wrapper.addEventListener('mouseenter', () => {
+            targetRate = 8.0;
+        });
+        wrapper.addEventListener('mouseleave', () => {
+            targetRate = 1.0;
+        });
+    });
+</script>
+
+</body>
+</html>
