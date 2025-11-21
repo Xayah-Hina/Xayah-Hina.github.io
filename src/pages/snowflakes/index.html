@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寒冰系技能图标 - 圣洁雪影 (凛冬完全体)</title>
+    <style>
+        /* --- 全局变量定义 --- */
+        :root {
+            /* 基础状态：极慢、静谧 */
+            --snow-duration-base: 25s;
+            --star-duration-base: 180s;
+
+            /* 基础雪花 (常驻) */
+            --snow-opacity: 0.3;
+
+            /* 风暴雪花 (Hover时才出现) */
+            --extra-snow-opacity: 0;
+
+            /* 星座透明度 */
+            --star-opacity: 0.3;
+
+            /* 全局雪花大小缩放倍率 */
+            --global-scale: 1;
+        }
+
+        /* Hover 状态：改变透明度、大小和光影 */
+        body:has(.icon-wrapper:hover) {
+            --snow-opacity: 1;         /* 常驻雪花变亮 */
+            --extra-snow-opacity: 0.8; /* 隐藏的雪花显现 */
+            --star-opacity: 0.8;       /* 星座更亮 */
+            --global-scale: 1.3;       /* 雪花整体稍微变大 */
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            font-family: "Times New Roman", serif;
+            color: #ffffff;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.8s ease;
+        }
+
+        /* --- 1. 背景层：星座与星轨 --- */
+        .constellation-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: var(--star-opacity);
+            transition: opacity 1s ease;
+        }
+
+        .star-rail-layer {
+            transform-origin: center;
+            animation: star-rail-spin var(--star-duration-base) linear infinite;
+            will-change: transform;
+        }
+
+        @keyframes star-rail-spin {
+            from { transform: rotate(0deg) scale(1.2); }
+            to { transform: rotate(360deg) scale(1.2); }
+        }
+
+        .constellation-group path,
+        .constellation-group line,
+        .constellation-group polyline {
+            fill: none !important;
+            stroke: rgba(255, 255, 255, 0.2);
+            stroke-width: 0.5;
+            stroke-dasharray: 3 6;
+            stroke-linecap: round;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .scattered-star {
+            fill: #fff;
+            opacity: 0.6;
+        }
+
+
+        /* --- 2. 背景层：动态雪花 --- */
+        .snow-storm-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .snow-particle {
+            position: absolute;
+            /* 六角雪花路径 */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M5 0 L5 10 M9.33 2.5 L0.67 7.5 M9.33 7.5 L0.67 2.5' stroke='white' stroke-width='1' /%3E%3C/svg%3E");
+            background-size: contain;
+            background-repeat: no-repeat;
+
+            visibility: hidden;
+
+            animation-name: snowfall;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+            animation-duration: var(--snow-duration-base);
+
+            transition: opacity 0.8s ease;
+            will-change: transform;
+        }
+
+        /* 常驻雪花 */
+        .snow-particle.base {
+            opacity: var(--snow-opacity);
+        }
+
+        /* 额外风暴雪花 */
+        .snow-particle.extra {
+            opacity: var(--extra-snow-opacity);
+        }
+
+        @keyframes snowfall {
+            0% {
+                visibility: visible;
+                transform: translate(0, -10vh) rotate(0deg) scale(calc(var(--scale-start) * var(--global-scale)));
+                opacity: 0;
+            }
+            10% { opacity: var(--current-max-opacity); }
+            90% { opacity: var(--current-max-opacity); }
+            100% {
+                transform: translate(var(--drift-x), 110vh) rotate(360deg) scale(calc(var(--scale-end) * var(--global-scale)));
+                opacity: 0;
+            }
+        }
+
+
+        /* --- 3. 主体容器 --- */
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .icon-wrapper {
+            width: 360px;
+            height: 360px;
+            margin: 0 auto 20px;
+            position: relative;
+            filter: drop-shadow(0 0 15px rgba(200, 230, 255, 0.7))
+            drop-shadow(0 0 40px rgba(200, 230, 255, 0.3));
+            transition: transform 0.5s ease, filter 0.5s ease;
+            cursor: pointer;
+        }
+
+        .icon-wrapper:hover {
+            transform: scale(1.05) translateZ(0);
+            filter: drop-shadow(0 0 30px rgba(255, 250, 240, 0.8))
+            drop-shadow(0 0 80px rgba(255, 240, 200, 0.4));
+        }
+
+        /* --- 4. On Hover 含蓄六芒星底座 --- */
+        .hover-magic-array {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 480px;
+            height: 480px;
+            transform: translate(-50%, -50%) scale(0.8);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: -1;
+            filter: drop-shadow(0 0 10px rgba(150, 220, 255, 0.3));
+        }
+
+        .icon-wrapper:hover .hover-magic-array {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .hover-magic-array circle,
+        .hover-magic-array polygon {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.35);
+            stroke-width: 1;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .rings-group {
+            transform-origin: 200px 200px;
+            transform-box: view-box;
+            animation: subtle-spin 50s linear infinite reverse;
+        }
+        .outer-ring { stroke-dasharray: 10 10; }
+        .inner-ring { stroke-dasharray: 5 5; stroke-width: 0.8; opacity: 0.6; }
+
+        .triangle-group {
+            transform-origin: 200px 200px;
+            transform-box: view-box;
+            animation: subtle-spin 50s linear infinite normal;
+        }
+        .triangle-up, .triangle-down { stroke-dasharray: 20 30; }
+
+        /* --- 5. 文字与动画 --- */
+        h1 {
+            font-weight: 100;
+            letter-spacing: 8px;
+            margin-bottom: 5px;
+            color: #ffffff;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        }
+
+        p.subtitle {
+            color: #e5e5e5;
+            font-size: 0.8rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+
+        @keyframes subtle-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .spin-slow {
+            transform-origin: 0px 0px;
+            animation: subtle-spin 50s linear infinite;
+        }
+
+        .snowflake-body, .center-core-dot {
+            transition: filter 0.5s ease;
+        }
+
+        .icon-wrapper:hover .snowflake-body,
+        .icon-wrapper:hover .center-core-dot {
+            filter: url(#goldHolyGlow);
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- 1. 背景层：星座与星轨 SVG -->
+<svg class="constellation-bg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <g class="star-rail-layer">
+        <g id="scatteredStarsGroup"></g>
+        <!-- 增加更多星座 -->
+        <g class="constellation-group">
+
+            <!-- 1. 大熊座 (Big Dipper) - 左上 -->
+            <g transform="translate(200, 250) scale(0.5) rotate(-10)">
+                <polyline points="0,0 50,10 100,40 120,100 180,120 240,110 280,60" />
+                <circle cx="0" cy="0" r="3" fill="#fff" />
+                <circle cx="50" cy="10" r="3" fill="#fff" />
+                <circle cx="100" cy="40" r="3" fill="#fff" />
+                <circle cx="120" cy="100" r="4" fill="#fff" />
+                <circle cx="180" cy="120" r="3" fill="#fff" />
+                <circle cx="240" cy="110" r="4" fill="#fff" />
+                <circle cx="280" cy="60" r="3" fill="#fff" />
+            </g>
+
+            <!-- 2. 猎户座 (Orion) - 右下 -->
+            <g transform="translate(1500, 800) scale(0.5) rotate(15)">
+                <!-- 身体 -->
+                <polyline points="0,0 40,100 120,100 160,0 80,-40 0,0" />
+                <!-- 腰带 -->
+                <line x1="40" y1="50" x2="120" y2="50" />
+                <circle cx="0" cy="0" r="4" fill="#fff" /> <!-- 参宿四 -->
+                <circle cx="160" cy="0" r="4" fill="#fff" /> <!-- 参宿五 -->
+                <circle cx="40" cy="100" r="4" fill="#fff" /> <!-- 参宿六 -->
+                <circle cx="120" cy="100" r="4" fill="#fff" /> <!-- 参宿七 -->
+                <circle cx="60" cy="50" r="3" fill="#fff" />
+                <circle cx="80" cy="50" r="3" fill="#fff" />
+                <circle cx="100" cy="50" r="3" fill="#fff" />
+            </g>
+
+            <!-- 3. 仙后座 (Cassiopeia) - 左下 -->
+            <g transform="translate(300, 800) scale(0.45) rotate(20)">
+                <polyline points="0,0 40,50 80,20 120,50 160,10" />
+                <circle cx="0" cy="0" r="3" fill="#fff" />
+                <circle cx="40" cy="50" r="3" fill="#fff" />
+                <circle cx="80" cy="20" r="3" fill="#fff" />
+                <circle cx="120" cy="50" r="3" fill="#fff" />
+                <circle cx="160" cy="10" r="3" fill="#fff" />
+            </g>
+
+            <!-- 4. 天鹅座 (Cygnus) - 右上 -->
+            <g transform="translate(1600, 200) scale(0.5) rotate(45)">
+                <!-- 十字架 -->
+                <line x1="50" y1="0" x2="50" y2="120" />
+                <line x1="0" y1="60" x2="100" y2="60" />
+                <circle cx="50" cy="0" r="3" fill="#fff" />
+                <circle cx="50" cy="60" r="4" fill="#fff" /> <!-- 天津四 -->
+                <circle cx="50" cy="120" r="3" fill="#fff" />
+                <circle cx="0" cy="60" r="3" fill="#fff" />
+                <circle cx="100" cy="60" r="3" fill="#fff" />
+            </g>
+
+            <!-- 5. 天蝎座 (Scorpius) - 中下 -->
+            <g transform="translate(960, 900) scale(0.4) rotate(-10)">
+                <polyline points="0,0 20,20 40,10 60,30 60,60 40,80 10,80 -10,60" />
+                <circle cx="0" cy="0" r="3" fill="#fff" />
+                <circle cx="20" cy="20" r="4" fill="#fff" /> <!-- 心宿二 -->
+                <circle cx="40" cy="10" r="3" fill="#fff" />
+                <circle cx="60" cy="30" r="3" fill="#fff" />
+                <circle cx="60" cy="60" r="3" fill="#fff" />
+                <circle cx="40" cy="80" r="3" fill="#fff" />
+                <circle cx="10" cy="80" r="3" fill="#fff" />
+                <circle cx="-10" cy="60" r="3" fill="#fff" />
+            </g>
+
+            <!-- 6. 狮子座 (Leo) - 中上 -->
+            <g transform="translate(800, 150) scale(0.4) rotate(-5)">
+                <!-- 镰刀头 + 身体 -->
+                <polyline points="0,0 30,-20 50,0 50,40 20,40 80,60 100,40" />
+                <circle cx="0" cy="0" r="3" fill="#fff" />
+                <circle cx="30" cy="-20" r="3" fill="#fff" />
+                <circle cx="50" cy="0" r="3" fill="#fff" />
+                <circle cx="50" cy="40" r="4" fill="#fff" /> <!-- 轩辕十四 -->
+                <circle cx="20" cy="40" r="3" fill="#fff" />
+                <circle cx="80" cy="60" r="3" fill="#fff" />
+                <circle cx="100" cy="40" r="3" fill="#fff" />
+            </g>
+
+            <!-- 7. 飞马座 (Pegasus) - 右侧中间 -->
+            <g transform="translate(1750, 500) scale(0.45) rotate(10)">
+                <!-- 大四边形 -->
+                <polygon points="0,0 80,10 90,90 10,80" />
+                <!-- 腿 -->
+                <polyline points="90,90 130,120 110,150" />
+                <polyline points="80,10 120,-20" />
+
+                <circle cx="0" cy="0" r="3" fill="#fff" />
+                <circle cx="80" cy="10" r="3" fill="#fff" />
+                <circle cx="90" cy="90" r="3" fill="#fff" />
+                <circle cx="10" cy="80" r="3" fill="#fff" />
+                <circle cx="130" cy="120" r="3" fill="#fff" />
+                <circle cx="110" cy="150" r="3" fill="#fff" />
+                <circle cx="120" cy="-20" r="3" fill="#fff" />
+            </g>
+
+        </g>
+    </g>
+</svg>
+
+<!-- 2. 背景层：动态雪花粒子 -->
+<div class="snow-storm-bg" id="snowStorm"></div>
+
+<div class="container">
+    <div class="icon-wrapper">
+
+        <!-- 3. On Hover 含蓄六芒星底座 -->
+        <svg class="hover-magic-array" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+            <g class="rings-group">
+                <circle class="outer-ring" cx="200" cy="200" r="190" />
+                <circle class="inner-ring" cx="200" cy="200" r="175" />
+            </g>
+            <g class="triangle-group">
+                <polygon class="triangle-up" points="200,40 338.5,280 61.5,280" />
+                <polygon class="triangle-down" points="200,360 338.5,120 61.5,120" />
+            </g>
+        </svg>
+
+        <!-- 主体雪花图标 -->
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="branchGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+                </linearGradient>
+
+                <filter id="holyGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="2" result="blur"/>
+                    <feColorMatrix in="blur" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.8 0" result="whiteBlur"/>
+                    <feMerge>
+                        <feMergeNode in="whiteBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+
+                <filter id="goldHolyGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="blur"/>
+                    <feColorMatrix in="blur" type="matrix" values="0 0 0 0 1   0 0 0 0 0.85   0 0 0 0 0.5  0 0 0 1 0" result="goldBlur"/>
+                    <feGaussianBlur in="goldBlur" stdDeviation="5" result="softGoldBlur"/>
+                    <feMerge>
+                        <feMergeNode in="softGoldBlur" opacity="0.6"/>
+                        <feMergeNode in="goldBlur" opacity="0.8"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+
+                <g id="slimFractalBranch">
+                    <path d="M0,0 L0,-190" stroke="url(#branchGrad)" stroke-width="4" stroke-linecap="round" fill="none" />
+                    <g transform="translate(0, -50)">
+                        <path d="M0,0 C-15,-15 -30,-30 -40,-60" stroke="url(#branchGrad)" stroke-width="3" fill="none" stroke-linecap="round"/>
+                        <path d="M0,0 C15,-15 30,-30 40,-60" stroke="url(#branchGrad)" stroke-width="3" fill="none" stroke-linecap="round"/>
+                        <rect x="-43" y="-63" width="6" height="6" transform="rotate(45 -40 -60)" fill="#fff" />
+                        <rect x="37" y="-63" width="6" height="6" transform="rotate(45 40 -60)" fill="#fff" />
+                    </g>
+                    <g transform="translate(0, -110)">
+                        <path d="M0,0 C-15,-10 -25,-20 -35,-50" stroke="url(#branchGrad)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                        <path d="M0,0 C15,-10 25,-20 35,-50" stroke="url(#branchGrad)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                        <path d="M-20,-25 L-30,-30" stroke="url(#branchGrad)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                        <path d="M20,-25 L30,-30" stroke="url(#branchGrad)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                        <circle cx="-35" cy="-50" r="3" fill="#fff" />
+                        <circle cx="35" cy="-50" r="3" fill="#fff" />
+                    </g>
+                    <g transform="translate(0, -190)">
+                        <path d="M0,0 L-15,15" stroke="url(#branchGrad)" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M0,0 L15,15" stroke="url(#branchGrad)" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M0,0 L-6,-10 L0,-20 L6,-10 Z" fill="#ffffff" />
+                    </g>
+                </g>
+
+                <g id="subtleLinks">
+                    <polygon points="0,-160 138.5,-80 138.5,80 0,160 -138.5,80 -138.5,-80"
+                             fill="none" stroke="#fff" stroke-width="0.5" stroke-dasharray="2,4" opacity="0.4" />
+                    <polygon points="0,-50 43.3,-25 43.3,25 0,50 -43.3,25 -43.3,-25"
+                             fill="none" stroke="#fff" stroke-width="0.8" opacity="0.3" />
+                </g>
+            </defs>
+
+            <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.4" />
+                <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0" />
+            </radialGradient>
+
+            <circle class="center-glow-circle" cx="256" cy="256" r="120" fill="url(#coreGlow)" opacity="0.6" />
+
+            <g transform="translate(256, 256)">
+                <g class="spin-slow">
+                    <g class="magic-connectors">
+                        <use href="#subtleLinks" />
+                    </g>
+                    <g class="snowflake-body" filter="url(#holyGlow)">
+                        <use href="#slimFractalBranch" transform="rotate(0)" />
+                        <use href="#slimFractalBranch" transform="rotate(60)" />
+                        <use href="#slimFractalBranch" transform="rotate(120)" />
+                        <use href="#slimFractalBranch" transform="rotate(180)" />
+                        <use href="#slimFractalBranch" transform="rotate(240)" />
+                        <use href="#slimFractalBranch" transform="rotate(300)" />
+                    </g>
+                    <circle class="center-core-dot" r="5" fill="#ffffff" filter="url(#holyGlow)" />
+                </g>
+            </g>
+        </svg>
+    </div>
+
+    <h1>圣洁雪影</h1>
+    <p class="subtitle">HOLY SNOWFLAKE</p>
+
+</div>
+
+<!-- JS 用于生成动态背景及控制速度 -->
+<script>
+    let snowAnimations = [];
+    let starAnimations = [];
+    let targetRate = 1;
+    let currentRate = 1;
+
+    // 生成雪花：baseCount (常驻) + extraCount (风暴时出现)
+    function createSnowStorm() {
+        const snowContainer = document.getElementById('snowStorm');
+        const baseCount = 100;
+        const extraCount = 100; // 额外增加 100 个雪花用于 Hover
+
+        const totalCount = baseCount + extraCount;
+
+        for (let i = 0; i < totalCount; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('snow-particle');
+
+            // 区分常驻和额外
+            if (i >= baseCount) {
+                particle.classList.add('extra');
+                particle.style.setProperty('--current-max-opacity', 'var(--extra-snow-opacity)');
+            } else {
+                particle.classList.add('base');
+                particle.style.setProperty('--current-max-opacity', 'var(--snow-opacity)');
+            }
+
+            const sizeScale = Math.random() * 1.2 + 0.6;
+            particle.style.width = sizeScale * 10 + 'px';
+            particle.style.height = sizeScale * 10 + 'px';
+            particle.style.left = Math.random() * 100 + 'vw';
+            particle.style.top = -Math.random() * 50 + 'vh';
+
+            particle.style.setProperty('--scale-start', Math.random() * 0.5 + 0.5);
+            particle.style.setProperty('--scale-end', Math.random() * 0.5 + 0.8);
+            particle.style.setProperty('--drift-x', (Math.random() * 20 - 10) + 'vw');
+
+            particle.style.animationDelay = Math.random() * 25 + 's';
+
+            if (Math.random() > 0.7) {
+                particle.style.filter = `blur(${Math.random() * 2}px)`;
+            }
+
+            snowContainer.appendChild(particle);
+        }
+    }
+
+    function createScatteredStars() {
+        const starsContainer = document.getElementById('scatteredStarsGroup');
+        const starCount = 300;
+
+        for (let i = 0; i < starCount; i++) {
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            const cx = Math.random() * 1920;
+            const cy = Math.random() * 1080;
+            const r = Math.random() * 1.5 + 0.5;
+            const opacity = Math.random() * 0.7 + 0.2;
+
+            circle.setAttribute("cx", cx);
+            circle.setAttribute("cy", cy);
+            circle.setAttribute("r", r);
+            circle.classList.add("scattered-star");
+            circle.style.opacity = opacity;
+
+            starsContainer.appendChild(circle);
+        }
+    }
+
+    function animateSpeed() {
+        currentRate += (targetRate - currentRate) * 0.05;
+
+        if (Math.abs(targetRate - currentRate) > 0.01) {
+            snowAnimations.forEach(anim => {
+                anim.playbackRate = currentRate;
+            });
+            starAnimations.forEach(anim => {
+                anim.playbackRate = 1 + (currentRate - 1) * 0.6;
+            });
+        }
+        requestAnimationFrame(animateSpeed);
+    }
+
+    window.addEventListener('load', () => {
+        createSnowStorm();
+        createScatteredStars();
+
+        const snowParticles = document.querySelectorAll('.snow-particle');
+        snowParticles.forEach(el => {
+            const anims = el.getAnimations();
+            snowAnimations.push(...anims);
+        });
+
+        const starLayer = document.querySelector('.star-rail-layer');
+        if (starLayer) {
+            const anims = starLayer.getAnimations();
+            starAnimations.push(...anims);
+        }
+
+        requestAnimationFrame(animateSpeed);
+
+        const wrapper = document.querySelector('.icon-wrapper');
+        wrapper.addEventListener('mouseenter', () => {
+            targetRate = 8.0; // 8倍速暴风雪
+        });
+        wrapper.addEventListener('mouseleave', () => {
+            targetRate = 1.0; // 恢复慢速
+        });
+    });
+</script>
+
+</body>
+</html>
