@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水系技能图标 - 深渊潮汐 (怒涛形态)</title>
+    <style>
+        /* --- 全局变量：深海主题 --- */
+        :root {
+            /* 颜色：深邃、透亮、液态 */
+            --hydro-core: #ecfeff;    /* 浪花白 */
+            --hydro-inner: #67e8f9;   /* 浅水青 */
+            --hydro-mid: #0ea5e9;     /* 湛蓝 */
+            --hydro-outer: #2563eb;   /* 深海蓝 */
+            --hydro-deep: #1e3a8a;    /* 深渊底色 */
+
+            /* 动画参数 */
+            --bubble-duration-base: 8s;
+            --star-duration-base: 180s;
+            --spin-speed-normal: 15s; /* 漩涡常态旋转 */
+
+            --bubble-opacity: 0.4;
+            --extra-bubble-opacity: 0;
+            --star-opacity: 0.3;
+
+            --global-scale: 1;
+        }
+
+        /* Hover 状态：激流爆发 */
+        body:has(.icon-wrapper:hover) {
+            --bubble-opacity: 0.8;
+            --extra-bubble-opacity: 0.7;
+            --star-opacity: 0.6;
+            --global-scale: 1.1;
+            --spin-speed-normal: 2s; /* 极速水龙卷 */
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            font-family: "Times New Roman", serif;
+            color: #ffffff;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.5s ease;
+        }
+
+        /* --- 背景层 --- */
+        .constellation-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: var(--star-opacity);
+            transition: opacity 1s ease;
+            mix-blend-mode: screen;
+        }
+        .star-rail-layer {
+            transform-origin: center;
+            animation: star-rail-spin 120s linear infinite;
+        }
+        @keyframes star-rail-spin {
+            from { transform: rotate(0deg) scale(1.1); }
+            to { transform: rotate(360deg) scale(1.1); }
+        }
+        .constellation-group path, .constellation-group line, .constellation-group polyline {
+            fill: none !important;
+            stroke: rgba(103, 232, 249, 0.15);
+            stroke-width: 0.5;
+            stroke-dasharray: 3 6;
+            stroke-linecap: round;
+            vector-effect: non-scaling-stroke;
+        }
+        .scattered-star { fill: #cffafe; opacity: 0.6; }
+
+        .bubble-storm-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+        .bubble-particle {
+            position: absolute;
+            border: 1px solid var(--hydro-inner);
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), transparent);
+            visibility: hidden;
+            animation-name: bubble-rise;
+            animation-timing-function: ease-in;
+            animation-iteration-count: infinite;
+            animation-duration: 8s;
+            transition: opacity 0.8s ease;
+            will-change: transform;
+            mix-blend-mode: screen;
+        }
+        .bubble-particle.base { opacity: var(--bubble-opacity); }
+        .bubble-particle.extra { opacity: var(--extra-bubble-opacity); }
+
+        @keyframes bubble-rise {
+            0% { visibility: visible; transform: translate(0, 110vh) scale(0.5); opacity: 0; }
+            20% { opacity: var(--bubble-opacity); }
+            80% { opacity: var(--bubble-opacity); }
+            100% { transform: translate(var(--drift-x), -10vh) scale(1.2); opacity: 0; }
+        }
+
+        /* --- 主体容器 --- */
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .icon-wrapper {
+            width: 420px;
+            height: 420px;
+            margin: 0 auto 20px;
+            position: relative;
+            filter: drop-shadow(0 0 20px rgba(14, 165, 233, 0.5))
+            drop-shadow(0 0 50px rgba(30, 58, 138, 0.3));
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+        }
+
+        .icon-wrapper:hover {
+            transform: scale(1.05) translateZ(0);
+            filter: drop-shadow(0 0 30px rgba(103, 232, 249, 0.8))
+            drop-shadow(0 0 80px rgba(14, 165, 233, 0.6));
+        }
+
+        /* --- 底座 --- */
+        .hover-magic-array {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 550px;
+            height: 550px;
+            transform: translate(-50%, -50%) scale(0.9);
+            opacity: 0.8;
+            pointer-events: none;
+            transition: all 0.5s ease;
+            z-index: -1;
+            filter: drop-shadow(0 0 10px rgba(14, 165, 233, 0.4));
+        }
+
+        .icon-wrapper:hover .hover-magic-array {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .hover-magic-array circle, .hover-magic-array path {
+            fill: none;
+            stroke: rgba(125, 211, 252, 0.35);
+            stroke-width: 1;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .magic-base-group {
+            transform-origin: 200px 200px;
+            transform-box: view-box;
+            animation: spin-slow 40s linear infinite;
+        }
+
+        h1 {
+            font-weight: 100;
+            letter-spacing: 10px;
+            margin-bottom: 5px;
+            color: var(--hydro-core);
+            text-shadow: 0 0 20px rgba(14, 165, 233, 0.8);
+            font-family: "Impact", sans-serif;
+            font-style: italic;
+        }
+
+        p.subtitle {
+            color: var(--hydro-mid);
+            font-size: 0.9rem;
+            font-weight: bold;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 漩涡旋转 */
+        .hydro-spin {
+            transform-origin: 0px 0px;
+            animation: spin-slow var(--spin-speed-normal) linear infinite;
+            will-change: transform;
+            transition: animation-duration 1s ease;
+        }
+
+        /* 波动呼吸 */
+        @keyframes hydro-pulse {
+            0%, 100% { filter: url(#hydroGlow) brightness(1); stroke-width: 2.5; transform: scale(1); }
+            50% { filter: url(#hydroGlow) brightness(1.3); stroke-width: 3; transform: scale(1.05); }
+        }
+
+        .hydro-body {
+            transform-origin: 0px 0px;
+            transition: filter 0.3s ease;
+            animation: hydro-pulse 3s ease-in-out infinite;
+        }
+
+        .icon-wrapper:hover .hydro-body {
+            filter: url(#brightHydroGlow) brightness(1.2);
+            animation: none;
+        }
+
+    </style>
+</head>
+<body>
+
+<svg class="constellation-bg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <g class="star-rail-layer">
+        <g id="scatteredStarsGroup"></g>
+        <g class="constellation-group" transform="rotate(-45 960 540)">
+            <g transform="translate(200, 250) scale(0.5) rotate(-10)">
+                <polyline points="0,0 50,10 100,40 120,100 180,120 240,110 280,60" />
+                <circle cx="0" cy="0" r="3" fill="#fff" /><circle cx="50" cy="10" r="3" fill="#fff" /><circle cx="100" cy="40" r="3" fill="#fff" />
+                <circle cx="120" cy="100" r="4" fill="#fff" /><circle cx="180" cy="120" r="3" fill="#fff" /><circle cx="240" cy="110" r="4" fill="#fff" />
+                <circle cx="280" cy="60" r="3" fill="#fff" />
+            </g>
+            <g transform="translate(1500, 800) scale(0.5) rotate(15)">
+                <polyline points="0,0 40,100 120,100 160,0 80,-40 0,0" />
+                <line x1="40" y1="50" x2="120" y2="50" />
+                <circle cx="0" cy="0" r="4" fill="#fff" /><circle cx="160" cy="0" r="4" fill="#fff" /><circle cx="40" cy="100" r="4" fill="#fff" />
+                <circle cx="120" cy="100" r="4" fill="#fff" /><circle cx="60" cy="50" r="3" fill="#fff" /><circle cx="80" cy="50" r="3" fill="#fff" />
+                <circle cx="100" cy="50" r="3" fill="#fff" />
+            </g>
+        </g>
+    </g>
+</svg>
+
+<div class="bubble-storm-bg" id="bubbleStorm"></div>
+
+<div class="container">
+    <div class="icon-wrapper">
+
+        <svg class="hover-magic-array" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+            <circle class="magic-ripple" cx="200" cy="200" r="100" stroke-width="1.5" />
+            <circle class="magic-ripple" cx="200" cy="200" r="100" stroke-width="1.5" />
+
+            <g class="magic-base-group">
+                <circle cx="200" cy="200" r="190" stroke-dasharray="2 4" opacity="0.6"/>
+                <circle cx="200" cy="200" r="170" stroke-dasharray="10 10" opacity="0.4"/>
+                <path d="M200,40 L338,120 L338,280 L200,360 L62,280 L62,120 Z" stroke-dasharray="5 5" opacity="0.3"/>
+                <path d="M200,40 Q 240,80 200,120 Q 160,80 200,40" transform="rotate(0 200 200)" opacity="0.3"/>
+                <path d="M200,40 Q 240,80 200,120 Q 160,80 200,40" transform="rotate(60 200 200)" opacity="0.3"/>
+                <path d="M200,40 Q 240,80 200,120 Q 160,80 200,40" transform="rotate(120 200 200)" opacity="0.3"/>
+                <path d="M200,40 Q 240,80 200,120 Q 160,80 200,40" transform="rotate(180 200 200)" opacity="0.3"/>
+                <path d="M200,40 Q 240,80 200,120 Q 160,80 200,40" transform="rotate(240 200 200)" opacity="0.3"/>
+                <path d="M200,40 Q 240,80 200,120 Q 160,80 200,40" transform="rotate(300 200 200)" opacity="0.3"/>
+            </g>
+        </svg>
+
+        <!-- 主体：深渊潮汐 (漩涡重制版) -->
+        <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="hydroLineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:var(--hydro-core);stop-opacity:1" />
+                    <stop offset="40%" style="stop-color:var(--hydro-inner);stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:var(--hydro-mid);stop-opacity:1" />
+                </linearGradient>
+
+                <filter id="hydroGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="2" result="blur"/>
+                    <feColorMatrix in="blur" type="matrix" values="0.1 0 0 0 0   0 0.7 0 0 0   0 0 1 0 0  0 0 0 1 0" result="hydroBlur"/>
+                    <feMerge>
+                        <feMergeNode in="hydroBlur" opacity="0.8"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+
+                <filter id="brightHydroGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="blur"/>
+                    <feColorMatrix in="blur" type="matrix" values="0.3 0 0 0 0   0 0.9 0 0 0   0 0 1 0 0  0 0 0 1 0" result="brightBlur"/>
+                    <feMerge>
+                        <feMergeNode in="brightBlur" opacity="0.9"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+
+                <!-- 核心设计：巨浪 (Mega Wave) - 勾玉形态 -->
+                <g id="megaWave">
+                    <!-- 轮廓：模仿浮世绘海浪的“鹰爪”感 -->
+                    <!-- 从中心出发(0,0)，先向右下发散，再猛烈向上卷曲，最后收束成尖钩 -->
+                    <path d="M0,0
+                                 Q 40,20 80,0
+                                 C 120,-20 140,-80 100,-130
+                                 C 60,-180 0,-160 -20,-120
+                                 C -30,-100 -20,-80 -10,-90
+                                 C 0,-100 20,-120 50,-100
+                                 C 70,-80 60,-40 0,0 Z"
+                          fill="none" stroke="url(#hydroLineGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+                    <!-- 内部流线：增加浪花的层次感 -->
+                    <path d="M20,-40 C 50,-60 80,-100 60,-130" stroke="var(--hydro-inner)" stroke-width="1.5" fill="none" opacity="0.7" stroke-linecap="round"/>
+                    <path d="M10,-20 Q 30,-30 40,-60" stroke="var(--hydro-mid)" stroke-width="1.5" fill="none" opacity="0.5" stroke-linecap="round"/>
+
+                    <!-- 浪尖飞溅的水珠 -->
+                    <circle cx="-25" cy="-125" r="3" fill="var(--hydro-core)" />
+                    <circle cx="-10" cy="-90" r="2" fill="var(--hydro-inner)" opacity="0.8" />
+                </g>
+
+                <!-- 内层激流 -->
+                <g id="innerCurrent">
+                    <path d="M0,0 Q 20,-20 10,-50 Q 0,-70 -10,-40 Q -20,-20 0,0 Z"
+                          fill="none" stroke="var(--hydro-inner)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+            </defs>
+
+            <radialGradient id="coreAbyssGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" style="stop-color:var(--hydro-core);stop-opacity:0.6" />
+                <stop offset="50%" style="stop-color:var(--hydro-mid);stop-opacity:0.2" />
+                <stop offset="100%" style="stop-color:var(--hydro-deep);stop-opacity:0" />
+            </radialGradient>
+            <circle cx="256" cy="256" r="130" fill="url(#coreAbyssGlow)" opacity="0.7" />
+
+            <g transform="translate(256, 256)">
+
+                <g class="hydro-body">
+
+                    <g class="hydro-spin" filter="url(#hydroGlow)">
+
+                        <!-- 第一层：3道巨浪 (三元螺旋，极具动感) -->
+                        <!-- 角度：0, 120, 240 -->
+                        <g>
+                            <use href="#megaWave" transform="rotate(0) scale(1.1)" />
+                            <use href="#megaWave" transform="rotate(120) scale(1.1)" />
+                            <use href="#megaWave" transform="rotate(240) scale(1.1)" />
+                        </g>
+
+                        <!-- 第二层：3道内层激流 (交错60度) -->
+                        <!-- 角度：60, 180, 300 -->
+                        <g transform="scale(0.6)">
+                            <use href="#innerCurrent" transform="rotate(60)" />
+                            <use href="#innerCurrent" transform="rotate(180)" />
+                            <use href="#innerCurrent" transform="rotate(300)" />
+                        </g>
+
+                        <!-- 核心深渊之眼 -->
+                        <circle r="10" fill="none" stroke="var(--hydro-core)" stroke-width="2.5" />
+                        <circle r="4" fill="var(--hydro-core)" />
+                    </g>
+                </g>
+            </g>
+        </svg>
+    </div>
+
+    <h1>深渊潮汐</h1>
+    <p class="subtitle">ABYSSAL TIDE</p>
+
+</div>
+
+<script>
+    let cycloneAnimations = [];
+    let starAnimations = [];
+    let targetRate = 1;
+    let currentRate = 1;
+
+    function createBubbleStorm() {
+        const container = document.getElementById('bubbleStorm');
+        const count = 80;
+
+        for (let i = 0; i < count; i++) {
+            const p = document.createElement('div');
+            p.classList.add('bubble-particle');
+
+            if (Math.random() > 0.5) p.classList.add('base');
+            else p.classList.add('extra');
+
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.top = Math.random() * 100 + 'vh';
+
+            const size = Math.random() * 15 + 5;
+            p.style.width = size + 'px';
+            p.style.height = size + 'px';
+
+            p.style.setProperty('--drift-x', (Math.random() * 20 - 10) + 'vw');
+
+            p.style.animationDelay = Math.random() * 10 + 's';
+
+            container.appendChild(p);
+        }
+    }
+
+    function createScatteredStars() {
+        const starsContainer = document.getElementById('scatteredStarsGroup');
+        const starCount = 300;
+
+        for (let i = 0; i < starCount; i++) {
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            const cx = Math.random() * 1920;
+            const cy = Math.random() * 1080;
+            const r = Math.random() * 1.5 + 0.5;
+            const opacity = Math.random() * 0.7 + 0.2;
+
+            circle.setAttribute("cx", cx);
+            circle.setAttribute("cy", cy);
+            circle.setAttribute("r", r);
+            circle.classList.add("scattered-star");
+            circle.style.opacity = opacity;
+
+            starsContainer.appendChild(circle);
+        }
+    }
+
+    function animateSpeed() {
+        currentRate += (targetRate - currentRate) * 0.05;
+
+        if (Math.abs(targetRate - currentRate) > 0.01) {
+            cycloneAnimations.forEach(anim => {
+                anim.playbackRate = currentRate;
+            });
+            starAnimations.forEach(anim => {
+                anim.playbackRate = 1 + (currentRate - 1) * 0.6;
+            });
+        }
+        requestAnimationFrame(animateSpeed);
+    }
+
+    window.addEventListener('load', () => {
+        createBubbleStorm();
+        createScatteredStars();
+
+        const particles = document.querySelectorAll('.bubble-particle');
+        particles.forEach(el => {
+            const anims = el.getAnimations();
+            cycloneAnimations.push(...anims);
+        });
+
+        const starLayer = document.querySelector('.star-rail-layer');
+        if (starLayer) {
+            const anims = starLayer.getAnimations();
+            starAnimations.push(...anims);
+        }
+
+        requestAnimationFrame(animateSpeed);
+
+        const wrapper = document.querySelector('.icon-wrapper');
+        wrapper.addEventListener('mouseenter', () => {
+            targetRate = 5.0;
+        });
+        wrapper.addEventListener('mouseleave', () => {
+            targetRate = 1.0;
+        });
+    });
+</script>
+
+</body>
+</html>
