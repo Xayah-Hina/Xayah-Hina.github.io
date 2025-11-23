@@ -1,0 +1,244 @@
+---
+import azureHtml from './azure/index.html?raw';
+import lotusframeHtml from './lotusframe/index.html?raw';
+import astrolabeHtml from './astrolabe/index.html?raw';
+import snowflakesHtml from './snowflakes/index.html?raw';
+import tideHtml from './tide/index.html?raw';
+import vitalitybloomHtml from './vitalitybloom/index.html?raw';
+
+const demos = [
+  { id: 'azure', label: '风 | Azure', accent: '#22d3ee', html: azureHtml },
+  { id: 'lotusframe', label: '火 | Lotus Frame', accent: '#ef4444', html: lotusframeHtml },
+  { id: 'astrolabe', label: '星盘 | Astrolabe', accent: '#c084fc', html: astrolabeHtml },
+  { id: 'snowflakes', label: '冰 | Snowflakes', accent: '#a5b4fc', html: snowflakesHtml },
+  { id: 'tide', label: '水 | Tide', accent: '#38bdf8', html: tideHtml },
+  { id: 'vitalitybloom', label: '草 | Vitality Bloom', accent: '#86efac', html: vitalitybloomHtml },
+];
+---
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>元素展馆 | 六系演示合集</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --accent: #22d3ee;
+        --panel: #0b1021;
+        --border: #1f2a44;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --glow: rgba(37, 99, 235, 0.3);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.15), transparent 35%),
+          radial-gradient(circle at 80% 0%, rgba(236, 72, 153, 0.12), transparent 32%),
+          linear-gradient(135deg, #030712, #0b1021 50%, #0f172a);
+        color: var(--text);
+        font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+        letter-spacing: 0.01em;
+        overflow: hidden;
+      }
+      header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 14px 18px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        backdrop-filter: blur(14px);
+        background: rgba(8, 12, 25, 0.7);
+        border-bottom: 1px solid var(--border);
+        z-index: 10;
+      }
+      .brand {
+        font-weight: 700;
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text);
+        padding: 10px 14px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #0f172a;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+      }
+      .tabs {
+        flex: 1;
+        display: grid;
+        grid-auto-flow: column;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+      }
+      .tabs::-webkit-scrollbar {
+        display: none;
+      }
+      .tab {
+        appearance: none;
+        border: 1px solid var(--border);
+        background: #0f172a;
+        color: var(--text);
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        transition:
+          transform 0.2s ease,
+          border-color 0.2s ease,
+          box-shadow 0.3s ease,
+          background 0.2s ease;
+        white-space: nowrap;
+      }
+      .tab:hover {
+        border-color: color-mix(in srgb, var(--accent) 60%, #1f2937);
+        transform: translateY(-1px);
+      }
+      .tab.active {
+        background: color-mix(in srgb, var(--accent) 70%, #0f172a);
+        color: #0b1021;
+        border-color: var(--accent);
+        box-shadow:
+          0 12px 36px var(--glow),
+          0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .hint {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      main {
+        position: relative;
+        margin: 90px 18px 18px;
+        height: calc(100vh - 108px);
+        border-radius: 18px;
+        background: #050815;
+        border: 1px solid var(--border);
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      }
+      .frame {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        border-radius: 18px;
+        opacity: 0;
+        pointer-events: none;
+        transform: scale(0.985);
+        transition:
+          opacity 0.35s ease,
+          transform 0.35s ease;
+        background: #000;
+      }
+      .frame.show {
+        opacity: 1;
+        pointer-events: auto;
+        transform: scale(1);
+      }
+      @media (max-width: 720px) {
+        header {
+          flex-wrap: wrap;
+          gap: 10px;
+          padding: 12px 12px 10px;
+        }
+        .brand {
+          width: 100%;
+          justify-content: center;
+          text-align: center;
+        }
+        .tabs {
+          width: 100%;
+        }
+        main {
+          margin: 96px 12px 12px;
+          height: calc(100vh - 114px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">Element Showcase</div>
+      <div class="tabs">
+        {demos.map((demo, idx) => (
+          <button
+            class={`tab ${idx === 0 ? 'active' : ''}`}
+            data-tab={demo.id}
+            data-accent={demo.accent}
+            aria-pressed={idx === 0 ? 'true' : 'false'}
+          >
+            {demo.label}
+          </button>
+        ))}
+      </div>
+      <div class="actions">
+        <span class="hint">点击按钮在同页切换效果</span>
+      </div>
+    </header>
+    <main>
+      {demos.map((demo, idx) => (
+        <iframe
+          class={`frame ${idx === 0 ? 'show' : ''}`}
+          data-frame={demo.id}
+          title={demo.label}
+          srcdoc={demo.html}
+          loading={idx === 0 ? 'eager' : 'lazy'}
+        ></iframe>
+      ))}
+    </main>
+    <script>
+      const tabs = Array.from(document.querySelectorAll('[data-tab]'));
+      const frames = Array.from(document.querySelectorAll('[data-frame]'));
+      const root = document.documentElement;
+
+      const hexToRgb = (hex) => {
+        const clean = hex.replace('#', '');
+        const int = parseInt(clean, 16);
+        const r = (int >> 16) & 255;
+        const g = (int >> 8) & 255;
+        const b = int & 255;
+        return `${r}, ${g}, ${b}`;
+      };
+
+      const activate = (id, accent) => {
+        root.style.setProperty('--accent', accent);
+        root.style.setProperty('--glow', `rgba(${hexToRgb(accent)}, 0.32)`);
+        tabs.forEach((btn) => {
+          const on = btn.dataset.tab === id;
+          btn.classList.toggle('active', on);
+          btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        frames.forEach((frame) => {
+          const on = frame.dataset.frame === id;
+          frame.classList.toggle('show', on);
+        });
+      };
+
+      tabs.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          activate(btn.dataset.tab, btn.dataset.accent || '#22d3ee');
+        });
+      });
+
+      if (tabs.length) {
+        activate(tabs[0].dataset.tab, tabs[0].dataset.accent || '#22d3ee');
+      }
+    </script>
+  </body>
+</html>
