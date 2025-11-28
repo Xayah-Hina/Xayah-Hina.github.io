@@ -1,5 +1,5 @@
 ---
-title: "[Instant NGP Code Digest - A First Principle Perspective] Main Training Pipeline"
+title: "[Instant NGP Code Digest - A First Principle Perspective] Core Training Pipeline"
 published: 2025-11-26
 description: ''
 image: ''
@@ -23,9 +23,11 @@ Instant-NGP Official Repository:
 - [ ] complete the kernel Generate Training Samples NeRF
   :::
 
-# 1. Overview
+# 1. Introduction and Motivation
 
-> TODO: add a project overview here
+[The official Instant NGP implementation](https://github.com/NVlabs/instant-ngp) is really **impressive** in performance. However, it seems also **complex** and **daunting** at first glance.
+
+In this article, we're going to untangle the core training pipeline, in a first-principle manner, and finally rewrite a _clean_, _tidy_, _modern_, and _easy-to-understand_ version, and achieve _better performance_.
 
 # 2. Kernel: Generate Training Samples NeRF
 
@@ -264,15 +266,30 @@ $$
 uint32_t img = image_idx(i, n_rays, n_rays_total, n_training_images, cdf_img);
 ```
 
-Function `image_idx`
+### 2.2.1 Function `image_idx`
 
 ```c++
-__device__ uint32_t image_idx(
-    const uint32_t base_idx,
-    const uint32_t n_rays,
-    const uint32_t n_training_images
-    ) {
-    return base_idx * n_training_images / n_rays % n_training_images;
+inline NGP_HOST_DEVICE uint32_t image_idx(uint32_t base_idx, uint32_t n_rays, uint32_t n_rays_total, uint32_t n_training_images, const float* __restrict__ cdf = nullptr, float* __restrict__ pdf = nullptr) {
+	if (cdf) {
+		float sample = ld_random_val(base_idx/* + n_rays_total*/, 0xdeadbeef);
+		// float sample = random_val(base_idx/* + n_rays_total*/);
+		uint32_t img = binary_search(sample, cdf, n_training_images);
+
+		if (pdf) {
+			float prev = img > 0 ? cdf[img-1] : 0.0f;
+			*pdf = (cdf[img] - prev) * n_training_images;
+		}
+
+		return img;
+	}
+
+	// return ((base_idx/* + n_rays_total*/) * 56924617 + 96925573) % n_training_images;
+
+	// Neighboring threads in the warp process the same image. Increases locality.
+	if (pdf) {
+		*pdf = 1.0f;
+	}
+	return (((base_idx/* + n_rays_total*/) * n_training_images) / n_rays) % n_training_images;
 }
 ```
 
