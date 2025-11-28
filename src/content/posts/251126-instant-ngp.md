@@ -9,23 +9,18 @@ draft: false
 lang: 'en'
 ---
 
+:::important[UPDATE LOG]
+- [ ] complete the kernel Generate Training Samples NeRF
+:::
+
 :::note
-This draft is base on the commit [
-`d64e353db28109a81657879fc88025713d8fad53`](https://github.com/NVlabs/instant-ngp/tree/d64e353db28109a81657879fc88025713d8fad53)  (
-Oct 8, 2025)
+This draft is base on the commit [`d64e353db28109a81657879fc88025713d8fad53`](https://github.com/NVlabs/instant-ngp/tree/d64e353db28109a81657879fc88025713d8fad53)  (Oct 8, 2025)
 
 Instant-NGP Official Repository:
 ::github{repo="NVlabs/instant-ngp"}
 :::
 
-:::important[UPDATE LOG]
-
-- [ ] complete the kernel Generate Training Samples NeRF
-  :::
-
 # 1. Introduction and Motivation
-
-[The official Instant NGP implementation](https://github.com/NVlabs/instant-ngp) is really **impressive** in performance. However, it seems also **complex** and **daunting** at first glance.
 
 In this article, we're going to untangle the core training pipeline, in a first-principle manner, and finally rewrite a _clean_, _tidy_, _modern_, and _easy-to-understand_ version, and achieve _better performance_.
 
@@ -242,7 +237,7 @@ if (i >= n_elements)
 }
 ```
 
-### Global Thread Index [[1]](https://docs.nvidia.com/cuda/cuda-c-programming-guide/)
+### 2.1.1 Global Thread Index [[1]](https://docs.nvidia.com/cuda/cuda-c-programming-guide/)
 
 $$
 \boxed{
@@ -266,7 +261,7 @@ $$
 uint32_t img = image_idx(i, n_rays, n_rays_total, n_training_images, cdf_img);
 ```
 
-### 2.2.1 Function `image_idx`
+### 2.2.1 CUDA Function `image_idx`
 
 ```c++
 inline NGP_HOST_DEVICE uint32_t image_idx(uint32_t base_idx, uint32_t n_rays, uint32_t n_rays_total, uint32_t n_training_images, const float* __restrict__ cdf = nullptr, float* __restrict__ pdf = nullptr) {
@@ -293,6 +288,29 @@ inline NGP_HOST_DEVICE uint32_t image_idx(uint32_t base_idx, uint32_t n_rays, ui
 }
 ```
 
+| Parameter           | Type           | Note                                                                                          |
+| ------------------- | -------------- | --------------------------------------------------------------------------------------------- |
+| `base_idx`          | `uint32_t`     | Unique ray/thread index used for hashing image selection                                      |
+| `n_rays`            | `uint32_t`     | Total rays scheduled in current iteration (controls uniform mapping)                          |
+| ~~`n_rays_total`~~  | ~~`uint32_t`~~ | *(Unused in training — relevance removed)*                                                    |
+| `n_training_images` | `uint32_t`     | Number of images available for sampling (upper bound of output index)                         |
+| `cdf`               | `const float*` | Optional CDF for **importance sampling** — always `nullptr` in NeRF training                  |
+| `pdf`               | `float*`       | Output for probability weight **only used when `cdf != nullptr`** (never touched in training) |
+
+
+### 2.2.2 Base Version
+```cpp
+__device__ uint32_t image_idx(
+    const uint32_t base_idx,
+    const uint32_t n_rays,
+    const uint32_t n_training_images
+    ) {
+    return base_idx * n_training_images / n_rays % n_training_images;
+}
+```
+
+> **Intuitive interpretation**: Each image receives approximately $\frac{N_R}{N_I}$ rays. Rays are distributed proportionally among the images.
+
 $$
 f(i) = \Biggl(\left\lfloor \frac{i \cdot N_I}{N_R} \right\rfloor \Biggr) \bmod N_I
 $$
@@ -305,11 +323,73 @@ Where:
 | $N_R$  | `n_rays`               |
 | $N_I$  | `n_training_images`    |
 
-**Intuitive interpretation**
 
-$$
-\text{Each image receives approximately } \frac{N_R}{N_I} \text{ rays.}
-$$
-$$
-\text{Rays are distributed proportionally among the images.}
-$$
+### 2.2.3 CDF and PDF
+
+For more details about CDF and PDF, please refer to [Appendix CDF: Cumulative Distribution Function](https://i.xayah.me/posts/251127-cdf/).
+
+> TODO: explain the CDF & PDF branch
+
+---
+
+## 2.3 Get Image Resolution
+
+```cpp
+ivec2 resolution = metadata[img].resolution;
+```
+
+### 2.3.1 `TrainingImageMetadata` Struct
+
+```cpp
+struct TrainingImageMetadata {
+	// Camera intrinsics and additional data associated with a NeRF training image
+	// the memory to back the pixels and rays is held by GPUMemory objects in the NerfDataset and copied here.
+	const void* pixels = nullptr;
+	EImageDataType image_data_type = EImageDataType::Half;
+
+	const float* depth = nullptr;
+	const Ray* rays = nullptr;
+
+	Lens lens = {};
+	ivec2 resolution = ivec2(0);
+	vec2 principal_point = vec2(0.5f);
+	vec2 focal_length = vec2(1000.f);
+	vec4 rolling_shutter = vec4(0.0f);
+	vec3 light_dir = vec3(0.f); // TODO: replace this with more generic float[] of task-specific metadata.
+};
+```
+
+| Field             | Type             | Meaning                                                    |
+| ----------------- | ---------------- | ---------------------------------------------------------- |
+| `pixels`          | `const void*`    | Pointer to pixel buffer in GPU memory                      |
+| `image_data_type` | `EImageDataType` | Pixel storage format (Byte/Half Float etc.)                |
+| `depth`           | `const float*`   | Optional depth values per pixel (nullable)                 |
+| `rays`            | `const Ray*`     | Optional precomputed rays (nullable)                       |
+| `lens`            | `Lens`           | Lens configuration (distortion and optical parameters)     |
+| `resolution`      | `ivec2`          | Image width & height                                       |
+| `principal_point` | `vec2`           | Camera optical center offset                               |
+| `focal_length`    | `vec2`           | Focal length fx, fy                                        |
+| `rolling_shutter` | `vec4`           | Rolling shutter timing & motion model                      |
+| `light_dir`       | `vec3`           | View lighting direction (non-general metadata placeholder) |
+
+### 2.3.2 How to compute `resolution`
+
+:::note
+In order to avid being trapped in the endless details of image loading and preprocessing, we now assume the image resolution is precomputed and stored in the `TrainingImageMetadata` struct. We will cover the image loading and preprocessing in a future article.
+:::
+
+Here, for [NeRF Synthetic dataset](https://github.com/bmild/nerf?tab=readme-ov-file#running-code), we can simply assume the resolution is a constant `(800 x 800)`. (Obviously, it's a safe assumption that all images in the dataset share the same resolution and never change during training.)
+
+---
+
+## 2.4 Advance RNG State
+
+```cpp
+rng.advance(i * N_MAX_RANDOM_SAMPLES_PER_RAY());
+```
+
+### 2.4.1 `default_rng_t` (`tcnn::pcg32`) Struct
+
+`default_rng_t` (`tcnn::pcg32`) is a wrapper around the [PCG Random Number Generator](https://www.pcg-random.org/). For more details about PCG, please refer to [Appendix PCG: Permuted Congruential Generator](https://i.xayah.me/posts/251128-pcg/).
+
+### 2.4.2 Why advance RNG state?
