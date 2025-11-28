@@ -393,3 +393,163 @@ rng.advance(i * N_MAX_RANDOM_SAMPLES_PER_RAY());
 `default_rng_t` (`tcnn::pcg32`) is a wrapper around the [PCG Random Number Generator](https://www.pcg-random.org/). For more details about PCG, please refer to [Appendix PCG: Permuted Congruential Generator](https://i.xayah.me/posts/251128-pcg/).
 
 ### 2.4.2 Why advance RNG state?
+
+In **tiny-cuda-nn / instant-ngp**, each CUDA thread generates one ray:
+
+```cpp
+const uint32_t i = threadIdx.x + blockIdx.x * blockDim.x;  // unique per thread
+rng.advance(i * N_MAX_RANDOM_SAMPLES_PER_RAY());
+```
+This line is not random — it is a design requirement.
+
+PCG produces a *sequence* of numbers. A PCG generator is **deterministic**:
+
+$$
+x_{n+1} = f(x_n)
+$$
+
+If all threads start with the same RNG state, then:
+
+| Thread   | RNG values            |
+| -------- | --------------------- |
+| Thread 0 | 0.83, 0.21, 0.55, ... |
+| Thread 1 | 0.83, 0.21, 0.55, ... |
+| Thread 2 | 0.83, 0.21, 0.55, ... |
+
+- every pixel ray gets the *same* random samples
+- training collapses (all rays identical → no learning)
+
+### 2.4.3 How `advance(k)` jumps ahead in the PCG sequence
+
+The function:
+
+```cpp
+rng.advance(K);
+```
+
+mathematically means:
+
+$$
+x_{n+K} = f^{(K)}(x_0)
+$$
+
+It fast-forwards the PCG stream without generating intermediate numbers.
+
+Each thread should get *different* random numbers, so they offset the RNG state using the thread ID:
+
+That means:
+
+| Thread `i` | RNG will begin at position |
+| ---------- |----------------------------|
+| 0          | base + 0$\times$stride            |
+| 1          | base + 1$\times$stride            |
+| 2          | base + 2$\times$stride     |
+| ...        | ...                        |
+
+Therefore:
+- **no collision**
+- **parallel-safe randomness**
+- **deterministic reproducibility**
+
+### 2.4.4 Why multiply by `N_MAX_RANDOM_SAMPLES_PER_RAY()`?
+
+Because each ray will generate up to that many random numbers.
+So they space threads far enough apart so streams don’t overlap.
+
+If worst case = 64 random samples per ray, then:
+
+| Ray index `i` | RNG range reserved |
+| ------------- | ------------------ |
+| 0             | 0–63               |
+| 1             | 64–127             |
+| 2             | 128–191            |
+
+Each ray lives in its own section of the RNG sequence.
+
+---
+
+## 2.5 Sample Image Position
+
+```cpp
+vec2 uv = nerf_random_image_pos_training(rng, resolution, snap_to_pixel_centers, cdf_x_cond_y, cdf_y, cdf_res, img);
+```
+
+### 2.5.1 CUDA Function `nerf_random_image_pos_training`
+
+```cpp
+inline __device__ vec2 nerf_random_image_pos_training(default_rng_t& rng, const ivec2& resolution, bool snap_to_pixel_centers, const float* __restrict__ cdf_x_cond_y, const float* __restrict__ cdf_y, const ivec2& cdf_res, uint32_t img, float* __restrict__ pdf = nullptr) {
+	vec2 uv = random_val_2d(rng);
+
+	if (cdf_x_cond_y) {
+		uv = sample_cdf_2d(uv, img, cdf_res, cdf_x_cond_y, cdf_y, pdf);
+	} else {
+		// // Warp-coherent tile
+		// uv.x = __shfl_sync(0xFFFFFFFF, uv.x, 0);
+		// uv.y = __shfl_sync(0xFFFFFFFF, uv.y, 0);
+
+		// const ivec2 TILE_SIZE = {8, 4};
+		// uv = (uv * vec2(resolution - TILE_SIZE) + vec2(tcnn::lane_id() % TILE_SIZE.x, tcnn::lane_id() / threadIdx.x)) / vec2(resolution);
+
+		if (pdf) {
+			*pdf = 1.0f;
+		}
+	}
+
+	if (snap_to_pixel_centers) {
+		uv = (vec2(clamp(ivec2(uv * vec2(resolution)), 0, resolution - 1)) + 0.5f) / vec2(resolution);
+	}
+
+	return uv;
+}
+```
+
+| Parameter               | Type                        | Note                                                                                  |
+| ----------------------- | --------------------------- | ------------------------------------------------------------------------------------- |
+| `rng`                   | `default_rng_t&`            | Random number generator reference — mutated each call                                 |
+| `resolution`            | `ivec2`                     | Image width/height used to scale UV coordinates                                       |
+| `snap_to_pixel_centers` | `bool`                      | If `true`, UV snapped to pixel center rather than continuous sampling                 |
+| `cdf_x_cond_y`          | `const float*` *(optional)* | X-conditioned CDF table for importance sampling — if non-null enables 2D CDF sampling |
+| `cdf_y`                 | `const float*` *(optional)* | Marginal distribution along Y axis for CDF sampling                                   |
+| `cdf_res`               | `ivec2`                     | Resolution of CDF grid `(width,height)` corresponding to `cdf_x_cond_y/cdf_y`         |
+| `img`                   | `uint32_t`                  | Image index — determines which image’s CDF to sample from                             |
+| `pdf`                   | `float*` *(optional)*       | Output probability density — set only if CDF sampling used or PDF requested           |
+
+
+### 2.5.2 Base Version
+
+```cpp
+__device__ tcnn::vec2 nerf_random_image_pos_training(
+    tcnn::pcg32& rng,
+    const tcnn::ivec2& resolution,
+    const bool snap_to_pixel_centers
+    ) {
+    tcnn::vec2 uv = {rng.next_float(), rng.next_float()};
+
+    if (snap_to_pixel_centers) {
+        uv = (tcnn::vec2(tcnn::clamp(tcnn::ivec2(uv * tcnn::vec2(resolution)), 0, resolution - 1)) + 0.5f) / tcnn::vec2(resolution);
+    }
+    return uv;
+}
+```
+> It generates a *random UV coordinate* inside a training image. UV is normalized to **[0,1] × [0,1]**. This UV is later turned into a ray shooting into the NeRF scene.
+
+
+### 2.5.3 The Key Takeaway
+
+**NeRF Synthetic training uses the `else` branch almost always.**
+
+Meaning:
+
+- UV is uniformly random
+- PDF defaults to `1.0`
+- CDF importance sampling is *disabled by default*
+
+## 2.6 Check for Masked Regions
+
+```cpp
+size_t pix_idx = pixel_idx(uv, resolution, 0);
+if (read_rgba(uv, resolution, metadata[img].pixels, metadata[img].image_data_type).x < 0.0f)
+{
+    return;
+}
+```
