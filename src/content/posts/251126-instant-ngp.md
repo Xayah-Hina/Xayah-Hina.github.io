@@ -544,12 +544,320 @@ Meaning:
 - PDF defaults to `1.0`
 - CDF importance sampling is *disabled by default*
 
-## 2.6 Check for Masked Regions
+## 2.6 Get Pixel Index
 
 ```cpp
 size_t pix_idx = pixel_idx(uv, resolution, 0);
+```
+
+### 2.6.1 CUDA Function `pixel_idx`
+
+```cpp
+inline NGP_HOST_DEVICE ivec2 image_pos(const vec2& pos, const ivec2& resolution)
+{
+    return clamp(ivec2(pos * vec2(resolution)), 0, resolution - 1);
+}
+
+inline NGP_HOST_DEVICE uint64_t pixel_idx(const ivec2& px, const ivec2& resolution, uint32_t img)
+{
+    return px.x + px.y * resolution.x + img * (uint64_t)resolution.x * resolution.y;
+}
+
+inline NGP_HOST_DEVICE uint64_t pixel_idx(const vec2& uv, const ivec2& resolution, uint32_t img)
+{
+    return pixel_idx(image_pos(uv, resolution), resolution, img);
+}
+```
+
+### 2.6.2 Base Version
+
+```cpp
+inline __device__ uint64_t pixel_idx(const tcnn::vec2& uv, const tcnn::ivec2& resolution, uint32_t img) {
+    tcnn::ivec2 px = tcnn::clamp(tcnn::ivec2(uv * tcnn::vec2(resolution)), 0, resolution - 1);
+    return px.x + px.y * resolution.x + img * (uint64_t) resolution.x * resolution.y;
+}
+```
+
+> They map `uv (float normalized coordinates)` → `pixel(x,y)` → flat pixel index in entire dataset
+
+#### CUDA Function `image_pos()`
+
+```cpp
+inline NGP_HOST_DEVICE ivec2 image_pos(const vec2& pos, const ivec2& resolution)
+{
+    return clamp(ivec2(pos * vec2(resolution)), 0, resolution - 1);
+}
+```
+
+**Input**
+
+* `pos = uv ∈ [0,1]` (normalized image space)
+* `resolution = (W,H)`
+
+**What it does**
+
+1. `pos * resolution` converts normalized UV → pixel space
+   Example → (0.2,0.5) * (800,800) → (160,400)
+
+2. Convert to integer `ivec2(...)` (drop decimals)
+
+3. `clamp(..., 0, resolution-1)` ensures pixel cannot go outside image
+
+**Output**
+
+A valid **pixel coordinate (x,y)** inside the image:
+
+```
+0 ≤ x < width
+0 ≤ y < height
+```
+
+#### CUDA Function `pixel_idx(px)`
+
+```cpp
+inline NGP_HOST_DEVICE uint64_t pixel_idx(const ivec2& px, const ivec2& resolution, uint32_t img)
+{
+    return px.x + px.y * resolution.x + img * (uint64_t)resolution.x * resolution.y;
+}
+```
+
+**Meaning**
+
+This converts **pixel index (x,y) + image number (img)**
+into **a 1D index for flattened dataset storage**.
+
+**Breakdown:**
+
+$$
+\text{pixel offset in image} = x + y \cdot \text{width}
+$$
+
+$$
+\text{image offset} = img \cdot (width \cdot height)
+$$
+
+So total index = index inside image + offset to image block
+
+---
+
+#### CUDA Function `pixel_idx(uv)` — UV version
+
+```cpp
+inline NGP_HOST_DEVICE uint64_t pixel_idx(const vec2& uv, const ivec2& resolution, uint32_t img)
+{
+    return pixel_idx(image_pos(uv, resolution), resolution, img);
+}
+```
+
+This is just a **convenience overload**:
+
+**Steps internally:**
+
+```
+uv → pixel(x,y) using image_pos()
+(x,y,img) → 1D index using pixel_idx()
+```
+
+So this lets you write:
+
+```cpp
+pixel_idx(uv, resolution, img);
+```
+
+instead of:
+
+```cpp
+ivec2 px = image_pos(uv, resolution);
+pixel_idx(px, resolution, img);
+```
+
+---
+
+## 2.7 Check Pixel Validity
+
+```cpp
 if (read_rgba(uv, resolution, metadata[img].pixels, metadata[img].image_data_type).x < 0.0f)
 {
     return;
 }
 ```
+> Given a pixel coordinate (either `uv` or integer `px`), look into GPU image data and return a `vec4(R,G,B,A)` in linear RGB space.
+
+### 2.7.1 CUDA Function `read_rgba`
+
+```cpp
+inline NGP_HOST_DEVICE vec4 read_rgba(ivec2 px, const ivec2& resolution, const void* pixels,
+                                      EImageDataType image_data_type, uint32_t img = 0)
+{
+    switch (image_data_type)
+    {
+    default:
+        // This should never happen. Bright red to indicate this.
+        return vec4{5.0f, 0.0f, 0.0f, 1.0f};
+    case EImageDataType::Byte:
+        {
+            uint32_t val = ((uint32_t*)pixels)[pixel_idx(px, resolution, img)];
+            if (val == 0x00FF00FF)
+            {
+                return vec4(-1.0f);
+            }
+
+            vec4 result = rgba32_to_rgba(val);
+            result.rgb() = srgb_to_linear(result.rgb()) * result.a;
+            return result;
+        }
+    case EImageDataType::Half:
+        {
+            __half val[4];
+            *(uint64_t*)&val[0] = ((uint64_t*)pixels)[pixel_idx(px, resolution, img)];
+            return vec4{(float)val[0], (float)val[1], (float)val[2], (float)val[3]};
+        }
+    case EImageDataType::Float:
+        return ((vec4*)pixels)[pixel_idx(px, resolution, img)];
+    }
+}
+inline NGP_HOST_DEVICE vec4 read_rgba(vec2 pos, const ivec2& resolution, const void* pixels,
+                                      EImageDataType image_data_type, uint32_t img = 0)
+{
+    return read_rgba(image_pos(pos, resolution), resolution, pixels, image_data_type, img);
+}
+```
+
+It supports three image formats:
+
+| Format  | Stored As                          | Per Channel  | Explanation                               |
+| ------- | ---------------------------------- | ------------ | ----------------------------------------- |
+| `Byte`  | `uint32_t`                         | 8-bit RGBA   | sRGB → linear conversion with premultiply |
+| `Half`  | `__half[4]` → packed in `uint64_t` | 16-bit float | No conversion, read directly              |
+| `Float` | `vec4*`                            | 32-bit float | Pure float, no transformation             |
+
+#### Case 1: `Byte` — 8-bit texture stored as `uint32_t`
+
+```cpp
+uint32_t val = ((uint32_t*)pixels)[pixel_idx(px, resolution, img)];
+if (val == 0x00FF00FF) {
+    return vec4(-1.0f);
+}
+vec4 result = rgba32_to_rgba(val);
+result.rgb() = srgb_to_linear(result.rgb()) * result.a;
+return result;
+```
+
+Explanation:
+
+1. Load 4 × 8-bit channels in one `uint32_t`
+2. If value is `0x00FF00FF`, treat pixel as **masked**
+   → returns `vec4(-1)` meaning invalid pixel
+3. Convert BGRA/ARGB → linear RGBA (`rgba32_to_rgba`)
+4. Convert sRGB → linear + premultiply by alpha
+
+> This format comes from NeRF synthetic datasets.
+
+#### Case 2: `Half` — 16-bit floating point (stored compact)
+
+```cpp
+__half val[4];
+*(uint64_t*)&val[0] = ((uint64_t*)pixels)[pixel_idx(...)]
+return vec4{(float)val[0], ... }
+```
+
+Breakdown:
+
+| Stored as                       | Read as          | Why?               |
+| ------------------------------- | ---------------- | ------------------ |
+| 4×half (each 16-bit) = 8 bytes  | `uint64_t` load  | faster & coalesced |
+| Then reinterpret as `__half[4]` | convert to float | for computation    |
+
+> Used for lighter GPU memory footprint with HDR capability.
+
+#### Case 3: `Float` — direct `vec4`
+
+```cpp
+return ((vec4*)pixels)[pixel_idx(px, resolution, img)];
+```
+
+Fastest — no conversion.
+Used when training directly with float images.
+
+
+#### Second overload — UV input
+
+```cpp
+inline vec4 read_rgba(vec2 pos, ...)
+{
+    return read_rgba(image_pos(pos, resolution), ...);
+}
+```
+
+Meaning:
+
+1. Convert ${u,v} \in [0,1)$ → pixel coordinate
+   `image_pos()` = `uv * resolution → clamp to image bounds`
+2. Call integer version
+
+### 2.7.2 Base Version
+
+```cpp
+inline __device__ float srgb_to_linear(float x) {
+    return (x <= 0.04045f) ? (x * (1.f / 12.92f)) : powf((x + 0.055f) * (1.f / 1.055f), 2.4f);
+}
+
+inline __device__ tcnn::vec4 read_rgba(
+    const tcnn::vec2& uv,
+    const tcnn::ivec2& resolution,
+    const void* pixels,
+    const uint32_t img = 0 // optional, default works same as before
+    ) {
+    // ---------------------------------------------
+    // 1. Get pixel address from uv + resolution
+    // ---------------------------------------------
+    const uint64_t idx  = pixel_idx(uv, resolution, img);
+    const uint32_t rgba = static_cast<const uint32_t*>(pixels)[idx]; // packed 0xAARRGGBB
+
+    // ---------------------------------------------
+    // 2. Masked pixel → skip (-1 = INVALID)
+    // ---------------------------------------------
+    if (rgba == 0x00FF00FFu) return {-1.f, -1.f, -1.f, -1.f};
+
+    // ---------------------------------------------
+    // 3. Extract channels [0–255] → float [0–1]
+    // ---------------------------------------------
+    const float r = static_cast<float>((rgba >> 0) & 0xFF) * (1.f / 255.f);
+    const float g = static_cast<float>((rgba >> 8) & 0xFF) * (1.f / 255.f);
+    const float b = static_cast<float>((rgba >> 16) & 0xFF) * (1.f / 255.f);
+    const float a = static_cast<float>((rgba >> 24) & 0xFF) * (1.f / 255.f);
+
+    return {srgb_to_linear(r) * a,
+            srgb_to_linear(g) * a,
+            srgb_to_linear(b) * a,
+            a};
+}
+```
+
+## 2.8 Determine Maximum Mip Level for Training
+
+```cpp
+float max_level = max_level_rand_training ? (random_val(rng) * 2.0f) : 1.0f; // Multiply by 2 to ensure 50% of training is at max level
+```
+> It seems that NeRF Synthetic training always uses `max_level = 1.0f` because `max_level_rand_training` is `false` by default.
+
+### 2.8.1 Base Version
+
+```cpp
+float max_level = 1.0f; // default
+```
+
+As mentioned, NeRF Synthetic training does not use random mip levels. It's safe to assume `max_level = 1.0f` always.
+
+## 2.9 Get Transform with Rolling Shutter and Motion Blur
+
+```cpp
+float motionblur_time = random_val(rng);
+...
+const mat4x3 xform = get_xform_given_rolling_shutter(training_xforms[img], metadata[img].rolling_shutter, uv, motionblur_time);
+```
+> Samples a random time in `[0,1]` for motion blur simulation during training, then computes the camera-to-world transform at that time, accounting for rolling shutter effects.
+
+### 2.9.1 Why Motion Blur?
+
+In Instant-NGP, `motionblur_time` controls sampling along temporal exposure of rolling-shutter or moving scene. Think of it like simulating a camera where the shutter isn’t instantaneous—different rays observe the world at slightly different times during the frame capture.
