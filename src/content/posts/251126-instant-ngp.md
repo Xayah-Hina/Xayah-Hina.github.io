@@ -861,3 +861,41 @@ const mat4x3 xform = get_xform_given_rolling_shutter(training_xforms[img], metad
 ### 2.9.1 Why Motion Blur?
 
 In Instant-NGP, `motionblur_time` controls sampling along temporal exposure of rolling-shutter or moving scene. Think of it like simulating a camera where the shutter isn’t instantaneous—different rays observe the world at slightly different times during the frame capture.
+
+## 2.10 CUDA Function `get_xform_given_rolling_shutter`
+
+```cpp
+
+        Ray ray_unnormalized;
+        const Ray* rays_in_unnormalized = metadata[img].rays;
+        if (rays_in_unnormalized)
+        {
+            // Rays have been explicitly supplied. Read them.
+            ray_unnormalized = rays_in_unnormalized[pix_idx];
+
+            /* DEBUG - compare the stored rays to the computed ones
+            const mat4x3 xform = get_xform_given_rolling_shutter(training_xforms[img], metadata[img].rolling_shutter,
+            uv, 0.f); Ray ray2; ray2.o = xform[3]; ray2.d = f_theta_distortion(uv, principal_point, lens); ray2.d =
+            (xform.block<3, 3>(0, 0) * ray2.d).normalized(); if (i==1000) { printf("\n%d uv %0.3f,%0.3f pixel
+            %0.2f,%0.2f transform from [%0.5f %0.5f %0.5f] to [%0.5f %0.5f %0.5f]\n" " origin    [%0.5f %0.5f %0.5f] vs
+            [%0.5f %0.5f %0.5f]\n" " direction [%0.5f %0.5f %0.5f] vs [%0.5f %0.5f %0.5f]\n" , img,uv.x, uv.y,
+            uv.x*resolution.x, uv.y*resolution.y,
+                    training_xforms[img].start[3].x,training_xforms[img].start[3].y,training_xforms[img].start[3].z,
+                    training_xforms[img].end[3].x,training_xforms[img].end[3].y,training_xforms[img].end[3].z,
+                    ray_unnormalized.o.x,ray_unnormalized.o.y,ray_unnormalized.o.z,
+                    ray2.o.x,ray2.o.y,ray2.o.z,
+                    ray_unnormalized.d.x,ray_unnormalized.d.y,ray_unnormalized.d.z,
+                    ray2.d.x,ray2.d.y,ray2.d.z);
+            }
+            */
+        }
+        else
+        {
+            ray_unnormalized = uv_to_ray(0, uv, resolution, focal_length, xform, principal_point, vec3(0.0f), 0.0f,
+                                         1.0f, 0.0f, {}, {}, lens, distortion);
+            if (!ray_unnormalized.is_valid())
+            {
+                ray_unnormalized = {xform[3], xform[2]};
+            }
+        }
+```

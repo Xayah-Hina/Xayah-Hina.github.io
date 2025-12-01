@@ -12,7 +12,7 @@ lang: 'en'
 # Month Task Plan
 
 1. [ ] Complete "Instant NGP Code Digest - A First Principle Perspective" Series
-2. [ ] Complete CZERNY 599 19-26, with records.
+2. [ ] Complete CZERNY 599 19-26 / Hanon 1-5, with records.
 3. [ ] Complete "Letter Song Rewrite 2025"
 
 # Daily Progress Report
@@ -25,39 +25,39 @@ lang: 'en'
 | 21  | 22  | 23  | 24                                         | 25  | 26  | 27  |
 | 28  | 29  | 30  | 31                                         |     |     |     |
 
-| Date       | Schedule (ongoing improvements)                                                                       | Done (completed items)✔️/❌ | Notes / Thoughts (attempts, difficulties, ideas) |
-|------------|-------------------------------------------------------------------------------------------------------|----------------------------|--------------------------------------------------|
-| 2025-12-01 | 1. 599-1<br/> 2. iNGP `generate_training_samples_nerf` <br/> 3. iNGP `compute_loss_kernel_train_nerf` | 1. ️                       |                                                  |
-| 2025-12-02 |                                                                                                       |                            |                                                  |
-| 2025-12-03 |                                                                                                       |                            |                                                  |
-| 2025-12-04 |                                                                                                       |                            |                                                  |
-| 2025-12-05 |                                                                                                       |                            |                                                  |
-| 2025-12-06 |                                                                                                       |                            |                                                  |
-| 2025-12-07 |                                                                                                       |                            |                                                  |
-| 2025-12-08 |                                                                                                       |                            |                                                  |
-| 2025-12-09 |                                                                                                       |                            |                                                  |
-| 2025-12-10 |                                                                                                       |                            |                                                  |
-| 2025-12-11 |                                                                                                       |                            |                                                  |
-| 2025-12-12 |                                                                                                       |                            |                                                  |
-| 2025-12-13 |                                                                                                       |                            |                                                  |
-| 2025-12-14 |                                                                                                       |                            |                                                  |
-| 2025-12-15 |                                                                                                       |                            |                                                  |
-| 2025-12-16 |                                                                                                       |                            |                                                  |
-| 2025-12-17 |                                                                                                       |                            |                                                  |
-| 2025-12-18 |                                                                                                       |                            |                                                  |
-| 2025-12-19 |                                                                                                       |                            |                                                  |
-| 2025-12-20 |                                                                                                       |                            |                                                  |
-| 2025-12-21 |                                                                                                       |                            |                                                  |
-| 2025-12-22 |                                                                                                       |                            |                                                  |
-| 2025-12-23 |                                                                                                       |                            |                                                  |
-| 2025-12-24 |                                                                                                       |                            |                                                  |
-| 2025-12-25 |                                                                                                       |                            |                                                  |
-| 2025-12-26 |                                                                                                       |                            |                                                  |
-| 2025-12-27 |                                                                                                       |                            |                                                  |
-| 2025-12-28 |                                                                                                       |                            |                                                  |
-| 2025-12-29 |                                                                                                       |                            |                                                  |
-| 2025-12-30 |                                                                                                       |                            |                                                  |
-| 2025-12-31 |                                                                                                       |                            |                                                  |
+| Date       | Schedule (ongoing improvements)                                                                           | Done (completed items)✔️/❌   | Notes / Thoughts (attempts, difficulties, ideas)            |
+|------------|-----------------------------------------------------------------------------------------------------------|------------------------------|-------------------------------------------------------------|
+| 2025-12-01 | 1. 599-19-1 <br/> 2. iNGP `generate_training_samples_nerf` <br/> 3. iNGP `compute_loss_kernel_train_nerf` | 1. ️✔️ <br/> 2. ❌ <br/> 3. ❌ | 1. Kawai CN 29 can not directly record audio via USB cable. |
+| 2025-12-02 | 1. iNGP `generate_training_samples_nerf` <br/> 2. iNGP `compute_loss_kernel_train_nerf`                   |                              |                                                             |
+| 2025-12-03 |                                                                                                           |                              |                                                             |
+| 2025-12-04 |                                                                                                           |                              |                                                             |
+| 2025-12-05 |                                                                                                           |                              |                                                             |
+| 2025-12-06 |                                                                                                           |                              |                                                             |
+| 2025-12-07 |                                                                                                           |                              |                                                             |
+| 2025-12-08 |                                                                                                           |                              |                                                             |
+| 2025-12-09 |                                                                                                           |                              |                                                             |
+| 2025-12-10 |                                                                                                           |                              |                                                             |
+| 2025-12-11 |                                                                                                           |                              |                                                             |
+| 2025-12-12 |                                                                                                           |                              |                                                             |
+| 2025-12-13 |                                                                                                           |                              |                                                             |
+| 2025-12-14 |                                                                                                           |                              |                                                             |
+| 2025-12-15 |                                                                                                           |                              |                                                             |
+| 2025-12-16 |                                                                                                           |                              |                                                             |
+| 2025-12-17 |                                                                                                           |                              |                                                             |
+| 2025-12-18 |                                                                                                           |                              |                                                             |
+| 2025-12-19 |                                                                                                           |                              |                                                             |
+| 2025-12-20 |                                                                                                           |                              |                                                             |
+| 2025-12-21 |                                                                                                           |                              |                                                             |
+| 2025-12-22 |                                                                                                           |                              |                                                             |
+| 2025-12-23 |                                                                                                           |                              |                                                             |
+| 2025-12-24 |                                                                                                           |                              |                                                             |
+| 2025-12-25 |                                                                                                           |                              |                                                             |
+| 2025-12-26 |                                                                                                           |                              |                                                             |
+| 2025-12-27 |                                                                                                           |                              |                                                             |
+| 2025-12-28 |                                                                                                           |                              |                                                             |
+| 2025-12-29 |                                                                                                           |                              |                                                             |
+| 2025-12-30 |                                                                                                           |                              |                                                             |
+| 2025-12-31 |                                                                                                           |                              |                                                             |
 
 <!-- @formatter:off -->
 ```mermaid
@@ -67,7 +67,8 @@ flowchart TD
     B[["CZERNY 599"]]:::root
     C[["Letter Song Rewrite 2025"]]:::root
     
-    B --> B1(["Piece 19 - 1201"]):::finish
+    B --> B1(["599-19-1 - 1201"]):::mid
+    A --> A1(["generate_training_samples_nerf - 1201"]):::mid
 
     classDef root fill:#4aa3ff,color:#fff,stroke:#036,stroke-width:2px;
     classDef fail fill:#ff6b6b,color:#fff;
