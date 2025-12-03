@@ -34,3 +34,11 @@ python -m pip install -r requirements.txt
 cd ui
 npm run build_and_start
 ```
+
+## WSL Huggingface Download
+```shell
+python -m pip install huggingface_hub
+hf auth login
+export HF_ENDPOINT="https://hf-mirror.com"
+hf download black-forest-labs/FLUX.1-dev  --repo-type model  --local-dir FLUX.1-dev   --exclude "flux1-dev.safetensors"
+```
