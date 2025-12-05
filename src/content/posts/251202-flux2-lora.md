@@ -37,8 +37,10 @@ npm run build_and_start
 
 ## WSL Huggingface Download
 ```shell
+sudo apt install python3.12-venv
+source .venv/bin/activate
 python -m pip install huggingface_hub
-hf auth login
 export HF_ENDPOINT="https://hf-mirror.com"
+hf auth login
 hf download black-forest-labs/FLUX.1-dev  --repo-type model  --local-dir FLUX.1-dev   --exclude "flux1-dev.safetensors"
 ```
