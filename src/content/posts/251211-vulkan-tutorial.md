@@ -294,8 +294,6 @@ this->surface = raii::SurfaceKHR(this->instance, _surface);
 
 ## Pick Physical Device RAII
 
-#### What “picking a physical device” really means
-
 In Vulkan:
 
 - Physical device = actual GPU hardware (or software implementation)
@@ -439,8 +437,6 @@ In modern Vulkan (≥ 1.1, especially 1.3 / 1.4),
 👉 you should almost always use getFeatures2().
 
 ## Create Logical Device RAII
-
-#### Goal of this function
 
 A physical device is “a GPU”.
 
@@ -593,9 +589,17 @@ DeviceCreateInfo deviceCreateInfo{
 };
 ```
 
-## Create swapchain RAII
+## Create Swapchain RAII
 
+A swapchain is a queue of images owned by the presentation engine (the “screen system”).
+Your renderer:
 
+1. acquires one image from the swapchain,
+2. renders into it,
+3. presents it to the window.
+
+So swapchain creation is basically: “Negotiate with the OS/window system: format, size, number of images, present mode,
+and usage.”
 
 ```cpp
 void VulkanEngine::create_swapchain_raii() {
@@ -603,11 +607,10 @@ void VulkanEngine::create_swapchain_raii() {
 
     int width, height;
     glfwGetFramebufferSize(window.get(), &width, &height);
-    this->swapchain_extent = surfaceCapabilities.currentExtent.width == 0xFFFFFFFF ? surfaceCapabilities.currentExtent
-                                                                                   : Extent2D{
+    this->swapchain_extent = surfaceCapabilities.currentExtent.width == 0xFFFFFFFF ? Extent2D{
                                                                                          std::clamp<uint32_t>(width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width),
                                                                                          std::clamp<uint32_t>(height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height),
-                                                                                     };
+                                                                                     }:surfaceCapabilities.currentExtent;
 
     const std::vector<SurfaceFormatKHR>& availableFormats = this->physical_device.getSurfaceFormatsKHR(*this->surface);
     const auto formatIt                                   = std::ranges::find_if(availableFormats, [](const auto& format) { return format.format == Format::eB8G8R8A8Srgb && format.colorSpace == ColorSpaceKHR::eSrgbNonlinear; });
@@ -632,4 +635,222 @@ void VulkanEngine::create_swapchain_raii() {
     this->swapchain        = raii::SwapchainKHR(device, swapChainCreateInfo);
     this->swapchain_images = this->swapchain.getImages();
 }
+```
+
+### 1. query surface capabilities
+
+This returns `vk::SurfaceCapabilitiesKHR`, which tells you what the surface supports, such as:
+
+- `minImageCount`, `maxImageCount`: Limits on swapchain image count.
+- `currentExtent`: The surface’s “preferred” or fixed resolution.
+- `minImageExtent`, `maxImageExtent`: Allowed extent range (if extent is flexible).
+- `currentTransform`: Whether the surface applies rotation/transforms (mobile can rotate).
+- supported usage flags (in other fields / related queries)
+
+```cpp
+auto surfaceCapabilities = this->physical_device.getSurfaceCapabilitiesKHR(*this->surface);
+```
+
+### 2. get framebuffer size from GLFW
+
+This gets the actual pixel size of the framebuffer, not the logical window size.
+On HiDPI screens, framebuffer size can be larger than window size.
+
+```cpp
+int width, height;
+glfwGetFramebufferSize(window.get(), &width, &height);
+```
+
+### 3. determine swapchain extent
+
+The Vulkan rule is:
+
+- If `currentExtent.width != UINT32_MAX`: the surface has a fixed extent, you must use `currentExtent`.
+- If `currentExtent.width == UINT32_MAX`: you choose the extent, clamped to [`minImageExtent`, `maxImageExtent`].
+
+```cpp
+this->swapchain_extent = surfaceCapabilities.currentExtent.width == 0xFFFFFFFF ? Extent2D{
+                                                                                     std::clamp<uint32_t>(width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width),
+                                                                                     std::clamp<uint32_t>(height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height),
+                                                                                 }:surfaceCapabilities.currentExtent;
+```
+
+### 4. choose swapchain surface format
+
+#### What a “surface format” means
+
+It’s a pair:
+
+- `format`: pixel layout (e.g. BGRA8)
+- `colorSpace`: how the presentation engine interprets it (often sRGB nonlinear)
+
+#### Your preference
+
+`eB8G8R8A8Srgb` + `eSrgbNonlinear`
+
+This is a very common “good default” because:
+
+it supports correct gamma / sRGB output
+
+it is widely supported
+
+#### Fallback
+
+If not available, you take the first supported format. That is typical.
+
+```cpp
+const std::vector<SurfaceFormatKHR>& availableFormats = this->physical_device.getSurfaceFormatsKHR(*this->surface);
+const auto formatIt                                   = std::ranges::find_if(availableFormats, [](const auto& format) { return format.format == Format::eB8G8R8A8Srgb && format.colorSpace == ColorSpaceKHR::eSrgbNonlinear; });
+this->swapchain_surface_format                        = formatIt != availableFormats.end() ? *formatIt : availableFormats[0];
+```
+
+### 5. determine swapchain image count (triple buffering)
+
+#### What this does
+
+- You want at least 3 images (triple buffering).
+- But the surface might require at least some minimum.
+- And it might cap the maximum.
+
+```cpp
+auto minImageCount = std::max(3u, surfaceCapabilities.minImageCount);
+if (0 < surfaceCapabilities.maxImageCount && surfaceCapabilities.maxImageCount < minImageCount) minImageCount = surfaceCapabilities.maxImageCount;
+```
+
+### 6. build SwapchainCreateInfoKHR
+
+- `surface`: The window surface you’re presenting to.
+
+- `minImageCount` How many images in the swapchain queue. More images can reduce stalls.
+
+- `imageFormat` and `imageColorSpace`: Must match one of the supported surface formats you queried.
+
+- `imageExtent`: Resolution of swapchain images, usually matches the window framebuffer size.
+
+- `imageArrayLayers = 1`: 1 for normal 2D rendering. Use >1 for stereoscopic / VR arrays.
+
+- `imageUsage = eColorAttachment`: Means you will render directly into swapchain images as color attachments.
+
+    - Common additions you might want later:
+        - `eTransferDst` if you plan to blit/copy into swapchain images
+        - `eStorage` if you plan compute writes (rare for swapchain)
+
+- `imageSharingMode = eExclusive`: Best performance when a single queue family owns the images.
+
+    - If your graphics queue family differs from present queue family, you must use:
+
+        - `eConcurrent` with both family indices
+        - (Your engine currently uses a single graphics+present family, so eExclusive is correct.)
+
+- `preTransform = currentTransform`: If the surface wants a transform (rotation), you accept it. Some engines prefer
+  eIdentity if supported, but your choice is safe.
+
+- `compositeAlpha = eOpaque`: How alpha blending works with the window system. eOpaque is usually supported and
+  simplest.
+
+```cpp
+const SwapchainCreateInfoKHR swapChainCreateInfo{.surface = *this->surface,
+    .minImageCount                                        = minImageCount,
+    .imageFormat                                          = this->swapchain_surface_format.format,
+    .imageColorSpace                                      = this->swapchain_surface_format.colorSpace,
+    .imageExtent                                          = this->swapchain_extent,
+    .imageArrayLayers                                     = 1,
+    .imageUsage                                           = ImageUsageFlagBits::eColorAttachment,
+    .imageSharingMode                                     = SharingMode::eExclusive,
+    .preTransform                                         = surfaceCapabilities.currentTransform,
+    .compositeAlpha                                       = CompositeAlphaFlagBitsKHR::eOpaque,
+    .presentMode                                          = std::ranges::any_of(this->physical_device.getSurfacePresentModesKHR(*this->surface), [](const PresentModeKHR value) { return PresentModeKHR::eMailbox == value; }) ? PresentModeKHR::eMailbox : PresentModeKHR::eFifo,
+    .clipped                                              = true};
+
+this->swapchain        = raii::SwapchainKHR(device, swapChainCreateInfo);
+this->swapchain_images = this->swapchain.getImages();
+```
+
+## Create Image Views RAII
+
+A swapchain image (`VkImage`) is just raw image memory owned by the presentation engine.
+
+You cannot:
+
+- bind it as a framebuffer attachment
+- sample from it
+- write to it in a pipeline
+
+…until you create an image view.
+
+So this function’s job is: “Create a view for each swapchain image so shaders and render operations can access them.”
+
+#### What an image view actually is (important concept)
+
+Think of:
+
+- `VkImage`: raw storage (like a buffer of pixels)
+- `VkImageView`: interpretation of that storage
+
+An image view defines:
+
+- how many dimensions (1D / 2D / 3D)
+- which format
+- which mip levels
+- which array layers
+- which aspects (color / depth / stencil)
+
+In Vulkan, you almost always use image views, not images directly.
+
+```cpp
+void VulkanEngine::create_swapchain_image_views_raii() {
+    ImageViewCreateInfo imageViewCreateInfo{
+        .viewType         = ImageViewType::e2D,
+        .format           = this->swapchain_surface_format.format,
+        .subresourceRange = {ImageAspectFlagBits::eColor, 0, 1, 0, 1},
+    };
+    for (const auto& image : this->swapchain_images) {
+        imageViewCreateInfo.image = image;
+        this->swapchain_image_views.emplace_back(device, imageViewCreateInfo);
+    }
+}
+```
+
+### 1. build ImageViewCreateInfo
+
+#### `viewType = e2D`: This tells Vulkan how to interpret the image.
+
+- Swapchain images are 2D images
+- So `e2D` is always correct here
+- Other possible values:
+    - `e2DArray` (stereo, VR)
+    - `eCube` (cubemaps)
+    - `e3D` (volume textures)
+
+#### `format`
+
+- This must:
+    - match the swapchain image format
+    - be compatible with the image
+- For swapchain images:
+    - You must use exactly the same format you selected during swapchain creation
+- If this doesn’t match:
+    - Image view creation fails
+    - Or validation layers complain
+
+#### `subresourceRange`
+
+This is one of the most important parts.
+
+`subresourceRange` tells Vulkan which part of the image this view exposes.
+
+##### What is a “subresource”?
+
+A Vulkan image can have:
+
+- multiple mip levels
+- multiple array layers
+- multiple aspects (color / depth / stencil)
+
+```cpp
+ImageViewCreateInfo imageViewCreateInfo{
+    .viewType         = ImageViewType::e2D,
+    .format           = this->swapchain_surface_format.format,
+    .subresourceRange = {ImageAspectFlagBits::eColor, 0, 1, 0, 1},
+};
 ```
