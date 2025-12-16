@@ -211,6 +211,8 @@ VKAPI_ATTR Bool32 VKAPI_CALL debugCallback(const DebugUtilsMessageSeverityFlagBi
 }
 ```
 
+---
+
 ## Create Surface RAII
 
 A Vulkan surface is the bridge between Vulkan and the window system.
@@ -291,6 +293,8 @@ VkSurfaceKHR _surface;
 if (glfwCreateWindowSurface(*this->instance, this->window.get(), nullptr, &_surface) != 0) throw std::runtime_error("failed to create window surface!");
 this->surface = raii::SurfaceKHR(this->instance, _surface);
 ```
+
+---
 
 ## Pick Physical Device RAII
 
@@ -435,6 +439,8 @@ Short answer (intuition first)
 
 In modern Vulkan (≥ 1.1, especially 1.3 / 1.4),
 👉 you should almost always use getFeatures2().
+
+---
 
 ## Create Logical Device RAII
 
@@ -588,6 +594,8 @@ DeviceCreateInfo deviceCreateInfo{
     .ppEnabledExtensionNames = this->info.required_device_extensions.data(),
 };
 ```
+
+---
 
 ## Create Swapchain RAII
 
@@ -766,6 +774,8 @@ this->swapchain        = raii::SwapchainKHR(device, swapChainCreateInfo);
 this->swapchain_images = this->swapchain.getImages();
 ```
 
+---
+
 ## Create Image Views RAII
 
 A swapchain image (`VkImage`) is just raw image memory owned by the presentation engine.
@@ -811,7 +821,7 @@ void VulkanEngine::create_swapchain_image_views_raii() {
 }
 ```
 
-### 1. build ImageViewCreateInfo
+### 1. build image view
 
 #### `viewType = e2D`: This tells Vulkan how to interpret the image.
 
@@ -847,10 +857,516 @@ A Vulkan image can have:
 - multiple array layers
 - multiple aspects (color / depth / stencil)
 
+#### Aspect mask
+
+This says:
+
+- This image view accesses the color aspect
+
+Correct because:
+
+- Swapchain images are color images
+- They are not depth/stencil images
+
+#### Base mip level & level count
+
+This means:
+
+- Use mip level 0
+- Only one mip level exists
+
+Swapchain images never have mipmaps.
+
+#### Base array layer & layer count
+
+This means:
+
+- Use the first array layer
+- Only one layer exists
+
+Again, swapchain images are single-layer.
+
+:::Important
+
+#### Lifetime rules (very important)
+
+The lifetime dependency is:
+
+```cpp
+VkImage (swapchain-owned)
+    ↓
+VkImageView (you created)
+```
+
+Rules:
+
+- Image views must be destroyed before the swapchain
+- Swapchain must exist as long as image views exist
+
+Your RAII ordering must reflect this.
+
+#### Why reuse ImageViewCreateInfo is fine
+
+You reuse the same `ImageViewCreateInfo` object and only change `.image`.
+Because all swapchain images share:
+
+- format
+- extent
+- mip count
+- layer count
+  :::
+
 ```cpp
 ImageViewCreateInfo imageViewCreateInfo{
     .viewType         = ImageViewType::e2D,
     .format           = this->swapchain_surface_format.format,
     .subresourceRange = {ImageAspectFlagBits::eColor, 0, 1, 0, 1},
 };
+```
+
+---
+
+## Create Command Pool RAII
+
+In Vulkan, command buffers do not own their memory.
+
+Instead:
+
+- A command pool owns the memory used to record commands
+- Command buffers are allocated from a command pool
+- Resetting or destroying a command pool affects all command buffers allocated from it
+
+Mental model:
+
+- Command pool = memory arena
+- Command buffers = objects allocated from that arena
+
+This function:
+
+- Specifies how command buffers allocated from this pool can be reset
+- Associates the pool with a specific queue family
+- Creates the pool using RAII
+
+It does not:
+
+- Allocate command buffers
+- Record commands
+- Submit commands
+
+#### `queueFamilyIndex`
+
+This tells Vulkan: “All command buffers allocated from this pool will be submitted to queues from this queue family.”
+
+Why this is required?
+
+Vulkan enforces:
+
+- A command pool is tied to one queue family
+- Command buffers allocated from it must be submitted to a queue belonging to the same family
+
+Consequence
+
+If you later add:
+
+- a compute-only queue family
+- a transfer-only queue family
+
+You must create separate command pools for them.
+
+#### `flags = eResetCommandBuffer`
+
+This flag controls how command buffers can be reset.
+
+With `eResetCommandBuffer`, you are allowed to call: `vkResetCommandBuffer(cmd, 0);` on individual command buffers. This
+is essential for per-frame command buffer reuse.
+
+Without this flag
+
+- You cannot reset individual command buffers
+- You must reset the entire command pool at once:
+
+| Command Pool Create Flags | Notes                                                               |
+|---------------------------|---------------------------------------------------------------------|
+| `eTransient`              | Hint that command buffers are short-lived(often ignored by drivers) |
+| `eResetCommandBuffer`     | Allow reset for individual command buffers.                         |
+| `eProtected`              | Used for protected content paths (rare)                             |
+
+```cpp
+void VulkanEngine::create_command_pool_raii() {
+    const CommandPoolCreateInfo poolInfo{
+        .flags            = CommandPoolCreateFlagBits::eResetCommandBuffer,
+        .queueFamilyIndex = queueIndex,
+    };
+    this->command_pool = raii::CommandPool(device, poolInfo);
+}
+```
+
+---
+
+## Create Command Buffers RAII
+
+In Vulkan, you do not issue rendering commands directly.
+
+Instead:
+
+- You record commands into a `VkCommandBuffer`
+- You submit that command buffer to a queue
+- The GPU executes it later
+
+So a command buffer is: A pre-recorded list of GPU commands
+
+#### `commandPool`
+
+A command pool:
+
+- Owns the memory used by command buffers
+- Is associated with one queue family
+- Controls allocation and reset behavior
+
+:::important
+
+- Command buffers allocated from a pool must be submitted to a queue from the same queue family
+- Destroying the pool automatically frees all its command buffers
+  :::
+
+#### `level = ePrimary`
+
+Vulkan has two command buffer levels:
+
+- `ePrimary`: Can be submitted directly to a queue
+- `eSecondary`: Can only be executed by a primary buffer
+
+You chose primary command buffers, meaning:
+
+- These will be submitted directly with vkQueueSubmit
+- This is the most common and simplest approach
+
+Secondary command buffers are used for:
+
+- Multi-threaded recording
+- Reusable command sequences
+
+#### `commandBufferCount`
+
+This is very important for frame synchronization.
+
+What “frames in flight” means
+
+In modern Vulkan engines, you usually allow multiple frames to be:
+
+- recorded on CPU
+- while previous frames are still executing on GPU
+
+Common values:
+
+- 2 (double buffering)
+- 3 (triple buffering)
+
+So this line means: “Allocate one primary command buffer per frame-in-flight.”
+
+```cpp
+void VulkanEngine::create_command_buffer_raii() {
+    const CommandBufferAllocateInfo allocInfo{
+        .commandPool        = this->command_pool,
+        .level              = CommandBufferLevel::ePrimary,
+        .commandBufferCount = this->info.max_frames_in_flight,
+    };
+    this->command_buffer = raii::CommandBuffers(this->device, allocInfo);
+}
+```
+
+---
+
+## Create Graphics Pipeline RAII
+
+A graphics pipeline in Vulkan is a fully compiled GPU state object that defines:
+
+- which shaders run
+- how vertices are assembled
+- how primitives are rasterized
+- how fragments are blended
+- how outputs are written
+
+With dynamic rendering, the pipeline:
+
+- does not reference a render pass
+- instead declares its attachment formats via PipelineRenderingCreateInfo
+
+```cpp
+void VulkanEngine::create_graphics_pipeline_raii() {
+    raii::ShaderModule shaderModule = create_shader_module(readFile("shaders/shader1.spv"));
+
+    PipelineShaderStageCreateInfo vertShaderStageInfo{.stage = ShaderStageFlagBits::eVertex, .module = shaderModule, .pName = "vertMain"};
+    PipelineShaderStageCreateInfo fragShaderStageInfo{.stage = ShaderStageFlagBits::eFragment, .module = shaderModule, .pName = "fragMain"};
+    PipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+
+    PipelineVertexInputStateCreateInfo vertexInputInfo;
+    PipelineInputAssemblyStateCreateInfo inputAssembly{.topology = PrimitiveTopology::eTriangleList};
+    PipelineViewportStateCreateInfo viewportState{.viewportCount = 1, .scissorCount = 1};
+
+    PipelineRasterizationStateCreateInfo rasterizer{.depthClampEnable = False, .rasterizerDiscardEnable = False, .polygonMode = PolygonMode::eFill, .cullMode = CullModeFlagBits::eBack, .frontFace = FrontFace::eClockwise, .depthBiasEnable = False, .depthBiasSlopeFactor = 1.0f, .lineWidth = 1.0f};
+
+    PipelineMultisampleStateCreateInfo multisampling{.rasterizationSamples = SampleCountFlagBits::e1, .sampleShadingEnable = False};
+
+    PipelineColorBlendAttachmentState colorBlendAttachment{.blendEnable = False, .colorWriteMask = ColorComponentFlagBits::eR | ColorComponentFlagBits::eG | ColorComponentFlagBits::eB | ColorComponentFlagBits::eA};
+
+    PipelineColorBlendStateCreateInfo colorBlending{.logicOpEnable = False, .logicOp = LogicOp::eCopy, .attachmentCount = 1, .pAttachments = &colorBlendAttachment};
+
+    std::vector dynamicStates = {DynamicState::eViewport, DynamicState::eScissor};
+    PipelineDynamicStateCreateInfo dynamicState{.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size()), .pDynamicStates = dynamicStates.data()};
+
+    PipelineLayoutCreateInfo pipelineLayoutInfo{.setLayoutCount = 0, .pushConstantRangeCount = 0};
+
+    this->pipeline_layout = raii::PipelineLayout(device, pipelineLayoutInfo);
+
+    StructureChain<GraphicsPipelineCreateInfo, PipelineRenderingCreateInfo> pipelineCreateInfoChain = {{
+                                                                                                           .stageCount          = 2,
+                                                                                                           .pStages             = shaderStages,
+                                                                                                           .pVertexInputState   = &vertexInputInfo,
+                                                                                                           .pInputAssemblyState = &inputAssembly,
+                                                                                                           .pViewportState      = &viewportState,
+                                                                                                           .pRasterizationState = &rasterizer,
+                                                                                                           .pMultisampleState   = &multisampling,
+                                                                                                           .pColorBlendState    = &colorBlending,
+                                                                                                           .pDynamicState       = &dynamicState,
+                                                                                                           .layout              = this->pipeline_layout,
+                                                                                                           .renderPass          = nullptr,
+                                                                                                       },
+        {
+            .colorAttachmentCount    = 1,
+            .pColorAttachmentFormats = &this->swapchain_surface_format.format,
+        }};
+
+    this->graphics_pipeline = raii::Pipeline(device, nullptr, pipelineCreateInfoChain.get<GraphicsPipelineCreateInfo>());
+}
+```
+
+### shader module creation
+
+What this does
+
+- Loads a SPIR-V binary (.spv)
+- Creates a VkShaderModule
+- Wrapped in RAII
+
+You use one shader module for both vertex and fragment stages later:
+
+This is valid only if: the SPIR-V contains both entry points
+
+- `vertMain`
+- `fragMain`
+
+Entry point rule: The entry point must exactly match the name in SPIR-V, including case.
+
+```cpp
+raii::ShaderModule VulkanEngine::create_shader_module(const std::vector<char>& code) const {
+    const ShaderModuleCreateInfo createInfo{
+        .codeSize = code.size() * sizeof(char),
+        .pCode    = reinterpret_cast<const uint32_t*>(code.data()),
+    };
+    raii::ShaderModule shaderModule{this->device, createInfo};
+    return shaderModule;
+}
+
+raii::ShaderModule shaderModule = create_shader_module(readFile("shaders/shader1.spv"));
+PipelineShaderStageCreateInfo vertShaderStageInfo{.stage = ShaderStageFlagBits::eVertex, .module = shaderModule, .pName = "vertMain"};
+PipelineShaderStageCreateInfo fragShaderStageInfo{.stage = ShaderStageFlagBits::eFragment, .module = shaderModule, .pName = "fragMain"};
+PipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+```
+
+### vertex input state
+
+This is empty, meaning:
+
+- No vertex bindings
+- No vertex attributes
+
+```cpp
+PipelineVertexInputStateCreateInfo vertexInputInfo;
+```
+
+### input assembly state
+
+What this means
+
+- Each group of 3 vertices → one triangle
+- No adjacency
+- No primitive restart (not enabled here)
+
+```cpp
+PipelineInputAssemblyStateCreateInfo inputAssembly{.topology = PrimitiveTopology::eTriangleList};
+```
+
+### viewport & scissor state (dynamic)
+
+Even though viewport and scissor are dynamic, Vulkan still requires:
+
+- how many viewports/scissors exist
+
+Actual values will be set later with:
+
+- `vkCmdSetViewport`
+- `vkCmdSetScissor`
+
+```cpp
+PipelineViewportStateCreateInfo viewportState{.viewportCount = 1, .scissorCount = 1};
+```
+
+### rasterization state
+
+| Field                     | Meaning                           |
+|---------------------------|-----------------------------------|
+| `polygonMode`             | Fill triangles (not wireframe)    |
+| `cullMode`                | Cull back-facing triangles        |
+| `frontFace`               | Clockwise winding = front face    |
+| `rasterizerDiscardEnable` | Disabled → geometry is rasterized |
+
+:::Important
+Most Vulkan tutorials use FrontFace::eCounterClockwise.
+:::
+
+```cpp
+PipelineRasterizationStateCreateInfo rasterizer{
+    .depthClampEnable        = False,
+    .rasterizerDiscardEnable = False,
+    .polygonMode             = PolygonMode::eFill,
+    .cullMode                = CullModeFlagBits::eBack,
+    .frontFace               = FrontFace::eClockwise,
+    .depthBiasEnable         = False,
+    .depthBiasSlopeFactor    = 1.0f,
+    .lineWidth               = 1.0f,
+};
+```
+
+### multisample state
+
+This means:
+
+- No MSAA
+- One sample per pixel
+
+This is the simplest and most common starting point.
+
+```cpp
+PipelineMultisampleStateCreateInfo multisampling{
+    .rasterizationSamples = SampleCountFlagBits::e1,
+    .sampleShadingEnable  = False,
+};
+```
+
+### color blend attachment
+
+What this means
+
+- No blending
+- Fragment shader output overwrites the color attachment
+- Writes RGBA channels
+
+This is correct for opaque rendering.
+
+```cpp
+PipelineColorBlendAttachmentState colorBlendAttachment{
+    .blendEnable    = False,
+    .colorWriteMask = ColorComponentFlagBits::eR | ColorComponentFlagBits::eG | ColorComponentFlagBits::eB | ColorComponentFlagBits::eA,
+};
+```
+
+### color blend state
+
+This defines blending per attachment.
+
+Since dynamic rendering uses one color attachment, this matches correctly.
+
+```cpp
+PipelineColorBlendStateCreateInfo colorBlending{
+    .logicOpEnable   = False,
+    .logicOp         = LogicOp::eCopy,
+    .attachmentCount = 1,
+    .pAttachments    = &colorBlendAttachment,
+};
+```
+
+### dynamic state
+
+Why dynamic state matters
+
+This tells Vulkan: “Viewport and scissor will be provided at command recording time.”
+
+This avoids pipeline recreation on resize.
+
+```cpp
+std::vector dynamicStates = {DynamicState::eViewport, DynamicState::eScissor};
+PipelineDynamicStateCreateInfo dynamicState{
+    .dynamicStateCount = static_cast<uint32_t>(dynamicStates.size()),
+    .pDynamicStates    = dynamicStates.data(),
+};
+```
+
+### pipeline layout
+
+Meaning
+
+- No descriptor sets
+- No push constants
+
+This is valid only if:
+
+- shaders do not reference descriptors or push constants
+- Later, when you add uniforms/textures, this will change.
+
+```cpp
+PipelineLayoutCreateInfo pipelineLayoutInfo{.setLayoutCount = 0, .pushConstantRangeCount = 0};
+
+this->pipeline_layout = raii::PipelineLayout(device, pipelineLayoutInfo);
+```
+
+### graphics pipeline
+
+:::Important[Key Point]
+
+```cpp
+.renderPass = nullptr
+```
+This is required for dynamic rendering.
+
+:::
+
+```cpp
+{
+    .colorAttachmentCount    = 1,
+    .pColorAttachmentFormats = &this->swapchain_surface_format.format,
+}
+```
+
+This declares:
+
+- number of color attachments
+- their formats
+
+This must match:
+
+- the format used in `vkCmdBeginRendering`
+- the swapchain image format
+
+
+```cpp
+StructureChain<GraphicsPipelineCreateInfo, PipelineRenderingCreateInfo> pipelineCreateInfoChain = {{
+                                                                                                       .stageCount          = 2,
+                                                                                                       .pStages             = shaderStages,
+                                                                                                       .pVertexInputState   = &vertexInputInfo,
+                                                                                                       .pInputAssemblyState = &inputAssembly,
+                                                                                                       .pViewportState      = &viewportState,
+                                                                                                       .pRasterizationState = &rasterizer,
+                                                                                                       .pMultisampleState   = &multisampling,
+                                                                                                       .pColorBlendState    = &colorBlending,
+                                                                                                       .pDynamicState       = &dynamicState,
+                                                                                                       .layout              = this->pipeline_layout,
+                                                                                                       .renderPass          = nullptr,
+                                                                                                   },
+    {
+        .colorAttachmentCount    = 1,
+        .pColorAttachmentFormats = &this->swapchain_surface_format.format,
+    }};
+
+this->graphics_pipeline = raii::Pipeline(device, nullptr, pipelineCreateInfoChain.get<GraphicsPipelineCreateInfo>());
 ```
