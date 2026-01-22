@@ -4,7 +4,7 @@ published: 2025-11-13
 description: ''
 image: ''
 tags: [Multithreading]
-category: 'C++'
+category: 'Graphics'
 draft: false
 lang: ''
 ---

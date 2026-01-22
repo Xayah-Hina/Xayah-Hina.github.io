@@ -4,7 +4,7 @@ published: 2025-11-02
 description: "ABC notation arrangement of 'Haruhikage' from BanG Dream! It's MyGO!!!!! OST. Four-part score (two treble, two bass) with tempo and MIDI settings — suitable for sheet music and MIDI export."
 image: ''
 tags: [Sheet Arrangement]
-category: 'Sheet Music'
+category: 'Music'
 draft: false 
 lang: 'jp'
 ---

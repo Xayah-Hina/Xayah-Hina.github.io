@@ -3,8 +3,8 @@ title: Vulkan Tutorial Read Digest
 published: 2025-12-11
 description: 'https://docs.vulkan.org/tutorial/latest'
 image: ''
-tags: [ Vulkan ]
-category: 'Rendering'
+tags: [ Rendering, Vulkan ]
+category: 'Graphics'
 draft: false
 lang: ''
 ---
