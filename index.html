@@ -339,7 +339,10 @@
     }
 
     .archive-controls {
+      display: grid;
       width: 100%;
+      min-width: 0;
+      gap: 0.75rem;
     }
 
     .search-control {
@@ -377,25 +380,54 @@
       color: var(--subtle);
     }
 
+    .year-filter {
+      display: flex;
+      max-width: 100%;
+      gap: 0.5rem;
+      overflow-x: auto;
+      overscroll-behavior-inline: contain;
+      scrollbar-width: thin;
+    }
+
+    .year-filter-button {
+      flex: 0 0 auto;
+      min-height: 2rem;
+      padding: 0.3rem 0.7rem;
+      color: var(--muted);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 0.45rem;
+      font: inherit;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .year-filter-button:hover {
+      color: var(--text);
+      border-color: var(--subtle);
+    }
+
+    .year-filter-button[aria-pressed="true"] {
+      color: var(--link);
+      background: var(--page);
+      border-color: var(--link);
+    }
+
+    .year-filter-button:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
     .archive-summary {
       margin: 1.75rem 0 0;
       color: var(--subtle);
       font-size: 0.875rem;
     }
 
-    .year-group {
-      margin-top: 1.5rem;
-    }
-
-    .year-title {
-      margin: 0 0 0.6rem;
-      color: var(--text);
-      font-size: 1rem;
-      font-weight: 700;
-    }
-
     .entry-list {
       display: grid;
+      margin-top: 1.5rem;
       gap: 0.75rem;
     }
 
@@ -652,6 +684,7 @@
           <svg class="search-icon" aria-hidden="true"><use href="#icon-search"></use></svg>
           <input id="search-input" class="search-input" type="search" autocomplete="off" placeholder="Search writing">
         </label>
+        <div id="year-filter" class="year-filter" role="group" aria-label="Filter by year"></div>
       </div>
 
       <p id="archive-summary" class="archive-summary" aria-live="polite"></p>
@@ -689,9 +722,6 @@
       const config = WRITING_CONFIG;
       const byId = (id) => document.getElementById(id);
       const sectionMap = new Map(Object.entries(config.sections));
-      const initialSection = sectionMap.has(location.hash.slice(1))
-        ? location.hash.slice(1)
-        : config.defaultSection;
       const entriesBySection = new Map(
         [...sectionMap].map(([sectionId, section]) => [
           sectionId,
@@ -702,13 +732,53 @@
           })
         ])
       );
+      const yearsBySection = new Map(
+        [...sectionMap.keys()].map((sectionId) => [
+          sectionId,
+          [...new Set(entriesBySection.get(sectionId).map((entry) => entryYear(sectionId, entry)))]
+            .filter(Boolean)
+            .sort((left, right) => right.localeCompare(left))
+        ])
+      );
+      const initialRoute = readRoute();
       const state = {
-        section: initialSection,
-        queries: Object.fromEntries([...sectionMap.keys()].map((sectionId) => [sectionId, ""]))
+        section: initialRoute.sectionId,
+        queries: Object.fromEntries([...sectionMap.keys()].map((sectionId) => [sectionId, ""])),
+        years: Object.fromEntries(
+          [...sectionMap.keys()].map((sectionId) => [sectionId, latestYear(sectionId)])
+        )
       };
+      state.years[initialRoute.sectionId] = initialRoute.year;
 
       function currentSection() {
         return sectionMap.get(state.section);
+      }
+
+      function entryYear(sectionId, entry) {
+        const date = sectionId === "journal" ? entry.publishedAt : entry.date;
+        return typeof date === "string" ? date.slice(0, 4) : "";
+      }
+
+      function latestYear(sectionId) {
+        return yearsBySection.get(sectionId)?.[0] || "";
+      }
+
+      function routeHash(sectionId, year) {
+        return `#${sectionId}${year ? `/${year}` : ""}`;
+      }
+
+      function readRoute() {
+        const [requestedSection, requestedYear] = location.hash.slice(1).split("/");
+        const sectionId = sectionMap.has(requestedSection) ? requestedSection : config.defaultSection;
+        const availableYears = yearsBySection.get(sectionId);
+        const year = availableYears.includes(requestedYear) ? requestedYear : latestYear(sectionId);
+        return { sectionId, year, hash: routeHash(sectionId, year) };
+      }
+
+      function updateRoute(sectionId, year, replace = false) {
+        const url = new URL(location.href);
+        url.hash = routeHash(sectionId, year);
+        history[replace ? "replaceState" : "pushState"](null, "", url);
       }
 
       function entrySearchText(entry) {
@@ -761,6 +831,24 @@
       function renderSectionSwitch() {
         for (const button of document.querySelectorAll("[data-section]")) {
           button.setAttribute("aria-pressed", String(button.dataset.section === state.section));
+        }
+      }
+
+      function renderYearFilter() {
+        const yearFilter = byId("year-filter");
+        const years = yearsBySection.get(state.section);
+
+        yearFilter.replaceChildren();
+        yearFilter.hidden = years.length === 0;
+
+        for (const year of years) {
+          const button = document.createElement("button");
+          button.className = "year-filter-button";
+          button.type = "button";
+          button.dataset.year = year;
+          button.setAttribute("aria-pressed", String(year === state.years[state.section]));
+          button.textContent = year;
+          yearFilter.append(button);
         }
       }
 
@@ -855,39 +943,22 @@
 
       function visibleEntries() {
         const query = state.queries[state.section].trim().toLocaleLowerCase();
+        const year = state.years[state.section];
         return entriesBySection.get(state.section).filter((entry) => (
-          !query || entrySearchText(entry).includes(query)
+          entryYear(state.section, entry) === year
+          && (!query || entrySearchText(entry).includes(query))
         ));
       }
 
       function renderWritingArchive(entries, archiveList) {
-        const groups = new Map();
+        const list = document.createElement("div");
+        list.className = "entry-list";
 
         for (const entry of entries) {
-          const year = entry.date.slice(0, 4);
-          if (!groups.has(year)) groups.set(year, []);
-          groups.get(year).push(entry);
+          list.append(renderEntry(entry));
         }
 
-        for (const [year, yearEntries] of groups) {
-          const section = document.createElement("section");
-          const heading = document.createElement("h2");
-          const list = document.createElement("div");
-
-          section.className = "year-group";
-          heading.className = "year-title";
-          heading.id = `year-${year}`;
-          heading.textContent = year;
-          list.className = "entry-list";
-          section.setAttribute("aria-labelledby", heading.id);
-
-          for (const entry of yearEntries) {
-            list.append(renderEntry(entry));
-          }
-
-          section.append(heading, list);
-          archiveList.append(section);
-        }
+        archiveList.append(list);
       }
 
       function renderJournalArchive(entries, archiveList, timeZone) {
@@ -924,10 +995,13 @@
         const archiveList = byId("archive-list");
         const filteredEntries = visibleEntries();
         const section = currentSection();
-        const itemName = state.section === "journal" ? "post" : "entry";
+        const itemName = state.section === "journal"
+          ? (filteredEntries.length === 1 ? "post" : "posts")
+          : (filteredEntries.length === 1 ? "entry" : "entries");
+        const year = state.years[state.section];
 
         archiveList.replaceChildren();
-        byId("archive-summary").textContent = `${filteredEntries.length} ${filteredEntries.length === 1 ? itemName : `${itemName}s`}`;
+        byId("archive-summary").textContent = `${filteredEntries.length} ${itemName}${year ? ` in ${year}` : ""}`;
 
         if (filteredEntries.length === 0) {
           const empty = document.createElement("p");
@@ -954,17 +1028,33 @@
         byId("search-input").value = state.queries[state.section];
 
         renderSectionSwitch();
+        renderYearFilter();
         renderArchive();
       }
 
-      function selectSection(sectionId, updateHash = true) {
+      function selectSection(sectionId, updateHistory = true) {
         if (!sectionMap.has(sectionId) || sectionId === state.section) return;
         state.section = sectionId;
-        if (updateHash) {
-          const url = new URL(location.href);
-          url.hash = sectionId;
-          history.pushState(null, "", url);
+        if (!yearsBySection.get(sectionId).includes(state.years[sectionId])) {
+          state.years[sectionId] = latestYear(sectionId);
         }
+        if (updateHistory) updateRoute(sectionId, state.years[sectionId]);
+        renderSection();
+      }
+
+      function selectYear(year, updateHistory = true) {
+        if (!yearsBySection.get(state.section).includes(year) || year === state.years[state.section]) return;
+        state.years[state.section] = year;
+        if (updateHistory) updateRoute(state.section, year);
+        renderYearFilter();
+        renderArchive();
+      }
+
+      function applyRoute() {
+        const route = readRoute();
+        state.section = route.sectionId;
+        state.years[route.sectionId] = route.year;
+        if (location.hash !== route.hash) updateRoute(route.sectionId, route.year, true);
         renderSection();
       }
 
@@ -975,22 +1065,19 @@
         button.addEventListener("click", () => selectSection(button.dataset.section));
       }
 
+      byId("year-filter").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-year]");
+        if (button) selectYear(button.dataset.year);
+      });
+
       byId("search-input").addEventListener("input", (event) => {
         state.queries[state.section] = event.currentTarget.value;
         renderArchive();
       });
 
-      window.addEventListener("popstate", () => {
-        const sectionId = location.hash.slice(1);
-        selectSection(sectionMap.has(sectionId) ? sectionId : config.defaultSection, false);
-      });
+      window.addEventListener("popstate", applyRoute);
 
-      if (!sectionMap.has(location.hash.slice(1))) {
-        const url = new URL(location.href);
-        url.hash = state.section;
-        history.replaceState(null, "", url);
-      }
-
+      if (location.hash !== initialRoute.hash) updateRoute(initialRoute.sectionId, initialRoute.year, true);
       renderSection();
     })();
   </script>
