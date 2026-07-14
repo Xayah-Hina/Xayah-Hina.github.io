@@ -1,4 +1,4 @@
-name: Deploy Writing to GitHub Pages
+name: Deploy Writing and Journal to GitHub Pages
 
 on:
   push:
@@ -29,16 +29,21 @@ jobs:
         with:
           tectonic-version: 0.16.9
 
-      - name: Build writing documents
+      - name: Build writing and journal documents
         shell: bash
         run: |
           set -euo pipefail
+          document_roots=(writing)
+          if [[ -d journal ]]; then
+            document_roots+=(journal)
+          fi
+
           mapfile -d '' sources < <(
-            find writing -mindepth 2 -maxdepth 2 -type f -name '*.tex' -print0 | sort -z
+            find "${document_roots[@]}" -mindepth 2 -maxdepth 2 -type f -name '*.tex' -print0 | sort -z
           )
 
           if (( ${#sources[@]} == 0 )); then
-            echo "No writing documents were found." >&2
+            echo "No writing or journal documents were found." >&2
             exit 1
           fi
 
