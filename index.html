@@ -32,7 +32,6 @@
             {
               slug: "opening-note",
               date: "2026-07-15",
-              tags: ["Introduction"],
               documents: [
                 {
                   lang: "en",
@@ -67,7 +66,7 @@
           searchPlaceholder: "Search journal",
           empty: "No journal entries have been published yet.",
           noResults: "No journal entries match this search.",
-          // Entry fields: id, publishedAt, content, images, tags, and relatedWriting.
+          // Entry fields: id, publishedAt, content, images, and relatedWriting.
           entries: [
             {
               id: "journal-layout-preview",
@@ -83,7 +82,6 @@
                 }
               ],
               images: [],
-              tags: ["preview", "development"],
               relatedWriting: {
                 label: "Opening Note",
                 url: "#writing"
@@ -99,7 +97,6 @@
                 }
               ],
               images: [],
-              tags: ["preview"],
               relatedWriting: null
             },
             {
@@ -112,7 +109,6 @@
                 }
               ],
               images: [],
-              tags: ["preview", "notes"],
               relatedWriting: null
             },
             {
@@ -129,7 +125,6 @@
                 }
               ],
               images: [],
-              tags: ["preview", "archive"],
               relatedWriting: null
             }
           ]
@@ -470,23 +465,6 @@
       color: var(--muted);
     }
 
-    .entry-tags {
-      display: flex;
-      flex-wrap: wrap;
-      margin: 0.85rem 0 0;
-      padding: 0;
-      gap: 0.5rem;
-      list-style: none;
-    }
-
-    .entry-tag {
-      padding: 0.2rem 0.6rem;
-      color: var(--muted);
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      font-size: 0.8rem;
-    }
-
     .journal-month-group {
       margin-top: 1.5rem;
     }
@@ -510,27 +488,21 @@
 
     .journal-feed {
       display: grid;
-      gap: 0.75rem;
+      gap: 0;
     }
 
     .journal-post {
-      padding: 1rem;
-      overflow: hidden;
-      background: var(--card);
-      border-radius: 0.75rem;
-      transition: background-color 150ms ease, box-shadow 150ms ease;
+      padding: 1.1rem 0 1.2rem;
+      border-bottom: 1px solid var(--line);
     }
 
-    @media (hover: hover) {
-      .journal-post:hover {
-        background: var(--card-hover);
-        box-shadow: var(--shadow);
-      }
+    .journal-post:last-child {
+      border-bottom: 0;
     }
 
     .journal-time {
       display: block;
-      margin-bottom: 0.65rem;
+      margin-bottom: 0.6rem;
       color: var(--subtle);
       font-size: 0.8rem;
       font-variant-numeric: tabular-nums;
@@ -582,17 +554,6 @@
     .journal-media[data-count="3"] .journal-image:first-child {
       grid-column: 1 / -1;
       aspect-ratio: 2 / 1;
-    }
-
-    .journal-tags {
-      display: flex;
-      flex-wrap: wrap;
-      margin: 0.85rem 0 0;
-      padding: 0;
-      gap: 0.65rem;
-      color: var(--link);
-      font-size: 0.8rem;
-      list-style: none;
     }
 
     .journal-related {
@@ -709,7 +670,6 @@
       </div>
       <h3 class="entry-title"></h3>
       <div class="entry-summary"></div>
-      <ul class="entry-tags" aria-label="Topics"></ul>
     </article>
   </template>
 
@@ -718,7 +678,6 @@
       <time class="journal-time"></time>
       <div class="journal-content"></div>
       <div class="journal-media"></div>
-      <ul class="journal-tags" aria-label="Topics"></ul>
       <a class="journal-related"></a>
     </article>
   </template>
@@ -757,15 +716,13 @@
           return [
             ...(entry.content || []).map((part) => part.text),
             ...(entry.images || []).map((image) => image.alt),
-            ...(entry.tags || []),
             entry.relatedWriting?.label
           ].filter(Boolean).join(" ").toLocaleLowerCase();
         }
 
         return [
           ...(entry.documents || []).map((documentVersion) => documentVersion.title),
-          ...(entry.summaries || []).map((summary) => summary.text),
-          ...(entry.tags || [])
+          ...(entry.summaries || []).map((summary) => summary.text)
         ].join(" ").toLocaleLowerCase();
       }
 
@@ -812,7 +769,6 @@
         const date = fragment.querySelector(".entry-date");
         const title = fragment.querySelector(".entry-title");
         const summary = fragment.querySelector(".entry-summary");
-        const tagList = fragment.querySelector(".entry-tags");
 
         date.dateTime = entry.date;
         date.textContent = formatDate(entry.date);
@@ -847,14 +803,6 @@
         }
         summary.hidden = summary.childElementCount === 0;
 
-        for (const tag of entry.tags || []) {
-          const item = document.createElement("li");
-          item.className = "entry-tag";
-          item.textContent = tag;
-          tagList.append(item);
-        }
-        tagList.hidden = tagList.childElementCount === 0;
-
         return fragment;
       }
 
@@ -864,7 +812,6 @@
         const time = fragment.querySelector(".journal-time");
         const content = fragment.querySelector(".journal-content");
         const media = fragment.querySelector(".journal-media");
-        const tagList = fragment.querySelector(".journal-tags");
         const related = fragment.querySelector(".journal-related");
 
         post.id = `journal-${entry.id}`;
@@ -891,13 +838,6 @@
           media.append(image);
         }
         media.hidden = images.length === 0;
-
-        for (const tag of entry.tags || []) {
-          const item = document.createElement("li");
-          item.textContent = `#${tag}`;
-          tagList.append(item);
-        }
-        tagList.hidden = tagList.childElementCount === 0;
 
         if (entry.relatedWriting) {
           related.href = entry.relatedWriting.url;
