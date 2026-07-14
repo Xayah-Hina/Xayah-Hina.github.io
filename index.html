@@ -62,11 +62,77 @@
         },
         journal: {
           title: "Journal",
+          timeZone: "Asia/Singapore",
           searchLabel: "Search journal entries",
           searchPlaceholder: "Search journal",
           empty: "No journal entries have been published yet.",
           noResults: "No journal entries match this search.",
-          entries: []
+          // Entry fields: id, publishedAt, content, images, tags, and relatedWriting.
+          entries: [
+            {
+              id: "journal-layout-preview",
+              publishedAt: "2026-07-15T22:41:00+08:00",
+              content: [
+                {
+                  lang: "zh-CN",
+                  text: "把 Journal 做成时间流以后，短小的想法不再需要标题，也不必整理成一篇完整文章。"
+                },
+                {
+                  lang: "zh-CN",
+                  text: "这是一条临时预览，主要用于观察多段文字、标签和关联文章的布局。"
+                }
+              ],
+              images: [],
+              tags: ["preview", "development"],
+              relatedWriting: {
+                label: "Opening Note",
+                url: "#writing"
+              }
+            },
+            {
+              id: "short-english-preview",
+              publishedAt: "2026-07-15T18:20:00+08:00",
+              content: [
+                {
+                  lang: "en",
+                  text: "A short English journal entry showing how a single thought sits in the feed."
+                }
+              ],
+              images: [],
+              tags: ["preview"],
+              relatedWriting: null
+            },
+            {
+              id: "late-night-preview",
+              publishedAt: "2026-07-09T00:35:00+08:00",
+              content: [
+                {
+                  lang: "zh-CN",
+                  text: "这是一条稍长一些的中文动态，用来检查正文在窄屏和宽屏下的换行效果。临时想法可以直接留在这里；如果以后逐渐扩展成完整论述，再整理到 Writing。"
+                }
+              ],
+              images: [],
+              tags: ["preview", "notes"],
+              relatedWriting: null
+            },
+            {
+              id: "previous-month-preview",
+              publishedAt: "2026-06-28T14:10:00+08:00",
+              content: [
+                {
+                  lang: "en",
+                  text: "This temporary post belongs to the previous month."
+                },
+                {
+                  lang: "en",
+                  text: "Its purpose is to make the month divider and chronological grouping visible."
+                }
+              ],
+              images: [],
+              tags: ["preview", "archive"],
+              relatedWriting: null
+            }
+          ]
         }
       },
       labels: {
@@ -421,6 +487,128 @@
       font-size: 0.8rem;
     }
 
+    .journal-month-group {
+      margin-top: 1.5rem;
+    }
+
+    .journal-month-title {
+      display: flex;
+      align-items: center;
+      margin: 0 0 0.6rem;
+      gap: 0.75rem;
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .journal-month-title::after {
+      height: 1px;
+      flex: 1;
+      background: var(--line);
+      content: "";
+    }
+
+    .journal-feed {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .journal-post {
+      padding: 1rem;
+      overflow: hidden;
+      background: var(--card);
+      border-radius: 0.75rem;
+      transition: background-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    @media (hover: hover) {
+      .journal-post:hover {
+        background: var(--card-hover);
+        box-shadow: var(--shadow);
+      }
+    }
+
+    .journal-time {
+      display: block;
+      margin-bottom: 0.65rem;
+      color: var(--subtle);
+      font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .journal-content {
+      color: var(--text);
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+    }
+
+    .journal-content p {
+      margin: 0;
+      white-space: pre-wrap;
+    }
+
+    .journal-content p + p {
+      margin-top: 0.65rem;
+    }
+
+    .journal-media {
+      display: grid;
+      margin-top: 0.9rem;
+      gap: 0.5rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .journal-image {
+      display: block;
+      width: 100%;
+      height: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      background: var(--page);
+      border-radius: 0.5rem;
+    }
+
+    .journal-media[data-count="1"] {
+      grid-template-columns: minmax(0, 36rem);
+    }
+
+    .journal-media[data-count="1"] .journal-image {
+      height: auto;
+      max-height: 32rem;
+      aspect-ratio: auto;
+      object-fit: contain;
+    }
+
+    .journal-media[data-count="3"] .journal-image:first-child {
+      grid-column: 1 / -1;
+      aspect-ratio: 2 / 1;
+    }
+
+    .journal-tags {
+      display: flex;
+      flex-wrap: wrap;
+      margin: 0.85rem 0 0;
+      padding: 0;
+      gap: 0.65rem;
+      color: var(--link);
+      font-size: 0.8rem;
+      list-style: none;
+    }
+
+    .journal-related {
+      display: inline-block;
+      margin-top: 0.85rem;
+      color: var(--link);
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .journal-related:hover {
+      text-decoration: underline;
+      text-underline-offset: 0.18em;
+    }
+
     .empty-state {
       margin: 1.5rem 0 0;
       padding: 2rem 1rem;
@@ -525,6 +713,16 @@
     </article>
   </template>
 
+  <template id="journal-template">
+    <article class="journal-post">
+      <time class="journal-time"></time>
+      <div class="journal-content"></div>
+      <div class="journal-media"></div>
+      <ul class="journal-tags" aria-label="Topics"></ul>
+      <a class="journal-related"></a>
+    </article>
+  </template>
+
   <script>
     (() => {
       "use strict";
@@ -538,7 +736,11 @@
       const entriesBySection = new Map(
         [...sectionMap].map(([sectionId, section]) => [
           sectionId,
-          [...section.entries].sort((left, right) => right.date.localeCompare(left.date))
+          [...section.entries].sort((left, right) => {
+            const leftDate = sectionId === "journal" ? left.publishedAt : left.date;
+            const rightDate = sectionId === "journal" ? right.publishedAt : right.date;
+            return rightDate.localeCompare(leftDate);
+          })
         ])
       );
       const state = {
@@ -551,6 +753,15 @@
       }
 
       function entrySearchText(entry) {
+        if (state.section === "journal") {
+          return [
+            ...(entry.content || []).map((part) => part.text),
+            ...(entry.images || []).map((image) => image.alt),
+            ...(entry.tags || []),
+            entry.relatedWriting?.label
+          ].filter(Boolean).join(" ").toLocaleLowerCase();
+        }
+
         return [
           ...(entry.documents || []).map((documentVersion) => documentVersion.title),
           ...(entry.summaries || []).map((summary) => summary.text),
@@ -566,6 +777,28 @@
           year: "numeric",
           timeZone: "UTC"
         }).format(date);
+      }
+
+      function formatJournalTimestamp(dateText, timeZone) {
+        const parts = new Intl.DateTimeFormat("en", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hourCycle: "h23",
+          timeZone
+        }).formatToParts(new Date(dateText));
+        const value = (type) => parts.find((part) => part.type === type)?.value || "";
+        return `${value("day")} ${value("month")} ${value("year")} · ${value("hour")}:${value("minute")}`;
+      }
+
+      function formatJournalMonth(monthKey) {
+        return new Intl.DateTimeFormat("en", {
+          month: "long",
+          year: "numeric",
+          timeZone: "UTC"
+        }).format(new Date(`${monthKey}-01T00:00:00Z`));
       }
 
       function renderSectionSwitch() {
@@ -625,6 +858,61 @@
         return fragment;
       }
 
+      function renderJournalEntry(entry, timeZone) {
+        const fragment = byId("journal-template").content.cloneNode(true);
+        const post = fragment.querySelector(".journal-post");
+        const time = fragment.querySelector(".journal-time");
+        const content = fragment.querySelector(".journal-content");
+        const media = fragment.querySelector(".journal-media");
+        const tagList = fragment.querySelector(".journal-tags");
+        const related = fragment.querySelector(".journal-related");
+
+        post.id = `journal-${entry.id}`;
+        time.dateTime = entry.publishedAt;
+        time.textContent = formatJournalTimestamp(entry.publishedAt, timeZone);
+
+        for (const contentPart of entry.content || []) {
+          const paragraph = document.createElement("p");
+          paragraph.lang = contentPart.lang;
+          paragraph.textContent = contentPart.text;
+          content.append(paragraph);
+        }
+        content.hidden = content.childElementCount === 0;
+
+        const images = entry.images || [];
+        media.dataset.count = String(images.length);
+        for (const imageData of images) {
+          const image = document.createElement("img");
+          image.className = "journal-image";
+          image.src = imageData.src;
+          image.alt = imageData.alt || "";
+          image.loading = "lazy";
+          image.decoding = "async";
+          media.append(image);
+        }
+        media.hidden = images.length === 0;
+
+        for (const tag of entry.tags || []) {
+          const item = document.createElement("li");
+          item.textContent = `#${tag}`;
+          tagList.append(item);
+        }
+        tagList.hidden = tagList.childElementCount === 0;
+
+        if (entry.relatedWriting) {
+          related.href = entry.relatedWriting.url;
+          related.textContent = `Related writing: ${entry.relatedWriting.label}`;
+          if (entry.relatedWriting.newTab) {
+            related.target = "_blank";
+            related.rel = "noopener";
+          }
+        } else {
+          related.hidden = true;
+        }
+
+        return fragment;
+      }
+
       function visibleEntries() {
         const query = state.queries[state.section].trim().toLocaleLowerCase();
         return entriesBySection.get(state.section).filter((entry) => (
@@ -632,24 +920,10 @@
         ));
       }
 
-      function renderArchive() {
-        const archiveList = byId("archive-list");
-        const filteredEntries = visibleEntries();
-        const section = currentSection();
+      function renderWritingArchive(entries, archiveList) {
         const groups = new Map();
 
-        archiveList.replaceChildren();
-        byId("archive-summary").textContent = `${filteredEntries.length} ${filteredEntries.length === 1 ? "entry" : "entries"}`;
-
-        if (filteredEntries.length === 0) {
-          const empty = document.createElement("p");
-          empty.className = "empty-state";
-          empty.textContent = state.queries[state.section].trim() ? section.noResults : section.empty;
-          archiveList.append(empty);
-          return;
-        }
-
-        for (const entry of filteredEntries) {
+        for (const entry of entries) {
           const year = entry.date.slice(0, 4);
           if (!groups.has(year)) groups.set(year, []);
           groups.get(year).push(entry);
@@ -673,6 +947,60 @@
 
           section.append(heading, list);
           archiveList.append(section);
+        }
+      }
+
+      function renderJournalArchive(entries, archiveList, timeZone) {
+        const groups = new Map();
+
+        for (const entry of entries) {
+          const month = entry.publishedAt.slice(0, 7);
+          if (!groups.has(month)) groups.set(month, []);
+          groups.get(month).push(entry);
+        }
+
+        for (const [month, monthEntries] of groups) {
+          const section = document.createElement("section");
+          const heading = document.createElement("h2");
+          const feed = document.createElement("div");
+
+          section.className = "journal-month-group";
+          heading.className = "journal-month-title";
+          heading.id = `month-${month}`;
+          heading.textContent = formatJournalMonth(month);
+          feed.className = "journal-feed";
+          section.setAttribute("aria-labelledby", heading.id);
+
+          for (const entry of monthEntries) {
+            feed.append(renderJournalEntry(entry, timeZone));
+          }
+
+          section.append(heading, feed);
+          archiveList.append(section);
+        }
+      }
+
+      function renderArchive() {
+        const archiveList = byId("archive-list");
+        const filteredEntries = visibleEntries();
+        const section = currentSection();
+        const itemName = state.section === "journal" ? "post" : "entry";
+
+        archiveList.replaceChildren();
+        byId("archive-summary").textContent = `${filteredEntries.length} ${filteredEntries.length === 1 ? itemName : `${itemName}s`}`;
+
+        if (filteredEntries.length === 0) {
+          const empty = document.createElement("p");
+          empty.className = "empty-state";
+          empty.textContent = state.queries[state.section].trim() ? section.noResults : section.empty;
+          archiveList.append(empty);
+          return;
+        }
+
+        if (state.section === "journal") {
+          renderJournalArchive(filteredEntries, archiveList, section.timeZone);
+        } else {
+          renderWritingArchive(filteredEntries, archiveList);
         }
       }
 
