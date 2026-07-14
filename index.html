@@ -65,69 +65,7 @@
           searchLabel: "Search journal entries",
           searchPlaceholder: "Search journal",
           empty: "No journal entries have been published yet.",
-          noResults: "No journal entries match this search.",
-          // Entry fields: id, publishedAt, content, images, and relatedWriting.
-          entries: [
-            {
-              id: "journal-layout-preview",
-              publishedAt: "2026-07-15T22:41:00+08:00",
-              content: [
-                {
-                  lang: "zh-CN",
-                  text: "把 Journal 做成时间流以后，短小的想法不再需要标题，也不必整理成一篇完整文章。"
-                },
-                {
-                  lang: "zh-CN",
-                  text: "这是一条临时预览，主要用于观察多段文字、标签和关联文章的布局。"
-                }
-              ],
-              images: [],
-              relatedWriting: {
-                label: "Opening Note",
-                url: "#writing"
-              }
-            },
-            {
-              id: "short-english-preview",
-              publishedAt: "2026-07-15T18:20:00+08:00",
-              content: [
-                {
-                  lang: "en",
-                  text: "A short English journal entry showing how a single thought sits in the feed."
-                }
-              ],
-              images: [],
-              relatedWriting: null
-            },
-            {
-              id: "late-night-preview",
-              publishedAt: "2026-07-09T00:35:00+08:00",
-              content: [
-                {
-                  lang: "zh-CN",
-                  text: "这是一条稍长一些的中文动态，用来检查正文在窄屏和宽屏下的换行效果。临时想法可以直接留在这里；如果以后逐渐扩展成完整论述，再整理到 Writing。"
-                }
-              ],
-              images: [],
-              relatedWriting: null
-            },
-            {
-              id: "previous-month-preview",
-              publishedAt: "2026-06-28T14:10:00+08:00",
-              content: [
-                {
-                  lang: "en",
-                  text: "This temporary post belongs to the previous month."
-                },
-                {
-                  lang: "en",
-                  text: "Its purpose is to make the month divider and chronological grouping visible."
-                }
-              ],
-              images: [],
-              relatedWriting: null
-            }
-          ]
+          noResults: "No journal entries match this search."
         }
       },
       labels: {
@@ -179,6 +117,10 @@
       box-sizing: border-box;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
     html {
       min-width: 18rem;
       background: var(--page);
@@ -206,7 +148,9 @@
     }
 
     button,
-    input {
+    input,
+    select,
+    textarea {
       font: inherit;
     }
 
@@ -419,6 +363,77 @@
       outline-offset: 2px;
     }
 
+    .journal-local-notice {
+      margin: 0;
+      padding: 0.65rem 0.75rem;
+      color: var(--muted);
+      background: var(--card);
+      border-radius: 0.5rem;
+      font-size: 0.8125rem;
+    }
+
+    .journal-authoring {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 2.75rem;
+      padding: 0.45rem 0.55rem 0.45rem 0.75rem;
+      gap: 0.75rem;
+      background: var(--card);
+      border-radius: 0.55rem;
+    }
+
+    .journal-authoring-status {
+      min-width: 0;
+      color: var(--muted);
+      font-size: 0.8125rem;
+      overflow-wrap: anywhere;
+    }
+
+    .journal-authoring-status[data-kind="error"] {
+      color: #dc2626;
+    }
+
+    .journal-authoring-actions,
+    .journal-actions,
+    .dialog-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .control-button {
+      min-height: 2rem;
+      padding: 0.3rem 0.65rem;
+      color: var(--text);
+      background: var(--page);
+      border: 1px solid var(--line);
+      border-radius: 0.45rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .control-button:hover:not(:disabled) {
+      border-color: var(--subtle);
+    }
+
+    .control-button-primary {
+      color: var(--page);
+      background: var(--text);
+      border-color: var(--text);
+    }
+
+    .control-button-danger {
+      color: #b91c1c;
+      border-color: #fecaca;
+    }
+
+    .control-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
     .archive-summary {
       margin: 1.75rem 0 0;
       color: var(--subtle);
@@ -532,12 +547,37 @@
       border-bottom: 0;
     }
 
-    .journal-time {
-      display: block;
+    .journal-post-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
       margin-bottom: 0.6rem;
+      gap: 0.75rem;
+    }
+
+    .journal-time {
       color: var(--subtle);
       font-size: 0.8rem;
       font-variant-numeric: tabular-nums;
+    }
+
+    .journal-action-button {
+      padding: 0;
+      color: var(--subtle);
+      background: transparent;
+      border: 0;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .journal-action-button:hover {
+      color: var(--link);
+      text-decoration: underline;
+      text-underline-offset: 0.16em;
+    }
+
+    .journal-action-button-danger:hover {
+      color: #dc2626;
     }
 
     .journal-content {
@@ -602,6 +642,168 @@
       text-underline-offset: 0.18em;
     }
 
+    .journal-dialog {
+      width: min(calc(100% - 2rem), 42rem);
+      max-height: calc(100dvh - 2rem);
+      padding: 0;
+      overflow: hidden;
+      color: var(--text);
+      background: var(--page);
+      border: 1px solid var(--line);
+      border-radius: 0.8rem;
+      box-shadow: var(--shadow);
+    }
+
+    .journal-dialog::backdrop {
+      background: rgba(17, 24, 39, 0.55);
+      backdrop-filter: blur(2px);
+    }
+
+    .journal-editor-form {
+      display: grid;
+      max-height: calc(100dvh - 2rem);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+    }
+
+    .dialog-header,
+    .dialog-actions {
+      padding: 0.85rem 1rem;
+    }
+
+    .dialog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .dialog-title {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .dialog-close {
+      width: 2rem;
+      height: 2rem;
+      padding: 0;
+      color: var(--muted);
+      background: transparent;
+      border: 0;
+      font-size: 1.35rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .dialog-body {
+      display: grid;
+      padding: 1rem;
+      overflow-y: auto;
+      gap: 1rem;
+    }
+
+    .field-group {
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .field-row {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .field-label {
+      color: var(--text-secondary);
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+
+    .field-input,
+    .field-select,
+    .field-textarea {
+      width: 100%;
+      color: var(--text);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 0.45rem;
+    }
+
+    .field-input,
+    .field-select {
+      min-height: 2.4rem;
+      padding: 0.4rem 0.6rem;
+    }
+
+    .field-textarea {
+      min-height: 9rem;
+      padding: 0.65rem;
+      line-height: 1.6;
+      resize: vertical;
+    }
+
+    .field-hint,
+    .editor-published-at,
+    .editor-message {
+      margin: 0;
+      color: var(--subtle);
+      font-size: 0.75rem;
+    }
+
+    .editor-message[data-kind="error"] {
+      color: #dc2626;
+    }
+
+    .editor-image-list {
+      display: grid;
+      gap: 0.65rem;
+    }
+
+    .editor-image-item {
+      display: grid;
+      align-items: center;
+      padding: 0.5rem;
+      gap: 0.65rem;
+      background: var(--card);
+      border-radius: 0.55rem;
+      grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+    }
+
+    .editor-image-preview {
+      display: block;
+      width: 4.5rem;
+      height: 4.5rem;
+      object-fit: cover;
+      border-radius: 0.4rem;
+    }
+
+    .editor-image-remove {
+      padding: 0.25rem;
+      color: var(--subtle);
+      background: transparent;
+      border: 0;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .editor-image-remove:hover {
+      color: #dc2626;
+    }
+
+    .dialog-actions {
+      justify-content: flex-end;
+      border-top: 1px solid var(--line);
+    }
+
+    .confirm-dialog-body {
+      padding: 1rem;
+    }
+
+    .confirm-dialog-body p {
+      margin: 0.6rem 0 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
     .empty-state {
       margin: 1.5rem 0 0;
       padding: 2rem 1rem;
@@ -641,6 +843,33 @@
       .section-container,
       .site-nav {
         width: calc(100% - 1.5rem);
+      }
+
+      .journal-authoring {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .journal-authoring-actions {
+        justify-content: flex-end;
+      }
+
+      .field-row {
+        grid-template-columns: 1fr;
+      }
+
+      .editor-image-item {
+        grid-template-columns: 3.75rem minmax(0, 1fr);
+      }
+
+      .editor-image-preview {
+        width: 3.75rem;
+        height: 3.75rem;
+      }
+
+      .editor-image-remove {
+        grid-column: 2;
+        justify-self: start;
       }
 
     }
@@ -685,6 +914,7 @@
           <input id="search-input" class="search-input" type="search" autocomplete="off" placeholder="Search writing">
         </label>
         <div id="year-filter" class="year-filter" role="group" aria-label="Filter by year"></div>
+        <div id="journal-local-slot"></div>
       </div>
 
       <p id="archive-summary" class="archive-summary" aria-live="polite"></p>
@@ -708,38 +938,128 @@
 
   <template id="journal-template">
     <article class="journal-post">
-      <time class="journal-time"></time>
+      <div class="journal-post-header">
+        <div class="journal-time"></div>
+      </div>
       <div class="journal-content"></div>
       <div class="journal-media"></div>
       <a class="journal-related"></a>
     </article>
   </template>
 
+  <template id="journal-authoring-template">
+    <div class="journal-authoring" aria-label="Local Journal editor">
+      <span class="journal-authoring-status" aria-live="polite">Starting local editor...</span>
+      <div class="journal-authoring-actions">
+        <button class="control-button control-button-primary" type="button" data-authoring-action="new" disabled>New Journal</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="journal-editor-template">
+    <dialog class="journal-dialog" aria-labelledby="journal-editor-title">
+      <form class="journal-editor-form" novalidate>
+        <header class="dialog-header">
+          <h2 id="journal-editor-title" class="dialog-title">New Journal</h2>
+          <button class="dialog-close" type="button" data-editor-action="close" aria-label="Close">×</button>
+        </header>
+
+        <div class="dialog-body">
+          <p class="editor-published-at" hidden></p>
+
+          <label class="field-group">
+            <span class="field-label">Content</span>
+            <textarea class="field-textarea" name="content" placeholder="Write a short thought..."></textarea>
+          </label>
+
+          <label class="field-group">
+            <span class="field-label">Language</span>
+            <select class="field-select" name="language">
+              <option value="auto">Auto detect</option>
+              <option value="en">English</option>
+              <option value="zh-CN">Chinese</option>
+            </select>
+            <span class="field-hint" data-language-hint>Language will be detected when you publish.</span>
+          </label>
+
+          <div class="field-group">
+            <label class="field-label" for="journal-images">Images</label>
+            <input id="journal-images" class="field-input" name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" multiple>
+            <span class="field-hint">JPEG, PNG, WebP, GIF, or AVIF. Original files are preserved.</span>
+            <div class="editor-image-list"></div>
+          </div>
+
+          <div class="field-row">
+            <label class="field-group">
+              <span class="field-label">Related Writing</span>
+              <input class="field-input" name="relatedLabel" type="text" placeholder="Optional label">
+            </label>
+            <label class="field-group">
+              <span class="field-label">Related URL</span>
+              <input class="field-input" name="relatedUrl" type="text" placeholder="#writing/2026">
+            </label>
+          </div>
+
+          <p class="editor-message" role="alert"></p>
+        </div>
+
+        <footer class="dialog-actions">
+          <button class="control-button" type="button" data-editor-action="close">Cancel</button>
+          <button class="control-button control-button-primary" type="submit" data-editor-action="save">Publish</button>
+        </footer>
+      </form>
+    </dialog>
+  </template>
+
+  <template id="journal-confirm-template">
+    <dialog class="journal-dialog" aria-labelledby="journal-confirm-title">
+      <div class="confirm-dialog-body">
+        <h2 id="journal-confirm-title" class="dialog-title">Delete Journal?</h2>
+        <p>This permanently removes the Journal entry and its images from the local site folder.</p>
+      </div>
+      <footer class="dialog-actions">
+        <button class="control-button" type="button" data-confirm-value="cancel">Cancel</button>
+        <button class="control-button control-button-danger" type="button" data-confirm-value="delete">Delete</button>
+      </footer>
+    </dialog>
+  </template>
+
   <script>
-    (() => {
+    (async () => {
       "use strict";
 
       const config = WRITING_CONFIG;
       const byId = (id) => document.getElementById(id);
       const sectionMap = new Map(Object.entries(config.sections));
-      const entriesBySection = new Map(
-        [...sectionMap].map(([sectionId, section]) => [
-          sectionId,
-          [...section.entries].sort((left, right) => {
-            const leftDate = sectionId === "journal" ? left.publishedAt : left.date;
-            const rightDate = sectionId === "journal" ? right.publishedAt : right.date;
-            return rightDate.localeCompare(leftDate);
-          })
-        ])
-      );
-      const yearsBySection = new Map(
-        [...sectionMap.keys()].map((sectionId) => [
-          sectionId,
-          [...new Set(entriesBySection.get(sectionId).map((entry) => entryYear(sectionId, entry)))]
+      const moduleVersion = Date.now().toString();
+      const loopbackHosts = new Set(["localhost", "127.0.0.1", "[::1]"]);
+      const isLoopback = location.protocol === "http:" && loopbackHosts.has(location.hostname);
+      const isFilePage = location.protocol === "file:";
+      const entriesBySection = new Map([
+        ["writing", sortEntries(config.sections.writing.entries, "writing")]
+      ]);
+      const journalEntriesByYear = new Map();
+      const journalLoadPromises = new Map();
+      const journalLoadErrors = new Map();
+      let journalCatalogError = null;
+      let journalYears = [];
+
+      try {
+        const catalog = await importJournalModule("journals/catalog.js");
+        journalYears = normalizeYears(catalog.default?.years);
+      } catch (error) {
+        journalCatalogError = error;
+      }
+
+      const yearsBySection = new Map([
+        [
+          "writing",
+          [...new Set(entriesBySection.get("writing").map((entry) => entryYear("writing", entry)))]
             .filter(Boolean)
             .sort((left, right) => right.localeCompare(left))
-        ])
-      );
+        ],
+        ["journal", journalYears]
+      ]);
       const initialRoute = readRoute();
       const state = {
         section: initialRoute.sectionId,
@@ -749,6 +1069,88 @@
         )
       };
       state.years[initialRoute.sectionId] = initialRoute.year;
+      const authoring = {
+        connected: false,
+        apiToken: "",
+        row: null,
+        status: null,
+        newButton: null,
+        editorDialog: null,
+        editorForm: null,
+        editorImages: [],
+        originalEntry: null,
+        originalBody: "",
+        originalLanguage: "auto",
+        busy: false,
+        confirmDialog: null,
+        confirmResolver: null
+      };
+
+      async function importJournalModule(path, version = moduleVersion) {
+        const url = new URL(path, location.href);
+        url.searchParams.set("v", version);
+        return import(url.href);
+      }
+
+      function normalizeYears(value) {
+        if (!Array.isArray(value)) throw new TypeError("Journal catalog years must be an array.");
+        return [...new Set(value.map(String).filter((year) => /^\d{4}$/.test(year)))]
+          .sort((left, right) => right.localeCompare(left));
+      }
+
+      function sortEntries(entries, sectionId) {
+        return [...(entries || [])].sort((left, right) => {
+          const leftDate = sectionId === "journal" ? left.publishedAt : left.date;
+          const rightDate = sectionId === "journal" ? right.publishedAt : right.date;
+          return String(rightDate).localeCompare(String(leftDate));
+        });
+      }
+
+      function validateJournalEntries(value, year) {
+        if (!Array.isArray(value)) throw new TypeError(`Journal ${year} must export an array.`);
+        const ids = new Set();
+
+        for (const entry of value) {
+          if (!entry || typeof entry.id !== "string" || !entry.id) {
+            throw new TypeError(`Journal ${year} contains an invalid id.`);
+          }
+          if (ids.has(entry.id)) throw new TypeError(`Journal ${year} contains duplicate id ${entry.id}.`);
+          if (typeof entry.publishedAt !== "string" || entry.publishedAt.slice(0, 4) !== year) {
+            throw new TypeError(`Journal ${entry.id} does not belong to ${year}.`);
+          }
+          if (!Array.isArray(entry.content) || !Array.isArray(entry.images)) {
+            throw new TypeError(`Journal ${entry.id} has invalid content or images.`);
+          }
+          if (entry.updatedAt && Number.isNaN(Date.parse(entry.updatedAt))) {
+            throw new TypeError(`Journal ${entry.id} has an invalid updatedAt timestamp.`);
+          }
+          ids.add(entry.id);
+        }
+
+        return sortEntries(value, "journal");
+      }
+
+      function loadJournalYear(year) {
+        if (!year) return Promise.resolve([]);
+        if (journalEntriesByYear.has(year)) return Promise.resolve(journalEntriesByYear.get(year));
+        if (journalLoadPromises.has(year)) return journalLoadPromises.get(year);
+
+        journalLoadErrors.delete(year);
+        const promise = importJournalModule(`journals/${year}.js`)
+          .then((module) => {
+            const entries = validateJournalEntries(module.default, year);
+            journalEntriesByYear.set(year, entries);
+            return entries;
+          })
+          .catch((error) => {
+            journalLoadErrors.set(year, error);
+            throw error;
+          })
+          .finally(() => journalLoadPromises.delete(year));
+
+        journalLoadPromises.set(year, promise);
+        return promise;
+      }
 
       function currentSection() {
         return sectionMap.get(state.section);
@@ -818,6 +1220,20 @@
         }).formatToParts(new Date(dateText));
         const value = (type) => parts.find((part) => part.type === type)?.value || "";
         return `${value("day")} ${value("month")} ${value("year")} · ${value("hour")}:${value("minute")}`;
+      }
+
+      function renderJournalTime(container, entry, timeZone) {
+        const published = document.createElement("time");
+        published.dateTime = entry.publishedAt;
+        published.textContent = formatJournalTimestamp(entry.publishedAt, timeZone);
+        container.append(published);
+
+        if (entry.updatedAt) {
+          const updated = document.createElement("time");
+          updated.dateTime = entry.updatedAt;
+          updated.textContent = formatJournalTimestamp(entry.updatedAt, timeZone);
+          container.append(" · Edited ", updated);
+        }
       }
 
       function formatJournalMonth(monthKey) {
@@ -897,14 +1313,33 @@
       function renderJournalEntry(entry, timeZone) {
         const fragment = byId("journal-template").content.cloneNode(true);
         const post = fragment.querySelector(".journal-post");
+        const header = fragment.querySelector(".journal-post-header");
         const time = fragment.querySelector(".journal-time");
         const content = fragment.querySelector(".journal-content");
         const media = fragment.querySelector(".journal-media");
         const related = fragment.querySelector(".journal-related");
 
         post.id = `journal-${entry.id}`;
-        time.dateTime = entry.publishedAt;
-        time.textContent = formatJournalTimestamp(entry.publishedAt, timeZone);
+        renderJournalTime(time, entry, timeZone);
+
+        if (canAuthorJournal()) {
+          const actions = document.createElement("div");
+          const editButton = document.createElement("button");
+          const deleteButton = document.createElement("button");
+          actions.className = "journal-actions";
+          editButton.className = "journal-action-button";
+          editButton.type = "button";
+          editButton.dataset.journalAction = "edit";
+          editButton.dataset.journalId = entry.id;
+          editButton.textContent = "Edit";
+          deleteButton.className = "journal-action-button journal-action-button-danger";
+          deleteButton.type = "button";
+          deleteButton.dataset.journalAction = "delete";
+          deleteButton.dataset.journalId = entry.id;
+          deleteButton.textContent = "Delete";
+          actions.append(editButton, deleteButton);
+          header.append(actions);
+        }
 
         for (const contentPart of entry.content || []) {
           const paragraph = document.createElement("p");
@@ -944,7 +1379,10 @@
       function visibleEntries() {
         const query = state.queries[state.section].trim().toLocaleLowerCase();
         const year = state.years[state.section];
-        return entriesBySection.get(state.section).filter((entry) => (
+        const entries = state.section === "journal"
+          ? (journalEntriesByYear.get(year) || [])
+          : entriesBySection.get(state.section);
+        return entries.filter((entry) => (
           entryYear(state.section, entry) === year
           && (!query || entrySearchText(entry).includes(query))
         ));
@@ -993,14 +1431,30 @@
 
       function renderArchive() {
         const archiveList = byId("archive-list");
-        const filteredEntries = visibleEntries();
         const section = currentSection();
-        const itemName = state.section === "journal"
-          ? (filteredEntries.length === 1 ? "post" : "posts")
-          : (filteredEntries.length === 1 ? "entry" : "entries");
         const year = state.years[state.section];
 
         archiveList.replaceChildren();
+
+        if (state.section === "journal" && journalCatalogError) {
+          byId("archive-summary").textContent = "";
+          renderArchiveMessage("Journal data could not be loaded.");
+          return;
+        }
+
+        if (state.section === "journal" && year && !journalEntriesByYear.has(year)) {
+          byId("archive-summary").textContent = "";
+          renderArchiveMessage(journalLoadErrors.has(year)
+            ? `Journal ${year} could not be loaded.`
+            : `Loading Journal ${year}...`);
+          return;
+        }
+
+        const filteredEntries = visibleEntries();
+        const itemName = state.section === "journal"
+          ? (filteredEntries.length === 1 ? "post" : "posts")
+          : (filteredEntries.length === 1 ? "entry" : "entries");
+
         byId("archive-summary").textContent = `${filteredEntries.length} ${itemName}${year ? ` in ${year}` : ""}`;
 
         if (filteredEntries.length === 0) {
@@ -1018,8 +1472,16 @@
         }
       }
 
+      function renderArchiveMessage(message) {
+        const notice = document.createElement("p");
+        notice.className = "empty-state";
+        notice.textContent = message;
+        byId("archive-list").append(notice);
+      }
+
       function renderSection() {
         const section = currentSection();
+        const year = state.years[state.section];
 
         document.title = `${section.title} - Xayah Hina`;
         byId("section-title").textContent = section.title;
@@ -1029,6 +1491,26 @@
 
         renderSectionSwitch();
         renderYearFilter();
+        const localSlot = byId("journal-local-slot");
+        localSlot.hidden = state.section !== "journal" || localSlot.childElementCount === 0;
+
+        if (
+          state.section === "journal"
+          && year
+          && !journalEntriesByYear.has(year)
+          && !journalLoadPromises.has(year)
+          && !journalLoadErrors.has(year)
+          && !journalCatalogError
+        ) {
+          loadJournalYear(year)
+            .then(() => {
+              if (state.section === "journal" && state.years.journal === year) renderArchive();
+            })
+            .catch(() => {
+              if (state.section === "journal" && state.years.journal === year) renderArchive();
+            });
+        }
+
         renderArchive();
       }
 
@@ -1058,6 +1540,470 @@
         renderSection();
       }
 
+      async function setupLocalAuthoring() {
+        const slot = byId("journal-local-slot");
+
+        if (isFilePage) {
+          const notice = document.createElement("p");
+          notice.className = "journal-local-notice";
+          notice.textContent = "Local editing requires the localhost server. Run serve-local.cmd from the site folder.";
+          slot.append(notice);
+          return;
+        }
+
+        if (!isLoopback) return;
+
+        const rowFragment = byId("journal-authoring-template").content.cloneNode(true);
+        authoring.row = rowFragment.querySelector(".journal-authoring");
+        authoring.status = rowFragment.querySelector(".journal-authoring-status");
+        authoring.newButton = rowFragment.querySelector('[data-authoring-action="new"]');
+        slot.append(rowFragment);
+
+        const editorFragment = byId("journal-editor-template").content.cloneNode(true);
+        authoring.editorDialog = editorFragment.querySelector("dialog");
+        authoring.editorForm = editorFragment.querySelector("form");
+        document.body.append(editorFragment);
+
+        const confirmFragment = byId("journal-confirm-template").content.cloneNode(true);
+        authoring.confirmDialog = confirmFragment.querySelector("dialog");
+        document.body.append(confirmFragment);
+
+        authoring.newButton.addEventListener("click", openNewEditor);
+        authoring.editorForm.addEventListener("submit", saveEditor);
+        authoring.editorForm.elements.images.addEventListener("change", addEditorImages);
+        authoring.editorForm.elements.content.addEventListener("input", updateLanguageHint);
+        authoring.editorForm.elements.language.addEventListener("change", updateLanguageHint);
+        authoring.editorDialog.addEventListener("cancel", (event) => {
+          event.preventDefault();
+          if (!authoring.busy) closeEditor();
+        });
+
+        for (const button of authoring.editorDialog.querySelectorAll('[data-editor-action="close"]')) {
+          button.addEventListener("click", closeEditor);
+        }
+
+        authoring.editorDialog.querySelector(".editor-image-list").addEventListener("input", (event) => {
+          const item = event.target.closest("[data-image-key]");
+          if (!item || !event.target.matches("input")) return;
+          const image = authoring.editorImages.find((candidate) => candidate.key === item.dataset.imageKey);
+          if (image) image.alt = event.target.value;
+        });
+
+        authoring.editorDialog.querySelector(".editor-image-list").addEventListener("click", (event) => {
+          const button = event.target.closest("[data-remove-image]");
+          if (!button) return;
+          removeEditorImage(button.dataset.removeImage);
+        });
+
+        byId("archive-list").addEventListener("click", (event) => {
+          const button = event.target.closest("[data-journal-action]");
+          if (!button || !canAuthorJournal() || authoring.busy) return;
+          if (button.dataset.journalAction === "edit") openEditEditor(button.dataset.journalId);
+          if (button.dataset.journalAction === "delete") deleteJournal(button.dataset.journalId);
+        });
+
+        for (const button of authoring.confirmDialog.querySelectorAll("[data-confirm-value]")) {
+          button.addEventListener("click", () => authoring.confirmDialog.close(button.dataset.confirmValue));
+        }
+        authoring.confirmDialog.addEventListener("close", () => {
+          authoring.confirmResolver?.(authoring.confirmDialog.returnValue === "delete");
+          authoring.confirmResolver = null;
+        });
+
+        try {
+          const response = await fetch("/api/journal/status", { cache: "no-store" });
+          const result = await response.json();
+          if (!response.ok || !result.authoring || typeof result.token !== "string") {
+            throw new Error(result.error || "The local editor service is unavailable.");
+          }
+          authoring.apiToken = result.token;
+          authoring.connected = true;
+          authoring.newButton.disabled = !canAuthorJournal();
+          setAuthoringStatus(journalCatalogError
+            ? "Journal catalog failed to load; local editing is disabled."
+            : "Local editing is enabled.",
+          journalCatalogError ? "error" : "status");
+          if (state.section === "journal") renderArchive();
+        } catch (error) {
+          authoring.connected = false;
+          authoring.apiToken = "";
+          authoring.newButton.disabled = true;
+          setAuthoringStatus("Local editor unavailable. Start the site with serve-local.cmd.", "error");
+        }
+      }
+
+      function canAuthorJournal() {
+        return authoring.connected && Boolean(authoring.apiToken) && !journalCatalogError;
+      }
+
+      function setAuthoringBusy(busy) {
+        authoring.busy = busy;
+        if (authoring.newButton) authoring.newButton.disabled = busy || !canAuthorJournal();
+        if (authoring.editorForm) {
+          for (const control of authoring.editorForm.elements) control.disabled = busy;
+        }
+      }
+
+      function setAuthoringStatus(message, kind = "status") {
+        if (!authoring.status) return;
+        authoring.status.textContent = message;
+        authoring.status.dataset.kind = kind;
+      }
+
+      async function localJournalRequest(action, payload) {
+        const response = await fetch(`/api/journal/${action}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Journal-Token": authoring.apiToken
+          },
+          body: JSON.stringify(payload)
+        });
+        let result;
+        try {
+          result = await response.json();
+        } catch (error) {
+          throw new Error("The local editor returned an invalid response.");
+        }
+        if (!response.ok) throw new Error(result.error || "The local editor request failed.");
+        return result;
+      }
+
+      function openNewEditor() {
+        if (!canAuthorJournal() || authoring.busy) return;
+        resetEditor();
+        authoring.originalEntry = null;
+        authoring.editorDialog.querySelector(".dialog-title").textContent = "New Journal";
+        authoring.editorDialog.querySelector('[data-editor-action="save"]').textContent = "Publish";
+        authoring.editorDialog.querySelector(".editor-published-at").hidden = true;
+        authoring.editorForm.elements.language.value = "auto";
+        updateLanguageHint();
+        authoring.editorDialog.showModal();
+        authoring.editorForm.elements.content.focus();
+      }
+
+      function openEditEditor(id) {
+        const year = state.years.journal;
+        const entry = journalEntriesByYear.get(year)?.find((candidate) => candidate.id === id);
+        if (!entry) return;
+
+        resetEditor();
+        authoring.originalEntry = structuredClone(entry);
+        authoring.originalBody = entry.content.map((part) => part.text).join("\n\n");
+        const languages = [...new Set(entry.content.map((part) => part.lang).filter(Boolean))];
+        authoring.originalLanguage = languages.length === 1 ? languages[0] : "auto";
+        authoring.editorForm.elements.content.value = authoring.originalBody;
+        authoring.editorForm.elements.language.value = authoring.originalLanguage;
+        authoring.editorForm.elements.relatedLabel.value = entry.relatedWriting?.label || "";
+        authoring.editorForm.elements.relatedUrl.value = entry.relatedWriting?.url || "";
+        authoring.editorImages = entry.images.map((image) => ({
+          key: crypto.randomUUID(),
+          kind: "existing",
+          src: image.src,
+          alt: image.alt || "",
+          previewUrl: new URL(image.src, location.href).href
+        }));
+        renderEditorImages();
+        updateLanguageHint();
+
+        authoring.editorDialog.querySelector(".dialog-title").textContent = "Edit Journal";
+        authoring.editorDialog.querySelector('[data-editor-action="save"]').textContent = "Save";
+        const published = authoring.editorDialog.querySelector(".editor-published-at");
+        published.hidden = false;
+        published.textContent = `Published ${formatJournalTimestamp(entry.publishedAt, config.sections.journal.timeZone)}`;
+        authoring.editorDialog.showModal();
+        authoring.editorForm.elements.content.focus();
+      }
+
+      function resetEditor() {
+        for (const image of authoring.editorImages) {
+          if (image.kind === "new") URL.revokeObjectURL(image.previewUrl);
+        }
+        authoring.editorImages = [];
+        authoring.originalEntry = null;
+        authoring.originalBody = "";
+        authoring.originalLanguage = "auto";
+        authoring.editorForm.reset();
+        authoring.editorDialog.querySelector(".editor-image-list").replaceChildren();
+        setEditorMessage("");
+      }
+
+      function closeEditor() {
+        if (authoring.busy) return;
+        if (authoring.editorDialog.open) authoring.editorDialog.close();
+        resetEditor();
+      }
+
+      function addEditorImages(event) {
+        const acceptedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
+        const rejected = [];
+
+        for (const file of event.currentTarget.files) {
+          if (!acceptedTypes.has(file.type)) {
+            rejected.push(file.name);
+            continue;
+          }
+          authoring.editorImages.push({
+            key: crypto.randomUUID(),
+            kind: "new",
+            file,
+            alt: "",
+            previewUrl: URL.createObjectURL(file)
+          });
+        }
+
+        event.currentTarget.value = "";
+        renderEditorImages();
+        setEditorMessage(rejected.length > 0 ? `Unsupported image: ${rejected.join(", ")}` : "", rejected.length > 0 ? "error" : "status");
+      }
+
+      function removeEditorImage(key) {
+        const image = authoring.editorImages.find((candidate) => candidate.key === key);
+        if (image?.kind === "new") URL.revokeObjectURL(image.previewUrl);
+        authoring.editorImages = authoring.editorImages.filter((candidate) => candidate.key !== key);
+        renderEditorImages();
+      }
+
+      function renderEditorImages() {
+        const list = authoring.editorDialog.querySelector(".editor-image-list");
+        list.replaceChildren();
+
+        for (const imageData of authoring.editorImages) {
+          const item = document.createElement("div");
+          const image = document.createElement("img");
+          const alt = document.createElement("input");
+          const remove = document.createElement("button");
+          item.className = "editor-image-item";
+          item.dataset.imageKey = imageData.key;
+          image.className = "editor-image-preview";
+          image.src = imageData.previewUrl;
+          image.alt = "";
+          alt.className = "field-input";
+          alt.type = "text";
+          alt.value = imageData.alt;
+          alt.placeholder = "Alternative text (optional)";
+          alt.setAttribute("aria-label", "Image alternative text");
+          remove.className = "editor-image-remove";
+          remove.type = "button";
+          remove.dataset.removeImage = imageData.key;
+          remove.textContent = "Remove";
+          item.append(image, alt, remove);
+          list.append(item);
+        }
+      }
+
+      function detectLanguage(text) {
+        return /[\u3400-\u9fff]/u.test(text) ? "zh-CN" : "en";
+      }
+
+      function isSafeRelatedUrl(value) {
+        try {
+          const url = new URL(value, location.href);
+          return url.protocol === "http:" || url.protocol === "https:";
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function updateLanguageHint() {
+        if (!authoring.editorForm) return;
+        const selected = authoring.editorForm.elements.language.value;
+        const body = authoring.editorForm.elements.content.value;
+        const language = selected === "auto" ? detectLanguage(body) : selected;
+        authoring.editorDialog.querySelector("[data-language-hint]").textContent = selected === "auto"
+          ? `Detected language: ${language === "zh-CN" ? "Chinese" : "English"}`
+          : `Language: ${language === "zh-CN" ? "Chinese" : "English"}`;
+      }
+
+      function setEditorMessage(message, kind = "status") {
+        if (!authoring.editorDialog) return;
+        const element = authoring.editorDialog.querySelector(".editor-message");
+        element.textContent = message;
+        element.dataset.kind = kind;
+      }
+
+      function confirmJournalDeletion() {
+        if (authoring.confirmResolver) return Promise.resolve(false);
+        authoring.confirmDialog.returnValue = "cancel";
+        authoring.confirmDialog.showModal();
+        return new Promise((resolve) => {
+          authoring.confirmResolver = resolve;
+        });
+      }
+
+      function singaporeTimestamp(date = new Date()) {
+        const parts = new Intl.DateTimeFormat("en", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hourCycle: "h23",
+          timeZone: config.sections.journal.timeZone
+        }).formatToParts(date);
+        const value = (type) => parts.find((part) => part.type === type)?.value || "";
+        return `${value("year")}-${value("month")}-${value("day")}T${value("hour")}:${value("minute")}:${value("second")}+08:00`;
+      }
+
+      function createJournalId(timestamp) {
+        const compact = timestamp.slice(0, 19).replace(/[-:]/g, "").replace("T", "-");
+        const random = [...crypto.getRandomValues(new Uint8Array(2))]
+          .map((value) => value.toString(16).padStart(2, "0"))
+          .join("");
+        return `${compact}-${random}`;
+      }
+
+      function encodeImageFile(image) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.addEventListener("load", () => {
+            const result = String(reader.result || "");
+            const separator = result.indexOf(",");
+            if (separator < 0) {
+              reject(new Error(`Image ${image.file.name} could not be encoded.`));
+              return;
+            }
+            resolve({
+              key: image.key,
+              name: image.file.name,
+              type: image.file.type,
+              data: result.slice(separator + 1)
+            });
+          });
+          reader.addEventListener("error", () => reject(reader.error || new Error(`Image ${image.file.name} could not be read.`)));
+          reader.readAsDataURL(image.file);
+        });
+      }
+
+      function applyJournalData(year, entries, years, historyMode = "replace") {
+        journalYears = normalizeYears(years);
+        yearsBySection.set("journal", journalYears);
+        journalCatalogError = null;
+        journalLoadErrors.delete(year);
+
+        if (entries.length > 0) journalEntriesByYear.set(year, sortEntries(entries, "journal"));
+        else journalEntriesByYear.delete(year);
+
+        const selectedYear = entries.length > 0 ? year : latestYear("journal");
+        state.years.journal = selectedYear;
+
+        if (state.section === "journal") {
+          const expectedHash = routeHash("journal", selectedYear);
+          if (location.hash !== expectedHash) updateRoute("journal", selectedYear, historyMode === "replace");
+          renderSection();
+        }
+      }
+
+      async function saveEditor(event) {
+        event.preventDefault();
+        if (!canAuthorJournal() || authoring.busy) return;
+
+        const form = authoring.editorForm.elements;
+        const body = form.content.value.trim();
+        const relatedLabel = form.relatedLabel.value.trim();
+        const relatedUrl = form.relatedUrl.value.trim();
+        const selectedLanguage = form.language.value;
+
+        if (!body && authoring.editorImages.length === 0) {
+          setEditorMessage("Add content or at least one image.", "error");
+          return;
+        }
+        if (Boolean(relatedLabel) !== Boolean(relatedUrl)) {
+          setEditorMessage("Related Writing requires both a label and a URL.", "error");
+          return;
+        }
+        if (relatedUrl && !isSafeRelatedUrl(relatedUrl)) {
+          setEditorMessage("Related URL must be an HTTP, HTTPS, or local page link.", "error");
+          return;
+        }
+
+        setAuthoringBusy(true);
+        setEditorMessage(authoring.originalEntry ? "Saving..." : "Publishing...");
+        let completed = false;
+
+        try {
+          const original = authoring.originalEntry;
+          const publishedAt = original?.publishedAt || singaporeTimestamp();
+          const year = publishedAt.slice(0, 4);
+          const id = original?.id || createJournalId(publishedAt);
+          const resolvedLanguage = selectedLanguage === "auto" ? detectLanguage(body) : selectedLanguage;
+          const contentChanged = !original
+            || body !== authoring.originalBody
+            || selectedLanguage !== authoring.originalLanguage;
+          const content = !body
+            ? []
+            : (original && !contentChanged
+              ? structuredClone(original.content)
+              : [{ lang: resolvedLanguage, text: body }]);
+          const originalRelated = original?.relatedWriting || null;
+          const relatedUnchanged = original
+            && (originalRelated?.label || "") === relatedLabel
+            && (originalRelated?.url || "") === relatedUrl;
+          const relatedWriting = relatedUnchanged
+            ? structuredClone(originalRelated)
+            : (relatedLabel ? { label: relatedLabel, url: relatedUrl } : null);
+          const imageSpecs = authoring.editorImages.map((image) => image.kind === "existing"
+            ? { kind: "existing", src: image.src, alt: image.alt.trim() }
+            : { kind: "new", key: image.key, alt: image.alt.trim() });
+          const uploads = await Promise.all(
+            authoring.editorImages.filter((image) => image.kind === "new").map(encodeImageFile)
+          );
+          const result = await localJournalRequest("save", {
+            mode: original ? "edit" : "create",
+            entry: { id, publishedAt, content, images: [], relatedWriting },
+            images: imageSpecs,
+            uploads
+          });
+          const resultYear = String(result.year || "");
+          const nextYears = normalizeYears(result.years);
+          const nextEntries = validateJournalEntries(result.entries, resultYear);
+          const cleanupFailures = Array.isArray(result.cleanupFailures) ? result.cleanupFailures : [];
+
+          applyJournalData(resultYear, nextEntries, nextYears, result.status === "created" ? "push" : "replace");
+          setAuthoringStatus(cleanupFailures.length > 0
+            ? `Journal saved, but ${cleanupFailures.length} old image file could not be removed.`
+            : (result.status === "unchanged"
+              ? "No Journal changes to save."
+              : (result.status === "updated" ? "Journal updated locally." : "Journal published locally.")),
+          cleanupFailures.length > 0 ? "error" : "status");
+          completed = true;
+        } catch (error) {
+          setEditorMessage(error.message || "The Journal could not be saved.", "error");
+        } finally {
+          setAuthoringBusy(false);
+          if (completed) closeEditor();
+        }
+      }
+
+      async function deleteJournal(id) {
+        const year = state.years.journal;
+        const previousEntries = journalEntriesByYear.get(year) || [];
+        const entry = previousEntries.find((candidate) => candidate.id === id);
+        if (!entry || !(await confirmJournalDeletion())) return;
+
+        setAuthoringBusy(true);
+        setAuthoringStatus("Deleting Journal...");
+
+        try {
+          const result = await localJournalRequest("delete", { year, id });
+          const nextYears = normalizeYears(result.years);
+          const nextEntries = result.entries.length > 0
+            ? validateJournalEntries(result.entries, year)
+            : [];
+          const cleanupFailures = Array.isArray(result.cleanupFailures) ? result.cleanupFailures : [];
+          applyJournalData(year, nextEntries, nextYears, "replace");
+          setAuthoringStatus(cleanupFailures.length > 0
+            ? `Journal deleted, but ${cleanupFailures.length} image file could not be removed.`
+            : "Journal deleted locally.",
+          cleanupFailures.length > 0 ? "error" : "status");
+        } catch (error) {
+          setAuthoringStatus(error.message || "The Journal could not be deleted.", "error");
+        } finally {
+          setAuthoringBusy(false);
+        }
+      }
+
       byId("skip-link").textContent = config.labels.skip;
       byId("footer-text").textContent = `© ${new Date().getFullYear()} Xayah Hina. ${config.labels.footer}`;
 
@@ -1077,9 +2023,19 @@
 
       window.addEventListener("popstate", applyRoute);
 
+      await setupLocalAuthoring();
       if (location.hash !== initialRoute.hash) updateRoute(initialRoute.sectionId, initialRoute.year, true);
       renderSection();
-    })();
+    })().catch((error) => {
+      console.error("Writing site initialization failed.", error);
+      const archiveList = document.getElementById("archive-list");
+      if (archiveList) {
+        const message = document.createElement("p");
+        message.className = "empty-state";
+        message.textContent = "The page could not be initialized.";
+        archiveList.replaceChildren(message);
+      }
+    });
   </script>
 </body>
 </html>
