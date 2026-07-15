@@ -1,5 +1,16 @@
 export default [
   {
+    "id": "20260715-150230-a6bc",
+    "publishedAt": "2026-07-15T15:02:30+08:00",
+    "content": "写点文章，总归是好的。",
+    "images": [],
+    "relatedWriting": {
+      "id": "20260715-090945",
+      "title": "理性是否真正理性：再读More is Different"
+    },
+    "updatedAt": "2026-07-15T15:05:57+08:00"
+  },
+  {
     "id": "20260715-075446-98f1",
     "publishedAt": "2026-07-15T07:54:46+08:00",
     "content": "这是一条新的日记",
