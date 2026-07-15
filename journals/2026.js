@@ -1,5 +1,15 @@
 export default [
   {
+    "id": "20260716-002842-a110",
+    "publishedAt": "2026-07-16T00:28:42+08:00",
+    "content": "https://www.zhihu.com/question/1976839227397399722\n\n这个“涌现（Emergence)\"很符合我文章中的一个观点诶。有时间好好研究一下。",
+    "images": [],
+    "relatedWriting": {
+      "id": "20260715-090945",
+      "title": "理性是否真正理性：再读More is Different"
+    }
+  },
+  {
     "id": "20260715-235738-42b1",
     "publishedAt": "2026-07-15T23:57:38+08:00",
     "content": "Elaborate，精心设计。这个词很符合当前我想要做到的状态。虽然说很多领域都做不到实质顶尖，但是事实上如果花费有效时间精心设计一个闭环作品，取得的价值也能比较高，从某种意义上在specialized field来说达到顶尖也并非难事。\n\n平庸原理要好好把握。",
