@@ -27,37 +27,7 @@
           searchLabel: "Search writing",
           searchPlaceholder: "Search writing",
           empty: "No writing has been published yet.",
-          noResults: "No writing matches this search.",
-          entries: [
-            {
-              slug: "opening-note",
-              date: "2026-07-15",
-              documents: [
-                {
-                  lang: "en",
-                  title: "Opening Note",
-                  url: "writing/opening-note/opening-note.pdf",
-                  newTab: true
-                },
-                {
-                  lang: "zh-CN",
-                  title: "开篇",
-                  url: "writing/opening-note/opening-note.pdf",
-                  newTab: true
-                }
-              ],
-              summaries: [
-                {
-                  lang: "en",
-                  text: "A short introduction to this writing space and the subjects I hope to return to."
-                },
-                {
-                  lang: "zh-CN",
-                  text: "关于这个写作空间，以及我希望持续记录的主题。"
-                }
-              ]
-            }
-          ]
+          noResults: "No writing matches this search."
         },
         journal: {
           title: "Journal",
@@ -462,7 +432,11 @@
     }
 
     .entry-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       margin-bottom: 0.5rem;
+      gap: 0.75rem;
       color: var(--subtle);
       font-size: 0.8rem;
     }
@@ -510,6 +484,21 @@
     .entry-summary p + p {
       margin-top: 0.15rem;
       color: var(--muted);
+    }
+
+    .entry-action-button {
+      padding: 0;
+      color: var(--subtle);
+      background: transparent;
+      border: 0;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .entry-action-button:hover {
+      color: var(--link);
+      text-decoration: underline;
+      text-underline-offset: 0.16em;
     }
 
     .journal-month-group {
@@ -807,6 +796,202 @@
       line-height: 1.6;
     }
 
+    body.writing-editor-open {
+      overflow: hidden;
+    }
+
+    .writing-editor-shell {
+      position: fixed;
+      z-index: 100;
+      inset: 0;
+      display: grid;
+      color: var(--text);
+      background: var(--page);
+      grid-template-rows: auto auto auto minmax(0, 1fr);
+    }
+
+    .writing-editor-shell[hidden] {
+      display: none;
+    }
+
+    .writing-editor-header {
+      display: grid;
+      align-items: center;
+      min-height: 3.6rem;
+      padding: 0.55rem 0.75rem;
+      gap: 0.75rem;
+      border-bottom: 1px solid var(--line);
+      grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .writing-editor-back {
+      white-space: nowrap;
+    }
+
+    .writing-editor-heading {
+      min-width: 0;
+    }
+
+    .writing-editor-title {
+      margin: 0;
+      overflow: hidden;
+      font-size: 0.95rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .writing-editor-status {
+      margin: 0.15rem 0 0;
+      overflow: hidden;
+      color: var(--subtle);
+      font-size: 0.72rem;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .writing-editor-status[data-kind="error"] {
+      color: #dc2626;
+    }
+
+    .writing-editor-actions,
+    .writing-language-tabs,
+    .writing-view-switch {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .writing-language-tabs {
+      min-width: 0;
+      padding: 0.45rem 0.75rem;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .writing-language-button,
+    .writing-view-button {
+      min-height: 1.9rem;
+      padding: 0.25rem 0.6rem;
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 0.4rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .writing-language-button[aria-pressed="true"],
+    .writing-view-button[aria-pressed="true"] {
+      color: var(--link);
+      background: var(--card);
+      border-color: var(--line);
+    }
+
+    .writing-editor-details {
+      display: grid;
+      padding: 0.65rem 0.75rem;
+      gap: 0.65rem;
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      grid-template-columns: minmax(10rem, 0.55fr) minmax(16rem, 1.45fr);
+    }
+
+    .writing-editor-details .field-input {
+      background: var(--page);
+    }
+
+    .writing-summary-input {
+      min-height: 2.4rem;
+      padding: 0.5rem 0.6rem;
+      resize: vertical;
+    }
+
+    .writing-workspace {
+      display: grid;
+      min-height: 0;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .writing-source-pane,
+    .writing-preview-pane {
+      display: grid;
+      min-width: 0;
+      min-height: 0;
+      grid-template-rows: minmax(0, 1fr) auto;
+    }
+
+    .writing-source-pane {
+      border-right: 1px solid var(--line);
+    }
+
+    .writing-source {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      padding: 1rem;
+      color: var(--text);
+      background: var(--page);
+      border: 0;
+      border-radius: 0;
+      font: 0.84rem/1.55 ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      resize: none;
+      tab-size: 2;
+    }
+
+    .writing-source:focus {
+      outline: 2px solid var(--focus);
+      outline-offset: -2px;
+    }
+
+    .writing-compile-log {
+      max-height: 12rem;
+      overflow: auto;
+      background: var(--card);
+      border-top: 1px solid var(--line);
+    }
+
+    .writing-compile-log summary {
+      padding: 0.45rem 0.7rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .writing-compile-output {
+      margin: 0;
+      padding: 0 0.7rem 0.7rem;
+      overflow-wrap: anywhere;
+      color: var(--text-secondary);
+      font: 0.72rem/1.5 ui-monospace, "Cascadia Code", Consolas, monospace;
+      white-space: pre-wrap;
+    }
+
+    .writing-preview-frame {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      background: var(--card);
+      border: 0;
+    }
+
+    .writing-preview-empty {
+      display: grid;
+      height: 100%;
+      margin: 0;
+      padding: 1rem;
+      place-items: center;
+      color: var(--muted);
+      background: var(--card);
+      text-align: center;
+    }
+
+    .writing-view-switch {
+      display: none;
+      margin-left: auto;
+    }
+
     .empty-state {
       margin: 1.5rem 0 0;
       padding: 2rem 1rem;
@@ -839,6 +1024,38 @@
         grid-row: 2;
         min-height: 2.8rem;
         border-top: 1px solid var(--line);
+      }
+
+      .writing-editor-header {
+        grid-template-columns: auto minmax(0, 1fr);
+      }
+
+      .writing-editor-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+      }
+
+      .writing-editor-details {
+        grid-template-columns: 1fr;
+      }
+
+      .writing-view-switch {
+        display: flex;
+        padding: 0.4rem 0.75rem;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .writing-workspace {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .writing-workspace[data-view="source"] .writing-preview-pane,
+      .writing-workspace[data-view="preview"] .writing-source-pane {
+        display: none;
+      }
+
+      .writing-source-pane {
+        border-right: 0;
       }
     }
 
@@ -917,6 +1134,7 @@
           <input id="search-input" class="search-input" type="search" autocomplete="off" placeholder="Search writing">
         </label>
         <div id="year-filter" class="year-filter" role="group" aria-label="Filter by year"></div>
+        <div id="writing-local-slot"></div>
         <div id="journal-local-slot"></div>
       </div>
 
@@ -933,6 +1151,7 @@
     <article class="entry-card">
       <div class="entry-meta">
         <time class="entry-date"></time>
+        <div class="entry-actions"></div>
       </div>
       <h3 class="entry-title"></h3>
       <div class="entry-summary"></div>
@@ -1027,6 +1246,137 @@
     </dialog>
   </template>
 
+  <template id="writing-authoring-template">
+    <div class="journal-authoring" aria-label="Local Writing editor">
+      <span class="journal-authoring-status writing-authoring-status" aria-live="polite">Starting local editor...</span>
+      <div class="journal-authoring-actions">
+        <button class="control-button control-button-primary" type="button" data-writing-action="new" disabled>New Writing</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="writing-create-template">
+    <dialog class="journal-dialog" aria-labelledby="writing-create-title">
+      <form class="journal-editor-form writing-create-form" novalidate>
+        <header class="dialog-header">
+          <h2 id="writing-create-title" class="dialog-title">New Writing</h2>
+          <button class="dialog-close" type="button" data-writing-create-action="close" aria-label="Close">×</button>
+        </header>
+        <div class="dialog-body">
+          <div class="field-row">
+            <label class="field-group">
+              <span class="field-label">Slug</span>
+              <input class="field-input" name="slug" type="text" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="new-writing">
+            </label>
+            <label class="field-group">
+              <span class="field-label">Date</span>
+              <input class="field-input" name="date" type="date" required>
+            </label>
+          </div>
+          <label class="field-group">
+            <span class="field-label">Language</span>
+            <select class="field-select" name="language">
+              <option value="en">English</option>
+              <option value="zh-CN">Chinese</option>
+            </select>
+          </label>
+          <label class="field-group">
+            <span class="field-label">Title</span>
+            <input class="field-input" name="title" type="text" required>
+          </label>
+          <label class="field-group">
+            <span class="field-label">Summary</span>
+            <textarea class="field-textarea" name="summary" placeholder="Optional archive summary"></textarea>
+          </label>
+          <p class="editor-message" role="alert"></p>
+        </div>
+        <footer class="dialog-actions">
+          <button class="control-button" type="button" data-writing-create-action="close">Cancel</button>
+          <button class="control-button control-button-primary" type="submit">Create</button>
+        </footer>
+      </form>
+    </dialog>
+  </template>
+
+  <template id="writing-language-template">
+    <dialog class="journal-dialog" aria-labelledby="writing-language-title">
+      <form class="journal-editor-form writing-language-form" novalidate>
+        <header class="dialog-header">
+          <h2 id="writing-language-title" class="dialog-title">Add Language</h2>
+          <button class="dialog-close" type="button" data-writing-language-action="close" aria-label="Close">×</button>
+        </header>
+        <div class="dialog-body">
+          <label class="field-group">
+            <span class="field-label">Language</span>
+            <select class="field-select" name="language"></select>
+          </label>
+          <label class="field-group">
+            <span class="field-label">Title</span>
+            <input class="field-input" name="title" type="text" required>
+          </label>
+          <label class="field-group">
+            <span class="field-label">Summary</span>
+            <textarea class="field-textarea" name="summary" placeholder="Optional archive summary"></textarea>
+          </label>
+          <p class="editor-message" role="alert"></p>
+        </div>
+        <footer class="dialog-actions">
+          <button class="control-button" type="button" data-writing-language-action="close">Cancel</button>
+          <button class="control-button control-button-primary" type="submit">Add Language</button>
+        </footer>
+      </form>
+    </dialog>
+  </template>
+
+  <template id="writing-editor-template">
+    <section class="writing-editor-shell" aria-label="Writing editor" hidden>
+      <header class="writing-editor-header">
+        <button class="control-button writing-editor-back" type="button" data-writing-editor-action="close">Back</button>
+        <div class="writing-editor-heading">
+          <h2 class="writing-editor-title">Writing Editor</h2>
+          <p class="writing-editor-status" aria-live="polite">Ready.</p>
+        </div>
+        <div class="writing-editor-actions">
+          <button class="control-button" type="button" data-writing-editor-action="save">Save</button>
+          <button class="control-button control-button-primary" type="button" data-writing-editor-action="compile">Save &amp; Compile</button>
+        </div>
+      </header>
+
+      <div class="writing-language-tabs" role="group" aria-label="Writing language">
+        <button class="writing-language-button" type="button" data-writing-editor-action="add-language">+ Language</button>
+        <div class="writing-view-switch" role="group" aria-label="Editor view">
+          <button class="writing-view-button" type="button" data-writing-view="source" aria-pressed="true">Source</button>
+          <button class="writing-view-button" type="button" data-writing-view="preview" aria-pressed="false">Preview</button>
+        </div>
+      </div>
+
+      <div class="writing-editor-details">
+        <label class="field-group">
+          <span class="field-label">Title</span>
+          <input class="field-input writing-title-input" type="text">
+        </label>
+        <label class="field-group">
+          <span class="field-label">Summary</span>
+          <textarea class="field-input writing-summary-input" rows="1" placeholder="Optional archive summary"></textarea>
+        </label>
+      </div>
+
+      <div class="writing-workspace" data-view="source">
+        <section class="writing-source-pane" aria-label="TeX source">
+          <textarea class="writing-source" aria-label="TeX source" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+          <details class="writing-compile-log">
+            <summary>Compilation log</summary>
+            <pre class="writing-compile-output">No compilation has run in this editor session.</pre>
+          </details>
+        </section>
+        <section class="writing-preview-pane" aria-label="PDF preview">
+          <iframe class="writing-preview-frame" title="PDF preview"></iframe>
+          <p class="writing-preview-empty" hidden>Compile this document to create its PDF preview.</p>
+        </section>
+      </div>
+    </section>
+  </template>
+
   <script>
     (async () => {
       "use strict";
@@ -1038,29 +1388,33 @@
       const loopbackHosts = new Set(["localhost", "127.0.0.1", "[::1]"]);
       const isLoopback = location.protocol === "http:" && loopbackHosts.has(location.hostname);
       const isFilePage = location.protocol === "file:";
-      const entriesBySection = new Map([
-        ["writing", sortEntries(config.sections.writing.entries, "writing")]
-      ]);
+      const writingEntriesByYear = new Map();
+      const writingLoadPromises = new Map();
+      const writingLoadErrors = new Map();
       const journalEntriesByYear = new Map();
       const journalLoadPromises = new Map();
       const journalLoadErrors = new Map();
+      let writingCatalogError = null;
       let journalCatalogError = null;
+      let writingYears = [];
       let journalYears = [];
 
       try {
-        const catalog = await importJournalModule("journals/catalog.js");
+        const catalog = await importDataModule("writing/catalog.js");
+        writingYears = normalizeYears(catalog.default?.years);
+      } catch (error) {
+        writingCatalogError = error;
+      }
+
+      try {
+        const catalog = await importDataModule("journals/catalog.js");
         journalYears = normalizeYears(catalog.default?.years);
       } catch (error) {
         journalCatalogError = error;
       }
 
       const yearsBySection = new Map([
-        [
-          "writing",
-          [...new Set(entriesBySection.get("writing").map((entry) => entryYear("writing", entry)))]
-            .filter(Boolean)
-            .sort((left, right) => right.localeCompare(left))
-        ],
+        ["writing", writingYears],
         ["journal", journalYears]
       ]);
       const initialRoute = readRoute();
@@ -1089,14 +1443,34 @@
         confirmResolver: null
       };
 
-      async function importJournalModule(path, version = moduleVersion) {
+      const writingAuthoring = {
+        connected: false,
+        busy: false,
+        status: null,
+        newButton: null,
+        createDialog: null,
+        createForm: null,
+        languageDialog: null,
+        languageForm: null,
+        editor: null,
+        source: null,
+        title: null,
+        summary: null,
+        log: null,
+        frame: null,
+        emptyPreview: null,
+        current: null,
+        baseline: null
+      };
+
+      async function importDataModule(path, version = moduleVersion) {
         const url = new URL(path, location.href);
         url.searchParams.set("v", version);
         return import(url.href);
       }
 
       function normalizeYears(value) {
-        if (!Array.isArray(value)) throw new TypeError("Journal catalog years must be an array.");
+        if (!Array.isArray(value)) throw new TypeError("Catalog years must be an array.");
         return [...new Set(value.map(String).filter((year) => /^\d{4}$/.test(year)))]
           .sort((left, right) => right.localeCompare(left));
       }
@@ -1133,13 +1507,64 @@
         return sortEntries(value, "journal");
       }
 
+      function validateWritingEntries(value, year) {
+        if (!Array.isArray(value)) throw new TypeError(`Writing ${year} must export an array.`);
+        const slugs = new Set();
+
+        for (const entry of value) {
+          if (!entry || typeof entry.slug !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entry.slug)) {
+            throw new TypeError(`Writing ${year} contains an invalid slug.`);
+          }
+          if (slugs.has(entry.slug)) throw new TypeError(`Writing ${year} contains duplicate slug ${entry.slug}.`);
+          if (typeof entry.date !== "string" || entry.date.slice(0, 4) !== year) {
+            throw new TypeError(`Writing ${entry.slug} does not belong to ${year}.`);
+          }
+          if (!Array.isArray(entry.documents) || entry.documents.length === 0 || !Array.isArray(entry.summaries)) {
+            throw new TypeError(`Writing ${entry.slug} has invalid documents or summaries.`);
+          }
+          const languages = new Set();
+          for (const documentVersion of entry.documents) {
+            if (!["en", "zh-CN"].includes(documentVersion?.lang) || typeof documentVersion.title !== "string" || typeof documentVersion.url !== "string") {
+              throw new TypeError(`Writing ${entry.slug} has an invalid document.`);
+            }
+            if (languages.has(documentVersion.lang)) throw new TypeError(`Writing ${entry.slug} repeats ${documentVersion.lang}.`);
+            languages.add(documentVersion.lang);
+          }
+          slugs.add(entry.slug);
+        }
+
+        return sortEntries(value, "writing");
+      }
+
+      function loadWritingYear(year) {
+        if (!year) return Promise.resolve([]);
+        if (writingEntriesByYear.has(year)) return Promise.resolve(writingEntriesByYear.get(year));
+        if (writingLoadPromises.has(year)) return writingLoadPromises.get(year);
+
+        writingLoadErrors.delete(year);
+        const promise = importDataModule(`writing/${year}.js`)
+          .then((module) => {
+            const entries = validateWritingEntries(module.default, year);
+            writingEntriesByYear.set(year, entries);
+            return entries;
+          })
+          .catch((error) => {
+            writingLoadErrors.set(year, error);
+            throw error;
+          })
+          .finally(() => writingLoadPromises.delete(year));
+
+        writingLoadPromises.set(year, promise);
+        return promise;
+      }
+
       function loadJournalYear(year) {
         if (!year) return Promise.resolve([]);
         if (journalEntriesByYear.has(year)) return Promise.resolve(journalEntriesByYear.get(year));
         if (journalLoadPromises.has(year)) return journalLoadPromises.get(year);
 
         journalLoadErrors.delete(year);
-        const promise = importJournalModule(`journals/${year}.js`)
+        const promise = importDataModule(`journals/${year}.js`)
           .then((module) => {
             const entries = validateJournalEntries(module.default, year);
             journalEntriesByYear.set(year, entries);
@@ -1273,12 +1698,27 @@
 
       function renderEntry(entry) {
         const fragment = byId("entry-template").content.cloneNode(true);
+        const card = fragment.querySelector(".entry-card");
         const date = fragment.querySelector(".entry-date");
+        const actions = fragment.querySelector(".entry-actions");
         const title = fragment.querySelector(".entry-title");
         const summary = fragment.querySelector(".entry-summary");
 
+        card.id = `writing-${entry.slug}`;
         date.dateTime = entry.date;
         date.textContent = formatDate(entry.date);
+
+        if (canAuthorWriting()) {
+          const edit = document.createElement("button");
+          edit.className = "entry-action-button";
+          edit.type = "button";
+          edit.dataset.writingAction = "edit";
+          edit.dataset.writingSlug = entry.slug;
+          edit.dataset.writingYear = entry.date.slice(0, 4);
+          edit.textContent = "Edit";
+          actions.append(edit);
+        }
+        actions.hidden = actions.childElementCount === 0;
 
         for (const [index, documentVersion] of (entry.documents || []).entries()) {
           if (index > 0) {
@@ -1294,10 +1734,8 @@
           anchor.href = documentVersion.url;
           anchor.lang = documentVersion.lang;
           anchor.textContent = documentVersion.title;
-          if (documentVersion.newTab) {
-            anchor.target = "_blank";
-            anchor.rel = "noopener";
-          }
+          anchor.target = "_blank";
+          anchor.rel = "noopener";
           title.append(anchor);
         }
         title.hidden = title.childElementCount === 0;
@@ -1384,7 +1822,7 @@
         const year = state.years[state.section];
         const entries = state.section === "journal"
           ? (journalEntriesByYear.get(year) || [])
-          : entriesBySection.get(state.section);
+          : (writingEntriesByYear.get(year) || []);
         return entries.filter((entry) => (
           entryYear(state.section, entry) === year
           && (!query || entrySearchText(entry).includes(query))
@@ -1439,17 +1877,22 @@
 
         archiveList.replaceChildren();
 
-        if (state.section === "journal" && journalCatalogError) {
+        const catalogError = state.section === "journal" ? journalCatalogError : writingCatalogError;
+        const entriesByYear = state.section === "journal" ? journalEntriesByYear : writingEntriesByYear;
+        const loadErrors = state.section === "journal" ? journalLoadErrors : writingLoadErrors;
+        const sectionLabel = state.section === "journal" ? "Journal" : "Writing";
+
+        if (catalogError) {
           byId("archive-summary").textContent = "";
-          renderArchiveMessage("Journal data could not be loaded.");
+          renderArchiveMessage(`${sectionLabel} data could not be loaded.`);
           return;
         }
 
-        if (state.section === "journal" && year && !journalEntriesByYear.has(year)) {
+        if (year && !entriesByYear.has(year)) {
           byId("archive-summary").textContent = "";
-          renderArchiveMessage(journalLoadErrors.has(year)
-            ? `Journal ${year} could not be loaded.`
-            : `Loading Journal ${year}...`);
+          renderArchiveMessage(loadErrors.has(year)
+            ? `${sectionLabel} ${year} could not be loaded.`
+            : `Loading ${sectionLabel} ${year}...`);
           return;
         }
 
@@ -1494,23 +1937,25 @@
 
         renderSectionSwitch();
         renderYearFilter();
-        const localSlot = byId("journal-local-slot");
-        localSlot.hidden = state.section !== "journal" || localSlot.childElementCount === 0;
+        const journalLocalSlot = byId("journal-local-slot");
+        const writingLocalSlot = byId("writing-local-slot");
+        journalLocalSlot.hidden = state.section !== "journal" || journalLocalSlot.childElementCount === 0;
+        writingLocalSlot.hidden = state.section !== "writing" || writingLocalSlot.childElementCount === 0;
 
-        if (
-          state.section === "journal"
-          && year
-          && !journalEntriesByYear.has(year)
-          && !journalLoadPromises.has(year)
-          && !journalLoadErrors.has(year)
-          && !journalCatalogError
-        ) {
-          loadJournalYear(year)
+        const entriesByYear = state.section === "journal" ? journalEntriesByYear : writingEntriesByYear;
+        const loadPromises = state.section === "journal" ? journalLoadPromises : writingLoadPromises;
+        const loadErrors = state.section === "journal" ? journalLoadErrors : writingLoadErrors;
+        const catalogError = state.section === "journal" ? journalCatalogError : writingCatalogError;
+        const loadYear = state.section === "journal" ? loadJournalYear : loadWritingYear;
+        const requestedSection = state.section;
+
+        if (year && !entriesByYear.has(year) && !loadPromises.has(year) && !loadErrors.has(year) && !catalogError) {
+          loadYear(year)
             .then(() => {
-              if (state.section === "journal" && state.years.journal === year) renderArchive();
+              if (state.section === requestedSection && state.years[requestedSection] === year) renderArchive();
             })
             .catch(() => {
-              if (state.section === "journal" && state.years.journal === year) renderArchive();
+              if (state.section === requestedSection && state.years[requestedSection] === year) renderArchive();
             });
         }
 
@@ -1531,8 +1976,7 @@
         if (!yearsBySection.get(state.section).includes(year) || year === state.years[state.section]) return;
         state.years[state.section] = year;
         if (updateHistory) updateRoute(state.section, year);
-        renderYearFilter();
-        renderArchive();
+        renderSection();
       }
 
       function applyRoute() {
@@ -1544,13 +1988,16 @@
       }
 
       async function setupLocalAuthoring() {
-        const slot = byId("journal-local-slot");
+        const journalSlot = byId("journal-local-slot");
+        const writingSlot = byId("writing-local-slot");
 
         if (isFilePage) {
-          const notice = document.createElement("p");
-          notice.className = "journal-local-notice";
-          notice.textContent = "Local editing requires the localhost server. Run serve-local.cmd from the site folder.";
-          slot.append(notice);
+          for (const slot of [journalSlot, writingSlot]) {
+            const notice = document.createElement("p");
+            notice.className = "journal-local-notice";
+            notice.textContent = "Local editing requires the localhost server. Run serve-local.cmd from the site folder.";
+            slot.append(notice);
+          }
           return;
         }
 
@@ -1560,7 +2007,7 @@
         authoring.row = rowFragment.querySelector(".journal-authoring");
         authoring.status = rowFragment.querySelector(".journal-authoring-status");
         authoring.newButton = rowFragment.querySelector('[data-authoring-action="new"]');
-        slot.append(rowFragment);
+        journalSlot.append(rowFragment);
 
         const editorFragment = byId("journal-editor-template").content.cloneNode(true);
         authoring.editorDialog = editorFragment.querySelector("dialog");
@@ -1613,25 +2060,110 @@
           authoring.confirmResolver = null;
         });
 
+        const writingRowFragment = byId("writing-authoring-template").content.cloneNode(true);
+        writingAuthoring.status = writingRowFragment.querySelector(".writing-authoring-status");
+        writingAuthoring.newButton = writingRowFragment.querySelector('[data-writing-action="new"]');
+        writingSlot.append(writingRowFragment);
+
+        const createFragment = byId("writing-create-template").content.cloneNode(true);
+        writingAuthoring.createDialog = createFragment.querySelector("dialog");
+        writingAuthoring.createForm = createFragment.querySelector("form");
+        document.body.append(createFragment);
+
+        const languageFragment = byId("writing-language-template").content.cloneNode(true);
+        writingAuthoring.languageDialog = languageFragment.querySelector("dialog");
+        writingAuthoring.languageForm = languageFragment.querySelector("form");
+        document.body.append(languageFragment);
+
+        const writingEditorFragment = byId("writing-editor-template").content.cloneNode(true);
+        writingAuthoring.editor = writingEditorFragment.querySelector(".writing-editor-shell");
+        writingAuthoring.source = writingEditorFragment.querySelector(".writing-source");
+        writingAuthoring.title = writingEditorFragment.querySelector(".writing-title-input");
+        writingAuthoring.summary = writingEditorFragment.querySelector(".writing-summary-input");
+        writingAuthoring.log = writingEditorFragment.querySelector(".writing-compile-output");
+        writingAuthoring.frame = writingEditorFragment.querySelector(".writing-preview-frame");
+        writingAuthoring.emptyPreview = writingEditorFragment.querySelector(".writing-preview-empty");
+        document.body.append(writingEditorFragment);
+
+        writingAuthoring.newButton.addEventListener("click", openWritingCreateDialog);
+        writingAuthoring.createForm.addEventListener("submit", createWriting);
+        writingAuthoring.languageForm.addEventListener("submit", addWritingLanguage);
+        for (const button of writingAuthoring.createDialog.querySelectorAll('[data-writing-create-action="close"]')) {
+          button.addEventListener("click", closeWritingCreateDialog);
+        }
+        for (const button of writingAuthoring.languageDialog.querySelectorAll('[data-writing-language-action="close"]')) {
+          button.addEventListener("click", closeWritingLanguageDialog);
+        }
+        writingAuthoring.createDialog.addEventListener("cancel", (event) => {
+          event.preventDefault();
+          closeWritingCreateDialog();
+        });
+        writingAuthoring.languageDialog.addEventListener("cancel", (event) => {
+          event.preventDefault();
+          closeWritingLanguageDialog();
+        });
+
+        writingAuthoring.editor.addEventListener("click", (event) => {
+          const action = event.target.closest("[data-writing-editor-action]")?.dataset.writingEditorAction;
+          if (action === "close") requestCloseWritingEditor();
+          if (action === "save") saveWritingDocument(false);
+          if (action === "compile") saveWritingDocument(true);
+          if (action === "add-language") openWritingLanguageDialog();
+          const language = event.target.closest("[data-writing-language]")?.dataset.writingLanguage;
+          if (language) switchWritingLanguage(language);
+          const view = event.target.closest("[data-writing-view]")?.dataset.writingView;
+          if (view) setWritingEditorView(view);
+        });
+        for (const input of [writingAuthoring.source, writingAuthoring.title, writingAuthoring.summary]) {
+          input.addEventListener("input", updateWritingEditorStatus);
+        }
+        writingAuthoring.editor.addEventListener("keydown", (event) => {
+          if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === "s") {
+            event.preventDefault();
+            saveWritingDocument(true);
+          }
+        });
+        byId("archive-list").addEventListener("click", (event) => {
+          const button = event.target.closest("[data-writing-action='edit']");
+          if (!button || !canAuthorWriting() || writingAuthoring.busy) return;
+          openWritingEditor(button.dataset.writingYear, button.dataset.writingSlug);
+        });
+        window.addEventListener("beforeunload", (event) => {
+          if (!writingEditorIsDirty()) return;
+          event.preventDefault();
+          event.returnValue = "";
+        });
+
         try {
-          const response = await fetch("/api/journal/status", { cache: "no-store" });
+          const response = await fetch("/api/local/status", { cache: "no-store" });
           const result = await response.json();
           if (!response.ok || !result.authoring || typeof result.token !== "string") {
             throw new Error(result.error || "The local editor service is unavailable.");
           }
           authoring.apiToken = result.token;
-          authoring.connected = true;
+          authoring.connected = !result.journalError;
+          writingAuthoring.connected = !result.writingError;
           authoring.newButton.disabled = !canAuthorJournal();
-          setAuthoringStatus(journalCatalogError
-            ? "Journal catalog failed to load; local editing is disabled."
+          writingAuthoring.newButton.disabled = !canAuthorWriting();
+          setAuthoringStatus(journalCatalogError || result.journalError
+            ? (result.journalError || "Journal catalog failed to load; local editing is disabled.")
             : "Local editing is enabled.",
-          journalCatalogError ? "error" : "status");
-          if (state.section === "journal") renderArchive();
+          journalCatalogError || result.journalError ? "error" : "status");
+          setWritingAuthoringStatus(writingCatalogError || result.writingError
+            ? (result.writingError || "Writing catalog failed to load; local editing is disabled.")
+            : (result.tectonicVersion
+              ? `Local Writing editor is enabled · ${result.tectonicVersion}`
+              : "Local Writing editor is enabled, but Tectonic is unavailable."),
+          writingCatalogError || result.writingError || !result.tectonicVersion ? "error" : "status");
+          renderArchive();
         } catch (error) {
           authoring.connected = false;
+          writingAuthoring.connected = false;
           authoring.apiToken = "";
           authoring.newButton.disabled = true;
+          writingAuthoring.newButton.disabled = true;
           setAuthoringStatus("Local editor unavailable. Start the site with serve-local.cmd.", "error");
+          setWritingAuthoringStatus("Local editor unavailable. Start the site with serve-local.cmd.", "error");
         }
       }
 
@@ -1653,12 +2185,22 @@
         authoring.status.dataset.kind = kind;
       }
 
-      async function localJournalRequest(action, payload) {
-        const response = await fetch(`/api/journal/${action}`, {
+      function canAuthorWriting() {
+        return writingAuthoring.connected && Boolean(authoring.apiToken) && !writingCatalogError;
+      }
+
+      function setWritingAuthoringStatus(message, kind = "status") {
+        if (!writingAuthoring.status) return;
+        writingAuthoring.status.textContent = message;
+        writingAuthoring.status.dataset.kind = kind;
+      }
+
+      async function localSiteRequest(path, payload) {
+        const response = await fetch(path, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-Journal-Token": authoring.apiToken
+            "X-Local-Token": authoring.apiToken
           },
           body: JSON.stringify(payload)
         });
@@ -1670,6 +2212,332 @@
         }
         if (!response.ok) throw new Error(result.error || "The local editor request failed.");
         return result;
+      }
+
+      function localJournalRequest(action, payload) {
+        return localSiteRequest(`/api/journal/${action}`, payload);
+      }
+
+      function localWritingRequest(action, payload) {
+        return localSiteRequest(`/api/writing/${action}`, payload);
+      }
+
+      function writingEditorSnapshot() {
+        if (!writingAuthoring.current) return "";
+        return JSON.stringify({
+          language: writingAuthoring.current.language,
+          title: writingAuthoring.title.value,
+          summary: writingAuthoring.summary.value,
+          source: writingAuthoring.source.value
+        });
+      }
+
+      function writingEditorIsDirty() {
+        return Boolean(
+          writingAuthoring.editor
+          && !writingAuthoring.editor.hidden
+          && writingAuthoring.current
+          && writingEditorSnapshot() !== writingAuthoring.baseline
+        );
+      }
+
+      function updateWritingEditorStatus() {
+        if (!writingAuthoring.current || writingAuthoring.busy) return;
+        setWritingEditorStatus(writingEditorIsDirty() ? "Unsaved changes." : "Saved.");
+      }
+
+      function setWritingEditorStatus(message, kind = "status") {
+        if (!writingAuthoring.editor) return;
+        const status = writingAuthoring.editor.querySelector(".writing-editor-status");
+        status.textContent = message;
+        status.dataset.kind = kind;
+      }
+
+      function setWritingEditorBusy(busy) {
+        writingAuthoring.busy = busy;
+        if (writingAuthoring.newButton) writingAuthoring.newButton.disabled = busy || !canAuthorWriting();
+        for (const dialog of [writingAuthoring.createDialog, writingAuthoring.languageDialog]) {
+          if (!dialog) continue;
+          for (const control of dialog.querySelectorAll("button, input, textarea, select")) control.disabled = busy;
+        }
+        if (writingAuthoring.editor) {
+          for (const control of writingAuthoring.editor.querySelectorAll("button, input, textarea")) control.disabled = busy;
+        }
+      }
+
+      function writingDialogMessage(dialog, message, kind = "status") {
+        const element = dialog.querySelector(".editor-message");
+        element.textContent = message;
+        element.dataset.kind = kind;
+      }
+
+      function singaporeDate() {
+        const parts = new Intl.DateTimeFormat("en", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          timeZone: config.sections.journal.timeZone
+        }).formatToParts(new Date());
+        const value = (type) => parts.find((part) => part.type === type)?.value || "";
+        return `${value("year")}-${value("month")}-${value("day")}`;
+      }
+
+      function openWritingCreateDialog() {
+        if (!canAuthorWriting() || writingAuthoring.busy) return;
+        writingAuthoring.createForm.reset();
+        writingAuthoring.createForm.elements.date.value = singaporeDate();
+        writingDialogMessage(writingAuthoring.createDialog, "");
+        writingAuthoring.createDialog.showModal();
+        writingAuthoring.createForm.elements.slug.focus();
+      }
+
+      function closeWritingCreateDialog() {
+        if (!writingAuthoring.busy && writingAuthoring.createDialog.open) writingAuthoring.createDialog.close();
+      }
+
+      async function createWriting(event) {
+        event.preventDefault();
+        if (!canAuthorWriting() || writingAuthoring.busy) return;
+        const form = writingAuthoring.createForm.elements;
+        const payload = {
+          slug: form.slug.value.trim(),
+          date: form.date.value,
+          language: form.language.value,
+          title: form.title.value.trim(),
+          summary: form.summary.value.trim()
+        };
+        if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(payload.slug)) {
+          writingDialogMessage(writingAuthoring.createDialog, "Slug must contain lowercase letters, numbers, and single hyphens.", "error");
+          return;
+        }
+        if (!payload.date || !payload.title) {
+          writingDialogMessage(writingAuthoring.createDialog, "Date and title are required.", "error");
+          return;
+        }
+
+        setWritingEditorBusy(true);
+        writingDialogMessage(writingAuthoring.createDialog, "Creating...");
+        try {
+          const result = await localWritingRequest("create", payload);
+          applyWritingServerData(result, true);
+          writingAuthoring.createDialog.close();
+          showWritingEditorData(result);
+        } catch (error) {
+          writingDialogMessage(writingAuthoring.createDialog, error.message || "Writing could not be created.", "error");
+        } finally {
+          setWritingEditorBusy(false);
+        }
+      }
+
+      function openWritingLanguageDialog() {
+        if (!writingAuthoring.current || writingAuthoring.busy) return;
+        const existing = new Set(writingAuthoring.current.entry.documents.map((documentVersion) => documentVersion.lang));
+        const available = ["en", "zh-CN"].filter((language) => !existing.has(language));
+        if (available.length === 0) {
+          setWritingEditorStatus("English and Chinese versions already exist.");
+          return;
+        }
+        const select = writingAuthoring.languageForm.elements.language;
+        select.replaceChildren();
+        for (const language of available) {
+          const option = document.createElement("option");
+          option.value = language;
+          option.textContent = language === "zh-CN" ? "Chinese" : "English";
+          select.append(option);
+        }
+        writingAuthoring.languageForm.elements.title.value = "";
+        writingAuthoring.languageForm.elements.summary.value = "";
+        writingDialogMessage(writingAuthoring.languageDialog, "");
+        writingAuthoring.languageDialog.showModal();
+        writingAuthoring.languageForm.elements.title.focus();
+      }
+
+      function closeWritingLanguageDialog() {
+        if (!writingAuthoring.busy && writingAuthoring.languageDialog.open) writingAuthoring.languageDialog.close();
+      }
+
+      async function addWritingLanguage(event) {
+        event.preventDefault();
+        if (!writingAuthoring.current || writingAuthoring.busy) return;
+        const form = writingAuthoring.languageForm.elements;
+        const payload = {
+          year: writingAuthoring.current.year,
+          slug: writingAuthoring.current.slug,
+          language: form.language.value,
+          title: form.title.value.trim(),
+          summary: form.summary.value.trim()
+        };
+        if (!payload.title) {
+          writingDialogMessage(writingAuthoring.languageDialog, "Title is required.", "error");
+          return;
+        }
+        setWritingEditorBusy(true);
+        writingDialogMessage(writingAuthoring.languageDialog, "Adding language...");
+        try {
+          const result = await localWritingRequest("add-language", payload);
+          applyWritingServerData(result);
+          writingAuthoring.languageDialog.close();
+          showWritingEditorData(result);
+        } catch (error) {
+          writingDialogMessage(writingAuthoring.languageDialog, error.message || "Language could not be added.", "error");
+        } finally {
+          setWritingEditorBusy(false);
+        }
+      }
+
+      function applyWritingServerData(result, pushHistory = false) {
+        const year = String(result.year || "");
+        const years = normalizeYears(result.years);
+        const entries = validateWritingEntries(result.entries, year);
+        writingYears = years;
+        yearsBySection.set("writing", years);
+        writingEntriesByYear.set(year, entries);
+        writingLoadErrors.delete(year);
+        writingCatalogError = null;
+        state.years.writing = year;
+        if (state.section === "writing") {
+          const hash = routeHash("writing", year);
+          if (location.hash !== hash) updateRoute("writing", year, !pushHistory);
+          renderSection();
+        }
+      }
+
+      function writingLanguageName(language) {
+        return language === "zh-CN" ? "Chinese" : "English";
+      }
+
+      function renderWritingLanguageTabs() {
+        const tabs = writingAuthoring.editor.querySelector(".writing-language-tabs");
+        for (const button of tabs.querySelectorAll("[data-writing-language]")) button.remove();
+        const addButton = tabs.querySelector('[data-writing-editor-action="add-language"]');
+        for (const documentVersion of writingAuthoring.current.entry.documents) {
+          const button = document.createElement("button");
+          button.className = "writing-language-button";
+          button.type = "button";
+          button.dataset.writingLanguage = documentVersion.lang;
+          button.setAttribute("aria-pressed", String(documentVersion.lang === writingAuthoring.current.language));
+          button.textContent = writingLanguageName(documentVersion.lang);
+          tabs.insertBefore(button, addButton);
+        }
+        addButton.hidden = writingAuthoring.current.entry.documents.length >= 2;
+      }
+
+      function setWritingPreview(pdfUrl, pdfExists, version) {
+        if (!pdfExists) {
+          writingAuthoring.frame.hidden = true;
+          writingAuthoring.frame.removeAttribute("src");
+          writingAuthoring.emptyPreview.hidden = false;
+          return;
+        }
+        const url = new URL(pdfUrl, location.href);
+        url.searchParams.set("v", String(version || Date.now()));
+        url.hash = "view=FitH";
+        writingAuthoring.frame.src = url.href;
+        writingAuthoring.frame.hidden = false;
+        writingAuthoring.emptyPreview.hidden = true;
+      }
+
+      function showWritingEditorData(result) {
+        writingAuthoring.current = {
+          year: String(result.year),
+          slug: result.entry.slug,
+          language: result.language,
+          entry: structuredClone(result.entry)
+        };
+        writingAuthoring.source.value = result.source;
+        writingAuthoring.title.value = result.title;
+        writingAuthoring.summary.value = result.summary || "";
+        writingAuthoring.editor.querySelector(".writing-editor-title").textContent = `${result.title} · ${writingLanguageName(result.language)}`;
+        writingAuthoring.log.textContent = "No compilation has run in this editor session.";
+        writingAuthoring.editor.querySelector(".writing-compile-log").open = false;
+        renderWritingLanguageTabs();
+        setWritingPreview(result.pdfUrl, result.pdfExists, result.pdfVersion);
+        writingAuthoring.baseline = writingEditorSnapshot();
+        writingAuthoring.editor.hidden = false;
+        document.body.classList.add("writing-editor-open");
+        setWritingEditorView("source");
+        setWritingEditorStatus("Saved.");
+        writingAuthoring.source.focus();
+      }
+
+      async function openWritingEditor(year, slug, language = null) {
+        if (!canAuthorWriting() || writingAuthoring.busy) return;
+        if (writingEditorIsDirty() && !window.confirm("Discard unsaved Writing changes?")) return;
+        const entry = (writingEntriesByYear.get(year) || []).find((candidate) => candidate.slug === slug);
+        const selectedLanguage = language || entry?.documents?.[0]?.lang;
+        if (!selectedLanguage) return;
+        setWritingEditorBusy(true);
+        try {
+          const result = await localWritingRequest("open", { year, slug, language: selectedLanguage });
+          showWritingEditorData(result);
+        } catch (error) {
+          setWritingAuthoringStatus(error.message || "Writing could not be opened.", "error");
+        } finally {
+          setWritingEditorBusy(false);
+        }
+      }
+
+      function requestCloseWritingEditor() {
+        if (writingAuthoring.busy) return;
+        if (writingEditorIsDirty() && !window.confirm("Discard unsaved Writing changes?")) return;
+        writingAuthoring.editor.hidden = true;
+        writingAuthoring.frame.removeAttribute("src");
+        writingAuthoring.current = null;
+        writingAuthoring.baseline = null;
+        document.body.classList.remove("writing-editor-open");
+      }
+
+      function switchWritingLanguage(language) {
+        if (!writingAuthoring.current || language === writingAuthoring.current.language) return;
+        openWritingEditor(writingAuthoring.current.year, writingAuthoring.current.slug, language);
+      }
+
+      function setWritingEditorView(view) {
+        if (!writingAuthoring.editor || !["source", "preview"].includes(view)) return;
+        writingAuthoring.editor.querySelector(".writing-workspace").dataset.view = view;
+        for (const button of writingAuthoring.editor.querySelectorAll("[data-writing-view]")) {
+          button.setAttribute("aria-pressed", String(button.dataset.writingView === view));
+        }
+      }
+
+      async function saveWritingDocument(compile) {
+        if (!writingAuthoring.current || writingAuthoring.busy) return;
+        const payload = {
+          year: writingAuthoring.current.year,
+          slug: writingAuthoring.current.slug,
+          language: writingAuthoring.current.language,
+          title: writingAuthoring.title.value.trim(),
+          summary: writingAuthoring.summary.value.trim(),
+          source: writingAuthoring.source.value
+        };
+        if (!payload.title || !payload.source.trim()) {
+          setWritingEditorStatus("Title and TeX source are required.", "error");
+          return;
+        }
+
+        setWritingEditorBusy(true);
+        setWritingEditorStatus(compile ? "Saving and compiling..." : "Saving...");
+        try {
+          const result = await localWritingRequest(compile ? "compile" : "save", payload);
+          applyWritingServerData(result);
+          showWritingEditorData(result);
+          if (compile) {
+            const compilation = result.compile || { ok: false, log: "No compilation result was returned." };
+            writingAuthoring.log.textContent = compilation.log;
+            writingAuthoring.editor.querySelector(".writing-compile-log").open = !compilation.ok;
+            setWritingEditorStatus(compilation.ok
+              ? "Saved and compiled successfully."
+              : "Saved, but compilation failed. The last successful PDF is still shown.",
+            compilation.ok ? "status" : "error");
+            if (compilation.ok && matchMedia("(max-width: 42rem)").matches) setWritingEditorView("preview");
+          } else {
+            setWritingEditorStatus("Saved.");
+          }
+        } catch (error) {
+          setWritingEditorStatus(error.message || "Writing could not be saved.", "error");
+        } finally {
+          setWritingEditorBusy(false);
+        }
       }
 
       function openNewEditor() {

@@ -49,10 +49,11 @@ jobs:
 
           for source in "${sources[@]}"; do
             output_dir="$(dirname "$source")"
-            tectonic -X compile --outdir "$output_dir" "$source"
+            tectonic -X compile --untrusted --outdir "$output_dir" "$source"
           done
 
-          test -f writing/opening-note/opening-note.pdf
+          test -f writing/opening-note/opening-note.en.pdf
+          test -f writing/opening-note/opening-note.zh-CN.pdf
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
