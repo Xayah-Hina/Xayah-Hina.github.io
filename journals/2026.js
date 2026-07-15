@@ -11,9 +11,10 @@ export default [
     "images": [
       {
         "src": "journals/images/2026/20260715-075446-98f1-01.png",
-        "alt": ""
+        "alt": "若叶睦"
       }
     ],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "updatedAt": "2026-07-15T14:46:01+08:00"
   }
 ];

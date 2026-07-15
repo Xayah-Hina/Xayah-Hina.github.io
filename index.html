@@ -723,6 +723,7 @@
       object-fit: contain;
       border-radius: 0.5rem;
       box-shadow: var(--shadow);
+      cursor: zoom-out;
     }
 
     .journal-lightbox-caption {
@@ -2872,11 +2873,14 @@
         if (event.target === lightbox.dialog) lightbox.dialog.close();
       });
       lightbox.dialog.querySelector("[data-lightbox-action=\"close\"]").addEventListener("click", () => lightbox.dialog.close());
+      lightbox.image.addEventListener("click", () => lightbox.dialog.close());
       lightbox.dialog.addEventListener("close", () => {
         const trigger = lightbox.trigger;
         lightbox.trigger = null;
         lightbox.image.removeAttribute("src");
-        if (trigger?.isConnected) trigger.focus();
+        requestAnimationFrame(() => {
+          if (trigger?.isConnected) trigger.focus();
+        });
       });
 
       for (const button of document.querySelectorAll("[data-section]")) {
