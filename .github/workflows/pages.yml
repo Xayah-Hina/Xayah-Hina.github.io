@@ -1,4 +1,4 @@
-name: Deploy Writing and Journal to GitHub Pages
+name: Deploy Writing to GitHub Pages
 
 on:
   push:
@@ -29,31 +29,23 @@ jobs:
         with:
           tectonic-version: 0.16.9
 
-      - name: Build writing and journal documents
+      - name: Build writing documents
         shell: bash
         run: |
           set -euo pipefail
-          document_roots=(writing)
-          if [[ -d journal ]]; then
-            document_roots+=(journal)
-          fi
-
           mapfile -d '' sources < <(
-            find "${document_roots[@]}" -mindepth 2 -maxdepth 2 -type f -name '*.tex' -print0 | sort -z
+            find writing -mindepth 2 -maxdepth 2 -type f -name '*.tex' -print0 | sort -z
           )
-
-          if (( ${#sources[@]} == 0 )); then
-            echo "No writing or journal documents were found." >&2
-            exit 1
-          fi
 
           for source in "${sources[@]}"; do
             output_dir="$(dirname "$source")"
             tectonic -X compile --untrusted --outdir "$output_dir" "$source"
+            pdf="${source%.tex}.pdf"
+            if [[ ! -s "$pdf" ]]; then
+              echo "Expected PDF was not generated: $pdf" >&2
+              exit 1
+            fi
           done
-
-          test -f writing/opening-note/opening-note.en.pdf
-          test -f writing/opening-note/opening-note.zh-CN.pdf
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

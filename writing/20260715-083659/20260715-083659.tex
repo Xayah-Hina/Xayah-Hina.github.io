@@ -1,16 +1,12 @@
-\documentclass[11pt,a4paper,fontset=fandol]{ctexart}
+\documentclass[11pt,a4paper,fontset=fandol,scheme=plain]{ctexart}
 
-\usepackage[top=24mm,bottom=23mm,left=27mm,right=27mm,headheight=22pt]{geometry}
+\usepackage[margin=25mm]{geometry}
 \usepackage{microtype}
 \usepackage{enumitem}
 \usepackage{xcolor}
 \usepackage{hyperref}
-\usepackage{fancyhdr}
 
-\definecolor{ink}{HTML}{1C2530}
-\definecolor{softink}{HTML}{626B75}
 \definecolor{accent}{HTML}{285FAE}
-\definecolor{rulecolor}{HTML}{C9C3B8}
 
 \hypersetup{
   unicode=true,
@@ -22,56 +18,21 @@
   urlcolor=accent
 }
 
-\setlength{\parindent}{0pt}
-\setlength{\parskip}{0.62em}
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0pt}
 \setlist{leftmargin=1.5em,itemsep=0.4em,topsep=0.5em}
-\setcounter{secnumdepth}{0}
+\setcounter{secnumdepth}{3}
 
-\pagestyle{fancy}
-\fancyhf{}
-\fancyhead[L]{\footnotesize\color{softink}\textsc{Xayah Hina / Writing}}
-\fancyhead[R]{\footnotesize\color{softink}开篇}
-\fancyfoot[C]{\footnotesize\color{softink}\thepage}
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\headrule}{\hbox to\headwidth{\color{rulecolor}\leaders\hrule height \headrulewidth\hfill}}
-
-\ctexset{
-  section={
-    format=\Large\bfseries\color{ink},
-    beforeskip=1.4em,
-    afterskip=0.55em
-  }
-}
+\title{开篇}
+\author{Xayah Hina}
+\date{2026-07-15}
 
 \begin{document}
+\maketitle
 
-\hypersetup{pageanchor=false}
-\begin{titlepage}
-  \thispagestyle{empty}
-
-  {\small\bfseries\color{accent}\MakeUppercase{Writing No. 001}\par}
-
-  \vspace*{0.2\textheight}
-
-  {\fontsize{39}{43}\selectfont\bfseries\color{ink}开篇\par}
-
-  \vspace{2.2em}
-  {\color{rulecolor}\rule{\textwidth}{0.7pt}\par}
-  \vspace{1.4em}
-
-  {\large\color{softink}
-    一个关于图形学、音乐、技术工作与普通日常的写作空间，从这里开始。\par
-  }
-
-  \vfill
-
-  {\large\bfseries Xayah Hina\par}
-  \vspace{0.35em}
-  {\color{softink}2026 年 7 月 15 日\par}
-  \vspace{0.35em}
-  {\small\href{https://i.xayah.me/}{i.xayah.me}\par}
-\end{titlepage}
-\hypersetup{pageanchor=true}
+\begin{abstract}
+一个关于图形学、音乐、技术工作与普通日常的写作空间，从这里开始。
+\end{abstract}
 
 \section{为什么有这个空间}
 
@@ -109,10 +70,5 @@
 这篇开场有意保持简单。它只是标记一个起点，也为之后的文字留出足够的空白，
 让这个网站的性格慢慢自然形成。如果这里的某些内容与你产生了共鸣，
 也可以在 \href{https://graphics.xayah.me/}{graphics.xayah.me} 找到我的学术工作。
-
-\vfill
-{\color{rulecolor}\rule{\textwidth}{0.5pt}\par}
-{\small\color{softink}使用 Tectonic 排版。源文件与之后的文章均发布于
-\href{https://i.xayah.me/}{i.xayah.me}。\par}
 
 \end{document}

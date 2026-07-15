@@ -366,6 +366,7 @@
 
     .journal-authoring-actions,
     .journal-actions,
+    .entry-actions,
     .dialog-actions {
       display: flex;
       align-items: center;
@@ -466,11 +467,6 @@
       text-underline-offset: 0.18em;
     }
 
-    .entry-title-separator {
-      color: var(--subtle);
-      font-weight: 400;
-    }
-
     .entry-summary {
       margin-top: 0.5rem;
     }
@@ -479,11 +475,6 @@
       margin: 0;
       color: var(--text-secondary);
       line-height: 1.625;
-    }
-
-    .entry-summary p + p {
-      margin-top: 0.15rem;
-      color: var(--muted);
     }
 
     .entry-action-button {
@@ -565,7 +556,7 @@
       text-underline-offset: 0.16em;
     }
 
-    .journal-action-button-danger:hover {
+    .danger-action:hover {
       color: #dc2626;
     }
 
@@ -807,7 +798,7 @@
       display: grid;
       color: var(--text);
       background: var(--page);
-      grid-template-rows: auto auto auto minmax(0, 1fr);
+      grid-template-rows: auto auto minmax(0, 1fr);
     }
 
     .writing-editor-shell[hidden] {
@@ -854,21 +845,20 @@
     }
 
     .writing-editor-actions,
-    .writing-language-tabs,
     .writing-view-switch {
       display: flex;
       align-items: center;
       gap: 0.4rem;
     }
 
-    .writing-language-tabs {
+    .writing-editor-toolbar {
+      display: none;
       min-width: 0;
       padding: 0.45rem 0.75rem;
-      overflow-x: auto;
       border-bottom: 1px solid var(--line);
+      justify-content: flex-end;
     }
 
-    .writing-language-button,
     .writing-view-button {
       min-height: 1.9rem;
       padding: 0.25rem 0.6rem;
@@ -882,7 +872,6 @@
       white-space: nowrap;
     }
 
-    .writing-language-button[aria-pressed="true"],
     .writing-view-button[aria-pressed="true"] {
       color: var(--link);
       background: var(--card);
@@ -1014,6 +1003,10 @@
     }
 
     @media (max-width: 42rem) {
+      .writing-editor-shell {
+        grid-template-rows: auto auto auto minmax(0, 1fr);
+      }
+
       .site-nav {
         grid-template-columns: 1fr auto;
         padding-top: 0.4rem;
@@ -1039,10 +1032,9 @@
         grid-template-columns: 1fr;
       }
 
+      .writing-editor-toolbar,
       .writing-view-switch {
         display: flex;
-        padding: 0.4rem 0.75rem;
-        border-bottom: 1px solid var(--line);
       }
 
       .writing-workspace {
@@ -1233,11 +1225,11 @@
     </dialog>
   </template>
 
-  <template id="journal-confirm-template">
-    <dialog class="journal-dialog" aria-labelledby="journal-confirm-title">
+  <template id="confirm-template">
+    <dialog class="journal-dialog" aria-labelledby="confirm-title">
       <div class="confirm-dialog-body">
-        <h2 id="journal-confirm-title" class="dialog-title">Delete Journal?</h2>
-        <p>This permanently removes the Journal entry and its images from the local site folder.</p>
+        <h2 id="confirm-title" class="dialog-title confirm-title"></h2>
+        <p class="confirm-message"></p>
       </div>
       <footer class="dialog-actions">
         <button class="control-button" type="button" data-confirm-value="cancel">Cancel</button>
@@ -1263,23 +1255,6 @@
           <button class="dialog-close" type="button" data-writing-create-action="close" aria-label="Close">×</button>
         </header>
         <div class="dialog-body">
-          <div class="field-row">
-            <label class="field-group">
-              <span class="field-label">Slug</span>
-              <input class="field-input" name="slug" type="text" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="new-writing">
-            </label>
-            <label class="field-group">
-              <span class="field-label">Date</span>
-              <input class="field-input" name="date" type="date" required>
-            </label>
-          </div>
-          <label class="field-group">
-            <span class="field-label">Language</span>
-            <select class="field-select" name="language">
-              <option value="en">English</option>
-              <option value="zh-CN">Chinese</option>
-            </select>
-          </label>
           <label class="field-group">
             <span class="field-label">Title</span>
             <input class="field-input" name="title" type="text" required>
@@ -1293,36 +1268,6 @@
         <footer class="dialog-actions">
           <button class="control-button" type="button" data-writing-create-action="close">Cancel</button>
           <button class="control-button control-button-primary" type="submit">Create</button>
-        </footer>
-      </form>
-    </dialog>
-  </template>
-
-  <template id="writing-language-template">
-    <dialog class="journal-dialog" aria-labelledby="writing-language-title">
-      <form class="journal-editor-form writing-language-form" novalidate>
-        <header class="dialog-header">
-          <h2 id="writing-language-title" class="dialog-title">Add Language</h2>
-          <button class="dialog-close" type="button" data-writing-language-action="close" aria-label="Close">×</button>
-        </header>
-        <div class="dialog-body">
-          <label class="field-group">
-            <span class="field-label">Language</span>
-            <select class="field-select" name="language"></select>
-          </label>
-          <label class="field-group">
-            <span class="field-label">Title</span>
-            <input class="field-input" name="title" type="text" required>
-          </label>
-          <label class="field-group">
-            <span class="field-label">Summary</span>
-            <textarea class="field-textarea" name="summary" placeholder="Optional archive summary"></textarea>
-          </label>
-          <p class="editor-message" role="alert"></p>
-        </div>
-        <footer class="dialog-actions">
-          <button class="control-button" type="button" data-writing-language-action="close">Cancel</button>
-          <button class="control-button control-button-primary" type="submit">Add Language</button>
         </footer>
       </form>
     </dialog>
@@ -1342,8 +1287,7 @@
         </div>
       </header>
 
-      <div class="writing-language-tabs" role="group" aria-label="Writing language">
-        <button class="writing-language-button" type="button" data-writing-editor-action="add-language">+ Language</button>
+      <div class="writing-editor-toolbar">
         <div class="writing-view-switch" role="group" aria-label="Editor view">
           <button class="writing-view-button" type="button" data-writing-view="source" aria-pressed="true">Source</button>
           <button class="writing-view-button" type="button" data-writing-view="preview" aria-pressed="false">Preview</button>
@@ -1450,8 +1394,6 @@
         newButton: null,
         createDialog: null,
         createForm: null,
-        languageDialog: null,
-        languageForm: null,
         editor: null,
         source: null,
         title: null,
@@ -1477,10 +1419,27 @@
 
       function sortEntries(entries, sectionId) {
         return [...(entries || [])].sort((left, right) => {
-          const leftDate = sectionId === "journal" ? left.publishedAt : left.date;
-          const rightDate = sectionId === "journal" ? right.publishedAt : right.date;
+          const leftDate = sectionId === "journal" ? left.publishedAt : left.id;
+          const rightDate = sectionId === "journal" ? right.publishedAt : right.id;
           return String(rightDate).localeCompare(String(leftDate));
         });
+      }
+
+      function writingDateFromId(value) {
+        const match = /^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})$/.exec(value || "");
+        if (!match) return null;
+        const parts = match.slice(1).map(Number);
+        const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]));
+        const normalized = [
+          date.getUTCFullYear(),
+          date.getUTCMonth() + 1,
+          date.getUTCDate(),
+          date.getUTCHours(),
+          date.getUTCMinutes(),
+          date.getUTCSeconds()
+        ];
+        if (parts.some((part, index) => part !== normalized[index])) return null;
+        return `${match[1]}-${match[2]}-${match[3]}`;
       }
 
       function validateJournalEntries(value, year) {
@@ -1509,28 +1468,23 @@
 
       function validateWritingEntries(value, year) {
         if (!Array.isArray(value)) throw new TypeError(`Writing ${year} must export an array.`);
-        const slugs = new Set();
+        const ids = new Set();
 
         for (const entry of value) {
-          if (!entry || typeof entry.slug !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(entry.slug)) {
-            throw new TypeError(`Writing ${year} contains an invalid slug.`);
+          if (!entry || !writingDateFromId(entry.id)) {
+            throw new TypeError(`Writing ${year} contains an invalid id.`);
           }
-          if (slugs.has(entry.slug)) throw new TypeError(`Writing ${year} contains duplicate slug ${entry.slug}.`);
-          if (typeof entry.date !== "string" || entry.date.slice(0, 4) !== year) {
-            throw new TypeError(`Writing ${entry.slug} does not belong to ${year}.`);
+          if (ids.has(entry.id)) throw new TypeError(`Writing ${year} contains duplicate id ${entry.id}.`);
+          if (entry.id.slice(0, 4) !== year) {
+            throw new TypeError(`Writing ${entry.id} does not belong to ${year}.`);
           }
-          if (!Array.isArray(entry.documents) || entry.documents.length === 0 || !Array.isArray(entry.summaries)) {
-            throw new TypeError(`Writing ${entry.slug} has invalid documents or summaries.`);
+          if (typeof entry.title !== "string" || !entry.title.trim()) {
+            throw new TypeError(`Writing ${entry.id} has an invalid title.`);
           }
-          const languages = new Set();
-          for (const documentVersion of entry.documents) {
-            if (!["en", "zh-CN"].includes(documentVersion?.lang) || typeof documentVersion.title !== "string" || typeof documentVersion.url !== "string") {
-              throw new TypeError(`Writing ${entry.slug} has an invalid document.`);
-            }
-            if (languages.has(documentVersion.lang)) throw new TypeError(`Writing ${entry.slug} repeats ${documentVersion.lang}.`);
-            languages.add(documentVersion.lang);
+          if (entry.summary !== undefined && typeof entry.summary !== "string") {
+            throw new TypeError(`Writing ${entry.id} has an invalid summary.`);
           }
-          slugs.add(entry.slug);
+          ids.add(entry.id);
         }
 
         return sortEntries(value, "writing");
@@ -1585,7 +1539,7 @@
       }
 
       function entryYear(sectionId, entry) {
-        const date = sectionId === "journal" ? entry.publishedAt : entry.date;
+        const date = sectionId === "journal" ? entry.publishedAt : entry.id;
         return typeof date === "string" ? date.slice(0, 4) : "";
       }
 
@@ -1620,10 +1574,7 @@
           ].filter(Boolean).join(" ").toLocaleLowerCase();
         }
 
-        return [
-          ...(entry.documents || []).map((documentVersion) => documentVersion.title),
-          ...(entry.summaries || []).map((summary) => summary.text)
-        ].join(" ").toLocaleLowerCase();
+        return [entry.title, entry.summary].filter(Boolean).join(" ").toLocaleLowerCase();
       }
 
       function formatDate(dateText) {
@@ -1704,46 +1655,41 @@
         const title = fragment.querySelector(".entry-title");
         const summary = fragment.querySelector(".entry-summary");
 
-        card.id = `writing-${entry.slug}`;
-        date.dateTime = entry.date;
-        date.textContent = formatDate(entry.date);
+        const writingDate = writingDateFromId(entry.id);
+        card.id = `writing-${entry.id}`;
+        date.dateTime = writingDate;
+        date.textContent = formatDate(writingDate);
 
         if (canAuthorWriting()) {
           const edit = document.createElement("button");
+          const deleteButton = document.createElement("button");
           edit.className = "entry-action-button";
           edit.type = "button";
           edit.dataset.writingAction = "edit";
-          edit.dataset.writingSlug = entry.slug;
-          edit.dataset.writingYear = entry.date.slice(0, 4);
+          edit.dataset.writingId = entry.id;
+          edit.dataset.writingYear = entry.id.slice(0, 4);
           edit.textContent = "Edit";
-          actions.append(edit);
+          deleteButton.className = "entry-action-button danger-action";
+          deleteButton.type = "button";
+          deleteButton.dataset.writingAction = "delete";
+          deleteButton.dataset.writingId = entry.id;
+          deleteButton.dataset.writingYear = entry.id.slice(0, 4);
+          deleteButton.textContent = "Delete";
+          actions.append(edit, deleteButton);
         }
         actions.hidden = actions.childElementCount === 0;
 
-        for (const [index, documentVersion] of (entry.documents || []).entries()) {
-          if (index > 0) {
-            const separator = document.createElement("span");
-            separator.className = "entry-title-separator";
-            separator.setAttribute("aria-hidden", "true");
-            separator.textContent = " / ";
-            title.append(separator);
-          }
+        const anchor = document.createElement("a");
+        anchor.className = "entry-title-link";
+        anchor.href = `writing/${entry.id}/${entry.id}.pdf`;
+        anchor.textContent = entry.title;
+        anchor.target = "_blank";
+        anchor.rel = "noopener";
+        title.append(anchor);
 
-          const anchor = document.createElement("a");
-          anchor.className = "entry-title-link";
-          anchor.href = documentVersion.url;
-          anchor.lang = documentVersion.lang;
-          anchor.textContent = documentVersion.title;
-          anchor.target = "_blank";
-          anchor.rel = "noopener";
-          title.append(anchor);
-        }
-        title.hidden = title.childElementCount === 0;
-
-        for (const summaryPart of entry.summaries || []) {
+        if (entry.summary) {
           const paragraph = document.createElement("p");
-          paragraph.lang = summaryPart.lang;
-          paragraph.textContent = summaryPart.text;
+          paragraph.textContent = entry.summary;
           summary.append(paragraph);
         }
         summary.hidden = summary.childElementCount === 0;
@@ -1773,7 +1719,7 @@
           editButton.dataset.journalAction = "edit";
           editButton.dataset.journalId = entry.id;
           editButton.textContent = "Edit";
-          deleteButton.className = "journal-action-button journal-action-button-danger";
+          deleteButton.className = "journal-action-button danger-action";
           deleteButton.type = "button";
           deleteButton.dataset.journalAction = "delete";
           deleteButton.dataset.journalId = entry.id;
@@ -2014,7 +1960,7 @@
         authoring.editorForm = editorFragment.querySelector("form");
         document.body.append(editorFragment);
 
-        const confirmFragment = byId("journal-confirm-template").content.cloneNode(true);
+        const confirmFragment = byId("confirm-template").content.cloneNode(true);
         authoring.confirmDialog = confirmFragment.querySelector("dialog");
         document.body.append(confirmFragment);
 
@@ -2070,11 +2016,6 @@
         writingAuthoring.createForm = createFragment.querySelector("form");
         document.body.append(createFragment);
 
-        const languageFragment = byId("writing-language-template").content.cloneNode(true);
-        writingAuthoring.languageDialog = languageFragment.querySelector("dialog");
-        writingAuthoring.languageForm = languageFragment.querySelector("form");
-        document.body.append(languageFragment);
-
         const writingEditorFragment = byId("writing-editor-template").content.cloneNode(true);
         writingAuthoring.editor = writingEditorFragment.querySelector(".writing-editor-shell");
         writingAuthoring.source = writingEditorFragment.querySelector(".writing-source");
@@ -2087,20 +2028,12 @@
 
         writingAuthoring.newButton.addEventListener("click", openWritingCreateDialog);
         writingAuthoring.createForm.addEventListener("submit", createWriting);
-        writingAuthoring.languageForm.addEventListener("submit", addWritingLanguage);
         for (const button of writingAuthoring.createDialog.querySelectorAll('[data-writing-create-action="close"]')) {
           button.addEventListener("click", closeWritingCreateDialog);
-        }
-        for (const button of writingAuthoring.languageDialog.querySelectorAll('[data-writing-language-action="close"]')) {
-          button.addEventListener("click", closeWritingLanguageDialog);
         }
         writingAuthoring.createDialog.addEventListener("cancel", (event) => {
           event.preventDefault();
           closeWritingCreateDialog();
-        });
-        writingAuthoring.languageDialog.addEventListener("cancel", (event) => {
-          event.preventDefault();
-          closeWritingLanguageDialog();
         });
 
         writingAuthoring.editor.addEventListener("click", (event) => {
@@ -2108,9 +2041,6 @@
           if (action === "close") requestCloseWritingEditor();
           if (action === "save") saveWritingDocument(false);
           if (action === "compile") saveWritingDocument(true);
-          if (action === "add-language") openWritingLanguageDialog();
-          const language = event.target.closest("[data-writing-language]")?.dataset.writingLanguage;
-          if (language) switchWritingLanguage(language);
           const view = event.target.closest("[data-writing-view]")?.dataset.writingView;
           if (view) setWritingEditorView(view);
         });
@@ -2124,9 +2054,14 @@
           }
         });
         byId("archive-list").addEventListener("click", (event) => {
-          const button = event.target.closest("[data-writing-action='edit']");
+          const button = event.target.closest("[data-writing-action]");
           if (!button || !canAuthorWriting() || writingAuthoring.busy) return;
-          openWritingEditor(button.dataset.writingYear, button.dataset.writingSlug);
+          if (button.dataset.writingAction === "edit") {
+            openWritingEditor(button.dataset.writingYear, button.dataset.writingId);
+          }
+          if (button.dataset.writingAction === "delete") {
+            deleteWriting(button.dataset.writingYear, button.dataset.writingId);
+          }
         });
         window.addEventListener("beforeunload", (event) => {
           if (!writingEditorIsDirty()) return;
@@ -2225,7 +2160,6 @@
       function writingEditorSnapshot() {
         if (!writingAuthoring.current) return "";
         return JSON.stringify({
-          language: writingAuthoring.current.language,
           title: writingAuthoring.title.value,
           summary: writingAuthoring.summary.value,
           source: writingAuthoring.source.value
@@ -2256,9 +2190,8 @@
       function setWritingEditorBusy(busy) {
         writingAuthoring.busy = busy;
         if (writingAuthoring.newButton) writingAuthoring.newButton.disabled = busy || !canAuthorWriting();
-        for (const dialog of [writingAuthoring.createDialog, writingAuthoring.languageDialog]) {
-          if (!dialog) continue;
-          for (const control of dialog.querySelectorAll("button, input, textarea, select")) control.disabled = busy;
+        if (writingAuthoring.createDialog) {
+          for (const control of writingAuthoring.createDialog.querySelectorAll("button, input, textarea")) control.disabled = busy;
         }
         if (writingAuthoring.editor) {
           for (const control of writingAuthoring.editor.querySelectorAll("button, input, textarea")) control.disabled = busy;
@@ -2271,24 +2204,12 @@
         element.dataset.kind = kind;
       }
 
-      function singaporeDate() {
-        const parts = new Intl.DateTimeFormat("en", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          timeZone: config.sections.journal.timeZone
-        }).formatToParts(new Date());
-        const value = (type) => parts.find((part) => part.type === type)?.value || "";
-        return `${value("year")}-${value("month")}-${value("day")}`;
-      }
-
       function openWritingCreateDialog() {
         if (!canAuthorWriting() || writingAuthoring.busy) return;
         writingAuthoring.createForm.reset();
-        writingAuthoring.createForm.elements.date.value = singaporeDate();
         writingDialogMessage(writingAuthoring.createDialog, "");
         writingAuthoring.createDialog.showModal();
-        writingAuthoring.createForm.elements.slug.focus();
+        writingAuthoring.createForm.elements.title.focus();
       }
 
       function closeWritingCreateDialog() {
@@ -2300,18 +2221,11 @@
         if (!canAuthorWriting() || writingAuthoring.busy) return;
         const form = writingAuthoring.createForm.elements;
         const payload = {
-          slug: form.slug.value.trim(),
-          date: form.date.value,
-          language: form.language.value,
           title: form.title.value.trim(),
           summary: form.summary.value.trim()
         };
-        if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(payload.slug)) {
-          writingDialogMessage(writingAuthoring.createDialog, "Slug must contain lowercase letters, numbers, and single hyphens.", "error");
-          return;
-        }
-        if (!payload.date || !payload.title) {
-          writingDialogMessage(writingAuthoring.createDialog, "Date and title are required.", "error");
+        if (!payload.title) {
+          writingDialogMessage(writingAuthoring.createDialog, "Title is required.", "error");
           return;
         }
 
@@ -2329,97 +2243,23 @@
         }
       }
 
-      function openWritingLanguageDialog() {
-        if (!writingAuthoring.current || writingAuthoring.busy) return;
-        const existing = new Set(writingAuthoring.current.entry.documents.map((documentVersion) => documentVersion.lang));
-        const available = ["en", "zh-CN"].filter((language) => !existing.has(language));
-        if (available.length === 0) {
-          setWritingEditorStatus("English and Chinese versions already exist.");
-          return;
-        }
-        const select = writingAuthoring.languageForm.elements.language;
-        select.replaceChildren();
-        for (const language of available) {
-          const option = document.createElement("option");
-          option.value = language;
-          option.textContent = language === "zh-CN" ? "Chinese" : "English";
-          select.append(option);
-        }
-        writingAuthoring.languageForm.elements.title.value = "";
-        writingAuthoring.languageForm.elements.summary.value = "";
-        writingDialogMessage(writingAuthoring.languageDialog, "");
-        writingAuthoring.languageDialog.showModal();
-        writingAuthoring.languageForm.elements.title.focus();
-      }
-
-      function closeWritingLanguageDialog() {
-        if (!writingAuthoring.busy && writingAuthoring.languageDialog.open) writingAuthoring.languageDialog.close();
-      }
-
-      async function addWritingLanguage(event) {
-        event.preventDefault();
-        if (!writingAuthoring.current || writingAuthoring.busy) return;
-        const form = writingAuthoring.languageForm.elements;
-        const payload = {
-          year: writingAuthoring.current.year,
-          slug: writingAuthoring.current.slug,
-          language: form.language.value,
-          title: form.title.value.trim(),
-          summary: form.summary.value.trim()
-        };
-        if (!payload.title) {
-          writingDialogMessage(writingAuthoring.languageDialog, "Title is required.", "error");
-          return;
-        }
-        setWritingEditorBusy(true);
-        writingDialogMessage(writingAuthoring.languageDialog, "Adding language...");
-        try {
-          const result = await localWritingRequest("add-language", payload);
-          applyWritingServerData(result);
-          writingAuthoring.languageDialog.close();
-          showWritingEditorData(result);
-        } catch (error) {
-          writingDialogMessage(writingAuthoring.languageDialog, error.message || "Language could not be added.", "error");
-        } finally {
-          setWritingEditorBusy(false);
-        }
-      }
-
       function applyWritingServerData(result, pushHistory = false) {
         const year = String(result.year || "");
         const years = normalizeYears(result.years);
         const entries = validateWritingEntries(result.entries, year);
         writingYears = years;
         yearsBySection.set("writing", years);
-        writingEntriesByYear.set(year, entries);
+        if (entries.length > 0) writingEntriesByYear.set(year, entries);
+        else writingEntriesByYear.delete(year);
         writingLoadErrors.delete(year);
         writingCatalogError = null;
-        state.years.writing = year;
+        const selectedYear = entries.length > 0 ? year : latestYear("writing");
+        state.years.writing = selectedYear;
         if (state.section === "writing") {
-          const hash = routeHash("writing", year);
-          if (location.hash !== hash) updateRoute("writing", year, !pushHistory);
+          const hash = routeHash("writing", selectedYear);
+          if (location.hash !== hash) updateRoute("writing", selectedYear, !pushHistory);
           renderSection();
         }
-      }
-
-      function writingLanguageName(language) {
-        return language === "zh-CN" ? "Chinese" : "English";
-      }
-
-      function renderWritingLanguageTabs() {
-        const tabs = writingAuthoring.editor.querySelector(".writing-language-tabs");
-        for (const button of tabs.querySelectorAll("[data-writing-language]")) button.remove();
-        const addButton = tabs.querySelector('[data-writing-editor-action="add-language"]');
-        for (const documentVersion of writingAuthoring.current.entry.documents) {
-          const button = document.createElement("button");
-          button.className = "writing-language-button";
-          button.type = "button";
-          button.dataset.writingLanguage = documentVersion.lang;
-          button.setAttribute("aria-pressed", String(documentVersion.lang === writingAuthoring.current.language));
-          button.textContent = writingLanguageName(documentVersion.lang);
-          tabs.insertBefore(button, addButton);
-        }
-        addButton.hidden = writingAuthoring.current.entry.documents.length >= 2;
       }
 
       function setWritingPreview(pdfUrl, pdfExists, version) {
@@ -2440,17 +2280,14 @@
       function showWritingEditorData(result) {
         writingAuthoring.current = {
           year: String(result.year),
-          slug: result.entry.slug,
-          language: result.language,
-          entry: structuredClone(result.entry)
+          id: result.entry.id
         };
         writingAuthoring.source.value = result.source;
-        writingAuthoring.title.value = result.title;
-        writingAuthoring.summary.value = result.summary || "";
-        writingAuthoring.editor.querySelector(".writing-editor-title").textContent = `${result.title} · ${writingLanguageName(result.language)}`;
+        writingAuthoring.title.value = result.entry.title;
+        writingAuthoring.summary.value = result.entry.summary || "";
+        writingAuthoring.editor.querySelector(".writing-editor-title").textContent = result.entry.title;
         writingAuthoring.log.textContent = "No compilation has run in this editor session.";
         writingAuthoring.editor.querySelector(".writing-compile-log").open = false;
-        renderWritingLanguageTabs();
         setWritingPreview(result.pdfUrl, result.pdfExists, result.pdfVersion);
         writingAuthoring.baseline = writingEditorSnapshot();
         writingAuthoring.editor.hidden = false;
@@ -2460,15 +2297,14 @@
         writingAuthoring.source.focus();
       }
 
-      async function openWritingEditor(year, slug, language = null) {
+      async function openWritingEditor(year, id) {
         if (!canAuthorWriting() || writingAuthoring.busy) return;
         if (writingEditorIsDirty() && !window.confirm("Discard unsaved Writing changes?")) return;
-        const entry = (writingEntriesByYear.get(year) || []).find((candidate) => candidate.slug === slug);
-        const selectedLanguage = language || entry?.documents?.[0]?.lang;
-        if (!selectedLanguage) return;
+        const entry = (writingEntriesByYear.get(year) || []).find((candidate) => candidate.id === id);
+        if (!entry) return;
         setWritingEditorBusy(true);
         try {
-          const result = await localWritingRequest("open", { year, slug, language: selectedLanguage });
+          const result = await localWritingRequest("open", { year, id });
           showWritingEditorData(result);
         } catch (error) {
           setWritingAuthoringStatus(error.message || "Writing could not be opened.", "error");
@@ -2487,11 +2323,6 @@
         document.body.classList.remove("writing-editor-open");
       }
 
-      function switchWritingLanguage(language) {
-        if (!writingAuthoring.current || language === writingAuthoring.current.language) return;
-        openWritingEditor(writingAuthoring.current.year, writingAuthoring.current.slug, language);
-      }
-
       function setWritingEditorView(view) {
         if (!writingAuthoring.editor || !["source", "preview"].includes(view)) return;
         writingAuthoring.editor.querySelector(".writing-workspace").dataset.view = view;
@@ -2504,8 +2335,7 @@
         if (!writingAuthoring.current || writingAuthoring.busy) return;
         const payload = {
           year: writingAuthoring.current.year,
-          slug: writingAuthoring.current.slug,
-          language: writingAuthoring.current.language,
+          id: writingAuthoring.current.id,
           title: writingAuthoring.title.value.trim(),
           summary: writingAuthoring.summary.value.trim(),
           source: writingAuthoring.source.value
@@ -2535,6 +2365,26 @@
           }
         } catch (error) {
           setWritingEditorStatus(error.message || "Writing could not be saved.", "error");
+        } finally {
+          setWritingEditorBusy(false);
+        }
+      }
+
+      async function deleteWriting(year, id) {
+        const entry = (writingEntriesByYear.get(year) || []).find((candidate) => candidate.id === id);
+        if (!entry || !(await confirmDeletion(
+          "Delete Writing?",
+          "This permanently removes the Writing entry, TeX source, PDF, and its local directory."
+        ))) return;
+
+        setWritingEditorBusy(true);
+        setWritingAuthoringStatus("Deleting Writing...");
+        try {
+          const result = await localWritingRequest("delete", { year, id });
+          applyWritingServerData(result);
+          setWritingAuthoringStatus("Writing deleted locally.");
+        } catch (error) {
+          setWritingAuthoringStatus(error.message || "The Writing entry could not be deleted.", "error");
         } finally {
           setWritingEditorBusy(false);
         }
@@ -2693,8 +2543,10 @@
         element.dataset.kind = kind;
       }
 
-      function confirmJournalDeletion() {
+      function confirmDeletion(title, message) {
         if (authoring.confirmResolver) return Promise.resolve(false);
+        authoring.confirmDialog.querySelector(".confirm-title").textContent = title;
+        authoring.confirmDialog.querySelector(".confirm-message").textContent = message;
         authoring.confirmDialog.returnValue = "cancel";
         authoring.confirmDialog.showModal();
         return new Promise((resolve) => {
@@ -2851,7 +2703,10 @@
         const year = state.years.journal;
         const previousEntries = journalEntriesByYear.get(year) || [];
         const entry = previousEntries.find((candidate) => candidate.id === id);
-        if (!entry || !(await confirmJournalDeletion())) return;
+        if (!entry || !(await confirmDeletion(
+          "Delete Journal?",
+          "This permanently removes the Journal entry and its images from the local site folder."
+        ))) return;
 
         setAuthoringBusy(true);
         setAuthoringStatus("Deleting Journal...");

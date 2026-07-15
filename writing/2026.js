@@ -1,28 +1,12 @@
 export default [
   {
-    "slug": "opening-note",
-    "date": "2026-07-15",
-    "documents": [
-      {
-        "lang": "en",
-        "title": "Opening Note",
-        "url": "writing/opening-note/opening-note.en.pdf"
-      },
-      {
-        "lang": "zh-CN",
-        "title": "开篇",
-        "url": "writing/opening-note/opening-note.zh-CN.pdf"
-      }
-    ],
-    "summaries": [
-      {
-        "lang": "en",
-        "text": "A short introduction to this writing space and the subjects I hope to return to."
-      },
-      {
-        "lang": "zh-CN",
-        "text": "关于这个写作空间，以及我希望持续记录的主题。"
-      }
-    ]
+    "id": "20260715-090945",
+    "title": "理性是否真正理性：一个概率视角的讨论",
+    "summary": "本文目标：探讨理性介入和规划执行在概率视角下对于现实优化的实际效果问题。"
+  },
+  {
+    "id": "20260715-083659",
+    "title": "开篇",
+    "summary": "关于这个写作空间，以及我希望持续记录的主题。"
   }
 ];

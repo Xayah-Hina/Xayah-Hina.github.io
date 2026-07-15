@@ -40,8 +40,8 @@ ID_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,126}[a-z0-9])?$")
 IMAGE_PATH_PATTERN = re.compile(
     r"^journals/images/(?P<year>\d{4})/(?P<name>[A-Za-z0-9._-]+)$"
 )
-WRITING_LANGUAGES = {"en", "zh-CN"}
-WRITING_COMPILE_LOCK = threading.Lock()
+WRITING_ID_PATTERN = re.compile(r"^\d{8}-\d{6}$")
+WRITING_MUTATION_LOCK = threading.RLock()
 
 
 class LocalEditorError(Exception):
@@ -429,26 +429,27 @@ def writing_catalog_years() -> list[str]:
     return normalize_years(raw_years)
 
 
-def writing_document_paths(slug: str, language: str) -> tuple[Path, Path, str]:
-    if not ID_PATTERN.fullmatch(slug) or language not in WRITING_LANGUAGES:
-        raise WritingError("Writing slug or language is invalid.")
-    directory = WRITING / slug
-    source = directory / f"{slug}.{language}.tex"
-    pdf = directory / f"{slug}.{language}.pdf"
+def validate_writing_id(value) -> str:
+    if not isinstance(value, str) or not WRITING_ID_PATTERN.fullmatch(value):
+        raise WritingError("Writing id must use YYYYMMDD-HHMMSS.")
+    try:
+        parsed = datetime.strptime(value, "%Y%m%d-%H%M%S")
+    except ValueError as error:
+        raise WritingError("Writing id contains an invalid date or time.") from error
+    if parsed.strftime("%Y%m%d-%H%M%S") != value:
+        raise WritingError("Writing id contains an invalid date or time.")
+    return value
+
+
+def writing_document_paths(writing_id: str) -> tuple[Path, Path, str]:
+    writing_id = validate_writing_id(writing_id)
+    directory = WRITING / writing_id
+    source = directory / f"{writing_id}.tex"
+    pdf = directory / f"{writing_id}.pdf"
     if WRITING not in source.resolve().parents or WRITING not in pdf.resolve().parents:
         raise WritingError("Writing path escapes the writing directory.")
-    url = f"writing/{slug}/{slug}.{language}.pdf"
+    url = f"writing/{writing_id}/{writing_id}.pdf"
     return source, pdf, url
-
-
-def validate_writing_date(value: str) -> str:
-    if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
-        raise WritingError("Writing date must use YYYY-MM-DD.")
-    try:
-        datetime.strptime(value, "%Y-%m-%d")
-    except ValueError as error:
-        raise WritingError("Writing date is invalid.") from error
-    return value
 
 
 def validate_writing_text(value, label: str, maximum: int, required: bool = True) -> str:
@@ -465,51 +466,15 @@ def validate_writing_text(value, label: str, maximum: int, required: bool = True
 def validate_writing_entry(entry: dict, year: str) -> dict:
     if not isinstance(entry, dict):
         raise WritingError(f"Writing {year} contains an invalid entry.")
-    slug = entry.get("slug")
-    date = validate_writing_date(entry.get("date"))
-    if not isinstance(slug, str) or not ID_PATTERN.fullmatch(slug) or date[:4] != year:
-        raise WritingError(f"Writing {year} contains an invalid slug or date.")
-    documents = entry.get("documents")
-    summaries = entry.get("summaries")
-    if not isinstance(documents, list) or not documents or not isinstance(summaries, list):
-        raise WritingError(f"Writing {slug} has invalid documents or summaries.")
-
-    normalized_documents = []
-    document_languages = set()
-    for document in documents:
-        if not isinstance(document, dict) or document.get("lang") not in WRITING_LANGUAGES:
-            raise WritingError(f"Writing {slug} has an invalid language.")
-        language = document["lang"]
-        if language in document_languages:
-            raise WritingError(f"Writing {slug} repeats language {language}.")
-        title = validate_writing_text(document.get("title"), "title", 200)
-        _, _, expected_url = writing_document_paths(slug, language)
-        if document.get("url") != expected_url:
-            raise WritingError(f"Writing {slug} has an unexpected PDF path.")
-        normalized_documents.append({"lang": language, "title": title, "url": expected_url})
-        document_languages.add(language)
-
-    normalized_summaries = []
-    summary_languages = set()
-    for summary in summaries:
-        if not isinstance(summary, dict) or summary.get("lang") not in document_languages:
-            raise WritingError(f"Writing {slug} has an invalid summary language.")
-        language = summary["lang"]
-        if language in summary_languages:
-            raise WritingError(f"Writing {slug} repeats summary language {language}.")
-        text = validate_writing_text(summary.get("text"), "summary", 5000)
-        normalized_summaries.append({"lang": language, "text": text})
-        summary_languages.add(language)
-
-    language_order = {"en": 0, "zh-CN": 1}
-    normalized_documents.sort(key=lambda item: language_order[item["lang"]])
-    normalized_summaries.sort(key=lambda item: language_order[item["lang"]])
-    return {
-        "slug": slug,
-        "date": date,
-        "documents": normalized_documents,
-        "summaries": normalized_summaries,
-    }
+    writing_id = validate_writing_id(entry.get("id"))
+    if writing_id[:4] != year:
+        raise WritingError(f"Writing {writing_id} does not belong to {year}.")
+    title = validate_writing_text(entry.get("title"), "title", 200)
+    summary = validate_writing_text(entry.get("summary", ""), "summary", 5000, required=False)
+    normalized = {"id": writing_id, "title": title}
+    if summary:
+        normalized["summary"] = summary
+    return normalized
 
 
 def read_writing_year(year: str, required: bool = True) -> list[dict]:
@@ -520,18 +485,21 @@ def read_writing_year(year: str, required: bool = True) -> list[dict]:
         return []
     entries = module_data(path, list)
     normalized = [validate_writing_entry(entry, year) for entry in entries]
-    slugs = [entry["slug"] for entry in normalized]
-    if len(slugs) != len(set(slugs)):
-        raise WritingError(f"Writing {year} contains duplicate slugs.")
-    return sorted(normalized, key=lambda entry: entry["date"], reverse=True)
+    ids = [entry["id"] for entry in normalized]
+    if len(ids) != len(set(ids)):
+        raise WritingError(f"Writing {year} contains duplicate ids.")
+    return sorted(normalized, key=lambda entry: entry["id"], reverse=True)
 
 
-def find_writing(year: str, slug: str) -> tuple[list[dict], dict]:
+def find_writing(year: str, writing_id: str) -> tuple[list[dict], dict]:
     years = writing_catalog_years()
     if year not in years:
         raise WritingError("The Writing year is no longer available.")
+    writing_id = validate_writing_id(writing_id)
+    if writing_id[:4] != year:
+        raise WritingError("The Writing entry does not belong to this year.")
     entries = read_writing_year(year)
-    entry = next((item for item in entries if item["slug"] == slug), None)
+    entry = next((item for item in entries if item["id"] == writing_id), None)
     if entry is None:
         raise WritingError("The Writing entry is no longer available.")
     return entries, entry
@@ -570,14 +538,17 @@ def tex_escape(value: str) -> str:
     return "".join(replacements.get(character, character) for character in value)
 
 
-def writing_source_template(language: str, title: str, summary: str, date: str) -> str:
+def writing_source_template(writing_id: str, title: str, summary: str) -> str:
+    writing_id = validate_writing_id(writing_id)
     title_tex = tex_escape(title)
     summary_tex = tex_escape(summary)
-    date_value = datetime.strptime(date, "%Y-%m-%d")
-    if language == "zh-CN":
-        display_date = f"{date_value.year} 年 {date_value.month} 月 {date_value.day} 日"
-        abstract = f"\\begin{{abstract}}\n{summary_tex}\n\\end{{abstract}}\n" if summary_tex else ""
-        template = r"""\documentclass[11pt,a4paper,fontset=fandol]{ctexart}
+    date_value = datetime.strptime(writing_id, "%Y%m%d-%H%M%S").strftime("%Y-%m-%d")
+    summary_block = (
+        f"\\begin{{abstract}}\n{summary_tex}\n\\end{{abstract}}\n"
+        if summary_tex
+        else ""
+    )
+    template = r"""\documentclass[11pt,a4paper,fontset=fandol,scheme=plain]{ctexart}
 
 \usepackage[margin=25mm]{geometry}
 \usepackage{microtype}
@@ -594,83 +565,37 @@ def writing_source_template(language: str, title: str, summary: str, date: str) 
   urlcolor=accent
 }
 
-\setlength{\parindent}{0pt}
-\setlength{\parskip}{0.65em}
-\setcounter{secnumdepth}{0}
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0pt}
+\setcounter{secnumdepth}{3}
 
-\title{\textbf{__TITLE__}}
+\title{__TITLE__}
 \author{Xayah Hina}
 \date{__DATE__}
 
 \begin{document}
 \maketitle
 
-__ABSTRACT__
-\section{正文}
-
-从这里开始写作。
-
-\end{document}
-"""
-    else:
-        display_date = date_value.strftime("%d %B %Y").lstrip("0")
-        abstract = f"\\begin{{abstract}}\n{summary_tex}\n\\end{{abstract}}\n" if summary_tex else ""
-        template = r"""\documentclass[11pt,a4paper]{article}
-
-\usepackage[margin=1in]{geometry}
-\usepackage{microtype}
-\usepackage{xcolor}
-\usepackage{hyperref}
-
-\definecolor{accent}{HTML}{285FAE}
-\hypersetup{
-  pdftitle={__TITLE__},
-  pdfauthor={Xayah Hina},
-  colorlinks=true,
-  linkcolor=accent,
-  urlcolor=accent
-}
-
-\setlength{\parindent}{0pt}
-\setlength{\parskip}{0.65em}
-\setcounter{secnumdepth}{0}
-
-\title{\textbf{__TITLE__}}
-\author{Xayah Hina}
-\date{__DATE__}
-
-\begin{document}
-\maketitle
-
-__ABSTRACT__
-\section{Notes}
-
-Begin writing here.
+__SUMMARY__
+% Begin writing here.
 
 \end{document}
 """
     return (
         template.replace("__TITLE__", title_tex)
-        .replace("__DATE__", tex_escape(display_date))
-        .replace("__ABSTRACT__", abstract.rstrip())
+        .replace("__DATE__", date_value)
+        .replace("__SUMMARY__", summary_block.rstrip())
     )
 
 
-def writing_open_response(year: str, entry: dict, language: str) -> dict:
-    document = next((item for item in entry["documents"] if item["lang"] == language), None)
-    if document is None:
-        raise WritingError("This language version is no longer available.")
-    summary = next((item["text"] for item in entry["summaries"] if item["lang"] == language), "")
-    source_path, pdf_path, pdf_url = writing_document_paths(entry["slug"], language)
+def writing_open_response(year: str, entry: dict) -> dict:
+    source_path, pdf_path, pdf_url = writing_document_paths(entry["id"])
     if not source_path.exists():
         raise WritingError(f"Missing source file {source_path.name}.")
     source = source_path.read_text(encoding="utf-8")
     return {
         "year": year,
         "entry": entry,
-        "language": language,
-        "title": document["title"],
-        "summary": summary,
         "source": source,
         "pdfUrl": pdf_url,
         "pdfExists": pdf_path.is_file(),
@@ -680,82 +605,40 @@ def writing_open_response(year: str, entry: dict, language: str) -> dict:
 
 def open_writing(payload: dict) -> dict:
     year = str(payload.get("year", ""))
-    slug = payload.get("slug")
-    language = payload.get("language")
-    if not isinstance(slug, str) or language not in WRITING_LANGUAGES:
-        raise WritingError("Writing open request is invalid.")
-    _, entry = find_writing(year, slug)
-    return writing_open_response(year, entry, language)
+    writing_id = validate_writing_id(payload.get("id"))
+    _, entry = find_writing(year, writing_id)
+    return writing_open_response(year, entry)
 
 
 def create_writing(payload: dict) -> dict:
-    slug = payload.get("slug")
-    language = payload.get("language")
-    date = validate_writing_date(payload.get("date"))
     title = validate_writing_text(payload.get("title"), "title", 200)
     summary = validate_writing_text(payload.get("summary", ""), "summary", 5000, required=False)
-    if not isinstance(slug, str) or not ID_PATTERN.fullmatch(slug) or language not in WRITING_LANGUAGES:
-        raise WritingError("Writing slug or language is invalid.")
-
-    years = writing_catalog_years()
-    for candidate_year in years:
-        if any(entry["slug"] == slug for entry in read_writing_year(candidate_year)):
-            raise WritingError("Writing slug already exists.")
-    year = date[:4]
-    year_path = WRITING / f"{year}.js"
-    entries = read_writing_year(year, required=year in years or year_path.exists())
-    source_path, _, pdf_url = writing_document_paths(slug, language)
-    if source_path.exists():
-        raise WritingError(f"Source file {source_path.name} already exists.")
-    entry = {
-        "slug": slug,
-        "date": date,
-        "documents": [{"lang": language, "title": title, "url": pdf_url}],
-        "summaries": ([{"lang": language, "text": summary}] if summary else []),
-    }
-    next_entries = sorted([*entries, entry], key=lambda item: item["date"], reverse=True)
-    next_years = normalize_years([*years, year])
-    source = writing_source_template(language, title, summary, date)
-    apply_writing_changes({
-        source_path: source.encode("utf-8"),
-        year_path: module_source(next_entries),
-        WRITING_CATALOG: module_source({"years": [int(value) for value in next_years]}),
-    })
-    return {**writing_open_response(year, entry, language), "years": next_years, "entries": next_entries}
+    with WRITING_MUTATION_LOCK:
+        writing_id = datetime.now(ZoneInfo("Asia/Singapore")).strftime("%Y%m%d-%H%M%S")
+        year = writing_id[:4]
+        years = writing_catalog_years()
+        year_path = WRITING / f"{year}.js"
+        entries = read_writing_year(year, required=year in years or year_path.exists())
+        source_path, _, _ = writing_document_paths(writing_id)
+        if any(entry["id"] == writing_id for entry in entries) or source_path.parent.exists():
+            raise WritingError("A Writing entry already exists for this second. Try again in a moment.")
+        entry = {"id": writing_id, "title": title}
+        if summary:
+            entry["summary"] = summary
+        next_entries = sorted([*entries, entry], key=lambda item: item["id"], reverse=True)
+        next_years = normalize_years([*years, year])
+        source = writing_source_template(writing_id, title, summary)
+        apply_writing_changes({
+            source_path: source.encode("utf-8"),
+            year_path: module_source(next_entries),
+            WRITING_CATALOG: module_source({"years": [int(value) for value in next_years]}),
+        })
+        return {**writing_open_response(year, entry), "years": next_years, "entries": next_entries}
 
 
-def add_writing_language(payload: dict) -> dict:
+def _save_writing(payload: dict) -> dict:
     year = str(payload.get("year", ""))
-    slug = payload.get("slug")
-    language = payload.get("language")
-    title = validate_writing_text(payload.get("title"), "title", 200)
-    summary = validate_writing_text(payload.get("summary", ""), "summary", 5000, required=False)
-    if not isinstance(slug, str) or language not in WRITING_LANGUAGES:
-        raise WritingError("Writing language request is invalid.")
-    entries, original = find_writing(year, slug)
-    if any(document["lang"] == language for document in original["documents"]):
-        raise WritingError("This language version already exists.")
-    source_path, _, pdf_url = writing_document_paths(slug, language)
-    if source_path.exists():
-        raise WritingError(f"Source file {source_path.name} already exists.")
-    entry = json.loads(json.dumps(original, ensure_ascii=False))
-    entry["documents"].append({"lang": language, "title": title, "url": pdf_url})
-    if summary:
-        entry["summaries"].append({"lang": language, "text": summary})
-    entry = validate_writing_entry(entry, year)
-    next_entries = [entry if item["slug"] == slug else item for item in entries]
-    source = writing_source_template(language, title, summary, entry["date"])
-    apply_writing_changes({
-        source_path: source.encode("utf-8"),
-        WRITING / f"{year}.js": module_source(next_entries),
-    })
-    return {**writing_open_response(year, entry, language), "years": writing_catalog_years(), "entries": next_entries}
-
-
-def save_writing(payload: dict) -> dict:
-    year = str(payload.get("year", ""))
-    slug = payload.get("slug")
-    language = payload.get("language")
+    writing_id = validate_writing_id(payload.get("id"))
     title = validate_writing_text(payload.get("title"), "title", 200)
     summary = validate_writing_text(payload.get("summary", ""), "summary", 5000, required=False)
     source = payload.get("source")
@@ -763,80 +646,128 @@ def save_writing(payload: dict) -> dict:
         raise WritingError("Writing source is required.")
     if len(source) > 2_000_000:
         raise WritingError("Writing source is too long.")
-    if not isinstance(slug, str) or language not in WRITING_LANGUAGES:
-        raise WritingError("Writing save request is invalid.")
-    entries, original = find_writing(year, slug)
-    entry = json.loads(json.dumps(original, ensure_ascii=False))
-    document = next((item for item in entry["documents"] if item["lang"] == language), None)
-    if document is None:
-        raise WritingError("This language version is no longer available.")
-    _, _, pdf_url = writing_document_paths(slug, language)
-    document.update({"title": title, "url": pdf_url})
-    entry["summaries"] = [item for item in entry["summaries"] if item["lang"] != language]
+    entries, _ = find_writing(year, writing_id)
+    entry = {"id": writing_id, "title": title}
     if summary:
-        entry["summaries"].append({"lang": language, "text": summary})
+        entry["summary"] = summary
     entry = validate_writing_entry(entry, year)
-    next_entries = [entry if item["slug"] == slug else item for item in entries]
-    source_path, _, _ = writing_document_paths(slug, language)
+    next_entries = [entry if item["id"] == writing_id else item for item in entries]
+    source_path, _, _ = writing_document_paths(writing_id)
     apply_writing_changes({
         source_path: (source.rstrip() + "\n").encode("utf-8"),
         WRITING / f"{year}.js": module_source(next_entries),
     })
-    return {**writing_open_response(year, entry, language), "years": writing_catalog_years(), "entries": next_entries}
+    return {**writing_open_response(year, entry), "years": writing_catalog_years(), "entries": next_entries}
 
 
-def compile_writing(payload: dict) -> dict:
-    result = save_writing(payload)
-    source_path, pdf_path, _ = writing_document_paths(payload["slug"], payload["language"])
+def save_writing(payload: dict) -> dict:
+    with WRITING_MUTATION_LOCK:
+        return _save_writing(payload)
+
+
+def _compile_writing(payload: dict) -> dict:
+    result = _save_writing(payload)
+    source_path, pdf_path, _ = writing_document_paths(payload["id"])
     tectonic = shutil.which("tectonic")
     if not tectonic:
         result["compile"] = {"ok": False, "log": "Tectonic is not available on PATH."}
         return result
 
-    with WRITING_COMPILE_LOCK:
-        try:
-            with tempfile.TemporaryDirectory(prefix=".tectonic-", dir=source_path.parent) as output_directory:
-                environment = os.environ.copy()
-                environment["TECTONIC_UNTRUSTED_MODE"] = "1"
-                process = subprocess.run(
-                    [
-                        tectonic,
-                        "-X",
-                        "compile",
-                        "--untrusted",
-                        "--print",
-                        "--outdir",
-                        output_directory,
-                        source_path.name,
-                    ],
-                    cwd=source_path.parent,
-                    env=environment,
-                    capture_output=True,
-                    text=True,
-                    timeout=60,
-                    check=False,
-                )
-                log = (process.stdout + process.stderr)[-200_000:]
-                temporary_pdf = Path(output_directory) / pdf_path.name
-                if process.returncode != 0 or not temporary_pdf.is_file():
-                    result["compile"] = {
-                        "ok": False,
-                        "log": log or f"Tectonic exited with code {process.returncode}.",
-                    }
-                    return result
-                pdf_content = temporary_pdf.read_bytes()
-                if not pdf_content.startswith(b"%PDF-"):
-                    result["compile"] = {"ok": False, "log": "Tectonic did not produce a valid PDF file."}
-                    return result
-                atomic_write(pdf_path, pdf_content)
-                result["pdfExists"] = True
-                result["pdfVersion"] = pdf_path.stat().st_mtime_ns
-                result["compile"] = {"ok": True, "log": log or "Compilation completed successfully."}
+    try:
+        with tempfile.TemporaryDirectory(prefix=".tectonic-", dir=source_path.parent) as output_directory:
+            environment = os.environ.copy()
+            environment["TECTONIC_UNTRUSTED_MODE"] = "1"
+            process = subprocess.run(
+                [
+                    tectonic,
+                    "-X",
+                    "compile",
+                    "--untrusted",
+                    "--print",
+                    "--outdir",
+                    output_directory,
+                    source_path.name,
+                ],
+                cwd=source_path.parent,
+                env=environment,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=60,
+                check=False,
+            )
+            log = (process.stdout + process.stderr)[-200_000:]
+            temporary_pdf = Path(output_directory) / pdf_path.name
+            if process.returncode != 0 or not temporary_pdf.is_file():
+                result["compile"] = {
+                    "ok": False,
+                    "log": log or f"Tectonic exited with code {process.returncode}.",
+                }
                 return result
-        except subprocess.TimeoutExpired as error:
-            output = ((error.stdout or "") + (error.stderr or ""))[-200_000:]
-            result["compile"] = {"ok": False, "log": f"Compilation timed out after 60 seconds.\n{output}".strip()}
+            pdf_content = temporary_pdf.read_bytes()
+            if not pdf_content.startswith(b"%PDF-"):
+                result["compile"] = {"ok": False, "log": "Tectonic did not produce a valid PDF file."}
+                return result
+            atomic_write(pdf_path, pdf_content)
+            result["pdfExists"] = True
+            result["pdfVersion"] = pdf_path.stat().st_mtime_ns
+            result["compile"] = {"ok": True, "log": log or "Compilation completed successfully."}
             return result
+    except subprocess.TimeoutExpired as error:
+        output = ((error.stdout or "") + (error.stderr or ""))[-200_000:]
+        result["compile"] = {"ok": False, "log": f"Compilation timed out after 60 seconds.\n{output}".strip()}
+        return result
+
+
+def compile_writing(payload: dict) -> dict:
+    with WRITING_MUTATION_LOCK:
+        return _compile_writing(payload)
+
+
+def delete_writing(payload: dict) -> dict:
+    year = str(payload.get("year", ""))
+    writing_id = validate_writing_id(payload.get("id"))
+
+    with WRITING_MUTATION_LOCK:
+        entries, _ = find_writing(year, writing_id)
+        source_path, _, _ = writing_document_paths(writing_id)
+        directory = source_path.parent
+        if not directory.is_dir():
+            raise WritingError(f"Missing Writing directory {directory.name}.")
+
+        years = writing_catalog_years()
+        next_entries = [entry for entry in entries if entry["id"] != writing_id]
+        next_years = years if next_entries else [value for value in years if value != year]
+        year_path = WRITING / f"{year}.js"
+        changes = {
+            year_path: module_source(next_entries) if next_entries else None,
+        }
+        if not next_entries:
+            changes[WRITING_CATALOG] = module_source({"years": [int(value) for value in next_years]})
+
+        with tempfile.TemporaryDirectory(prefix="writing-delete-", ignore_cleanup_errors=True) as backup_root:
+            backup = Path(backup_root) / writing_id
+            try:
+                shutil.move(str(directory), str(backup))
+            except OSError as error:
+                raise WritingError(f"Writing directory {writing_id} could not be removed.") from error
+
+            try:
+                apply_writing_changes(changes)
+            except Exception:
+                try:
+                    shutil.move(str(backup), str(directory))
+                except OSError as rollback_error:
+                    print(f"Writing directory rollback failed for {writing_id}: {rollback_error}")
+                raise
+
+        return {
+            "year": year,
+            "years": next_years,
+            "entries": next_entries,
+            "status": "deleted",
+        }
 
 
 def tectonic_version() -> str | None:
@@ -906,9 +837,9 @@ class LocalSiteHandler(SimpleHTTPRequestHandler):
             "/api/journal/delete": delete_journal,
             "/api/writing/open": open_writing,
             "/api/writing/create": create_writing,
-            "/api/writing/add-language": add_writing_language,
             "/api/writing/save": save_writing,
             "/api/writing/compile": compile_writing,
+            "/api/writing/delete": delete_writing,
         }
         if path not in actions:
             self.api_json(HTTPStatus.NOT_FOUND, {"error": "Unknown local editor endpoint."})
