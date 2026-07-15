@@ -582,14 +582,34 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .journal-image-button {
+      display: block;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      overflow: hidden;
+      background: transparent;
+      border: 0;
+      aspect-ratio: 1;
+      border-radius: 0.5rem;
+      cursor: zoom-in;
+    }
+
     .journal-image {
       display: block;
       width: 100%;
       height: 100%;
-      aspect-ratio: 1;
       object-fit: cover;
       background: var(--page);
-      border-radius: 0.5rem;
+    }
+
+    .journal-image-button:hover .journal-image {
+      filter: brightness(0.94);
+    }
+
+    .journal-image-button:focus-visible {
+      outline: 3px solid var(--link);
+      outline-offset: 3px;
     }
 
     .journal-media[data-count="1"] {
@@ -597,16 +617,23 @@
       justify-items: start;
     }
 
-    .journal-media[data-count="1"] .journal-image {
+    .journal-media[data-count="1"] .journal-image-button {
       width: auto;
       height: auto;
       max-width: 100%;
       max-height: 32rem;
       aspect-ratio: auto;
+    }
+
+    .journal-media[data-count="1"] .journal-image {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 32rem;
       object-fit: initial;
     }
 
-    .journal-media[data-count="3"] .journal-image:first-child {
+    .journal-media[data-count="3"] .journal-image-button:first-child {
       grid-column: 1 / -1;
       aspect-ratio: 2 / 1;
     }
@@ -640,6 +667,72 @@
     .journal-dialog::backdrop {
       background: rgba(17, 24, 39, 0.55);
       backdrop-filter: blur(2px);
+    }
+
+    .journal-lightbox {
+      position: relative;
+      width: min(calc(100% - 1rem), 90rem);
+      max-width: none;
+      max-height: none;
+      padding: 0;
+      overflow: visible;
+      color: var(--text);
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+    }
+
+    .journal-lightbox::backdrop {
+      background: rgba(17, 24, 39, 0.78);
+      backdrop-filter: blur(3px);
+    }
+
+    .journal-lightbox-close {
+      position: absolute;
+      z-index: 1;
+      top: 0.5rem;
+      right: 0.5rem;
+      width: 2.25rem;
+      height: 2.25rem;
+      padding: 0;
+      color: #fff;
+      background: rgba(17, 24, 39, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: 999px;
+      font-size: 1.45rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .journal-lightbox-close:focus-visible {
+      outline: 3px solid #fff;
+      outline-offset: 3px;
+    }
+
+    .journal-lightbox-figure {
+      display: grid;
+      margin: 0;
+      gap: 0.5rem;
+      justify-items: center;
+    }
+
+    .journal-lightbox-image {
+      display: block;
+      max-width: min(100%, calc(100vw - 2rem));
+      max-height: calc(100dvh - 4rem);
+      object-fit: contain;
+      border-radius: 0.5rem;
+      box-shadow: var(--shadow);
+    }
+
+    .journal-lightbox-caption {
+      max-width: min(100%, calc(100vw - 2rem));
+      padding: 0.35rem 0.6rem;
+      color: #fff;
+      background: rgba(17, 24, 39, 0.72);
+      border-radius: 0.35rem;
+      font-size: 0.8125rem;
+      text-align: center;
     }
 
     .journal-editor-form {
@@ -1161,6 +1254,16 @@
     </article>
   </template>
 
+  <template id="journal-lightbox-template">
+    <dialog class="journal-lightbox" aria-label="Expanded Journal image">
+      <button class="journal-lightbox-close" type="button" data-lightbox-action="close" aria-label="Close image">×</button>
+      <figure class="journal-lightbox-figure">
+        <img class="journal-lightbox-image" alt="">
+        <figcaption class="journal-lightbox-caption" hidden></figcaption>
+      </figure>
+    </dialog>
+  </template>
+
   <template id="journal-authoring-template">
     <div class="journal-authoring" aria-label="Local Journal editor">
       <span class="journal-authoring-status" aria-live="polite">Starting local editor...</span>
@@ -1385,6 +1488,12 @@
         busy: false,
         confirmDialog: null,
         confirmResolver: null
+      };
+      const lightbox = {
+        dialog: null,
+        image: null,
+        caption: null,
+        trigger: null
       };
 
       const writingAuthoring = {
@@ -1739,13 +1848,22 @@
         const images = entry.images || [];
         media.dataset.count = String(images.length);
         for (const imageData of images) {
+          const button = document.createElement("button");
           const image = document.createElement("img");
+          const alt = imageData.alt || "";
+          button.className = "journal-image-button";
+          button.type = "button";
+          button.dataset.journalImage = "";
+          button.dataset.imageSrc = imageData.src;
+          button.dataset.imageAlt = alt;
+          button.setAttribute("aria-label", alt ? `View larger: ${alt}` : "View image larger");
           image.className = "journal-image";
           image.src = imageData.src;
-          image.alt = imageData.alt || "";
+          image.alt = alt;
           image.loading = "lazy";
           image.decoding = "async";
-          media.append(image);
+          button.append(image);
+          media.append(button);
         }
         media.hidden = images.length === 0;
 
@@ -1869,6 +1987,18 @@
         notice.className = "empty-state";
         notice.textContent = message;
         byId("archive-list").append(notice);
+      }
+
+      function openJournalLightbox(trigger) {
+        if (!lightbox.dialog || lightbox.dialog.open) return;
+        const alt = trigger.dataset.imageAlt || "";
+        lightbox.trigger = trigger;
+        lightbox.image.src = trigger.dataset.imageSrc || "";
+        lightbox.image.alt = alt;
+        lightbox.caption.textContent = alt;
+        lightbox.caption.hidden = !alt;
+        lightbox.dialog.showModal();
+        lightbox.dialog.querySelector("[data-lightbox-action=\"close\"]").focus();
       }
 
       function renderSection() {
@@ -2733,6 +2863,22 @@
       byId("skip-link").textContent = config.labels.skip;
       byId("footer-text").textContent = `© ${new Date().getFullYear()} Xayah Hina. ${config.labels.footer}`;
 
+      const lightboxFragment = byId("journal-lightbox-template").content.cloneNode(true);
+      lightbox.dialog = lightboxFragment.querySelector("dialog");
+      lightbox.image = lightboxFragment.querySelector(".journal-lightbox-image");
+      lightbox.caption = lightboxFragment.querySelector(".journal-lightbox-caption");
+      document.body.append(lightboxFragment);
+      lightbox.dialog.addEventListener("click", (event) => {
+        if (event.target === lightbox.dialog) lightbox.dialog.close();
+      });
+      lightbox.dialog.querySelector("[data-lightbox-action=\"close\"]").addEventListener("click", () => lightbox.dialog.close());
+      lightbox.dialog.addEventListener("close", () => {
+        const trigger = lightbox.trigger;
+        lightbox.trigger = null;
+        lightbox.image.removeAttribute("src");
+        if (trigger?.isConnected) trigger.focus();
+      });
+
       for (const button of document.querySelectorAll("[data-section]")) {
         button.addEventListener("click", () => selectSection(button.dataset.section));
       }
@@ -2745,6 +2891,11 @@
       byId("search-input").addEventListener("input", (event) => {
         state.queries[state.section] = event.currentTarget.value;
         renderArchive();
+      });
+
+      byId("archive-list").addEventListener("click", (event) => {
+        const imageButton = event.target.closest("[data-journal-image]");
+        if (imageButton) openJournalLightbox(imageButton);
       });
 
       window.addEventListener("popstate", applyRoute);
