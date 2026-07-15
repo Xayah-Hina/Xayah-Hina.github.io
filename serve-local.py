@@ -578,11 +578,12 @@ def writing_source_template(writing_id: str, title: str, summary: str) -> str:
 ]{LXGWWenKaiGB-Regular.ttf}
 \setCJKsansfont[
   Path=\writingfontpath,
-  BoldFont=SourceHanSansCN-Medium.otf
-]{SourceHanSansCN-Medium.otf}
+  BoldFont=LXGWWenKaiGB-Medium.ttf
+]{LXGWWenKaiGB-Medium.ttf}
 \setCJKmonofont[
-  Path=\writingfontpath
-]{SourceHanSansCN-Medium.otf}
+  Path=\writingfontpath,
+  BoldFont=LXGWWenKaiGB-Medium.ttf
+]{LXGWWenKaiGB-Regular.ttf}
 \xeCJKsetup{PunctStyle=kaiming}
 
 \definecolor{bookink}{HTML}{222222}
