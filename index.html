@@ -783,12 +783,6 @@
       gap: 0.4rem;
     }
 
-    .field-row {
-      display: grid;
-      gap: 0.75rem;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
     .field-label {
       color: var(--text-secondary);
       font-size: 0.8125rem;
@@ -1160,10 +1154,6 @@
         justify-content: flex-end;
       }
 
-      .field-row {
-        grid-template-columns: 1fr;
-      }
-
       .editor-image-item {
         grid-template-columns: 3.75rem minmax(0, 1fr);
       }
@@ -1290,16 +1280,6 @@
             <textarea class="field-textarea" name="content" placeholder="Write a short thought..."></textarea>
           </label>
 
-          <label class="field-group">
-            <span class="field-label">Language</span>
-            <select class="field-select" name="language">
-              <option value="auto">Auto detect</option>
-              <option value="en">English</option>
-              <option value="zh-CN">Chinese</option>
-            </select>
-            <span class="field-hint" data-language-hint>Language will be detected when you publish.</span>
-          </label>
-
           <div class="field-group">
             <label class="field-label" for="journal-images">Images</label>
             <input id="journal-images" class="field-input" name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" multiple>
@@ -1307,16 +1287,12 @@
             <div class="editor-image-list"></div>
           </div>
 
-          <div class="field-row">
-            <label class="field-group">
-              <span class="field-label">Related Writing</span>
-              <input class="field-input" name="relatedLabel" type="text" placeholder="Optional label">
-            </label>
-            <label class="field-group">
-              <span class="field-label">Related URL</span>
-              <input class="field-input" name="relatedUrl" type="text" placeholder="#writing/2026">
-            </label>
-          </div>
+          <label class="field-group">
+            <span class="field-label">Related Writing</span>
+            <input class="field-input" name="relatedWriting" type="text" list="related-writing-options" placeholder="Search or select a Writing" autocomplete="off">
+            <datalist id="related-writing-options"></datalist>
+            <span class="field-hint">Optional. Select an existing Writing from the suggestions.</span>
+          </label>
 
           <p class="editor-message" role="alert"></p>
         </div>
@@ -1483,9 +1459,9 @@
         editorDialog: null,
         editorForm: null,
         editorImages: [],
+        relatedWritingChoices: [],
         originalEntry: null,
         originalBody: "",
-        originalLanguage: "auto",
         busy: false,
         confirmDialog: null,
         confirmResolver: null
@@ -1564,8 +1540,14 @@
           if (typeof entry.publishedAt !== "string" || entry.publishedAt.slice(0, 4) !== year) {
             throw new TypeError(`Journal ${entry.id} does not belong to ${year}.`);
           }
-          if (!Array.isArray(entry.content) || !Array.isArray(entry.images)) {
+          if (typeof entry.content !== "string" || !Array.isArray(entry.images)) {
             throw new TypeError(`Journal ${entry.id} has invalid content or images.`);
+          }
+          if (entry.relatedWriting && (
+            typeof entry.relatedWriting.id !== "string"
+            || typeof entry.relatedWriting.title !== "string"
+          )) {
+            throw new TypeError(`Journal ${entry.id} has invalid related Writing data.`);
           }
           if (entry.updatedAt && Number.isNaN(Date.parse(entry.updatedAt))) {
             throw new TypeError(`Journal ${entry.id} has an invalid updatedAt timestamp.`);
@@ -1678,9 +1660,9 @@
       function entrySearchText(entry) {
         if (state.section === "journal") {
           return [
-            ...(entry.content || []).map((part) => part.text),
+            entry.content,
             ...(entry.images || []).map((image) => image.alt),
-            entry.relatedWriting?.label
+            entry.relatedWriting?.title
           ].filter(Boolean).join(" ").toLocaleLowerCase();
         }
 
@@ -1838,10 +1820,9 @@
           header.append(actions);
         }
 
-        for (const contentPart of entry.content || []) {
+        if (entry.content) {
           const paragraph = document.createElement("p");
-          paragraph.lang = contentPart.lang;
-          paragraph.textContent = contentPart.text;
+          paragraph.textContent = entry.content;
           content.append(paragraph);
         }
         content.hidden = content.childElementCount === 0;
@@ -1869,12 +1850,10 @@
         media.hidden = images.length === 0;
 
         if (entry.relatedWriting) {
-          related.href = entry.relatedWriting.url;
-          related.textContent = `Related writing: ${entry.relatedWriting.label}`;
-          if (entry.relatedWriting.newTab) {
-            related.target = "_blank";
-            related.rel = "noopener";
-          }
+          related.href = `writing/${entry.relatedWriting.id}/${entry.relatedWriting.id}.pdf`;
+          related.textContent = `Related writing: ${entry.relatedWriting.title}`;
+          related.target = "_blank";
+          related.rel = "noopener";
         } else {
           related.hidden = true;
         }
@@ -2098,8 +2077,6 @@
         authoring.newButton.addEventListener("click", openNewEditor);
         authoring.editorForm.addEventListener("submit", saveEditor);
         authoring.editorForm.elements.images.addEventListener("change", addEditorImages);
-        authoring.editorForm.elements.content.addEventListener("input", updateLanguageHint);
-        authoring.editorForm.elements.language.addEventListener("change", updateLanguageHint);
         authoring.editorDialog.addEventListener("cancel", (event) => {
           event.preventDefault();
           if (!authoring.busy) closeEditor();
@@ -2521,33 +2498,62 @@
         }
       }
 
-      function openNewEditor() {
+      function relatedWritingDisplay(entry) {
+        return `${entry.title} (${writingDateFromId(entry.id)})`;
+      }
+
+      async function populateRelatedWritingChoices(selectedId = "") {
+        await Promise.all(writingYears.map((year) => loadWritingYear(year)));
+        const list = authoring.editorDialog.querySelector("#related-writing-options");
+        const entries = [...writingEntriesByYear.values()].flat()
+          .sort((left, right) => right.id.localeCompare(left.id));
+        authoring.relatedWritingChoices = entries.map((entry) => ({
+          id: entry.id,
+          title: entry.title,
+          display: relatedWritingDisplay(entry)
+        }));
+        list.replaceChildren(...authoring.relatedWritingChoices.map((entry) => {
+          const option = document.createElement("option");
+          option.value = entry.display;
+          return option;
+        }));
+        return authoring.relatedWritingChoices.find((entry) => entry.id === selectedId)?.display || "";
+      }
+
+      async function openNewEditor() {
         if (!canAuthorJournal() || authoring.busy) return;
         resetEditor();
+        try {
+          await populateRelatedWritingChoices();
+        } catch (error) {
+          setAuthoringStatus(error.message || "Writing suggestions could not be loaded.", "error");
+          return;
+        }
         authoring.originalEntry = null;
         authoring.editorDialog.querySelector(".dialog-title").textContent = "New Journal";
         authoring.editorDialog.querySelector('[data-editor-action="save"]').textContent = "Publish";
         authoring.editorDialog.querySelector(".editor-published-at").hidden = true;
-        authoring.editorForm.elements.language.value = "auto";
-        updateLanguageHint();
         authoring.editorDialog.showModal();
         authoring.editorForm.elements.content.focus();
       }
 
-      function openEditEditor(id) {
+      async function openEditEditor(id) {
         const year = state.years.journal;
         const entry = journalEntriesByYear.get(year)?.find((candidate) => candidate.id === id);
         if (!entry) return;
 
         resetEditor();
+        let relatedWritingValue;
+        try {
+          relatedWritingValue = await populateRelatedWritingChoices(entry.relatedWriting?.id);
+        } catch (error) {
+          setAuthoringStatus(error.message || "Writing suggestions could not be loaded.", "error");
+          return;
+        }
         authoring.originalEntry = structuredClone(entry);
-        authoring.originalBody = entry.content.map((part) => part.text).join("\n\n");
-        const languages = [...new Set(entry.content.map((part) => part.lang).filter(Boolean))];
-        authoring.originalLanguage = languages.length === 1 ? languages[0] : "auto";
+        authoring.originalBody = entry.content;
         authoring.editorForm.elements.content.value = authoring.originalBody;
-        authoring.editorForm.elements.language.value = authoring.originalLanguage;
-        authoring.editorForm.elements.relatedLabel.value = entry.relatedWriting?.label || "";
-        authoring.editorForm.elements.relatedUrl.value = entry.relatedWriting?.url || "";
+        authoring.editorForm.elements.relatedWriting.value = relatedWritingValue;
         authoring.editorImages = entry.images.map((image) => ({
           key: crypto.randomUUID(),
           kind: "existing",
@@ -2556,7 +2562,6 @@
           previewUrl: new URL(image.src, location.href).href
         }));
         renderEditorImages();
-        updateLanguageHint();
 
         authoring.editorDialog.querySelector(".dialog-title").textContent = "Edit Journal";
         authoring.editorDialog.querySelector('[data-editor-action="save"]').textContent = "Save";
@@ -2572,9 +2577,9 @@
           if (image.kind === "new") URL.revokeObjectURL(image.previewUrl);
         }
         authoring.editorImages = [];
+        authoring.relatedWritingChoices = [];
         authoring.originalEntry = null;
         authoring.originalBody = "";
-        authoring.originalLanguage = "auto";
         authoring.editorForm.reset();
         authoring.editorDialog.querySelector(".editor-image-list").replaceChildren();
         setEditorMessage("");
@@ -2642,29 +2647,6 @@
           item.append(image, alt, remove);
           list.append(item);
         }
-      }
-
-      function detectLanguage(text) {
-        return /[\u3400-\u9fff]/u.test(text) ? "zh-CN" : "en";
-      }
-
-      function isSafeRelatedUrl(value) {
-        try {
-          const url = new URL(value, location.href);
-          return url.protocol === "http:" || url.protocol === "https:";
-        } catch (error) {
-          return false;
-        }
-      }
-
-      function updateLanguageHint() {
-        if (!authoring.editorForm) return;
-        const selected = authoring.editorForm.elements.language.value;
-        const body = authoring.editorForm.elements.content.value;
-        const language = selected === "auto" ? detectLanguage(body) : selected;
-        authoring.editorDialog.querySelector("[data-language-hint]").textContent = selected === "auto"
-          ? `Detected language: ${language === "zh-CN" ? "Chinese" : "English"}`
-          : `Language: ${language === "zh-CN" ? "Chinese" : "English"}`;
       }
 
       function setEditorMessage(message, kind = "status") {
@@ -2755,20 +2737,17 @@
 
         const form = authoring.editorForm.elements;
         const body = form.content.value.trim();
-        const relatedLabel = form.relatedLabel.value.trim();
-        const relatedUrl = form.relatedUrl.value.trim();
-        const selectedLanguage = form.language.value;
+        const relatedWritingValue = form.relatedWriting.value.trim();
+        const relatedWriting = relatedWritingValue
+          ? authoring.relatedWritingChoices.find((entry) => entry.display === relatedWritingValue)
+          : null;
 
         if (!body && authoring.editorImages.length === 0) {
           setEditorMessage("Add content or at least one image.", "error");
           return;
         }
-        if (Boolean(relatedLabel) !== Boolean(relatedUrl)) {
-          setEditorMessage("Related Writing requires both a label and a URL.", "error");
-          return;
-        }
-        if (relatedUrl && !isSafeRelatedUrl(relatedUrl)) {
-          setEditorMessage("Related URL must be an HTTP, HTTPS, or local page link.", "error");
+        if (relatedWritingValue && !relatedWriting) {
+          setEditorMessage("Select a Writing from the suggestions.", "error");
           return;
         }
 
@@ -2781,22 +2760,13 @@
           const publishedAt = original?.publishedAt || singaporeTimestamp();
           const year = publishedAt.slice(0, 4);
           const id = original?.id || createJournalId(publishedAt);
-          const resolvedLanguage = selectedLanguage === "auto" ? detectLanguage(body) : selectedLanguage;
           const contentChanged = !original
-            || body !== authoring.originalBody
-            || selectedLanguage !== authoring.originalLanguage;
+            || body !== authoring.originalBody;
           const content = !body
-            ? []
+            ? ""
             : (original && !contentChanged
               ? structuredClone(original.content)
-              : [{ lang: resolvedLanguage, text: body }]);
-          const originalRelated = original?.relatedWriting || null;
-          const relatedUnchanged = original
-            && (originalRelated?.label || "") === relatedLabel
-            && (originalRelated?.url || "") === relatedUrl;
-          const relatedWriting = relatedUnchanged
-            ? structuredClone(originalRelated)
-            : (relatedLabel ? { label: relatedLabel, url: relatedUrl } : null);
+              : body);
           const imageSpecs = authoring.editorImages.map((image) => image.kind === "existing"
             ? { kind: "existing", src: image.src, alt: image.alt.trim() }
             : { kind: "new", key: image.key, alt: image.alt.trim() });
@@ -2805,7 +2775,7 @@
           );
           const result = await localJournalRequest("save", {
             mode: original ? "edit" : "create",
-            entry: { id, publishedAt, content, images: [], relatedWriting },
+            entry: { id, publishedAt, content, images: [], relatedWriting: relatedWriting ? { id: relatedWriting.id } : null },
             images: imageSpecs,
             uploads
           });

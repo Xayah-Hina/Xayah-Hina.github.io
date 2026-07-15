@@ -137,29 +137,20 @@ def validate_related(value):
         return None
     if not isinstance(value, dict):
         raise JournalError("Related Writing is invalid.")
-    label = value.get("label")
-    url = value.get("url")
-    if not isinstance(label, str) or not label.strip() or not isinstance(url, str) or not url.strip():
-        raise JournalError("Related Writing requires both a label and a URL.")
-    parsed = urlsplit(url)
-    if parsed.scheme and parsed.scheme not in {"http", "https"}:
-        raise JournalError("Related URL must be an HTTP, HTTPS, or local page link.")
-    return {"label": label.strip(), "url": url.strip()}
+    try:
+        writing_id = validate_writing_id(value.get("id"))
+        _, writing = find_writing(writing_id[:4], writing_id)
+    except WritingError as error:
+        raise JournalError("Related Writing is unavailable.") from error
+    return {"id": writing_id, "title": writing["title"]}
 
 
-def validate_content(value) -> list[dict]:
-    if not isinstance(value, list):
+def validate_content(value) -> str:
+    if not isinstance(value, str):
         raise JournalError("Journal content is invalid.")
-    result = []
-    for part in value:
-        if not isinstance(part, dict) or part.get("lang") not in {"en", "zh-CN"}:
-            raise JournalError("Journal content has an unsupported language.")
-        text = part.get("text")
-        if not isinstance(text, str) or not text.strip():
-            raise JournalError("Journal content contains an empty text block.")
-        if len(text) > 100_000:
-            raise JournalError("Journal content is too long.")
-        result.append({"lang": part["lang"], "text": text.strip()})
+    result = value.strip()
+    if len(result) > 100_000:
+        raise JournalError("Journal content is too long.")
     return result
 
 

@@ -2,12 +2,7 @@ export default [
   {
     "id": "20260715-075446-98f1",
     "publishedAt": "2026-07-15T07:54:46+08:00",
-    "content": [
-      {
-        "lang": "zh-CN",
-        "text": "这是一条新的日记"
-      }
-    ],
+    "content": "这是一条新的日记",
     "images": [
       {
         "src": "journals/images/2026/20260715-075446-98f1-01.png",
