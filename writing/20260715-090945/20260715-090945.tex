@@ -1,25 +1,134 @@
-\documentclass[11pt,a4paper,fontset=fandol,scheme=plain]{ctexart}
+\documentclass[11pt,twoside,fontset=none,scheme=plain]{ctexart}
 
-\usepackage[margin=25mm]{geometry}
+\usepackage[
+    paperwidth=176mm,
+    paperheight=250mm,
+    top=21mm,
+    bottom=22mm,
+    inner=23mm,
+    outer=19mm,
+    headheight=14pt,
+    headsep=7mm,
+    footskip=13mm
+]{geometry}
+\usepackage[nomath,semibold]{libertinus}
 \usepackage{microtype}
 \usepackage{xcolor}
 \usepackage{hyperref}
+\usepackage{fancyhdr}
 
-\definecolor{accent}{HTML}{285FAE}
+\newcommand{\writingfontpath}{assets/fonts/}
+\IfFileExists{assets/fonts/LXGWWenKaiGB-Regular.ttf}{}{%
+    \renewcommand{\writingfontpath}{../../assets/fonts/}%
+}
+\setCJKmainfont[
+    Path=\writingfontpath,
+    BoldFont=LXGWWenKaiGB-Medium.ttf,
+    AutoFakeSlant=0.2
+]{LXGWWenKaiGB-Regular.ttf}
+\setCJKsansfont[
+    Path=\writingfontpath,
+    BoldFont=SourceHanSansCN-Medium.otf
+]{SourceHanSansCN-Medium.otf}
+\setCJKmonofont[
+    Path=\writingfontpath
+]{SourceHanSansCN-Medium.otf}
+\xeCJKsetup{PunctStyle=kaiming}
+
+\definecolor{bookink}{HTML}{222222}
+\definecolor{mutedink}{HTML}{6B6964}
+\definecolor{accent}{HTML}{315F86}
 \hypersetup{
     unicode=true,
     pdftitle={理性是否真正理性：一个概率视角的讨论},
     pdfauthor={Xayah Hina},
+    pdfdisplaydoctitle=true,
     colorlinks=true,
     linkcolor=accent,
-    urlcolor=accent
+    urlcolor=accent,
+    citecolor=accent
 }
+\urlstyle{same}
 
 \setlength{\parindent}{2em}
 \setlength{\parskip}{0pt}
+\linespread{1.28}
+\emergencystretch=1.5em
+\clubpenalty=10000
+\widowpenalty=10000
+\displaywidowpenalty=10000
 \setcounter{secnumdepth}{3}
+\raggedbottom
 
-\title{理性是否真正理性：一个概率视角的讨论}
+\ctexset{
+    section={
+        name={},
+        number=\arabic{section},
+        format=\Large\sffamily\bfseries\color{bookink},
+        aftername=\hspace{0.8em},
+        beforeskip=2.6ex plus 0.5ex minus 0.2ex,
+        afterskip=1.3ex plus 0.2ex,
+        indent=0pt
+    },
+    subsection={
+        name={},
+        number=\thesection.\arabic{subsection},
+        format=\large\sffamily\bfseries\color{bookink},
+        aftername=\hspace{0.75em},
+        beforeskip=2.2ex plus 0.4ex minus 0.2ex,
+        afterskip=1ex plus 0.2ex,
+        indent=0pt
+    },
+    subsubsection={
+        name={},
+        number=\thesubsection.\arabic{subsubsection},
+        format=\normalsize\sffamily\bfseries\color{bookink},
+        aftername=\hspace{0.7em},
+        beforeskip=1.8ex plus 0.3ex minus 0.2ex,
+        afterskip=0.8ex plus 0.2ex,
+        indent=0pt
+    }
+}
+
+\renewcommand{\abstractname}{摘要}
+\renewenvironment{abstract}{%
+    \begin{center}
+        \small\sffamily\bfseries\color{bookink}\abstractname
+    \end{center}
+    \begin{list}{}{\leftmargin=2em\rightmargin=2em}
+        \item\relax\small\color{mutedink}\noindent\ignorespaces
+}{%
+    \end{list}
+    \vspace{1.2em}
+}
+
+\makeatletter
+\renewcommand{\maketitle}{%
+    \thispagestyle{plain}%
+    \begin{center}
+        \vspace*{0.6em}
+        {\LARGE\sffamily\bfseries\color{bookink}\@title\par}
+        \vspace{1em}
+        {\small\color{mutedink}\@author\quad\textperiodcentered\quad\@date\par}
+    \end{center}
+    \vspace{1.8em}
+}
+\makeatother
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE]{\footnotesize\color{mutedink}Xayah Hina}
+\fancyhead[RO]{\footnotesize\color{mutedink}理性是否真正理性：一个概率视角的讨论}
+\fancyfoot[LE,RO]{\footnotesize\color{mutedink}\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\fancypagestyle{plain}{%
+    \fancyhf{}
+    \fancyfoot[C]{\footnotesize\color{mutedink}\thepage}
+    \renewcommand{\headrulewidth}{0pt}
+}
+\AtBeginDocument{\color{bookink}}
+
+\title{理性是否真正理性：再读More is Different}
 \author{Xayah Hina}
 \date{2026-07-15}
 
@@ -32,23 +141,27 @@
 
 
     \section{Motivation}
-    最近几年，尤其是LLM的实证成功让我对于概率这个领域的思考越来越多，体会也会来越频繁。近期对于
+    最近几年，尤其是LLM的实证成功让我对于概率这个领域的思考越来越多，体会也会来越频繁。
 
 
-    \section{More is Different? 对世界概率性的思考历程}
-    这一章节回顾一下自己从本科那会开始对于整个世界概率性（注：此处的概率学并非完全等价于数学中的概率论）的整个思考历程。
+    \section{More is Different? }
+    这一章节回顾一下自己从本科那会开始对于整个世界概率性的整个思考历程。
     
     \subsection{大数定律和中心极限定律：随机中的确定}
-
     对于世界的概率性的初步认识自然是来自于修概率论与数理统计这门课的时候。说实话当时对于前几章的排列组合求概率等中学已熟知的内容并无太多兴趣，直到第五章（对于这一章我印象非常清晰，当时还特意上课时多看了很多遍）老师讲大数定律/中心极限定理时，突然眼前一亮大脑清澈，这种感受我直接仍记忆犹新。尤其是当时老师提到去一个面包店排队的人从微观上是随机的但是一旦从一个月来统计就会发现，一天中人群排队的按每小时统计的值会回归到一个\textbf{稳定的值}。
-    这个现象说实话挺“显而易见”的但是细细思考下去就会触及到我之前从没有想过的一面。之前我总是以为随机就是随机，掷骰子是随机，分子随机运动是随机，怎样的人什么时候去网购一键什么样的东西也是随机。那时我就在想，这么说其实这种“随机其实并不是随机”而是一种确定意义下的随机？或者说完全可以视作一种隐藏的确定值？这个\textbf{隐藏}给了当时的我很大启发。果不其然下一节课就讲到了中心极限定律，这个世界上的万事万物都和正态分布有着千丝万缕的联系（难怪要叫Normal Distribution）。
-    在奶茶店一个月每天上午10点排队的人数就是近似正态分布。
-    
+
+    这个现象说实话挺“显而易见”的但是细细思考下去就会触及到我之前从没有想过的一面。之前我总是以为随机就是随机，掷骰子是随机，分子随机运动是随机，怎样的人什么时候去网购一键什么样的东西也是随机。那时我就在想，这么说其实这种“随机其实并不是随机”而是一种确定意义下的随机？或者说完全可以视作一种隐藏的确定值？这个\textbf{隐藏}给了当时的我很大启发。果不其然下一节课就讲到了中心极限定律，这个世界上的万事万物都和正态分布有着千丝万缕的联系（难怪要叫Normal Distribution）。 在奶茶店一个月每天上午10点排队的人数就是近似正态分布。
+
+
     \subsection{采样定理：离散和连续}
     第二次对于概率的深入理解来自于复习留学备考的时候，那时候要补本科没学过的通信原理。其余只是说实话现在已经忘得七七八八了，但对于当时初学采样定理（这里感谢一下浙大的胡浩基老师）看到“只要采样频率至少高于信号最高频率的两倍，就能从这些离散采样点中完整还原原始信号”。这句话当时对我的震撼其实还是很大的。在我的朴素认知中，一个连续的东西你再怎么采样那肯定只能像盲人摸象一样知道一个局部永远不可能知道全貌，但是采样定理沟通了\textbf{离散}和\textbf{连续}的关系。包括后来沟通连续傅里叶变换和离散傅里叶变换的关系也让我对于这个世界的概率性有了更深刻的理解。也就是说，世界上很多看似连续的东西其实是离散的，或者说离散的东西可以还原出连续的东西。这个“还原”给了我很大的启发。
 
     \subsection{More is Different：复杂系统的涌现性}
     第三次也是在本科的时候当时刷知乎的时候思考了很久的一个东西。如知乎上一些回答一样在此之前我一直都是比较典型的“还原论”的信徒，我那时一直相信复杂的事物总是由简单的事堆叠出来的，理清了简单的一个个“原子”和沟通这些原子之间的“关系”就能像搭积木一样搭出来整个世界。就像自然科学中的“化学过程本质不过是物理原子的变化，弄清楚物理化学这门科学就可以不用存在了”（生物学也是同理）论调一样，在此之前我都是深信不疑的。直到后来看到一众知乎答主对于P.W. Anderson的\textit{More is Difference}的讨论才让我更加深入地去思考了一下这个问题。
     当时遍观了各位物理学PhD答主的讨论，我得出的阶段性结论是类似于系统论/控制论/耗散结构之类的东西，认为给简单系统增加复杂性确实会增加一些“系统”层面的复杂性，但还是认为这种系统性的复杂并不和还原论的“简单本质”冲突：原子还是那些原子，复杂的只是构建了这么个系统，如果没这个系统那一切都还是原来简单的本质。有一个比喻我至今还记得非常清楚：就好像是一堆祖传石山代码，也许核心的逻辑和算法只在其中一个文件的一小段，但是想要理清整个系统并重写成相同功能需要耗费巨大的精力（PS.我想即使是目前的Claude Fable/GPT 5.6 Sol也不是一件容易的事情）。因此那时的我在想，复杂的是系统，而不是本质很复杂。“More的只是System，Essence还是Essence”。
+
+    \subsection{光速不变与量子化}
+
+    \section{Trash in, Trash out}
 
 \end{document}

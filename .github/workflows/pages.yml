@@ -47,6 +47,10 @@ jobs:
             fi
           done
 
+      - name: Remove build-only fonts
+        shell: bash
+        run: rm -rf assets/fonts
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
