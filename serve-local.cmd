@@ -3,13 +3,13 @@ setlocal
 cd /d "%~dp0"
 
 set "LOCAL_URL=http://localhost:8765/#journal"
-set "CHROME=%ProgramFiles%\Google\Chrome\Application\chrome.exe"
-if not exist "%CHROME%" set "CHROME=%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"
+set "EDGE=%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"
+if not exist "%EDGE%" set "EDGE=%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"
 
-if exist "%CHROME%" (
-  start "" /b powershell.exe -NoProfile -WindowStyle Hidden -Command "Start-Sleep -Milliseconds 700; Start-Process -FilePath '%CHROME%' -ArgumentList '%LOCAL_URL%'"
+if exist "%EDGE%" (
+  start "" /b powershell.exe -NoProfile -WindowStyle Hidden -Command "Start-Sleep -Milliseconds 700; Start-Process -FilePath '%EDGE%' -ArgumentList '%LOCAL_URL%'"
 ) else (
-  start "" /b powershell.exe -NoProfile -WindowStyle Hidden -Command "Start-Sleep -Milliseconds 700; Start-Process '%LOCAL_URL%'"
+  echo Microsoft Edge was not found. Open %LOCAL_URL% manually.
 )
 
 echo Writing local editor: %LOCAL_URL%

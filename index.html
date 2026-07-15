@@ -614,13 +614,16 @@
 
     .journal-media[data-count="1"] {
       grid-template-columns: minmax(0, 36rem);
+      justify-items: start;
     }
 
     .journal-media[data-count="1"] .journal-image {
+      width: auto;
       height: auto;
+      max-width: 100%;
       max-height: 32rem;
       aspect-ratio: auto;
-      object-fit: contain;
+      object-fit: initial;
     }
 
     .journal-media[data-count="3"] .journal-image:first-child {
