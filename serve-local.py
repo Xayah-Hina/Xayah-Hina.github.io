@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import base64
 import binascii
 import json
@@ -41,7 +42,7 @@ IMAGE_PATH_PATTERN = re.compile(
     r"^journals/images/(?P<year>\d{4})/(?P<name>[A-Za-z0-9._-]+)$"
 )
 WRITING_ID_PATTERN = re.compile(r"^\d{8}-\d{6}$")
-WRITING_MUTATION_LOCK = threading.RLock()
+MUTATION_LOCK = threading.RLock()
 
 
 class LocalEditorError(Exception):
@@ -54,6 +55,130 @@ class JournalError(LocalEditorError):
 
 class WritingError(LocalEditorError):
     pass
+
+
+class PublishError(LocalEditorError):
+    pass
+
+
+class GitPublisher:
+    MANAGED_PATHS = ("journals", "writing")
+
+    def __init__(self, root: Path, enabled: bool = False):
+        self.root = root.resolve()
+        self.enabled = enabled
+        self.branch = ""
+        self.state = "disabled" if not enabled else "starting"
+        self.message = "Automatic publishing is disabled." if not enabled else "Checking Git configuration..."
+
+    def _git(self, *arguments: str, timeout: int = 60) -> subprocess.CompletedProcess:
+        environment = os.environ.copy()
+        environment["GIT_TERMINAL_PROMPT"] = "0"
+        try:
+            result = subprocess.run(
+                ["git", *arguments],
+                cwd=self.root,
+                env=environment,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=timeout,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise PublishError(f"Git command failed: {error}") from error
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout).strip()
+            raise PublishError(detail or f"Git exited with code {result.returncode}.")
+        return result
+
+    def _set_state(self, state: str, message: str) -> None:
+        self.state = state
+        self.message = message
+
+    def _ensure_repository(self) -> None:
+        if self._git("rev-parse", "--is-inside-work-tree").stdout.strip() != "true":
+            raise PublishError("The local site directory is not a Git repository.")
+        self.branch = self._git("branch", "--show-current").stdout.strip()
+        if not self.branch:
+            raise PublishError("Automatic publishing is unavailable in detached HEAD state.")
+        self._git("remote", "get-url", "origin")
+        conflicts = self._git("diff", "--name-only", "--diff-filter=U").stdout.strip()
+        if conflicts:
+            raise PublishError("Resolve Git merge conflicts before using the local editor.")
+
+    def _changed_managed_paths(self) -> list[str]:
+        paths = set()
+        commands = (
+            ("diff", "--name-only", "-z", "--", *self.MANAGED_PATHS),
+            ("diff", "--cached", "--name-only", "-z", "--", *self.MANAGED_PATHS),
+            ("ls-files", "--others", "--exclude-standard", "-z", "--", *self.MANAGED_PATHS),
+        )
+        for command in commands:
+            output = self._git(*command).stdout
+            paths.update(path for path in output.split("\0") if path)
+        return sorted(paths)
+
+    def start(self) -> None:
+        if not self.enabled:
+            return
+        try:
+            self._ensure_repository()
+            changed = self._changed_managed_paths()
+            if changed:
+                shown = ", ".join(changed[:4])
+                if len(changed) > 4:
+                    shown += ", ..."
+                raise PublishError(f"Existing Journal/Writing changes block auto-push: {shown}")
+            self._git("push", "-u", "origin", self.branch)
+            self._set_state("synced", f"Auto-push is ready on {self.branch}.")
+        except PublishError as error:
+            self._set_state("failed", str(error))
+
+    def prepare_mutation(self) -> None:
+        if not self.enabled:
+            return
+        self._ensure_repository()
+        changed = self._changed_managed_paths()
+        if changed:
+            shown = ", ".join(changed[:4])
+            if len(changed) > 4:
+                shown += ", ..."
+            raise PublishError(f"Commit or discard existing Journal/Writing changes before editing: {shown}")
+
+    def publish(self, message: str) -> dict:
+        if not self.enabled:
+            return self.status()
+        try:
+            self._ensure_repository()
+            paths = self._changed_managed_paths()
+            if not paths:
+                self._git("push", "-u", "origin", self.branch)
+                self._set_state("unchanged", "No new commit was needed; the branch is synced.")
+                return self.status()
+            self._git("add", "-A", "--", *paths)
+            self._git("commit", "--only", "-m", message, "--", *paths)
+            commit = self._git("rev-parse", "--short", "HEAD").stdout.strip()
+            self._git("push", "-u", "origin", self.branch)
+            self._set_state("synced", f"Committed {commit} and pushed to {self.branch}.")
+            result = self.status()
+            result["commit"] = commit
+            return result
+        except PublishError as error:
+            self._set_state("failed", str(error))
+            return self.status()
+
+    def status(self) -> dict:
+        return {
+            "enabled": self.enabled,
+            "state": self.state,
+            "message": self.message,
+            "branch": self.branch,
+        }
+
+
+AUTO_PUBLISHER = GitPublisher(ROOT)
 
 
 def module_data(path: Path, expected_type: type):
@@ -714,27 +839,26 @@ def open_writing(payload: dict) -> dict:
 def create_writing(payload: dict) -> dict:
     title = validate_writing_text(payload.get("title"), "title", 200)
     summary = validate_writing_text(payload.get("summary", ""), "summary", 5000, required=False)
-    with WRITING_MUTATION_LOCK:
-        writing_id = datetime.now(ZoneInfo("Asia/Singapore")).strftime("%Y%m%d-%H%M%S")
-        year = writing_id[:4]
-        years = writing_catalog_years()
-        year_path = WRITING / f"{year}.js"
-        entries = read_writing_year(year, required=year in years or year_path.exists())
-        source_path, _, _ = writing_document_paths(writing_id)
-        if any(entry["id"] == writing_id for entry in entries) or source_path.parent.exists():
-            raise WritingError("A Writing entry already exists for this second. Try again in a moment.")
-        entry = {"id": writing_id, "title": title}
-        if summary:
-            entry["summary"] = summary
-        next_entries = sorted([*entries, entry], key=lambda item: item["id"], reverse=True)
-        next_years = normalize_years([*years, year])
-        source = writing_source_template(writing_id, title, summary)
-        apply_writing_changes({
-            source_path: source.encode("utf-8"),
-            year_path: module_source(next_entries),
-            WRITING_CATALOG: module_source({"years": [int(value) for value in next_years]}),
-        })
-        return {**writing_open_response(year, entry), "years": next_years, "entries": next_entries}
+    writing_id = datetime.now(ZoneInfo("Asia/Singapore")).strftime("%Y%m%d-%H%M%S")
+    year = writing_id[:4]
+    years = writing_catalog_years()
+    year_path = WRITING / f"{year}.js"
+    entries = read_writing_year(year, required=year in years or year_path.exists())
+    source_path, _, _ = writing_document_paths(writing_id)
+    if any(entry["id"] == writing_id for entry in entries) or source_path.parent.exists():
+        raise WritingError("A Writing entry already exists for this second. Try again in a moment.")
+    entry = {"id": writing_id, "title": title}
+    if summary:
+        entry["summary"] = summary
+    next_entries = sorted([*entries, entry], key=lambda item: item["id"], reverse=True)
+    next_years = normalize_years([*years, year])
+    source = writing_source_template(writing_id, title, summary)
+    apply_writing_changes({
+        source_path: source.encode("utf-8"),
+        year_path: module_source(next_entries),
+        WRITING_CATALOG: module_source({"years": [int(value) for value in next_years]}),
+    })
+    return {**writing_open_response(year, entry), "years": next_years, "entries": next_entries}
 
 
 def _save_writing(payload: dict) -> dict:
@@ -762,8 +886,7 @@ def _save_writing(payload: dict) -> dict:
 
 
 def save_writing(payload: dict) -> dict:
-    with WRITING_MUTATION_LOCK:
-        return _save_writing(payload)
+    return _save_writing(payload)
 
 
 def _compile_writing(payload: dict) -> dict:
@@ -822,53 +945,50 @@ def _compile_writing(payload: dict) -> dict:
 
 
 def compile_writing(payload: dict) -> dict:
-    with WRITING_MUTATION_LOCK:
-        return _compile_writing(payload)
+    return _compile_writing(payload)
 
 
 def delete_writing(payload: dict) -> dict:
     year = str(payload.get("year", ""))
     writing_id = validate_writing_id(payload.get("id"))
+    entries, _ = find_writing(year, writing_id)
+    source_path, _, _ = writing_document_paths(writing_id)
+    directory = source_path.parent
+    if not directory.is_dir():
+        raise WritingError(f"Missing Writing directory {directory.name}.")
 
-    with WRITING_MUTATION_LOCK:
-        entries, _ = find_writing(year, writing_id)
-        source_path, _, _ = writing_document_paths(writing_id)
-        directory = source_path.parent
-        if not directory.is_dir():
-            raise WritingError(f"Missing Writing directory {directory.name}.")
+    years = writing_catalog_years()
+    next_entries = [entry for entry in entries if entry["id"] != writing_id]
+    next_years = years if next_entries else [value for value in years if value != year]
+    year_path = WRITING / f"{year}.js"
+    changes = {
+        year_path: module_source(next_entries) if next_entries else None,
+    }
+    if not next_entries:
+        changes[WRITING_CATALOG] = module_source({"years": [int(value) for value in next_years]})
 
-        years = writing_catalog_years()
-        next_entries = [entry for entry in entries if entry["id"] != writing_id]
-        next_years = years if next_entries else [value for value in years if value != year]
-        year_path = WRITING / f"{year}.js"
-        changes = {
-            year_path: module_source(next_entries) if next_entries else None,
-        }
-        if not next_entries:
-            changes[WRITING_CATALOG] = module_source({"years": [int(value) for value in next_years]})
+    with tempfile.TemporaryDirectory(prefix="writing-delete-", ignore_cleanup_errors=True) as backup_root:
+        backup = Path(backup_root) / writing_id
+        try:
+            shutil.move(str(directory), str(backup))
+        except OSError as error:
+            raise WritingError(f"Writing directory {writing_id} could not be removed.") from error
 
-        with tempfile.TemporaryDirectory(prefix="writing-delete-", ignore_cleanup_errors=True) as backup_root:
-            backup = Path(backup_root) / writing_id
+        try:
+            apply_writing_changes(changes)
+        except Exception:
             try:
-                shutil.move(str(directory), str(backup))
-            except OSError as error:
-                raise WritingError(f"Writing directory {writing_id} could not be removed.") from error
+                shutil.move(str(backup), str(directory))
+            except OSError as rollback_error:
+                print(f"Writing directory rollback failed for {writing_id}: {rollback_error}")
+            raise
 
-            try:
-                apply_writing_changes(changes)
-            except Exception:
-                try:
-                    shutil.move(str(backup), str(directory))
-                except OSError as rollback_error:
-                    print(f"Writing directory rollback failed for {writing_id}: {rollback_error}")
-                raise
-
-        return {
-            "year": year,
-            "years": next_years,
-            "entries": next_entries,
-            "status": "deleted",
-        }
+    return {
+        "year": year,
+        "years": next_years,
+        "entries": next_entries,
+        "status": "deleted",
+    }
 
 
 def tectonic_version() -> str | None:
@@ -880,6 +1000,30 @@ def tectonic_version() -> str | None:
     except (OSError, subprocess.TimeoutExpired):
         return None
     return result.stdout.strip() if result.returncode == 0 else None
+
+
+MUTATING_ENDPOINTS = {
+    "/api/journal/save",
+    "/api/journal/delete",
+    "/api/writing/create",
+    "/api/writing/save",
+    "/api/writing/compile",
+    "/api/writing/delete",
+}
+
+
+def publish_message(path: str, payload: dict, result: dict) -> str:
+    if path == "/api/journal/save":
+        action = "publish" if result.get("status") == "created" else "update"
+        journal_id = str(payload.get("entry", {}).get("id", "Journal"))
+        return f"Journal: {action} {journal_id}"
+    if path == "/api/journal/delete":
+        return f"Journal: delete {payload.get('id', 'entry')}"
+    if path == "/api/writing/create":
+        return f"Writing: create {result.get('entry', {}).get('id', 'entry')}"
+    if path == "/api/writing/delete":
+        return f"Writing: delete {payload.get('id', 'entry')}"
+    return f"Writing: update {payload.get('id', 'entry')}"
 
 
 class LocalSiteHandler(SimpleHTTPRequestHandler):
@@ -918,6 +1062,7 @@ class LocalSiteHandler(SimpleHTTPRequestHandler):
                 "journalError": None,
                 "writingError": None,
                 "tectonicVersion": tectonic_version(),
+                "autoPublish": AUTO_PUBLISHER.status(),
             }
             try:
                 status["journalYears"] = catalog_years()
@@ -964,7 +1109,13 @@ class LocalSiteHandler(SimpleHTTPRequestHandler):
             payload = json.loads(self.rfile.read(length))
             if not isinstance(payload, dict):
                 raise LocalEditorError("Local editor request is invalid.")
-            result = actions[path](payload)
+            if path in MUTATING_ENDPOINTS:
+                with MUTATION_LOCK:
+                    AUTO_PUBLISHER.prepare_mutation()
+                    result = actions[path](payload)
+                    result["sync"] = AUTO_PUBLISHER.publish(publish_message(path, payload, result))
+            else:
+                result = actions[path](payload)
             self.api_json(HTTPStatus.OK, result)
         except (LocalEditorError, json.JSONDecodeError, UnicodeDecodeError) as error:
             self.api_json(HTTPStatus.BAD_REQUEST, {"error": str(error)})
@@ -979,11 +1130,18 @@ class LocalSiteHandler(SimpleHTTPRequestHandler):
 
 
 def main() -> None:
+    global AUTO_PUBLISHER
+    parser = argparse.ArgumentParser(description="Run the local Writing and Journal editor.")
+    parser.add_argument("--auto-push", action="store_true", help="Commit and push successful editor mutations.")
+    arguments = parser.parse_args()
     if not (ROOT / "index.html").is_file() or not JOURNAL_CATALOG.is_file() or not WRITING_CATALOG.is_file():
         raise SystemExit("serve-local.py must be run from the xayah-hina.github.io repository.")
+    AUTO_PUBLISHER = GitPublisher(ROOT, enabled=arguments.auto_push)
+    AUTO_PUBLISHER.start()
     handler = partial(LocalSiteHandler, directory=str(ROOT))
     with ThreadingHTTPServer((HOST, PORT), handler) as server:
         print(f"Writing local editor: http://localhost:{PORT}/#journal")
+        print(AUTO_PUBLISHER.message)
         print("Writes are restricted to the journals and writing directories. Press Ctrl+C to stop.")
         try:
             server.serve_forever()

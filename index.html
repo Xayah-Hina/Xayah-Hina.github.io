@@ -2188,16 +2188,20 @@
           writingAuthoring.connected = !result.writingError;
           authoring.newButton.disabled = !canAuthorJournal();
           writingAuthoring.newButton.disabled = !canAuthorWriting();
-          setAuthoringStatus(journalCatalogError || result.journalError
-            ? (result.journalError || "Journal catalog failed to load; local editing is disabled.")
-            : "Local editing is enabled.",
+          const journalInitial = initialSyncFeedback(result.autoPublish,
+            journalCatalogError || result.journalError
+              ? (result.journalError || "Journal catalog failed to load; local editing is disabled.")
+              : "Local editing is enabled.",
           journalCatalogError || result.journalError ? "error" : "status");
-          setWritingAuthoringStatus(writingCatalogError || result.writingError
+          setAuthoringStatus(journalInitial.message, journalInitial.kind);
+          const writingInitial = initialSyncFeedback(result.autoPublish,
+            writingCatalogError || result.writingError
             ? (result.writingError || "Writing catalog failed to load; local editing is disabled.")
             : (result.tectonicVersion
               ? `Local Writing editor is enabled · ${result.tectonicVersion}`
               : "Local Writing editor is enabled, but Tectonic is unavailable."),
           writingCatalogError || result.writingError || !result.tectonicVersion ? "error" : "status");
+          setWritingAuthoringStatus(writingInitial.message, writingInitial.kind);
           renderArchive();
         } catch (error) {
           authoring.connected = false;
@@ -2236,6 +2240,27 @@
         if (!writingAuthoring.status) return;
         writingAuthoring.status.textContent = message;
         writingAuthoring.status.dataset.kind = kind;
+      }
+
+      function initialSyncFeedback(sync, localMessage, localKind = "status") {
+        if (!sync?.enabled) return { message: localMessage, kind: localKind };
+        if (sync.state === "failed") {
+          return { message: `${localMessage} Auto-push unavailable: ${sync.message}`, kind: "error" };
+        }
+        const branch = sync.branch ? ` on ${sync.branch}` : "";
+        return { message: `${localMessage} Auto-push enabled${branch}.`, kind: localKind };
+      }
+
+      function operationSyncFeedback(result, localMessage, localKind = "status") {
+        const sync = result?.sync;
+        if (!sync?.enabled) return { message: localMessage, kind: localKind };
+        if (sync.state === "synced") {
+          return { message: `${localMessage} ${sync.message}`, kind: localKind };
+        }
+        if (sync.state === "unchanged") {
+          return { message: `${localMessage} No remote update was needed.`, kind: localKind };
+        }
+        return { message: `${localMessage} Saved locally, but auto-push failed: ${sync.message}`, kind: "error" };
       }
 
       async function localSiteRequest(path, payload) {
@@ -2344,6 +2369,8 @@
           applyWritingServerData(result, true);
           writingAuthoring.createDialog.close();
           showWritingEditorData(result);
+          const feedback = operationSyncFeedback(result, "Writing created locally.");
+          setWritingEditorStatus(feedback.message, feedback.kind);
         } catch (error) {
           writingDialogMessage(writingAuthoring.createDialog, error.message || "Writing could not be created.", "error");
         } finally {
@@ -2463,13 +2490,16 @@
             const compilation = result.compile || { ok: false, log: "No compilation result was returned." };
             writingAuthoring.log.textContent = compilation.log;
             writingAuthoring.editor.querySelector(".writing-compile-log").open = !compilation.ok;
-            setWritingEditorStatus(compilation.ok
-              ? "Saved and compiled successfully."
-              : "Saved, but compilation failed. The last successful PDF is still shown.",
+            const feedback = operationSyncFeedback(result,
+              compilation.ok
+                ? "Saved and compiled successfully."
+                : "Saved, but compilation failed. The last successful PDF is still shown.",
             compilation.ok ? "status" : "error");
+            setWritingEditorStatus(feedback.message, feedback.kind);
             if (compilation.ok && matchMedia("(max-width: 42rem)").matches) setWritingEditorView("preview");
           } else {
-            setWritingEditorStatus("Saved.");
+            const feedback = operationSyncFeedback(result, "Writing saved locally.");
+            setWritingEditorStatus(feedback.message, feedback.kind);
           }
         } catch (error) {
           setWritingEditorStatus(error.message || "Writing could not be saved.", "error");
@@ -2490,7 +2520,8 @@
         try {
           const result = await localWritingRequest("delete", { year, id });
           applyWritingServerData(result);
-          setWritingAuthoringStatus("Writing deleted locally.");
+          const feedback = operationSyncFeedback(result, "Writing deleted locally.");
+          setWritingAuthoringStatus(feedback.message, feedback.kind);
         } catch (error) {
           setWritingAuthoringStatus(error.message || "The Writing entry could not be deleted.", "error");
         } finally {
@@ -2785,12 +2816,13 @@
           const cleanupFailures = Array.isArray(result.cleanupFailures) ? result.cleanupFailures : [];
 
           applyJournalData(resultYear, nextEntries, nextYears, result.status === "created" ? "push" : "replace");
-          setAuthoringStatus(cleanupFailures.length > 0
+          const feedback = operationSyncFeedback(result, cleanupFailures.length > 0
             ? `Journal saved, but ${cleanupFailures.length} old image file could not be removed.`
             : (result.status === "unchanged"
               ? "No Journal changes to save."
               : (result.status === "updated" ? "Journal updated locally." : "Journal published locally.")),
           cleanupFailures.length > 0 ? "error" : "status");
+          setAuthoringStatus(feedback.message, feedback.kind);
           completed = true;
         } catch (error) {
           setEditorMessage(error.message || "The Journal could not be saved.", "error");
@@ -2820,10 +2852,11 @@
             : [];
           const cleanupFailures = Array.isArray(result.cleanupFailures) ? result.cleanupFailures : [];
           applyJournalData(year, nextEntries, nextYears, "replace");
-          setAuthoringStatus(cleanupFailures.length > 0
+          const feedback = operationSyncFeedback(result, cleanupFailures.length > 0
             ? `Journal deleted, but ${cleanupFailures.length} image file could not be removed.`
             : "Journal deleted locally.",
           cleanupFailures.length > 0 ? "error" : "status");
+          setAuthoringStatus(feedback.message, feedback.kind);
         } catch (error) {
           setAuthoringStatus(error.message || "The Journal could not be deleted.", "error");
         } finally {

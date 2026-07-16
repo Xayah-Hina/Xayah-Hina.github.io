@@ -14,4 +14,4 @@ if exist "%EDGE%" (
 
 echo Writing local editor: %LOCAL_URL%
 echo Press Ctrl+C to stop the server.
-py "%~dp0serve-local.py"
+py "%~dp0serve-local.py" --auto-push
