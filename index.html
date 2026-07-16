@@ -1363,7 +1363,8 @@
         </div>
         <div class="writing-editor-actions">
           <button class="control-button" type="button" data-writing-editor-action="save">Save</button>
-          <button class="control-button control-button-primary" type="button" data-writing-editor-action="compile">Save &amp; Compile</button>
+          <button class="control-button" type="button" data-writing-editor-action="compile">Save &amp; Compile</button>
+          <button class="control-button control-button-primary" type="button" data-writing-editor-action="publish" disabled>Publish</button>
         </div>
       </header>
 
@@ -1488,7 +1489,9 @@
         frame: null,
         emptyPreview: null,
         current: null,
-        baseline: null
+        baseline: null,
+        publishEnabled: false,
+        unpublished: false
       };
 
       async function importDataModule(path, version = moduleVersion) {
@@ -2149,6 +2152,7 @@
           if (action === "close") requestCloseWritingEditor();
           if (action === "save") saveWritingDocument(false);
           if (action === "compile") saveWritingDocument(true);
+          if (action === "publish") publishWritingDocument();
           const view = event.target.closest("[data-writing-view]")?.dataset.writingView;
           if (view) setWritingEditorView(view);
         });
@@ -2186,6 +2190,7 @@
           authoring.apiToken = result.token;
           authoring.connected = !result.journalError;
           writingAuthoring.connected = !result.writingError;
+          writingAuthoring.publishEnabled = Boolean(result.autoPublish?.enabled);
           authoring.newButton.disabled = !canAuthorJournal();
           writingAuthoring.newButton.disabled = !canAuthorWriting();
           const journalInitial = initialSyncFeedback(result.autoPublish,
@@ -2200,7 +2205,7 @@
             : (result.tectonicVersion
               ? `Local Writing editor is enabled · ${result.tectonicVersion}`
               : "Local Writing editor is enabled, but Tectonic is unavailable."),
-          writingCatalogError || result.writingError || !result.tectonicVersion ? "error" : "status");
+          writingCatalogError || result.writingError || !result.tectonicVersion ? "error" : "status", true);
           setWritingAuthoringStatus(writingInitial.message, writingInitial.kind);
           renderArchive();
         } catch (error) {
@@ -2242,10 +2247,13 @@
         writingAuthoring.status.dataset.kind = kind;
       }
 
-      function initialSyncFeedback(sync, localMessage, localKind = "status") {
+      function initialSyncFeedback(sync, localMessage, localKind = "status", showWritingPending = false) {
         if (!sync?.enabled) return { message: localMessage, kind: localKind };
         if (sync.state === "failed") {
           return { message: `${localMessage} Auto-push unavailable: ${sync.message}`, kind: "error" };
+        }
+        if (showWritingPending && sync.writingPending) {
+          return { message: `${localMessage} Writing changes are pending Publish.`, kind: localKind };
         }
         const branch = sync.branch ? ` on ${sync.branch}` : "";
         return { message: `${localMessage} Auto-push enabled${branch}.`, kind: localKind };
@@ -2259,6 +2267,9 @@
         }
         if (sync.state === "unchanged") {
           return { message: `${localMessage} No remote update was needed.`, kind: localKind };
+        }
+        if (sync.state === "pending") {
+          return { message: `${localMessage} Unpublished changes.`, kind: localKind };
         }
         return { message: `${localMessage} Saved locally, but auto-push failed: ${sync.message}`, kind: "error" };
       }
@@ -2310,7 +2321,12 @@
 
       function updateWritingEditorStatus() {
         if (!writingAuthoring.current || writingAuthoring.busy) return;
-        setWritingEditorStatus(writingEditorIsDirty() ? "Unsaved changes." : "Saved.");
+        const dirty = writingEditorIsDirty();
+        const publish = writingAuthoring.editor.querySelector('[data-writing-editor-action="publish"]');
+        publish.disabled = dirty || !writingAuthoring.publishEnabled || !writingAuthoring.unpublished;
+        setWritingEditorStatus(dirty
+          ? "Unsaved changes."
+          : (writingAuthoring.unpublished ? "Saved locally · Unpublished changes." : "Saved and published."));
       }
 
       function setWritingEditorStatus(message, kind = "status") {
@@ -2328,6 +2344,8 @@
         }
         if (writingAuthoring.editor) {
           for (const control of writingAuthoring.editor.querySelectorAll("button, input, textarea")) control.disabled = busy;
+          const publish = writingAuthoring.editor.querySelector('[data-writing-editor-action="publish"]');
+          publish.disabled = busy || !writingAuthoring.publishEnabled || !writingAuthoring.unpublished;
         }
       }
 
@@ -2413,6 +2431,10 @@
       }
 
       function showWritingEditorData(result) {
+        if (result.sync) {
+          writingAuthoring.publishEnabled = Boolean(result.sync.enabled);
+          writingAuthoring.unpublished = Boolean(result.sync.writingPending);
+        }
         writingAuthoring.current = {
           year: String(result.year),
           id: result.entry.id
@@ -2428,7 +2450,9 @@
         writingAuthoring.editor.hidden = false;
         document.body.classList.add("writing-editor-open");
         setWritingEditorView("source");
-        setWritingEditorStatus("Saved.");
+        setWritingEditorStatus(writingAuthoring.unpublished
+          ? "Saved locally · Unpublished changes."
+          : "Saved and published.");
         writingAuthoring.source.focus();
       }
 
@@ -2451,6 +2475,7 @@
       function requestCloseWritingEditor() {
         if (writingAuthoring.busy) return;
         if (writingEditorIsDirty() && !window.confirm("Discard unsaved Writing changes?")) return;
+        if (writingAuthoring.unpublished && !window.confirm("Leave these Writing changes saved locally but unpublished?")) return;
         writingAuthoring.editor.hidden = true;
         writingAuthoring.frame.removeAttribute("src");
         writingAuthoring.current = null;
@@ -2503,6 +2528,30 @@
           }
         } catch (error) {
           setWritingEditorStatus(error.message || "Writing could not be saved.", "error");
+        } finally {
+          setWritingEditorBusy(false);
+        }
+      }
+
+      async function publishWritingDocument() {
+        if (!writingAuthoring.current || writingAuthoring.busy || !writingAuthoring.publishEnabled) return;
+        if (writingEditorIsDirty()) {
+          setWritingEditorStatus("Save the current changes locally before publishing.", "error");
+          return;
+        }
+
+        setWritingEditorBusy(true);
+        setWritingEditorStatus("Publishing...");
+        try {
+          const result = await localWritingRequest("publish", {
+            year: writingAuthoring.current.year,
+            id: writingAuthoring.current.id
+          });
+          writingAuthoring.unpublished = Boolean(result.sync?.writingPending);
+          const feedback = operationSyncFeedback(result, "Writing published.");
+          setWritingEditorStatus(feedback.message, feedback.kind);
+        } catch (error) {
+          setWritingEditorStatus(error.message || "Writing could not be published.", "error");
         } finally {
           setWritingEditorBusy(false);
         }

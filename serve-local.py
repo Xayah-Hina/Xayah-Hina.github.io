@@ -62,8 +62,6 @@ class PublishError(LocalEditorError):
 
 
 class GitPublisher:
-    MANAGED_PATHS = ("journals", "writing")
-
     def __init__(self, root: Path, enabled: bool = False):
         self.root = root.resolve()
         self.enabled = enabled
@@ -108,51 +106,61 @@ class GitPublisher:
         if conflicts:
             raise PublishError("Resolve Git merge conflicts before using the local editor.")
 
-    def _changed_managed_paths(self) -> list[str]:
+    def _changed_paths(self, managed_paths: tuple[str, ...]) -> list[str]:
         paths = set()
         commands = (
-            ("diff", "--name-only", "-z", "--", *self.MANAGED_PATHS),
-            ("diff", "--cached", "--name-only", "-z", "--", *self.MANAGED_PATHS),
-            ("ls-files", "--others", "--exclude-standard", "-z", "--", *self.MANAGED_PATHS),
+            ("diff", "--name-only", "-z", "--", *managed_paths),
+            ("diff", "--cached", "--name-only", "-z", "--", *managed_paths),
+            ("ls-files", "--others", "--exclude-standard", "-z", "--", *managed_paths),
         )
         for command in commands:
             output = self._git(*command).stdout
             paths.update(path for path in output.split("\0") if path)
         return sorted(paths)
 
+    def _unpushed_commit_count(self) -> int:
+        upstream = self._git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}", timeout=10).stdout.strip()
+        if not upstream:
+            return 0
+        value = self._git("rev-list", "--count", f"{upstream}..HEAD", timeout=10).stdout.strip()
+        return int(value or "0")
+
     def start(self) -> None:
         if not self.enabled:
             return
         try:
             self._ensure_repository()
-            changed = self._changed_managed_paths()
-            if changed:
-                shown = ", ".join(changed[:4])
-                if len(changed) > 4:
+            journal_changes = self._changed_paths(("journals",))
+            if journal_changes:
+                shown = ", ".join(journal_changes[:4])
+                if len(journal_changes) > 4:
                     shown += ", ..."
-                raise PublishError(f"Existing Journal/Writing changes block auto-push: {shown}")
+                raise PublishError(f"Existing Journal changes block auto-push: {shown}")
             self._git("push", "-u", "origin", self.branch)
-            self._set_state("synced", f"Auto-push is ready on {self.branch}.")
+            if self._changed_paths(("writing",)):
+                self._set_state("pending", "Writing changes are saved locally and awaiting Publish.")
+            else:
+                self._set_state("synced", f"Auto-push is ready on {self.branch}.")
         except PublishError as error:
             self._set_state("failed", str(error))
 
-    def prepare_mutation(self) -> None:
+    def prepare_mutation(self, managed_paths: tuple[str, ...]) -> None:
         if not self.enabled:
             return
         self._ensure_repository()
-        changed = self._changed_managed_paths()
+        changed = self._changed_paths(managed_paths)
         if changed:
             shown = ", ".join(changed[:4])
             if len(changed) > 4:
                 shown += ", ..."
-            raise PublishError(f"Commit or discard existing Journal/Writing changes before editing: {shown}")
+            raise PublishError(f"Commit or discard existing changes before editing: {shown}")
 
-    def publish(self, message: str) -> dict:
+    def publish(self, message: str, managed_paths: tuple[str, ...]) -> dict:
         if not self.enabled:
             return self.status()
         try:
             self._ensure_repository()
-            paths = self._changed_managed_paths()
+            paths = self._changed_paths(managed_paths)
             if not paths:
                 self._git("push", "-u", "origin", self.branch)
                 self._set_state("unchanged", "No new commit was needed; the branch is synced.")
@@ -169,13 +177,33 @@ class GitPublisher:
             self._set_state("failed", str(error))
             return self.status()
 
+    def pending_status(self) -> dict:
+        if not self.enabled:
+            return self.status()
+        try:
+            if self._changed_paths(("writing",)) or self._unpushed_commit_count() > 0:
+                self._set_state("pending", "Writing changes are saved locally and awaiting Publish.")
+        except PublishError as error:
+            self._set_state("failed", str(error))
+        return self.status()
+
     def status(self) -> dict:
-        return {
+        result = {
             "enabled": self.enabled,
             "state": self.state,
             "message": self.message,
             "branch": self.branch,
         }
+        result["writingPending"] = False
+        if self.enabled:
+            try:
+                result["writingPending"] = bool(
+                    self._changed_paths(("writing",))
+                    or self._unpushed_commit_count() > 0
+                )
+            except PublishError:
+                pass
+        return result
 
 
 AUTO_PUBLISHER = GitPublisher(ROOT)
@@ -836,6 +864,13 @@ def open_writing(payload: dict) -> dict:
     return writing_open_response(year, entry)
 
 
+def publish_writing(payload: dict) -> dict:
+    year = str(payload.get("year", ""))
+    writing_id = validate_writing_id(payload.get("id"))
+    _, entry = find_writing(year, writing_id)
+    return {"year": year, "entry": entry, "status": "published"}
+
+
 def create_writing(payload: dict) -> dict:
     title = validate_writing_text(payload.get("title"), "title", 200)
     summary = validate_writing_text(payload.get("summary", ""), "summary", 5000, required=False)
@@ -1002,12 +1037,19 @@ def tectonic_version() -> str | None:
     return result.stdout.strip() if result.returncode == 0 else None
 
 
-MUTATING_ENDPOINTS = {
+JOURNAL_PUBLISH_ENDPOINTS = {
     "/api/journal/save",
     "/api/journal/delete",
+}
+
+WRITING_LOCAL_ENDPOINTS = {
     "/api/writing/create",
     "/api/writing/save",
     "/api/writing/compile",
+}
+
+WRITING_PUBLISH_ENDPOINTS = {
+    "/api/writing/publish",
     "/api/writing/delete",
 }
 
@@ -1019,11 +1061,11 @@ def publish_message(path: str, payload: dict, result: dict) -> str:
         return f"Journal: {action} {journal_id}"
     if path == "/api/journal/delete":
         return f"Journal: delete {payload.get('id', 'entry')}"
-    if path == "/api/writing/create":
-        return f"Writing: create {result.get('entry', {}).get('id', 'entry')}"
     if path == "/api/writing/delete":
         return f"Writing: delete {payload.get('id', 'entry')}"
-    return f"Writing: update {payload.get('id', 'entry')}"
+    if path == "/api/writing/publish":
+        return f"Writing: publish {payload.get('id', 'entry')}"
+    raise PublishError(f"Unsupported publish endpoint: {path}")
 
 
 class LocalSiteHandler(SimpleHTTPRequestHandler):
@@ -1082,6 +1124,7 @@ class LocalSiteHandler(SimpleHTTPRequestHandler):
             "/api/journal/save": save_journal,
             "/api/journal/delete": delete_journal,
             "/api/writing/open": open_writing,
+            "/api/writing/publish": publish_writing,
             "/api/writing/create": create_writing,
             "/api/writing/save": save_writing,
             "/api/writing/compile": compile_writing,
@@ -1109,13 +1152,29 @@ class LocalSiteHandler(SimpleHTTPRequestHandler):
             payload = json.loads(self.rfile.read(length))
             if not isinstance(payload, dict):
                 raise LocalEditorError("Local editor request is invalid.")
-            if path in MUTATING_ENDPOINTS:
+            if path in JOURNAL_PUBLISH_ENDPOINTS:
                 with MUTATION_LOCK:
-                    AUTO_PUBLISHER.prepare_mutation()
+                    AUTO_PUBLISHER.prepare_mutation(("journals",))
                     result = actions[path](payload)
-                    result["sync"] = AUTO_PUBLISHER.publish(publish_message(path, payload, result))
+                    result["sync"] = AUTO_PUBLISHER.publish(
+                        publish_message(path, payload, result),
+                        ("journals",),
+                    )
+            elif path in WRITING_LOCAL_ENDPOINTS:
+                with MUTATION_LOCK:
+                    result = actions[path](payload)
+                    result["sync"] = AUTO_PUBLISHER.pending_status()
+            elif path in WRITING_PUBLISH_ENDPOINTS:
+                with MUTATION_LOCK:
+                    result = actions[path](payload)
+                    result["sync"] = AUTO_PUBLISHER.publish(
+                        publish_message(path, payload, result),
+                        ("writing",),
+                    )
             else:
                 result = actions[path](payload)
+                if path == "/api/writing/open":
+                    result["sync"] = AUTO_PUBLISHER.status()
             self.api_json(HTTPStatus.OK, result)
         except (LocalEditorError, json.JSONDecodeError, UnicodeDecodeError) as error:
             self.api_json(HTTPStatus.BAD_REQUEST, {"error": str(error)})
