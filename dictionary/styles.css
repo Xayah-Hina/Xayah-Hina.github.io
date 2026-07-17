@@ -53,20 +53,6 @@ a { color: inherit; }
 }
 .skip-link:focus { transform: none; }
 
-.site-nav {
-  width: min(90rem, calc(100% - 3rem)); margin: 0 auto;
-  min-height: 4.25rem; display: flex; align-items: center; gap: 1.5rem;
-  border-bottom: 1px solid var(--line);
-}
-.site-name { font-weight: 750; text-decoration: none; white-space: nowrap; }
-.site-sections { display: flex; align-items: center; gap: .25rem; }
-.site-sections a, .nav-link {
-  padding: .45rem .65rem; border-radius: .45rem; color: var(--text-secondary); text-decoration: none;
-}
-.site-sections a:hover, .nav-link:hover { color: var(--text); background: var(--card); }
-.site-sections a[aria-current="page"] { color: var(--link); background: var(--accent-soft); }
-.nav-link { margin-left: auto; }
-
 .dictionary-page { width: min(90rem, calc(100% - 3rem)); margin: 0 auto; padding: 3rem 0 2rem; }
 .dictionary-header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 30rem); gap: 2rem; align-items: end; }
 .eyebrow, .panel-kicker { margin: 0 0 .35rem; color: var(--muted); font-size: .75rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
@@ -206,13 +192,10 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 
 @media (max-width: 68rem) {
   .dictionary-workspace { grid-template-columns: minmax(12rem, .7fr) minmax(14rem, .9fr) minmax(22rem, 1.4fr); }
-  .site-nav, .dictionary-page, .site-footer { width: min(100% - 2rem, 90rem); }
+  .dictionary-page, .site-footer { width: min(100% - 2rem, 90rem); }
 }
 
 @media (max-width: 52rem) {
-  .site-nav { flex-wrap: wrap; gap: .4rem .75rem; padding: .7rem 0; }
-  .site-name { width: 100%; }
-  .nav-link { margin-left: auto; }
   .dictionary-header { grid-template-columns: 1fr; }
   .dictionary-workspace { grid-template-columns: 14rem minmax(0, 1fr); }
   .entry-panel { grid-column: 1 / -1; border-top: 1px solid var(--line); }
@@ -221,9 +204,6 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 
 @media (max-width: 38rem) {
   .dictionary-page { padding-top: 2rem; }
-  .site-name { flex: 0 0 100%; }
-  .site-sections { order: 3; width: 100%; }
-  .nav-link { order: 4; margin-left: 0; }
   .dictionary-workspace { display: block; }
   .prefix-panel, .word-panel { border-right: 0; border-bottom: 1px solid var(--line); }
   .word-list { max-height: 20rem; }
