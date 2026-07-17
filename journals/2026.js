@@ -61,10 +61,8 @@ export default [
     "publishedAt": "2026-07-16T00:28:42+08:00",
     "content": "https://www.zhihu.com/question/1976839227397399722\n\n这个“涌现（Emergence)\"很符合我文章中的一个观点诶。有时间好好研究一下。",
     "images": [],
-    "relatedWriting": {
-      "id": "20260715-090945",
-      "title": "理性是否真正理性：再读More is Different"
-    }
+    "relatedWriting": null,
+    "updatedAt": "2026-07-17T14:34:22+08:00"
   },
   {
     "id": "20260715-235738-42b1",
