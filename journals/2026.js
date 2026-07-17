@@ -76,11 +76,8 @@ export default [
     "publishedAt": "2026-07-15T17:12:43+08:00",
     "content": "要不要要求写日报呢？好纠结。\n\n感觉要是写日报很容易烂尾啊……但是不写的话又容易懈怠。\n\n先不要求吧，下周7月22日的时候看看当前计划执行的怎么样，如果顺利可以要求日报。",
     "images": [],
-    "relatedWriting": {
-      "id": "20260717-124940",
-      "title": "[DiffSolver-01] Towards Differentiable Solver: Start from Scratch"
-    },
-    "updatedAt": "2026-07-17T14:31:27+08:00"
+    "relatedWriting": null,
+    "updatedAt": "2026-07-17T14:34:39+08:00"
   },
   {
     "id": "20260715-165923-20f3",
