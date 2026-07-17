@@ -282,12 +282,18 @@ class FrontendContractTests(unittest.TestCase):
 
     def test_word_selection_does_not_replace_browse_context(self):
         script = (ROOT / "dictionary" / "app.js").read_text(encoding="utf-8")
-        show_word = script[script.index("async function showWord"):script.index("function applyLocation")]
+        show_word = script[script.index("async function showWord"):script.index("function locatorPrefix")]
+        locate_word = script[script.index("function locateWord"):script.index("function applyLocation")]
         self.assertIn("updateWordListSelection()", show_word)
         self.assertIn("renderEntry(entry, personal)", show_word)
         self.assertIn("updateUrl({ prefix: state.prefix, word: entry.word }, push)", show_word)
         self.assertNotIn("renderWordList(", show_word)
         self.assertNotIn("renderPrefixMap(", show_word)
+        self.assertIn("state.prefix = locatorPrefix(key)", locate_word)
+        self.assertIn("renderBrowseContext()", locate_word)
+        self.assertIn("showWord(key, push)", locate_word)
+        self.assertIn("locateWord(entry)", script)
+        self.assertIn("if (exact) locateWord(exact)", script)
         self.assertNotIn("state.mode", script)
         self.assertNotIn("const blockStart", script)
 

@@ -33,6 +33,7 @@ const elements = {
 const loopbackHosts = new Set(["localhost", "127.0.0.1", "[::1]"]);
 const isLoopback = location.protocol === "http:" && loopbackHosts.has(location.hostname);
 const SUGGESTION_LIMIT = 16;
+const LOCATOR_PREFIX_LENGTH = 5;
 const RELATION_LABELS = {
   lemma: "lemma",
   past: "past",
@@ -178,8 +179,7 @@ function selectSuggestion(index) {
   const entry = state.suggestionEntries[index];
   if (!entry) return;
   closeSuggestions();
-  elements.searchInput.value = entry.word;
-  showWord(entry);
+  locateWord(entry);
 }
 
 function renderAlphabet(activePrefix = "") {
@@ -500,6 +500,27 @@ async function showWord(key, push = true) {
   }
 }
 
+function locatorPrefix(key) {
+  return key.canonicalKey.slice(0, Math.min(LOCATOR_PREFIX_LENGTH, key.canonicalKey.length)) || "a";
+}
+
+function locateWord(key, push = true) {
+  if (!key) return;
+  if (!matchesActiveView(key)) {
+    state.filterTag = "";
+    elements.filter.value = "";
+    renderLexiconSummary();
+  }
+  state.prefix = locatorPrefix(key);
+  state.selectedKey = key;
+  state.currentEntry = null;
+  state.oovWord = "";
+  elements.searchInput.value = key.word;
+  closeSuggestions();
+  renderBrowseContext();
+  showWord(key, push);
+}
+
 function applyLocation(push = false) {
   state.navigationVersion += 1;
   const parameters = new URLSearchParams(location.search);
@@ -508,16 +529,17 @@ function applyLocation(push = false) {
   state.filterTag = validViews.has(requestedView) ? requestedView : "";
   elements.filter.value = state.filterTag;
   renderLexiconSummary();
-  state.prefix = canonicalKey(parameters.get("prefix") || "a").trim() || "a";
+  const requestedWord = parameters.get("word");
+  const requestedKey = requestedWord === null ? null : state.byCanonical.get(canonicalKey(requestedWord));
+  const requestedPrefix = parameters.get("prefix");
+  state.prefix = canonicalKey(requestedPrefix || (requestedKey ? locatorPrefix(requestedKey) : "a")).trim() || "a";
   state.selectedKey = null;
   state.currentEntry = null;
   state.oovWord = "";
   const entries = renderBrowseContext();
-  const requestedWord = parameters.get("word");
   if (requestedWord !== null) {
     elements.searchInput.value = requestedWord;
-    const key = state.byCanonical.get(canonicalKey(requestedWord));
-    if (key) showWord(key, push);
+    if (requestedKey) showWord(requestedKey, push);
     else renderOov(requestedWord, push);
     return;
   }
@@ -727,7 +749,7 @@ function bindEvents() {
     if (!query) return;
     closeSuggestions();
     const exact = state.byCanonical.get(canonicalKey(query));
-    if (exact) showWord(exact);
+    if (exact) locateWord(exact);
     else if (entriesForPrefix(canonicalKey(query)).length) showPrefix(query);
     else if (allEntriesForPrefix(canonicalKey(query)).length) {
       state.filterTag = "";
