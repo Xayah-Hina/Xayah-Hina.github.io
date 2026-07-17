@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260718-041345-c04c",
+    "publishedAt": "2026-07-18T04:13:45+08:00",
+    "content": "技能优势保持不了多久的，因此曝光赚取margin必然会导致整个领域的leap。所以到底该怎么维护优势赚取持久margin还得好好考虑一下。\n\n个人能力进步感觉肯定干不过专业下场的。有点难以琢磨呢。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260717-103417-0121",
     "publishedAt": "2026-07-17T10:34:17+08:00",
     "content": "做完了，希望能好好用上这个私人词典。\n\nhttps://i.xayah.me/dictionary",
