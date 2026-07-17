@@ -84,8 +84,11 @@ export default [
     "publishedAt": "2026-07-15T16:59:23+08:00",
     "content": "【计划0】（三天）0715-0718\n1. 写一篇可微Solver的阶段总结报告。\n2. 写一篇自然语言模型的LoRA训练阶段总结报告。\n\n（这种固定成果形式比之前试过的精确计划应该要好不少。）\n（刚开始新的改革总是有阵痛的，要允许计划失败，但绝不允许不写报告。）\n（计划要带上编号，要自增的不要用日期的，如果前期坚持下来了一定要继续坚持否则多可惜。）",
     "images": [],
-    "relatedWriting": null,
-    "updatedAt": "2026-07-15T17:03:35+08:00"
+    "relatedWriting": {
+      "id": "20260717-124940",
+      "title": "[DiffSolver-01] Towards Differentiable Solver: Start from Scratch"
+    },
+    "updatedAt": "2026-07-17T14:34:55+08:00"
   },
   {
     "id": "20260715-165042-6a12",
