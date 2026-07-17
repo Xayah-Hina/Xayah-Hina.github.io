@@ -39,6 +39,8 @@
 \definecolor{bookink}{HTML}{222222}
 \definecolor{mutedink}{HTML}{6B6964}
 \definecolor{accent}{HTML}{315F86}
+\newcommand{\writingtwodigits}[1]{\ifnum#1<10 0\fi\number#1}
+\newcommand{\writinglastrevised}{\number\year-\writingtwodigits{\month}-\writingtwodigits{\day}}
 \hypersetup{
   unicode=true,
   pdftitle={关于我：世界，爱情与意识形态},
@@ -131,7 +133,7 @@
 
 \title{关于我：世界，爱情与意识形态}
 \author{Xayah Hina}
-\date{2026-07-17\quad\textperiodcentered\quad Last Revised: 2026-07-17}
+\date{2026-07-17\quad\textperiodcentered\quad Last Revised: \writinglastrevised}
 
 \begin{document}
 \maketitle

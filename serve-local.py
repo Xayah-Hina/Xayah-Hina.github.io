@@ -774,6 +774,8 @@ def writing_source_template(writing_id: str, title: str, summary: str) -> str:
 \definecolor{bookink}{HTML}{222222}
 \definecolor{mutedink}{HTML}{6B6964}
 \definecolor{accent}{HTML}{315F86}
+\newcommand{\writingtwodigits}[1]{\ifnum#1<10 0\fi\number#1}
+\newcommand{\writinglastrevised}{\number\year-\writingtwodigits{\month}-\writingtwodigits{\day}}
 \hypersetup{
   unicode=true,
   pdftitle={__TITLE__},
@@ -866,7 +868,7 @@ def writing_source_template(writing_id: str, title: str, summary: str) -> str:
 
 \title{__TITLE__}
 \author{Xayah Hina}
-\date{__DATE__}
+\date{__DATE__\quad\textperiodcentered\quad Last Revised: \writinglastrevised}
 
 \begin{document}
 \maketitle
@@ -977,6 +979,7 @@ def _compile_writing(payload: dict) -> dict:
         with tempfile.TemporaryDirectory(prefix=".tectonic-", dir=source_path.parent) as output_directory:
             environment = os.environ.copy()
             environment["TECTONIC_UNTRUSTED_MODE"] = "1"
+            environment["TZ"] = "Asia/Singapore"
             process = subprocess.run(
                 [
                     tectonic,

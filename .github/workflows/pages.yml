@@ -42,6 +42,8 @@ jobs:
 
       - name: Build writing documents
         shell: bash
+        env:
+          TZ: Asia/Singapore
         run: |
           set -euo pipefail
           mapfile -d '' sources < <(

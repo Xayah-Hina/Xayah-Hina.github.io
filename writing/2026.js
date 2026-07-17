@@ -1,5 +1,10 @@
 export default [
   {
+    "id": "20260717-124940",
+    "title": "[DiffSolver-01] Towards Differentiable Solver: Start from Scratch",
+    "summary": "Leaning notes on how to build the first diff solver from scratch.\nhttps://github.com/Xayah-Graphics/diff-solver"
+  },
+  {
     "id": "20260717-061303",
     "title": "【方法论】预测未来与验证未来：计划与执行",
     "summary": "本文目标：作为概率论的一个实践方案，提出一个对于未来函数的预测和验证的初步方案。"
