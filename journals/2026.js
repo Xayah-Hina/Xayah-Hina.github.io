@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260717-103417-0121",
+    "publishedAt": "2026-07-17T10:34:17+08:00",
+    "content": "做完了，希望能好好用上这个私人词典。\n\nhttps://i.xayah.me/dictionary",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260717-070931-d63f",
     "publishedAt": "2026-07-17T07:09:31+08:00",
     "content": "目前Writing和Journal的做法对于文章和小想法的记录很不错，可是还缺少一个类似于知识库沉淀的的东西，得想想办法。",
