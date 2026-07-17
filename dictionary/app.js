@@ -48,11 +48,11 @@ const state = {
   keys: [],
   byCanonical: new Map(),
   byEntryId: new Map(),
-  blockCache: new Map(),
+  payloadCache: new Map(),
   personalCache: new Map(),
   selectedKey: null,
   currentEntry: null,
-  mode: "prefix",
+  oovWord: "",
   prefix: "a",
   filterTag: "",
   suggestionEntries: [],
@@ -178,6 +178,7 @@ function selectSuggestion(index) {
   const entry = state.suggestionEntries[index];
   if (!entry) return;
   closeSuggestions();
+  elements.searchInput.value = entry.word;
   showWord(entry);
 }
 
@@ -256,13 +257,27 @@ function renderWordList(entries, { title, kicker }) {
   }
 }
 
+function updateWordListSelection() {
+  for (const button of elements.wordList.querySelectorAll("[data-entry-id]")) {
+    button.setAttribute("aria-current", String(button.dataset.entryId === state.selectedKey?.entryId));
+  }
+}
+
+function renderBrowseContext() {
+  const entries = entriesForPrefix(state.prefix);
+  renderPrefixMap(state.prefix);
+  const viewLabel = state.filterTag ? state.filterTag.toUpperCase() : "General";
+  renderWordList(entries, { title: state.prefix.toUpperCase(), kicker: `${viewLabel} prefix region` });
+  return entries;
+}
+
 function renderPrefixOverview(prefix, entries) {
   clear(elements.entry);
   const wrapper = makeElement("div", "oov-panel");
   wrapper.append(
     makeElement("p", "eyebrow", "Prefix region"),
     makeElement("h2", "", prefix.toUpperCase()),
-    makeElement("p", "", `${entries.length} frozen entries begin with “${prefix}”. Select a word to open its permanent address and local neighborhood.`),
+    makeElement("p", "", `${entries.length} frozen entries begin with “${prefix}”. Select a word to inspect its dictionary entry.`),
   );
   elements.entry.append(wrapper);
 }
@@ -271,16 +286,13 @@ function showPrefix(rawPrefix, push = true) {
   state.navigationVersion += 1;
   const prefix = canonicalKey(rawPrefix).trim();
   const effective = prefix || "a";
-  const entries = entriesForPrefix(effective);
-  state.mode = "prefix";
   state.prefix = effective;
   state.selectedKey = null;
   state.currentEntry = null;
+  state.oovWord = "";
   elements.searchInput.value = effective;
   closeSuggestions();
-  renderPrefixMap(effective);
-  const viewLabel = state.filterTag ? state.filterTag.toUpperCase() : "General";
-  renderWordList(entries, { title: effective.toUpperCase(), kicker: `${viewLabel} prefix region` });
+  const entries = renderBrowseContext();
   renderPrefixOverview(effective, entries);
   updateUrl({ prefix: effective }, push);
 }
@@ -288,14 +300,12 @@ function showPrefix(rawPrefix, push = true) {
 function renderOov(rawWord, push = true) {
   state.navigationVersion += 1;
   const word = String(rawWord || "").trim();
-  state.mode = "oov";
   state.selectedKey = null;
   state.currentEntry = null;
+  state.oovWord = word;
   elements.searchInput.value = word;
   closeSuggestions();
-  const prefix = canonicalKey(word).slice(0, 5) || "a";
-  renderPrefixMap(prefix);
-  renderWordList([], { title: "Outside the lexicon", kicker: "OOV" });
+  updateWordListSelection();
   clear(elements.entry);
   const wrapper = makeElement("div", "oov-panel");
   wrapper.append(
@@ -304,16 +314,16 @@ function renderOov(rawWord, push = true) {
     makeElement("p", "", `Not in ${state.manifest.name} ${state.manifest.version}. This frozen version cannot create or insert new keys.`),
   );
   elements.entry.append(wrapper);
-  updateUrl({ word }, push);
+  updateUrl({ prefix: state.prefix, word }, push);
 }
 
 async function loadEntry(key) {
-  if (!state.blockCache.has(key.shard)) {
+  if (!state.payloadCache.has(key.shard)) {
     const filename = String(key.shard).padStart(4, "0");
     const entries = await fetchJson(`generated/blocks/${filename}.json`, state.manifest.dataVersion);
-    state.blockCache.set(key.shard, new Map(entries.map((entry) => [entry.entryId, entry])));
+    state.payloadCache.set(key.shard, new Map(entries.map((entry) => [entry.entryId, entry])));
   }
-  return state.blockCache.get(key.shard).get(key.entryId);
+  return state.payloadCache.get(key.shard).get(key.entryId);
 }
 
 async function loadPersonal(key) {
@@ -477,19 +487,12 @@ async function showWord(key, push = true) {
     const [entry, personal] = await Promise.all([loadEntry(key), loadPersonal(key)]);
     if (navigationVersion !== state.navigationVersion) return;
     if (!entry) throw new Error("The selected entry is missing from its payload shard.");
-    state.mode = "block";
     state.selectedKey = key;
     state.currentEntry = entry;
-    elements.searchInput.value = entry.word;
-    const blockStart = (entry.block - 1) * state.manifest.cognitiveBlockSize;
-    const neighbors = state.keys.slice(blockStart, blockStart + state.manifest.cognitiveBlockSize);
-    renderWordList(neighbors, {
-      title: `Block ${entry.block}`,
-      kicker: `${state.manifest.cognitiveBlockSize}-word cognitive block`,
-    });
-    renderPrefixMap(entry.canonicalKey.slice(0, Math.min(5, entry.canonicalKey.length)));
+    state.oovWord = "";
+    updateWordListSelection();
     renderEntry(entry, personal);
-    updateUrl({ word: entry.word }, push);
+    updateUrl({ prefix: state.prefix, word: entry.word }, push);
     setPageStatus("");
   } catch (error) {
     if (navigationVersion !== state.navigationVersion) return;
@@ -498,20 +501,29 @@ async function showWord(key, push = true) {
 }
 
 function applyLocation(push = false) {
+  state.navigationVersion += 1;
   const parameters = new URLSearchParams(location.search);
   const requestedView = parameters.get("view") || "";
   const validViews = new Set((state.manifest.browseViews || []).map((view) => view.id));
   state.filterTag = validViews.has(requestedView) ? requestedView : "";
   elements.filter.value = state.filterTag;
   renderLexiconSummary();
+  state.prefix = canonicalKey(parameters.get("prefix") || "a").trim() || "a";
+  state.selectedKey = null;
+  state.currentEntry = null;
+  state.oovWord = "";
+  const entries = renderBrowseContext();
   const requestedWord = parameters.get("word");
   if (requestedWord !== null) {
+    elements.searchInput.value = requestedWord;
     const key = state.byCanonical.get(canonicalKey(requestedWord));
     if (key) showWord(key, push);
     else renderOov(requestedWord, push);
     return;
   }
-  showPrefix(parameters.get("prefix") || "a", push);
+  elements.searchInput.value = state.prefix;
+  renderPrefixOverview(state.prefix, entries);
+  updateUrl({ prefix: state.prefix }, push);
 }
 
 function renderLexiconSummary() {
@@ -519,7 +531,7 @@ function renderLexiconSummary() {
   const viewText = activeView
     ? `${activeView.label} view: ${activeView.totalEntries.toLocaleString()} keys`
     : `${state.manifest.totalEntries.toLocaleString()} immutable keys`;
-  elements.summary.textContent = `${viewText} · ${state.manifest.cognitiveBlockSize}-word cognitive blocks · strict lexicographic ranks`;
+  elements.summary.textContent = `${viewText} · fixed ${state.manifest.cognitiveBlockSize}-word address blocks · strict lexicographic ranks`;
 }
 
 function populateBrowseViews() {
@@ -535,14 +547,8 @@ function refreshActiveView() {
   closeSuggestions();
   state.filterTag = elements.filter.value;
   renderLexiconSummary();
-  if (state.mode === "prefix") {
-    showPrefix(state.prefix, false);
-  } else if (state.mode === "block" && state.selectedKey) {
-    renderPrefixMap(state.selectedKey.canonicalKey.slice(0, Math.min(5, state.selectedKey.canonicalKey.length)));
-    updateUrl({ word: state.selectedKey.word }, false);
-  } else if (state.mode === "oov") {
-    renderOov(elements.searchInput.value, false);
-  }
+  renderBrowseContext();
+  updateUrl({ prefix: state.prefix, word: state.currentEntry?.word || state.oovWord }, false);
 }
 
 function editorSnapshot() {
