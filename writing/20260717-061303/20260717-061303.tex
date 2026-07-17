@@ -1,15 +1,15 @@
 \documentclass[11pt,twoside,fontset=none,scheme=plain]{ctexart}
 
 \usepackage[
-  paperwidth=176mm,
-  paperheight=250mm,
-  top=21mm,
-  bottom=22mm,
-  inner=23mm,
-  outer=19mm,
-  headheight=14pt,
-  headsep=7mm,
-  footskip=13mm
+    paperwidth=176mm,
+    paperheight=250mm,
+    top=21mm,
+    bottom=22mm,
+    inner=23mm,
+    outer=19mm,
+    headheight=14pt,
+    headsep=7mm,
+    footskip=13mm
 ]{geometry}
 \usepackage[nomath,semibold]{libertinus}
 \usepackage{microtype}
@@ -19,20 +19,20 @@
 
 \newcommand{\writingfontpath}{assets/fonts/}
 \IfFileExists{assets/fonts/LXGWWenKaiGB-Regular.ttf}{}{%
-  \renewcommand{\writingfontpath}{../../assets/fonts/}%
+    \renewcommand{\writingfontpath}{../../assets/fonts/}%
 }
 \setCJKmainfont[
-  Path=\writingfontpath,
-  BoldFont=LXGWWenKaiGB-Medium.ttf,
-  AutoFakeSlant=0.2
+    Path=\writingfontpath,
+    BoldFont=LXGWWenKaiGB-Medium.ttf,
+    AutoFakeSlant=0.2
 ]{LXGWWenKaiGB-Regular.ttf}
 \setCJKsansfont[
-  Path=\writingfontpath,
-  BoldFont=LXGWWenKaiGB-Medium.ttf
+    Path=\writingfontpath,
+    BoldFont=LXGWWenKaiGB-Medium.ttf
 ]{LXGWWenKaiGB-Medium.ttf}
 \setCJKmonofont[
-  Path=\writingfontpath,
-  BoldFont=LXGWWenKaiGB-Medium.ttf
+    Path=\writingfontpath,
+    BoldFont=LXGWWenKaiGB-Medium.ttf
 ]{LXGWWenKaiGB-Regular.ttf}
 \xeCJKsetup{PunctStyle=kaiming}
 
@@ -40,14 +40,14 @@
 \definecolor{mutedink}{HTML}{6B6964}
 \definecolor{accent}{HTML}{315F86}
 \hypersetup{
-  unicode=true,
-  pdftitle={【方法论】预测未来与验证未来：计划与执行},
-  pdfauthor={Xayah Hina},
-  pdfdisplaydoctitle=true,
-  colorlinks=true,
-  linkcolor=accent,
-  urlcolor=accent,
-  citecolor=accent
+    unicode=true,
+    pdftitle={【方法论】预测未来与验证未来：计划与执行},
+    pdfauthor={Xayah Hina},
+    pdfdisplaydoctitle=true,
+    colorlinks=true,
+    linkcolor=accent,
+    urlcolor=accent,
+    citecolor=accent
 }
 \urlstyle{same}
 
@@ -62,57 +62,57 @@
 \raggedbottom
 
 \ctexset{
-  section={
-    name={},
-    number=\arabic{section},
-    format=\Large\sffamily\bfseries\color{bookink},
-    aftername=\hspace{0.8em},
-    beforeskip=2.6ex plus 0.5ex minus 0.2ex,
-    afterskip=1.3ex plus 0.2ex,
-    indent=0pt
-  },
-  subsection={
-    name={},
-    number=\thesection.\arabic{subsection},
-    format=\large\sffamily\bfseries\color{bookink},
-    aftername=\hspace{0.75em},
-    beforeskip=2.2ex plus 0.4ex minus 0.2ex,
-    afterskip=1ex plus 0.2ex,
-    indent=0pt
-  },
-  subsubsection={
-    name={},
-    number=\thesubsection.\arabic{subsubsection},
-    format=\normalsize\sffamily\bfseries\color{bookink},
-    aftername=\hspace{0.7em},
-    beforeskip=1.8ex plus 0.3ex minus 0.2ex,
-    afterskip=0.8ex plus 0.2ex,
-    indent=0pt
-  }
+    section={
+        name={},
+        number=\arabic{section},
+        format=\Large\sffamily\bfseries\color{bookink},
+        aftername=\hspace{0.8em},
+        beforeskip=2.6ex plus 0.5ex minus 0.2ex,
+        afterskip=1.3ex plus 0.2ex,
+        indent=0pt
+    },
+    subsection={
+        name={},
+        number=\thesection.\arabic{subsection},
+        format=\large\sffamily\bfseries\color{bookink},
+        aftername=\hspace{0.75em},
+        beforeskip=2.2ex plus 0.4ex minus 0.2ex,
+        afterskip=1ex plus 0.2ex,
+        indent=0pt
+    },
+    subsubsection={
+        name={},
+        number=\thesubsection.\arabic{subsubsection},
+        format=\normalsize\sffamily\bfseries\color{bookink},
+        aftername=\hspace{0.7em},
+        beforeskip=1.8ex plus 0.3ex minus 0.2ex,
+        afterskip=0.8ex plus 0.2ex,
+        indent=0pt
+    }
 }
 
 \renewcommand{\abstractname}{摘要}
 \renewenvironment{abstract}{%
-  \begin{center}
+    \begin{center}
     \small\sffamily\bfseries\color{bookink}\abstractname
-  \end{center}
-  \begin{list}{}{\leftmargin=2em\rightmargin=2em}
+    \end{center}
+    \begin{list}{}{\leftmargin=2em\rightmargin=2em}
     \item\relax\small\color{mutedink}\noindent\ignorespaces
 }{%
-  \end{list}
-  \vspace{1.2em}
+    \end{list}
+    \vspace{1.2em}
 }
 
 \makeatletter
 \renewcommand{\maketitle}{%
-  \thispagestyle{plain}%
-  \begin{center}
-    \vspace*{0.6em}
-    {\LARGE\sffamily\bfseries\color{bookink}\@title\par}
-    \vspace{1em}
-    {\small\color{mutedink}\@author\quad\textperiodcentered\quad\@date\par}
-  \end{center}
-  \vspace{1.8em}
+    \thispagestyle{plain}%
+    \begin{center}
+        \vspace*{0.6em}
+        {\LARGE\sffamily\bfseries\color{bookink}\@title\par}
+        \vspace{1em}
+        {\small\color{mutedink}\@author\quad\textperiodcentered\quad\@date\par}
+    \end{center}
+    \vspace{1.8em}
 }
 \makeatother
 
@@ -123,9 +123,9 @@
 \fancyfoot[LE,RO]{\footnotesize\color{mutedink}\thepage}
 \renewcommand{\headrulewidth}{0pt}
 \fancypagestyle{plain}{%
-  \fancyhf{}
-  \fancyfoot[C]{\footnotesize\color{mutedink}\thepage}
-  \renewcommand{\headrulewidth}{0pt}
+    \fancyhf{}
+    \fancyfoot[C]{\footnotesize\color{mutedink}\thepage}
+    \renewcommand{\headrulewidth}{0pt}
 }
 \AtBeginDocument{\color{bookink}}
 
@@ -134,11 +134,16 @@
 \date{2026-07-17}
 
 \begin{document}
-\maketitle
+    \maketitle
 
-\begin{abstract}
-本文目标：作为概率论的一个实践方案，提出一个对于未来函数的预测和验证的初步方案。
-\end{abstract}
+    \begin{abstract}
+        本文目标：作为概率论的一个实践方案，提出一个对于未来函数的预测和验证的初步方案。
+    \end{abstract}
 % Begin writing here.
+
+
+    \section{写在前面}
+    本文作为前文\href{https://i.xayah.me/writing/20260715-090945/20260715-090945.pdf}{理性是否真正理性：再读More is Different} 的一次在讨论。
+
 
 \end{document}
