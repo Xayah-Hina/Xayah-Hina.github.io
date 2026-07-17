@@ -26,9 +26,7 @@ git status --porcelain | findstr . >nul || (
 )
 
 echo.
-set "COMMIT_MESSAGE="
-set /p "COMMIT_MESSAGE=Commit message [Update site]: "
-if not defined COMMIT_MESSAGE set "COMMIT_MESSAGE=Update site"
+set "COMMIT_MESSAGE=Update site"
 
 git add -A || goto :error
 git commit -m "%COMMIT_MESSAGE%" || goto :error
@@ -41,8 +39,7 @@ goto :done
 :error
 echo.
 echo Publish failed. Resolve the error above and run this script again.
-pause
 exit /b 1
 
 :done
-pause
+exit /b 0

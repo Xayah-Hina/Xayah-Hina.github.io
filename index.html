@@ -175,7 +175,7 @@
     .site-nav {
       display: grid;
       align-items: center;
-      grid-template-columns: 1fr auto 1fr;
+      grid-template-columns: 1fr auto;
       min-height: 4rem;
       gap: 1rem;
     }
@@ -191,7 +191,8 @@
       display: flex;
       align-self: stretch;
       align-items: stretch;
-      justify-content: center;
+      justify-self: end;
+      justify-content: flex-end;
       gap: 1.25rem;
     }
 
@@ -232,26 +233,6 @@
     .section-switch-button[aria-pressed="true"]::after {
       opacity: 1;
       transform: scaleX(1);
-    }
-
-    .nav-link {
-      justify-self: end;
-      color: var(--link);
-      font-size: 0.875rem;
-      font-weight: 600;
-      text-decoration: none;
-    }
-
-    .nav-link:hover {
-      text-decoration: underline;
-      text-underline-offset: 0.2em;
-    }
-
-    .nav-links {
-      display: flex;
-      justify-self: end;
-      align-items: center;
-      gap: 1rem;
     }
 
     .archive-section {
@@ -1107,13 +1088,6 @@
         padding-top: 0.4rem;
       }
 
-      .section-switch {
-        grid-column: 1 / -1;
-        grid-row: 2;
-        min-height: 2.8rem;
-        border-top: 1px solid var(--line);
-      }
-
       .writing-editor-header {
         grid-template-columns: auto minmax(0, 1fr);
       }
@@ -1202,10 +1176,6 @@
     <div id="section-switch" class="section-switch" role="group" aria-label="Choose a section">
       <button class="section-switch-button" type="button" data-section="writing" aria-pressed="true">Writing</button>
       <button class="section-switch-button" type="button" data-section="journal" aria-pressed="false">Journal</button>
-    </div>
-    <div class="nav-links">
-      <a class="nav-link" href="dictionary/">Dictionary</a>
-      <a class="nav-link" href="https://graphics.xayah.me/">Academic Profile</a>
     </div>
   </nav>
 
