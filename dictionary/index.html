@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Dictionary - Xayah Hina</title>
+  <meta name="description" content="XEL-General, a frozen and addressable English vocabulary database with personal knowledge overlays.">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111827">
+  <link rel="canonical" href="https://i.xayah.me/dictionary/">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d4ed8'/%3E%3Ctext x='32' y='41' text-anchor='middle' font-family='sans-serif' font-size='25' font-weight='700' fill='white'%3EXH%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#dictionary-entry">Skip to entry</a>
+
+  <nav class="site-nav" aria-label="Site navigation">
+    <a class="site-name" href="/">Xayah Hina</a>
+    <div class="site-sections">
+      <a href="/#writing">Writing</a>
+      <a href="/#journal">Journal</a>
+      <a href="./" aria-current="page">Dictionary</a>
+    </div>
+    <a class="nav-link" href="https://graphics.xayah.me/">Academic Profile</a>
+  </nav>
+
+  <main class="dictionary-page">
+    <header class="dictionary-header">
+      <div>
+        <p class="eyebrow">Frozen vocabulary database</p>
+        <h1><span id="lexicon-name" class="lexicon-name">XEL-General</span> <span id="lexicon-version">1.0</span></h1>
+        <p id="lexicon-summary" class="header-summary">Loading the lexicon…</p>
+      </div>
+      <form id="search-form" class="search-form" role="search">
+        <label class="filter-field">
+          <span>Browse view</span>
+          <select id="lexicon-filter">
+            <option value="">All words</option>
+          </select>
+        </label>
+        <label class="visually-hidden" for="search-input">Search headwords or prefixes</label>
+        <div class="search-control">
+          <input id="search-input" type="search" role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" aria-controls="search-suggestions" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Search a word or prefix" required>
+          <div id="search-suggestions" class="search-suggestions" role="listbox" aria-label="Headword suggestions" hidden></div>
+        </div>
+        <button type="submit">Search</button>
+      </form>
+    </header>
+
+    <section id="local-authoring" class="local-authoring" hidden aria-live="polite">
+      <div>
+        <strong>Local authoring</strong>
+        <span id="local-status">Connecting…</span>
+      </div>
+      <button id="publish-button" type="button" disabled>Publish personal knowledge</button>
+    </section>
+
+    <p id="page-status" class="page-status" role="status">Loading dictionary data…</p>
+
+    <div id="dictionary-workspace" class="dictionary-workspace" hidden>
+      <aside class="prefix-panel" aria-labelledby="prefix-title">
+        <div class="panel-heading">
+          <p class="panel-kicker">Address</p>
+          <h2 id="prefix-title">Prefix map</h2>
+        </div>
+        <div id="alphabet" class="alphabet" role="group" aria-label="Alphabet"></div>
+        <nav id="prefix-path" class="prefix-path" aria-label="Current prefix path"></nav>
+        <div id="prefix-branches" class="prefix-branches"></div>
+      </aside>
+
+      <section class="word-panel" aria-labelledby="word-list-title">
+        <div class="panel-heading word-panel-heading">
+          <div>
+            <p id="word-list-kicker" class="panel-kicker">Lexicographic region</p>
+            <h2 id="word-list-title">Words</h2>
+          </div>
+          <span id="word-list-count" class="count-badge"></span>
+        </div>
+        <div id="word-list" class="word-list"></div>
+      </section>
+
+      <article id="dictionary-entry" class="entry-panel" tabindex="-1" aria-live="polite"></article>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>Base definitions: <a href="https://github.com/skywind3000/ECDICT">ECDICT</a> · <a href="SOURCES.md">Data provenance</a></p>
+  </footer>
+
+  <dialog id="personal-editor" class="editor-dialog" aria-labelledby="editor-title">
+    <form id="personal-form" class="editor-form" novalidate>
+      <header class="editor-header">
+        <div>
+          <p class="panel-kicker">Personal Knowledge</p>
+          <h2 id="editor-title">Edit entry</h2>
+        </div>
+        <button class="icon-button" type="button" data-editor-action="close" aria-label="Close editor">×</button>
+      </header>
+      <div class="editor-body">
+        <label class="field-group">
+          <span>Chinese summary</span>
+          <textarea name="summary" rows="3" placeholder="用自己的中文总结这个词"></textarea>
+        </label>
+        <label class="field-group">
+          <span>Usage notes</span>
+          <textarea name="usageNotes" rows="4" placeholder="记录语境、搭配或使用心得"></textarea>
+        </label>
+        <label class="field-group">
+          <span>Confusion notes</span>
+          <textarea name="confusionNotes" rows="3" placeholder="记录相似词、易错点或辨析"></textarea>
+        </label>
+
+        <section class="examples-editor" aria-labelledby="examples-editor-title">
+          <div class="examples-editor-heading">
+            <h3 id="examples-editor-title">Examples</h3>
+            <button type="button" data-editor-action="add-example">Add example</button>
+          </div>
+          <div id="examples-editor-list" class="examples-editor-list"></div>
+        </section>
+        <p id="editor-message" class="editor-message" role="alert"></p>
+      </div>
+      <div class="editor-actions">
+        <button type="button" data-editor-action="close">Cancel</button>
+        <button class="primary-button" type="submit">Save locally</button>
+      </div>
+    </form>
+  </dialog>
+
+  <template id="example-editor-template">
+    <fieldset class="example-editor-item">
+      <legend>Example</legend>
+      <input type="hidden" data-example-field="id">
+      <div class="example-editor-toolbar">
+        <span data-example-number>Example</span>
+        <button type="button" data-example-action="remove">Remove</button>
+      </div>
+      <label class="field-group">
+        <span>Sentence</span>
+        <textarea data-example-field="sentence" rows="2" required></textarea>
+      </label>
+      <label class="field-group">
+        <span>Chinese translation</span>
+        <textarea data-example-field="translation" rows="2"></textarea>
+      </label>
+      <div class="example-editor-columns">
+        <label class="field-group">
+          <span>Source</span>
+          <input data-example-field="source" type="text">
+        </label>
+        <label class="field-group">
+          <span>Comment</span>
+          <input data-example-field="comment" type="text">
+        </label>
+      </div>
+    </fieldset>
+  </template>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

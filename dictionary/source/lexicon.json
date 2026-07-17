@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "name": "XEL-General",
+  "version": "1.0",
+  "frozen": true,
+  "frozenAt": "2026-07-17",
+  "totalEntries": 34137,
+  "cognitiveBlockSize": 32,
+  "payloadShardSize": 256,
+  "contentSha256": "8a5994b905b823c071238b4d1403fb486e563a4d1f45b0192f23af54aad6b602",
+  "normalization": "Unicode NFKC followed by casefold; sorted by canonical key and original word",
+  "inclusionPolicy": "ECDICT rows with any exact zk/gk/cet4/cet6/ky/toefl/ielts/gre tag, Collins rank, or Oxford 3000 marker; plus lowercase-only frequency fallback rows whose BNC or FRQ rank is at most 30000",
+  "browseViews": [
+    {
+      "id": "toefl",
+      "label": "TOEFL",
+      "totalEntries": 6974
+    },
+    {
+      "id": "ielts",
+      "label": "IELTS",
+      "totalEntries": 5040
+    },
+    {
+      "id": "gre",
+      "label": "GRE",
+      "totalEntries": 7504
+    }
+  ],
+  "source": {
+    "name": "ECDICT",
+    "repository": "https://github.com/skywind3000/ECDICT",
+    "revision": "bc015ed2e24a7abef49fc6dbbb7fe32c1dadaf8b",
+    "csvUrl": "https://raw.githubusercontent.com/skywind3000/ECDICT/bc015ed2e24a7abef49fc6dbbb7fe32c1dadaf8b/ecdict.csv",
+    "csvSha256": "1a6947e04785db63613a92e14903cdae7954f7e84860b10e68e5c7cbb3f9c3cf",
+    "license": "MIT"
+  }
+}

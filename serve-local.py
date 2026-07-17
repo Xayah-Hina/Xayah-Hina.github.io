@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import tempfile
 import threading
+import uuid
 from datetime import datetime
 from functools import partial
 from http import HTTPStatus
@@ -19,12 +20,24 @@ from pathlib import Path
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
+from dictionary.build import (
+    BuildError as DictionaryBuildError,
+    GENERATED_DIR as DICTIONARY_GENERATED,
+    PERSONAL_DIR as DICTIONARY_PERSONAL,
+    build_site as build_dictionary_site,
+    json_bytes as dictionary_json_bytes,
+    load_lexicon as load_dictionary_lexicon,
+    personal_path as dictionary_personal_path,
+    validate_personal_record as validate_dictionary_personal_record,
+)
+
 
 ROOT = Path(__file__).resolve().parent
 JOURNALS = ROOT / "journals"
 JOURNAL_CATALOG = JOURNALS / "catalog.js"
 WRITING = ROOT / "writing"
 WRITING_CATALOG = WRITING / "catalog.js"
+DICTIONARY = ROOT / "dictionary"
 HOST = "127.0.0.1"
 PORT = 8765
 TOKEN = secrets.token_urlsafe(32)
@@ -54,6 +67,10 @@ class JournalError(LocalEditorError):
 
 
 class WritingError(LocalEditorError):
+    pass
+
+
+class DictionaryError(LocalEditorError):
     pass
 
 
@@ -125,6 +142,17 @@ class GitPublisher:
         value = self._git("rev-list", "--count", f"{upstream}..HEAD", timeout=10).stdout.strip()
         return int(value or "0")
 
+    def _managed_pending(self, managed_paths: tuple[str, ...]) -> bool:
+        if self._changed_paths(managed_paths):
+            return True
+        try:
+            upstream = self._git("rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}", timeout=10).stdout.strip()
+        except PublishError:
+            return False
+        if not upstream:
+            return False
+        return bool(self._git("diff", "--name-only", f"{upstream}..HEAD", "--", *managed_paths).stdout.strip())
+
     def start(self) -> None:
         if not self.enabled:
             return
@@ -137,8 +165,13 @@ class GitPublisher:
                     shown += ", ..."
                 raise PublishError(f"Existing Journal changes block auto-push: {shown}")
             self._git("push", "-u", "origin", self.branch)
-            if self._changed_paths(("writing",)):
-                self._set_state("pending", "Writing changes are saved locally and awaiting Publish.")
+            pending = []
+            if self._managed_pending(("writing",)):
+                pending.append("Writing")
+            if self._managed_pending(("dictionary/personal",)):
+                pending.append("Dictionary")
+            if pending:
+                self._set_state("pending", f"{' and '.join(pending)} changes are saved locally and awaiting Publish.")
             else:
                 self._set_state("synced", f"Auto-push is ready on {self.branch}.")
         except PublishError as error:
@@ -181,8 +214,15 @@ class GitPublisher:
         if not self.enabled:
             return self.status()
         try:
-            if self._changed_paths(("writing",)) or self._unpushed_commit_count() > 0:
-                self._set_state("pending", "Writing changes are saved locally and awaiting Publish.")
+            pending = []
+            if self._managed_pending(("writing",)):
+                pending.append("Writing")
+            if self._managed_pending(("dictionary/personal",)):
+                pending.append("Dictionary")
+            if pending:
+                self._set_state("pending", f"{' and '.join(pending)} changes are saved locally and awaiting Publish.")
+            elif self.state == "pending":
+                self._set_state("synced", f"Auto-push is ready on {self.branch}.")
         except PublishError as error:
             self._set_state("failed", str(error))
         return self.status()
@@ -195,18 +235,19 @@ class GitPublisher:
             "branch": self.branch,
         }
         result["writingPending"] = False
+        result["dictionaryPending"] = False
         if self.enabled:
             try:
-                result["writingPending"] = bool(
-                    self._changed_paths(("writing",))
-                    or self._unpushed_commit_count() > 0
-                )
+                result["writingPending"] = self._managed_pending(("writing",))
+                result["dictionaryPending"] = self._managed_pending(("dictionary/personal",))
             except PublishError:
                 pass
         return result
 
 
 AUTO_PUBLISHER = GitPublisher(ROOT)
+DICTIONARY_BUILD_ERROR: str | None = None
+DICTIONARY_CACHE: tuple[dict, list[dict], dict[str, dict]] | None = None
 
 
 def module_data(path: Path, expected_type: type):
@@ -1037,6 +1078,206 @@ def tectonic_version() -> str | None:
     return result.stdout.strip() if result.returncode == 0 else None
 
 
+def dictionary_catalog() -> tuple[dict, list[dict], dict[str, dict]]:
+    global DICTIONARY_CACHE
+    if DICTIONARY_CACHE is None:
+        try:
+            lexicon, entries = load_dictionary_lexicon()
+        except DictionaryBuildError as error:
+            raise DictionaryError(str(error)) from error
+        DICTIONARY_CACHE = lexicon, entries, {entry["entryId"]: entry for entry in entries}
+    return DICTIONARY_CACHE
+
+
+def empty_personal_entry(entry_id: str) -> dict:
+    return {
+        "schemaVersion": 1,
+        "entryId": entry_id,
+        "summary": "",
+        "usageNotes": "",
+        "confusionNotes": "",
+        "examples": [],
+        "createdAt": "",
+        "updatedAt": "",
+    }
+
+
+def dictionary_entry_from_payload(payload: dict) -> dict:
+    entry_id = payload.get("entryId")
+    if not isinstance(entry_id, str) or not entry_id:
+        raise DictionaryError("Dictionary entryId is required.")
+    lexicon, _, by_id = dictionary_catalog()
+    entry = by_id.get(entry_id)
+    if not entry:
+        raise DictionaryError(f"Not in {lexicon['name']} {lexicon['version']}.")
+    return entry
+
+
+def read_personal_entry(entry: dict, personal_dir: Path = DICTIONARY_PERSONAL) -> dict:
+    path = dictionary_personal_path(entry, personal_dir)
+    if not path.is_file():
+        return empty_personal_entry(entry["entryId"])
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+        return validate_dictionary_personal_record(value, entry["entryId"])
+    except (OSError, json.JSONDecodeError, DictionaryBuildError) as error:
+        raise DictionaryError(f"Personal Knowledge for {entry['word']} is invalid: {error}") from error
+
+
+def open_dictionary(payload: dict, personal_dir: Path = DICTIONARY_PERSONAL) -> dict:
+    entry = dictionary_entry_from_payload(payload)
+    return {
+        "entryId": entry["entryId"],
+        "word": entry["word"],
+        "personal": read_personal_entry(entry, personal_dir),
+    }
+
+
+def dictionary_text(value, label: str, maximum: int = 50_000) -> str:
+    if value is None:
+        return ""
+    if not isinstance(value, str):
+        raise DictionaryError(f"{label} must be text.")
+    value = value.strip()
+    if len(value) > maximum:
+        raise DictionaryError(f"{label} is too long.")
+    return value
+
+
+def personal_content(record: dict) -> dict:
+    return {
+        "summary": record["summary"],
+        "usageNotes": record["usageNotes"],
+        "confusionNotes": record["confusionNotes"],
+        "examples": [
+            {
+                "id": example["id"],
+                "sentence": example["sentence"],
+                "translation": example["translation"],
+                "source": example["source"],
+                "comment": example["comment"],
+            }
+            for example in record["examples"]
+        ],
+    }
+
+
+def personal_has_content(record: dict) -> bool:
+    return bool(record["summary"] or record["usageNotes"] or record["confusionNotes"] or record["examples"])
+
+
+def normalize_personal_entry(entry: dict, payload: dict, original: dict) -> tuple[dict, bool]:
+    value = payload.get("personal")
+    if not isinstance(value, dict):
+        raise DictionaryError("Personal Knowledge payload must be an object.")
+    now = datetime.now(ZoneInfo("Asia/Singapore")).replace(microsecond=0).isoformat()
+    original_examples = {example["id"]: example for example in original["examples"]}
+    examples_value = value.get("examples", [])
+    if not isinstance(examples_value, list) or len(examples_value) > 200:
+        raise DictionaryError("Personal examples must be an array of at most 200 items.")
+    examples = []
+    seen_ids = set()
+    for index, example in enumerate(examples_value, start=1):
+        if not isinstance(example, dict):
+            raise DictionaryError(f"Example {index} must be an object.")
+        example_id = dictionary_text(example.get("id", ""), f"Example {index} id", 200)
+        if example_id and example_id not in original_examples:
+            raise DictionaryError(f"Example {index} has an unknown id.")
+        if not example_id:
+            example_id = uuid.uuid4().hex
+        if example_id in seen_ids:
+            raise DictionaryError("Personal example ids must be unique.")
+        sentence = dictionary_text(example.get("sentence"), f"Example {index} sentence", 20_000)
+        if not sentence:
+            raise DictionaryError(f"Example {index} sentence is required.")
+        previous = original_examples.get(example_id)
+        examples.append({
+            "id": example_id,
+            "sentence": sentence,
+            "translation": dictionary_text(example.get("translation"), f"Example {index} translation", 20_000),
+            "source": dictionary_text(example.get("source"), f"Example {index} source", 5_000),
+            "comment": dictionary_text(example.get("comment"), f"Example {index} comment", 20_000),
+            "createdAt": previous["createdAt"] if previous else now,
+            "updatedAt": now,
+        })
+        seen_ids.add(example_id)
+
+    record = {
+        "schemaVersion": 1,
+        "entryId": entry["entryId"],
+        "summary": dictionary_text(value.get("summary"), "Chinese summary"),
+        "usageNotes": dictionary_text(value.get("usageNotes"), "Usage notes"),
+        "confusionNotes": dictionary_text(value.get("confusionNotes"), "Confusion notes"),
+        "examples": examples,
+        "createdAt": original["createdAt"] or now,
+        "updatedAt": now,
+    }
+    return record, personal_has_content(record)
+
+
+def write_dictionary_personal(path: Path, content: bytes | None) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if content is None:
+        path.unlink(missing_ok=True)
+        return
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as output:
+            output.write(content)
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temporary, path)
+    except Exception:
+        temporary.unlink(missing_ok=True)
+        raise
+
+
+def save_dictionary(
+    payload: dict,
+    personal_dir: Path = DICTIONARY_PERSONAL,
+    generated_dir: Path = DICTIONARY_GENERATED,
+) -> dict:
+    entry = dictionary_entry_from_payload(payload)
+    original = read_personal_entry(entry, personal_dir)
+    record, has_content = normalize_personal_entry(entry, payload, original)
+    if personal_content(record) == personal_content(original):
+        return {
+            "entryId": entry["entryId"],
+            "personal": original,
+            "personalHasContent": personal_has_content(original),
+            "status": "unchanged",
+        }
+
+    path = dictionary_personal_path(entry, personal_dir)
+    previous = path.read_bytes() if path.is_file() else None
+    try:
+        write_dictionary_personal(path, dictionary_json_bytes(record, pretty=True) if has_content else None)
+        build_dictionary_site(generated_dir, personal_dir)
+    except (OSError, DictionaryBuildError) as error:
+        try:
+            write_dictionary_personal(path, previous)
+        except OSError as rollback_error:
+            print(f"Dictionary rollback failed for {entry['word']}: {rollback_error}")
+        raise DictionaryError(f"Dictionary save could not be completed: {error}") from error
+    return {
+        "entryId": entry["entryId"],
+        "personal": record if has_content else empty_personal_entry(entry["entryId"]),
+        "personalHasContent": has_content,
+        "status": "saved",
+    }
+
+
+def publish_dictionary(_payload: dict) -> dict:
+    lexicon, entries, _ = dictionary_catalog()
+    return {
+        "status": "ready",
+        "name": lexicon["name"],
+        "version": lexicon["version"],
+        "totalEntries": len(entries),
+    }
+
+
 JOURNAL_PUBLISH_ENDPOINTS = {
     "/api/journal/save",
     "/api/journal/delete",
@@ -1053,6 +1294,14 @@ WRITING_PUBLISH_ENDPOINTS = {
     "/api/writing/delete",
 }
 
+DICTIONARY_LOCAL_ENDPOINTS = {
+    "/api/dictionary/save",
+}
+
+DICTIONARY_PUBLISH_ENDPOINTS = {
+    "/api/dictionary/publish",
+}
+
 
 def publish_message(path: str, payload: dict, result: dict) -> str:
     if path == "/api/journal/save":
@@ -1065,6 +1314,8 @@ def publish_message(path: str, payload: dict, result: dict) -> str:
         return f"Writing: delete {payload.get('id', 'entry')}"
     if path == "/api/writing/publish":
         return f"Writing: publish {payload.get('id', 'entry')}"
+    if path == "/api/dictionary/publish":
+        return "Dictionary: publish personal knowledge"
     raise PublishError(f"Unsupported publish endpoint: {path}")
 
 
@@ -1101,8 +1352,12 @@ class LocalSiteHandler(SimpleHTTPRequestHandler):
                 "token": TOKEN,
                 "journalYears": [],
                 "writingYears": [],
+                "dictionaryName": None,
+                "dictionaryVersion": None,
+                "dictionaryEntries": 0,
                 "journalError": None,
                 "writingError": None,
+                "dictionaryError": DICTIONARY_BUILD_ERROR,
                 "tectonicVersion": tectonic_version(),
                 "autoPublish": AUTO_PUBLISHER.status(),
             }
@@ -1114,6 +1369,14 @@ class LocalSiteHandler(SimpleHTTPRequestHandler):
                 status["writingYears"] = writing_catalog_years()
             except (LocalEditorError, OSError) as error:
                 status["writingError"] = str(error)
+            if not status["dictionaryError"]:
+                try:
+                    lexicon, entries, _ = dictionary_catalog()
+                    status["dictionaryName"] = lexicon["name"]
+                    status["dictionaryVersion"] = lexicon["version"]
+                    status["dictionaryEntries"] = len(entries)
+                except (LocalEditorError, OSError) as error:
+                    status["dictionaryError"] = str(error)
             self.api_json(HTTPStatus.OK, status)
             return
         super().do_GET()
@@ -1129,6 +1392,9 @@ class LocalSiteHandler(SimpleHTTPRequestHandler):
             "/api/writing/save": save_writing,
             "/api/writing/compile": compile_writing,
             "/api/writing/delete": delete_writing,
+            "/api/dictionary/open": open_dictionary,
+            "/api/dictionary/save": save_dictionary,
+            "/api/dictionary/publish": publish_dictionary,
         }
         if path not in actions:
             self.api_json(HTTPStatus.NOT_FOUND, {"error": "Unknown local editor endpoint."})
@@ -1171,9 +1437,20 @@ class LocalSiteHandler(SimpleHTTPRequestHandler):
                         publish_message(path, payload, result),
                         ("writing",),
                     )
+            elif path in DICTIONARY_LOCAL_ENDPOINTS:
+                with MUTATION_LOCK:
+                    result = actions[path](payload)
+                    result["sync"] = AUTO_PUBLISHER.pending_status()
+            elif path in DICTIONARY_PUBLISH_ENDPOINTS:
+                with MUTATION_LOCK:
+                    result = actions[path](payload)
+                    result["sync"] = AUTO_PUBLISHER.publish(
+                        publish_message(path, payload, result),
+                        ("dictionary/personal",),
+                    )
             else:
                 result = actions[path](payload)
-                if path == "/api/writing/open":
+                if path in {"/api/writing/open", "/api/dictionary/open"}:
                     result["sync"] = AUTO_PUBLISHER.status()
             self.api_json(HTTPStatus.OK, result)
         except (LocalEditorError, json.JSONDecodeError, UnicodeDecodeError) as error:
@@ -1188,20 +1465,38 @@ class LocalSiteHandler(SimpleHTTPRequestHandler):
         self.api_json(HTTPStatus.METHOD_NOT_ALLOWED, {"error": "Cross-origin requests are not supported."})
 
 
+class LocalSiteServer(ThreadingHTTPServer):
+    allow_reuse_address = False
+
+
 def main() -> None:
-    global AUTO_PUBLISHER
-    parser = argparse.ArgumentParser(description="Run the local Writing and Journal editor.")
-    parser.add_argument("--auto-push", action="store_true", help="Commit and push successful editor mutations.")
+    global AUTO_PUBLISHER, DICTIONARY_BUILD_ERROR
+    parser = argparse.ArgumentParser(description="Run the local Writing, Journal, and Dictionary editor.")
+    parser.add_argument(
+        "--auto-push",
+        action="store_true",
+        help="Enable Git commit/push for automatic Journal writes and explicit Writing/Dictionary Publish actions.",
+    )
     arguments = parser.parse_args()
-    if not (ROOT / "index.html").is_file() or not JOURNAL_CATALOG.is_file() or not WRITING_CATALOG.is_file():
+    if not (ROOT / "index.html").is_file() or not JOURNAL_CATALOG.is_file() or not WRITING_CATALOG.is_file() or not DICTIONARY.is_dir():
         raise SystemExit("serve-local.py must be run from the xayah-hina.github.io repository.")
+    try:
+        build_dictionary_site()
+        DICTIONARY_BUILD_ERROR = None
+    except (OSError, DictionaryBuildError) as error:
+        DICTIONARY_BUILD_ERROR = str(error)
+        print(f"Dictionary build failed: {error}")
     AUTO_PUBLISHER = GitPublisher(ROOT, enabled=arguments.auto_push)
     AUTO_PUBLISHER.start()
     handler = partial(LocalSiteHandler, directory=str(ROOT))
-    with ThreadingHTTPServer((HOST, PORT), handler) as server:
-        print(f"Writing local editor: http://localhost:{PORT}/#journal")
+    try:
+        server = LocalSiteServer((HOST, PORT), handler)
+    except OSError as error:
+        raise SystemExit(f"Local editor could not listen on {HOST}:{PORT}. Stop the existing local editor and try again: {error}") from error
+    with server:
+        print(f"Local site editor: http://localhost:{PORT}/#journal")
         print(AUTO_PUBLISHER.message)
-        print("Writes are restricted to the journals and writing directories. Press Ctrl+C to stop.")
+        print("Writes are restricted to journals, writing, and dictionary/personal. Press Ctrl+C to stop.")
         try:
             server.serve_forever()
         except KeyboardInterrupt:

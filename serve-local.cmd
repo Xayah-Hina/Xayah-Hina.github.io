@@ -12,6 +12,6 @@ if exist "%EDGE%" (
   echo Microsoft Edge was not found. Open %LOCAL_URL% manually.
 )
 
-echo Writing local editor: %LOCAL_URL%
+echo Local site editor: %LOCAL_URL%
 echo Press Ctrl+C to stop the server.
 py "%~dp0serve-local.py" --auto-push

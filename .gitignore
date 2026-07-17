@@ -1,2 +1,6 @@
 .idea/
 writing/**/*.pdf
+__pycache__/
+*.pyc
+dictionary/generated/
+dictionary/export/

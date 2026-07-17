@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "entryId": "en:turnaround",
+  "summary": "turnaround 交付周期",
+  "usageNotes": "",
+  "confusionNotes": "",
+  "examples": [
+    {
+      "id": "f71787733cf84b3e86245d404bd6f231",
+      "sentence": "Absolutely fantastic work. Incredibly fast turnaround too.",
+      "translation": "做得太棒了，而且交付速度也快得惊人。",
+      "source": "https://x.com/heyoblake/status/2077929317657461163",
+      "comment": "",
+      "createdAt": "2026-07-17T09:49:02+08:00",
+      "updatedAt": "2026-07-17T09:49:02+08:00"
+    }
+  ],
+  "createdAt": "2026-07-17T09:49:02+08:00",
+  "updatedAt": "2026-07-17T09:49:02+08:00"
+}

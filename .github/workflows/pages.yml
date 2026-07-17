@@ -1,4 +1,4 @@
-name: Deploy Writing to GitHub Pages
+name: Deploy site to GitHub Pages
 
 on:
   push:
@@ -23,6 +23,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Test dictionary
+        run: python -m unittest discover -s tests -p "test_dictionary*.py"
+
+      - name: Build dictionary data
+        run: python dictionary/build.py build
 
       - name: Setup Tectonic
         uses: wtfjoke/setup-tectonic@v4

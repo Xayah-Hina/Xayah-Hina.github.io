@@ -1,0 +1,839 @@
+"use strict";
+
+const byId = (id) => document.getElementById(id);
+const elements = {
+  name: byId("lexicon-name"),
+  version: byId("lexicon-version"),
+  summary: byId("lexicon-summary"),
+  searchForm: byId("search-form"),
+  searchInput: byId("search-input"),
+  filter: byId("lexicon-filter"),
+  suggestions: byId("search-suggestions"),
+  pageStatus: byId("page-status"),
+  workspace: byId("dictionary-workspace"),
+  alphabet: byId("alphabet"),
+  prefixPath: byId("prefix-path"),
+  prefixBranches: byId("prefix-branches"),
+  wordListKicker: byId("word-list-kicker"),
+  wordListTitle: byId("word-list-title"),
+  wordListCount: byId("word-list-count"),
+  wordList: byId("word-list"),
+  entry: byId("dictionary-entry"),
+  authoring: byId("local-authoring"),
+  localStatus: byId("local-status"),
+  publishButton: byId("publish-button"),
+  editor: byId("personal-editor"),
+  personalForm: byId("personal-form"),
+  editorTitle: byId("editor-title"),
+  editorMessage: byId("editor-message"),
+  examplesEditorList: byId("examples-editor-list"),
+  exampleTemplate: byId("example-editor-template"),
+};
+
+const loopbackHosts = new Set(["localhost", "127.0.0.1", "[::1]"]);
+const isLoopback = location.protocol === "http:" && loopbackHosts.has(location.hostname);
+const SUGGESTION_LIMIT = 16;
+const RELATION_LABELS = {
+  lemma: "lemma",
+  past: "past",
+  pastParticiple: "past participle",
+  presentParticiple: "present participle",
+  thirdPersonSingular: "third-person singular",
+  comparative: "comparative",
+  superlative: "superlative",
+  plural: "plural",
+};
+const state = {
+  manifest: null,
+  keys: [],
+  byCanonical: new Map(),
+  byEntryId: new Map(),
+  blockCache: new Map(),
+  personalCache: new Map(),
+  selectedKey: null,
+  currentEntry: null,
+  mode: "prefix",
+  prefix: "a",
+  filterTag: "",
+  suggestionEntries: [],
+  activeSuggestion: -1,
+  navigationVersion: 0,
+  apiToken: "",
+  authoring: false,
+  editorBaseline: "",
+  editorBusy: false,
+};
+
+function canonicalKey(value) {
+  return String(value || "").normalize("NFKC").toLowerCase();
+}
+
+function clear(node) {
+  node.replaceChildren();
+}
+
+function makeElement(tag, className, text) {
+  const element = document.createElement(tag);
+  if (className) element.className = className;
+  if (text !== undefined) element.textContent = text;
+  return element;
+}
+
+async function fetchJson(path, version = "") {
+  const url = new URL(path, location.href);
+  if (version) url.searchParams.set("v", version);
+  const response = await fetch(url, { cache: version ? "default" : "no-cache" });
+  if (!response.ok) throw new Error(`Could not load ${path} (${response.status}).`);
+  return response.json();
+}
+
+function setPageStatus(message, isError = false) {
+  elements.pageStatus.textContent = message;
+  elements.pageStatus.hidden = !message;
+  elements.pageStatus.style.color = isError ? "var(--danger)" : "";
+}
+
+function updateUrl(parameters, push = true) {
+  const url = new URL(location.href);
+  url.search = "";
+  if (state.filterTag) url.searchParams.set("view", state.filterTag);
+  for (const [key, value] of Object.entries(parameters)) {
+    if (value) url.searchParams.set(key, value);
+  }
+  history[push ? "pushState" : "replaceState"]({}, "", url);
+}
+
+function lowerBound(value) {
+  let low = 0;
+  let high = state.keys.length;
+  while (low < high) {
+    const middle = (low + high) >> 1;
+    if (state.keys[middle].canonicalKey < value) low = middle + 1;
+    else high = middle;
+  }
+  return low;
+}
+
+function matchesActiveView(entry) {
+  return !state.filterTag || entry.tags.includes(state.filterTag);
+}
+
+function allEntriesForPrefix(prefix) {
+  if (!prefix) return state.keys;
+  const start = lowerBound(prefix);
+  const end = lowerBound(`${prefix}\uffff`);
+  return state.keys.slice(start, end);
+}
+
+function closeSuggestions() {
+  state.suggestionEntries = [];
+  state.activeSuggestion = -1;
+  clear(elements.suggestions);
+  elements.suggestions.hidden = true;
+  elements.searchInput.setAttribute("aria-expanded", "false");
+  elements.searchInput.removeAttribute("aria-activedescendant");
+}
+
+function setActiveSuggestion(index) {
+  if (!state.suggestionEntries.length) return;
+  state.activeSuggestion = (index + state.suggestionEntries.length) % state.suggestionEntries.length;
+  const options = [...elements.suggestions.querySelectorAll('[role="option"]')];
+  options.forEach((option, optionIndex) => option.setAttribute("aria-selected", String(optionIndex === state.activeSuggestion)));
+  const active = options[state.activeSuggestion];
+  if (active) {
+    elements.searchInput.setAttribute("aria-activedescendant", active.id);
+    active.scrollIntoView({ block: "nearest" });
+  }
+}
+
+function renderSuggestions() {
+  const query = canonicalKey(elements.searchInput.value).trim();
+  closeSuggestions();
+  if (!query) return;
+  state.suggestionEntries = entriesForPrefix(query).slice(0, SUGGESTION_LIMIT);
+  if (!state.suggestionEntries.length) return;
+
+  const fragment = document.createDocumentFragment();
+  state.suggestionEntries.forEach((entry, index) => {
+    const button = makeElement("button", "suggestion-button");
+    button.type = "button";
+    button.id = `search-suggestion-${index}`;
+    button.tabIndex = -1;
+    button.dataset.suggestionIndex = String(index);
+    button.setAttribute("role", "option");
+    button.setAttribute("aria-selected", "false");
+    const viewTags = state.manifest.browseViews.map((view) => view.id).filter((tag) => entry.tags.includes(tag));
+    button.append(
+      makeElement("span", "suggestion-word", entry.word),
+      makeElement("span", "suggestion-meta", `${viewTags.map((tag) => tag.toUpperCase()).join(" · ") || "General"} · #${entry.rank}`),
+    );
+    fragment.append(button);
+  });
+  elements.suggestions.append(fragment);
+  elements.suggestions.hidden = false;
+  elements.searchInput.setAttribute("aria-expanded", "true");
+}
+
+function selectSuggestion(index) {
+  const entry = state.suggestionEntries[index];
+  if (!entry) return;
+  closeSuggestions();
+  showWord(entry);
+}
+
+function renderAlphabet(activePrefix = "") {
+  clear(elements.alphabet);
+  for (let code = 97; code <= 122; code += 1) {
+    const letter = String.fromCharCode(code);
+    const button = makeElement("button", "", letter.toUpperCase());
+    button.type = "button";
+    button.dataset.prefix = letter;
+    button.setAttribute("aria-pressed", String(activePrefix.startsWith(letter)));
+    elements.alphabet.append(button);
+  }
+}
+
+function entriesForPrefix(prefix) {
+  return allEntriesForPrefix(prefix).filter(matchesActiveView);
+}
+
+function renderPrefixMap(prefix) {
+  const effective = prefix || "a";
+  renderAlphabet(effective);
+  clear(elements.prefixPath);
+  for (let length = 1; length <= effective.length; length += 1) {
+    const part = effective.slice(0, length);
+    const button = makeElement("button", "", part.toUpperCase());
+    button.type = "button";
+    button.dataset.prefix = part;
+    elements.prefixPath.append(button);
+  }
+
+  clear(elements.prefixBranches);
+  const branches = new Map();
+  for (const entry of entriesForPrefix(effective)) {
+    const next = entry.canonicalKey.slice(0, effective.length + 1);
+    if (next.length <= effective.length) continue;
+    branches.set(next, (branches.get(next) || 0) + 1);
+  }
+  if (branches.size === 0) {
+    elements.prefixBranches.append(makeElement("p", "empty-message", "No deeper branches."));
+    return;
+  }
+  for (const [branch, count] of [...branches].sort(([left], [right]) => left < right ? -1 : left > right ? 1 : 0)) {
+    const button = makeElement("button", "prefix-branch");
+    button.type = "button";
+    button.dataset.prefix = branch;
+    button.append(makeElement("span", "", branch), makeElement("span", "", String(count)));
+    elements.prefixBranches.append(button);
+  }
+}
+
+function renderWordList(entries, { title, kicker }) {
+  elements.wordListTitle.textContent = title;
+  elements.wordListKicker.textContent = kicker;
+  elements.wordListCount.textContent = `${entries.length} ${entries.length === 1 ? "entry" : "entries"}`;
+  clear(elements.wordList);
+  if (entries.length === 0) {
+    elements.wordList.append(makeElement("p", "empty-message", "No entries in this region."));
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  for (const entry of entries) {
+    const button = makeElement("button", "word-button");
+    button.type = "button";
+    button.dataset.entryId = entry.entryId;
+    button.setAttribute("aria-current", String(entry.entryId === state.selectedKey?.entryId));
+    button.append(makeElement("span", "", entry.word), makeElement("small", "", `#${entry.rank}`));
+    fragment.append(button);
+  }
+  elements.wordList.append(fragment);
+  const selected = elements.wordList.querySelector('[aria-current="true"]');
+  if (selected) {
+    elements.wordList.scrollTop = Math.max(0, selected.offsetTop - elements.wordList.clientHeight / 2);
+  } else {
+    elements.wordList.scrollTop = 0;
+  }
+}
+
+function renderPrefixOverview(prefix, entries) {
+  clear(elements.entry);
+  const wrapper = makeElement("div", "oov-panel");
+  wrapper.append(
+    makeElement("p", "eyebrow", "Prefix region"),
+    makeElement("h2", "", prefix.toUpperCase()),
+    makeElement("p", "", `${entries.length} frozen entries begin with “${prefix}”. Select a word to open its permanent address and local neighborhood.`),
+  );
+  elements.entry.append(wrapper);
+}
+
+function showPrefix(rawPrefix, push = true) {
+  state.navigationVersion += 1;
+  const prefix = canonicalKey(rawPrefix).trim();
+  const effective = prefix || "a";
+  const entries = entriesForPrefix(effective);
+  state.mode = "prefix";
+  state.prefix = effective;
+  state.selectedKey = null;
+  state.currentEntry = null;
+  elements.searchInput.value = effective;
+  closeSuggestions();
+  renderPrefixMap(effective);
+  const viewLabel = state.filterTag ? state.filterTag.toUpperCase() : "General";
+  renderWordList(entries, { title: effective.toUpperCase(), kicker: `${viewLabel} prefix region` });
+  renderPrefixOverview(effective, entries);
+  updateUrl({ prefix: effective }, push);
+}
+
+function renderOov(rawWord, push = true) {
+  state.navigationVersion += 1;
+  const word = String(rawWord || "").trim();
+  state.mode = "oov";
+  state.selectedKey = null;
+  state.currentEntry = null;
+  elements.searchInput.value = word;
+  closeSuggestions();
+  const prefix = canonicalKey(word).slice(0, 5) || "a";
+  renderPrefixMap(prefix);
+  renderWordList([], { title: "Outside the lexicon", kicker: "OOV" });
+  clear(elements.entry);
+  const wrapper = makeElement("div", "oov-panel");
+  wrapper.append(
+    makeElement("p", "eyebrow", "Out of vocabulary"),
+    makeElement("h2", "", word || "Unknown entry"),
+    makeElement("p", "", `Not in ${state.manifest.name} ${state.manifest.version}. This frozen version cannot create or insert new keys.`),
+  );
+  elements.entry.append(wrapper);
+  updateUrl({ word }, push);
+}
+
+async function loadEntry(key) {
+  if (!state.blockCache.has(key.shard)) {
+    const filename = String(key.shard).padStart(4, "0");
+    const entries = await fetchJson(`generated/blocks/${filename}.json`, state.manifest.dataVersion);
+    state.blockCache.set(key.shard, new Map(entries.map((entry) => [entry.entryId, entry])));
+  }
+  return state.blockCache.get(key.shard).get(key.entryId);
+}
+
+async function loadPersonal(key) {
+  if (state.personalCache.has(key.entryId)) return state.personalCache.get(key.entryId);
+  if (!state.manifest.personalShards.includes(key.shard)) {
+    state.personalCache.set(key.entryId, null);
+    return null;
+  }
+  const filename = String(key.shard).padStart(4, "0");
+  const records = await fetchJson(`generated/personal/${filename}.json`, state.manifest.dataVersion);
+  for (const record of records) state.personalCache.set(record.entryId, record);
+  if (!state.personalCache.has(key.entryId)) state.personalCache.set(key.entryId, null);
+  return state.personalCache.get(key.entryId);
+}
+
+function addressBadge(text) {
+  return makeElement("span", "address-badge", text);
+}
+
+function appendTextSection(parent, title, values, unavailableMessage) {
+  const section = makeElement("section", "entry-section");
+  section.append(makeElement("h3", "", title));
+  if (!values?.length) {
+    section.append(makeElement("p", "unavailable", unavailableMessage));
+  } else {
+    for (const value of values) section.append(makeElement("p", "", value));
+  }
+  parent.append(section);
+}
+
+function renderRelations(parent, relations) {
+  const section = makeElement("section", "entry-section");
+  section.append(makeElement("h3", "", "Word forms and lemma"));
+  const list = makeElement("div", "relations");
+  if (!relations.length) {
+    list.append(makeElement("p", "unavailable", "No exchange relations provided by ECDICT."));
+  } else {
+    for (const relation of relations) {
+      const target = relation.targetEntryId ? state.byEntryId.get(relation.targetEntryId) : null;
+      const element = target ? makeElement("button", "relation-button") : makeElement("span", "relation-label");
+      if (target) {
+        element.type = "button";
+        element.dataset.entryId = target.entryId;
+      }
+      element.append(makeElement("span", "relation-kind", RELATION_LABELS[relation.kind] || relation.kind), document.createTextNode(relation.word));
+      list.append(element);
+    }
+  }
+  section.append(list);
+  parent.append(section);
+}
+
+function appendPersonalField(parent, title, value) {
+  if (!value) return;
+  const field = makeElement("div", "personal-field");
+  field.append(makeElement("h4", "", title), makeElement("p", "", value));
+  parent.append(field);
+}
+
+function renderPersonal(parent, personal) {
+  const section = makeElement("section", "entry-section personal-section");
+  const heading = makeElement("div", "personal-heading");
+  heading.append(makeElement("h3", "", "Personal Knowledge"));
+  if (state.authoring) {
+    const edit = makeElement("button", "text-button", "Edit");
+    edit.type = "button";
+    edit.dataset.action = "edit-personal";
+    heading.append(edit);
+  }
+  section.append(heading);
+  if (!personal) {
+    section.append(makeElement("p", "unavailable", "No personal knowledge has been published for this entry."));
+    parent.append(section);
+    return;
+  }
+  appendPersonalField(section, "Chinese summary", personal.summary);
+  appendPersonalField(section, "Usage notes", personal.usageNotes);
+  appendPersonalField(section, "Confusion notes", personal.confusionNotes);
+  if (personal.examples.length) {
+    const field = makeElement("div", "personal-field");
+    field.append(makeElement("h4", "", "Examples"));
+    const list = makeElement("ol", "example-list");
+    for (const example of personal.examples) {
+      const item = makeElement("li", "example-card");
+      item.append(makeElement("p", "", example.sentence));
+      if (example.translation) item.append(makeElement("p", "", example.translation));
+      const meta = [example.source, example.comment].filter(Boolean).join(" · ");
+      if (meta) item.append(makeElement("p", "example-meta", meta));
+      list.append(item);
+    }
+    field.append(list);
+    section.append(field);
+  }
+  if (![personal.summary, personal.usageNotes, personal.confusionNotes].some(Boolean) && !personal.examples.length) {
+    section.append(makeElement("p", "unavailable", "This personal entry is empty."));
+  }
+  parent.append(section);
+}
+
+function renderMetadata(parent, metadata) {
+  const details = makeElement("details", "entry-section");
+  details.append(makeElement("summary", "", "ECDICT metadata"));
+  const grid = makeElement("dl", "metadata-grid");
+  const items = [
+    ["Tags", metadata.tags.join(" · ") || "Unavailable"],
+    ["Included by", (metadata.inclusionReasons || []).join(" · ") || "Unavailable"],
+    ["Collins", metadata.collins ? `${metadata.collins} ${metadata.collins === 1 ? "star" : "stars"}` : "Unavailable"],
+    ["Oxford 3000", metadata.oxford3000 ? "Yes" : "No"],
+    ["BNC rank", metadata.bncRank ? String(metadata.bncRank) : "Unavailable"],
+    ["Frequency rank", metadata.frqRank ? String(metadata.frqRank) : "Unavailable"],
+  ];
+  for (const [term, description] of items) {
+    const cell = makeElement("div", "");
+    cell.append(makeElement("dt", "", term), makeElement("dd", "", description));
+    grid.append(cell);
+  }
+  details.append(grid);
+  parent.append(details);
+}
+
+function renderEntry(entry, personal) {
+  clear(elements.entry);
+  const header = makeElement("header", "entry-header");
+  const heading = makeElement("div", "");
+  heading.append(makeElement("h2", "", entry.word));
+  heading.append(makeElement("p", entry.phonetic ? "phonetic" : "phonetic unavailable", entry.phonetic || "Pronunciation unavailable in ECDICT."));
+  const navigation = makeElement("div", "entry-navigation");
+  const previous = state.keys[entry.rank - 2];
+  const next = state.keys[entry.rank];
+  for (const [label, target] of [["← Previous", previous], ["Next →", next]]) {
+    const button = makeElement("button", "", label);
+    button.type = "button";
+    button.disabled = !target;
+    if (target) button.dataset.entryId = target.entryId;
+    navigation.append(button);
+  }
+  header.append(heading, navigation);
+  elements.entry.append(header);
+
+  const address = makeElement("div", "entry-address");
+  address.append(
+    addressBadge(`${state.manifest.name} ${state.manifest.version}`),
+    addressBadge(`Rank ${entry.rank} / ${state.manifest.totalEntries}`),
+    addressBadge(`Block ${entry.block}`),
+    addressBadge(`Slot ${entry.slot} / ${state.manifest.cognitiveBlockSize}`),
+  );
+  elements.entry.append(address);
+  appendTextSection(elements.entry, "Chinese translation", entry.translations, "Chinese translation unavailable in ECDICT.");
+  appendTextSection(elements.entry, "English definition", entry.definitions, "English definition unavailable in ECDICT.");
+  renderRelations(elements.entry, entry.relations);
+  renderPersonal(elements.entry, personal);
+  renderMetadata(elements.entry, entry.metadata);
+}
+
+async function showWord(key, push = true) {
+  if (!key) return;
+  const navigationVersion = ++state.navigationVersion;
+  closeSuggestions();
+  setPageStatus("Loading entry…");
+  try {
+    const [entry, personal] = await Promise.all([loadEntry(key), loadPersonal(key)]);
+    if (navigationVersion !== state.navigationVersion) return;
+    if (!entry) throw new Error("The selected entry is missing from its payload shard.");
+    state.mode = "block";
+    state.selectedKey = key;
+    state.currentEntry = entry;
+    elements.searchInput.value = entry.word;
+    const blockStart = (entry.block - 1) * state.manifest.cognitiveBlockSize;
+    const neighbors = state.keys.slice(blockStart, blockStart + state.manifest.cognitiveBlockSize);
+    renderWordList(neighbors, {
+      title: `Block ${entry.block}`,
+      kicker: `${state.manifest.cognitiveBlockSize}-word cognitive block`,
+    });
+    renderPrefixMap(entry.canonicalKey.slice(0, Math.min(5, entry.canonicalKey.length)));
+    renderEntry(entry, personal);
+    updateUrl({ word: entry.word }, push);
+    setPageStatus("");
+  } catch (error) {
+    if (navigationVersion !== state.navigationVersion) return;
+    setPageStatus(error.message || "The entry could not be loaded.", true);
+  }
+}
+
+function applyLocation(push = false) {
+  const parameters = new URLSearchParams(location.search);
+  const requestedView = parameters.get("view") || "";
+  const validViews = new Set((state.manifest.browseViews || []).map((view) => view.id));
+  state.filterTag = validViews.has(requestedView) ? requestedView : "";
+  elements.filter.value = state.filterTag;
+  renderLexiconSummary();
+  const requestedWord = parameters.get("word");
+  if (requestedWord !== null) {
+    const key = state.byCanonical.get(canonicalKey(requestedWord));
+    if (key) showWord(key, push);
+    else renderOov(requestedWord, push);
+    return;
+  }
+  showPrefix(parameters.get("prefix") || "a", push);
+}
+
+function renderLexiconSummary() {
+  const activeView = (state.manifest.browseViews || []).find((view) => view.id === state.filterTag);
+  const viewText = activeView
+    ? `${activeView.label} view: ${activeView.totalEntries.toLocaleString()} keys`
+    : `${state.manifest.totalEntries.toLocaleString()} immutable keys`;
+  elements.summary.textContent = `${viewText} · ${state.manifest.cognitiveBlockSize}-word cognitive blocks · strict lexicographic ranks`;
+}
+
+function populateBrowseViews() {
+  elements.filter.options[0].textContent = `All words (${state.manifest.totalEntries.toLocaleString()})`;
+  for (const view of state.manifest.browseViews || []) {
+    const option = makeElement("option", "", `${view.label} (${view.totalEntries.toLocaleString()})`);
+    option.value = view.id;
+    elements.filter.append(option);
+  }
+}
+
+function refreshActiveView() {
+  closeSuggestions();
+  state.filterTag = elements.filter.value;
+  renderLexiconSummary();
+  if (state.mode === "prefix") {
+    showPrefix(state.prefix, false);
+  } else if (state.mode === "block" && state.selectedKey) {
+    renderPrefixMap(state.selectedKey.canonicalKey.slice(0, Math.min(5, state.selectedKey.canonicalKey.length)));
+    updateUrl({ word: state.selectedKey.word }, false);
+  } else if (state.mode === "oov") {
+    renderOov(elements.searchInput.value, false);
+  }
+}
+
+function editorSnapshot() {
+  const form = elements.personalForm.elements;
+  const examples = [...elements.examplesEditorList.querySelectorAll(".example-editor-item")].map((item) => {
+    const value = (field) => item.querySelector(`[data-example-field="${field}"]`).value;
+    return {
+      id: value("id"),
+      sentence: value("sentence").trim(),
+      translation: value("translation").trim(),
+      source: value("source").trim(),
+      comment: value("comment").trim(),
+    };
+  }).filter((example) => Object.entries(example).some(([key, value]) => key !== "id" && value));
+  return {
+    summary: form.summary.value.trim(),
+    usageNotes: form.usageNotes.value.trim(),
+    confusionNotes: form.confusionNotes.value.trim(),
+    examples,
+  };
+}
+
+function serializedEditor() {
+  return JSON.stringify(editorSnapshot());
+}
+
+function renumberExamples() {
+  [...elements.examplesEditorList.querySelectorAll(".example-editor-item")].forEach((item, index) => {
+    item.querySelector("[data-example-number]").textContent = `Example ${index + 1}`;
+  });
+}
+
+function addExampleEditor(example = {}) {
+  const fragment = elements.exampleTemplate.content.cloneNode(true);
+  const item = fragment.querySelector(".example-editor-item");
+  for (const field of ["id", "sentence", "translation", "source", "comment"]) {
+    item.querySelector(`[data-example-field="${field}"]`).value = example[field] || "";
+  }
+  elements.examplesEditorList.append(fragment);
+  renumberExamples();
+}
+
+async function localRequest(path, payload) {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Local-Token": state.apiToken },
+    body: JSON.stringify(payload),
+  });
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error("The local editor returned an invalid response.");
+  }
+  if (!response.ok) throw new Error(result.error || "The local dictionary request failed.");
+  return result;
+}
+
+function updateLocalStatus(sync, fallback = "Local editing is enabled.") {
+  if (!sync?.enabled) {
+    elements.localStatus.textContent = fallback;
+    elements.publishButton.disabled = true;
+    return;
+  }
+  const pending = Boolean(sync.dictionaryPending);
+  elements.localStatus.textContent = pending ? "Saved locally · Unpublished changes." : (sync.message || fallback);
+  elements.publishButton.disabled = !pending;
+}
+
+async function openEditor() {
+  if (!state.authoring || !state.currentEntry || state.editorBusy) return;
+  elements.editorMessage.textContent = "Loading…";
+  try {
+    const result = await localRequest("/api/dictionary/open", { entryId: state.currentEntry.entryId });
+    const personal = result.personal;
+    const form = elements.personalForm.elements;
+    form.summary.value = personal.summary || "";
+    form.usageNotes.value = personal.usageNotes || "";
+    form.confusionNotes.value = personal.confusionNotes || "";
+    clear(elements.examplesEditorList);
+    for (const example of personal.examples || []) addExampleEditor(example);
+    elements.editorTitle.textContent = `Edit ${state.currentEntry.word}`;
+    elements.editorMessage.textContent = "";
+    state.editorBaseline = serializedEditor();
+    elements.editor.showModal();
+    form.summary.focus();
+  } catch (error) {
+    const message = error.message || "The personal entry could not be opened.";
+    elements.localStatus.textContent = message;
+    setPageStatus(message, true);
+  }
+}
+
+function editorIsDirty() {
+  return elements.editor.open && serializedEditor() !== state.editorBaseline;
+}
+
+function closeEditor() {
+  if (state.editorBusy) return;
+  if (editorIsDirty() && !window.confirm("Discard unsaved Personal Knowledge changes?")) return;
+  elements.editor.close();
+}
+
+function setEditorBusy(busy) {
+  state.editorBusy = busy;
+  for (const control of elements.personalForm.querySelectorAll("button, input, textarea")) control.disabled = busy;
+}
+
+async function saveEditor(event) {
+  event.preventDefault();
+  if (!state.currentEntry || state.editorBusy) return;
+  const personal = editorSnapshot();
+  const missingSentence = personal.examples.some((example) => !example.sentence);
+  if (missingSentence) {
+    elements.editorMessage.textContent = "Every non-empty example needs an English sentence.";
+    return;
+  }
+  setEditorBusy(true);
+  elements.editorMessage.textContent = "Saving…";
+  try {
+    const result = await localRequest("/api/dictionary/save", { entryId: state.currentEntry.entryId, personal });
+    state.personalCache.set(state.currentEntry.entryId, result.personalHasContent ? result.personal : null);
+    elements.editor.close();
+    renderEntry(state.currentEntry, state.personalCache.get(state.currentEntry.entryId));
+    updateLocalStatus(result.sync, result.status === "unchanged" ? "No local changes were needed." : "Saved locally.");
+  } catch (error) {
+    elements.editorMessage.textContent = error.message || "The personal entry could not be saved.";
+  } finally {
+    setEditorBusy(false);
+  }
+}
+
+async function publishPersonal() {
+  if (!state.authoring || state.editorBusy) return;
+  elements.publishButton.disabled = true;
+  elements.localStatus.textContent = "Publishing…";
+  try {
+    const result = await localRequest("/api/dictionary/publish", {});
+    updateLocalStatus(result.sync, "Personal Knowledge is published.");
+  } catch (error) {
+    elements.localStatus.textContent = error.message || "Personal Knowledge could not be published.";
+    elements.publishButton.disabled = false;
+  }
+}
+
+async function setupLocalAuthoring() {
+  if (!isLoopback) return;
+  elements.authoring.hidden = false;
+  try {
+    const response = await fetch("/api/local/status", { cache: "no-store" });
+    if (!response.ok) throw new Error("Start the site with serve-local.cmd to edit.");
+    let result;
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error("Start the site with serve-local.cmd to edit.");
+    }
+    if (!response.ok || !result.authoring || !result.token || result.dictionaryError) {
+      throw new Error(result.dictionaryError || result.error || "The local dictionary editor is unavailable.");
+    }
+    state.apiToken = result.token;
+    state.authoring = true;
+    updateLocalStatus(result.autoPublish);
+    if (state.currentEntry) renderEntry(state.currentEntry, state.personalCache.get(state.currentEntry.entryId) || null);
+  } catch (error) {
+    state.authoring = false;
+    elements.localStatus.textContent = error.message || "Start the site with serve-local.cmd to edit.";
+    elements.publishButton.disabled = true;
+  }
+}
+
+function bindEvents() {
+  elements.searchForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const query = elements.searchInput.value.trim();
+    if (!query) return;
+    closeSuggestions();
+    const exact = state.byCanonical.get(canonicalKey(query));
+    if (exact) showWord(exact);
+    else if (entriesForPrefix(canonicalKey(query)).length) showPrefix(query);
+    else if (allEntriesForPrefix(canonicalKey(query)).length) {
+      state.filterTag = "";
+      elements.filter.value = "";
+      renderLexiconSummary();
+      showPrefix(query);
+    } else renderOov(query);
+  });
+  elements.searchInput.addEventListener("input", renderSuggestions);
+  elements.searchInput.addEventListener("focus", renderSuggestions);
+  elements.searchInput.addEventListener("blur", closeSuggestions);
+  elements.searchInput.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (elements.suggestions.hidden) renderSuggestions();
+      setActiveSuggestion(state.activeSuggestion + 1);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      if (elements.suggestions.hidden) renderSuggestions();
+      setActiveSuggestion(state.activeSuggestion < 0 ? state.suggestionEntries.length - 1 : state.activeSuggestion - 1);
+    } else if (event.key === "Enter" && state.activeSuggestion >= 0) {
+      event.preventDefault();
+      selectSuggestion(state.activeSuggestion);
+    } else if (event.key === "Escape") {
+      closeSuggestions();
+    }
+  });
+  elements.suggestions.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+  });
+  elements.suggestions.addEventListener("click", (event) => {
+    const option = event.target.closest("[data-suggestion-index]");
+    if (option) selectSuggestion(Number(option.dataset.suggestionIndex));
+  });
+  elements.filter.addEventListener("change", refreshActiveView);
+  document.addEventListener("pointerdown", (event) => {
+    if (!elements.searchForm.contains(event.target)) closeSuggestions();
+  });
+  elements.alphabet.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-prefix]");
+    if (button) showPrefix(button.dataset.prefix);
+  });
+  elements.prefixPath.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-prefix]");
+    if (button) showPrefix(button.dataset.prefix);
+  });
+  elements.prefixBranches.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-prefix]");
+    if (button) showPrefix(button.dataset.prefix);
+  });
+  elements.wordList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-entry-id]");
+    if (button) showWord(state.byEntryId.get(button.dataset.entryId));
+  });
+  elements.entry.addEventListener("click", (event) => {
+    const target = event.target.closest("[data-entry-id]");
+    if (target) showWord(state.byEntryId.get(target.dataset.entryId));
+    if (event.target.closest('[data-action="edit-personal"]')) openEditor();
+  });
+  elements.personalForm.addEventListener("submit", saveEditor);
+  elements.personalForm.addEventListener("click", (event) => {
+    const action = event.target.closest("[data-editor-action]")?.dataset.editorAction;
+    if (action === "close") closeEditor();
+    if (action === "add-example") {
+      addExampleEditor();
+      elements.examplesEditorList.lastElementChild.querySelector('[data-example-field="sentence"]').focus();
+    }
+    if (event.target.closest('[data-example-action="remove"]')) {
+      event.target.closest(".example-editor-item").remove();
+      renumberExamples();
+    }
+  });
+  elements.personalForm.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+      event.preventDefault();
+      elements.personalForm.requestSubmit();
+    }
+  });
+  elements.editor.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeEditor();
+  });
+  elements.publishButton.addEventListener("click", publishPersonal);
+  window.addEventListener("popstate", () => applyLocation(false));
+  window.addEventListener("beforeunload", (event) => {
+    if (!editorIsDirty()) return;
+    event.preventDefault();
+    event.returnValue = "";
+  });
+}
+
+async function initialize() {
+  bindEvents();
+  const manifest = await fetchJson("generated/manifest.json");
+  const keys = await fetchJson("generated/keys.json", manifest.dataVersion);
+  if (!Array.isArray(keys) || keys.length !== manifest.totalEntries || keys.some((entry) => !Array.isArray(entry.tags))) {
+    throw new Error("Dictionary key index is inconsistent.");
+  }
+  state.manifest = manifest;
+  state.keys = keys;
+  state.byCanonical = new Map(keys.map((entry) => [entry.canonicalKey, entry]));
+  state.byEntryId = new Map(keys.map((entry) => [entry.entryId, entry]));
+  elements.name.textContent = manifest.name;
+  elements.version.textContent = manifest.version;
+  populateBrowseViews();
+  elements.workspace.hidden = false;
+  setPageStatus("");
+  applyLocation(false);
+  await setupLocalAuthoring();
+}
+
+initialize().catch((error) => {
+  console.error("Dictionary initialization failed.", error);
+  setPageStatus(error.message || "Dictionary initialization failed.", true);
+});

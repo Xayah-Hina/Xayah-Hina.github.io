@@ -247,6 +247,13 @@
       text-underline-offset: 0.2em;
     }
 
+    .nav-links {
+      display: flex;
+      justify-self: end;
+      align-items: center;
+      gap: 1rem;
+    }
+
     .archive-section {
       padding-top: 1rem;
       border-top: 1px solid var(--line);
@@ -1196,7 +1203,10 @@
       <button class="section-switch-button" type="button" data-section="writing" aria-pressed="true">Writing</button>
       <button class="section-switch-button" type="button" data-section="journal" aria-pressed="false">Journal</button>
     </div>
-    <a class="nav-link" href="https://graphics.xayah.me/">Academic Profile</a>
+    <div class="nav-links">
+      <a class="nav-link" href="dictionary/">Dictionary</a>
+      <a class="nav-link" href="https://graphics.xayah.me/">Academic Profile</a>
+    </div>
   </nav>
 
   <main>
