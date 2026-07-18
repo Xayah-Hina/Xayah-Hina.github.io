@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260719-061603-c315",
+    "publishedAt": "2026-07-19T06:16:03+08:00",
+    "content": "感觉如果不加Diffusion Model很难和前人做过的东西区分开来。\n\n但是前人做的有一个很大的缺点就是“很假”。如果我还是做target引导/轨迹引导，但是尽可能不用类似于external force控制而是根据特性来估计场景中真实的物理信息（因为视频本身肯定就是完全物理的，无论是synthetic video还是real shot video）。比如自然中的烟雾可以估计风场（对于短视频监督完全可以简化成方向和强度变化最不剧烈的假设），对于pyro这类就可以估计温度场之类的完全摒弃external force场，对于云就更好办了云有自身的三态变化规律完全可以拟合一个规则来估计。\n\n最终的成果可能可以做一个结合Differentiable Solver的In Paint 3D Diffusion Model。渲染一张图（比如夕阳下的蒸汽火车）然后让Diffusion Model自己生成一张比较合理美观的图片，然后允许单图恢复出3D密度，然后指定source（一般来说烟雾的source是比较容易指定也是比较固定的）生成整个物理动态轨迹。类似的思想可以迁移到Differentiable Cloth Simulation上。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260719-054423-8ced",
     "publishedAt": "2026-07-19T05:44:23+08:00",
     "content": "一定要允许错误。错误是好事，错误越大相对最终target的gradient越大，人才能更好更快地学习。一定要诚实面对错误，并且努力寻找修复错误的方案。",
