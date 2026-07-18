@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260719-054423-8ced",
+    "publishedAt": "2026-07-19T05:44:23+08:00",
+    "content": "一定要允许错误。错误是好事，错误越大相对最终target的gradient越大，人才能更好更快地学习。一定要诚实面对错误，并且努力寻找修复错误的方案。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260719-052219-392e",
     "publishedAt": "2026-07-19T05:22:19+08:00",
     "content": "Kimi的杨植麟提到一本书 The Beginning of Infinity。有时间可以看一下。",
