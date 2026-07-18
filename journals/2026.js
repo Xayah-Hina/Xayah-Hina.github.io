@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260719-052219-392e",
+    "publishedAt": "2026-07-19T05:22:19+08:00",
+    "content": "Kimi的杨植麟提到一本书 The Beginning of Infinity。有时间可以看一下。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260719-033957-2135",
     "publishedAt": "2026-07-19T03:39:57+08:00",
     "content": "网上乌烟瘴气的东西真的太多了，一定要控制住看垃圾信息的惯性。Trash in trash out，概率论的一大核心论题。\n\n人群的共识是让你用来赚取margin的，不是让你来反被影响的。一定要坚持以现实进步和利润落盘为唯一准则。",
