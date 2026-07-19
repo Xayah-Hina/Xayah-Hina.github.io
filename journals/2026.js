@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260720-014654-9de7",
+    "publishedAt": "2026-07-20T01:46:54+08:00",
+    "content": "【Paper想法2】也许可以命名成屏幕空间流体引导？这样能结合的特性就有\n\n1. Diffusion Model直接生成渲染后的预览图（允许艺术家在屏幕空间任意改动）\n2. 把相机位置以及时间戳加入到整个Guide Optimization Pipeline中（过去应该没有类似的工作吧，需要进一步调研）\n3. Intuitive Physics考虑一下",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260719-144637-93e8",
     "publishedAt": "2026-07-19T14:46:37+08:00",
     "content": "是不是应该停下来好好读几篇paper了啊。\n\n可是codex额度用不完总感觉有点亏……",
