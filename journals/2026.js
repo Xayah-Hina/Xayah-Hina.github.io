@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260719-144637-93e8",
+    "publishedAt": "2026-07-19T14:46:37+08:00",
+    "content": "是不是应该停下来好好读几篇paper了啊。\n\n可是codex额度用不完总感觉有点亏……",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260719-093355-6ae6",
     "publishedAt": "2026-07-19T09:33:55+08:00",
     "content": "TODO\n做完这个谱之后插入做一个Old Memory的谱子。这应该工作量比较低，就是注意后期要合成弦乐。",
