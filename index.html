@@ -1067,15 +1067,38 @@
     }
 
     .site-footer {
-      padding: 1rem;
-      color: var(--subtle);
       border-top: 1px solid var(--line);
-      font-size: 0.875rem;
       text-align: center;
     }
 
-    .site-footer p {
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: calc(100% - 2rem);
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 1.25rem 0;
+      gap: 1rem;
+    }
+
+    .footer-quote {
       margin: 0;
+      color: var(--subtle);
+      font-size: 0.8125rem;
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    .footer-quote p,
+    .footer-meta {
+      margin: 0;
+    }
+
+    .footer-meta {
+      color: var(--subtle);
+      font-size: 0.8125rem;
+      letter-spacing: 0.015em;
     }
 
     @media (max-width: 42rem) {
@@ -1122,8 +1145,15 @@
 
     @media (max-width: 30rem) {
       .section-container,
-      .site-nav {
+      .site-nav,
+      .footer-inner {
         width: calc(100% - 1.5rem);
+      }
+
+      .footer-inner {
+        align-items: center;
+        flex-direction: column;
+        gap: 0.4rem;
       }
 
       .journal-authoring {
@@ -1200,7 +1230,12 @@
   </main>
 
   <footer class="site-footer">
-    <p id="footer-text">© 2026 Xayah Hina. All rights reserved.</p>
+    <div class="footer-inner">
+      <blockquote class="footer-quote">
+        <p>In solitude, where we are least alone.</p>
+      </blockquote>
+      <p id="footer-text" class="footer-meta">© 2026 Xayah Hina. All rights reserved.</p>
+    </div>
   </footer>
 
   <template id="entry-template">
