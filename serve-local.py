@@ -967,6 +967,28 @@ def save_writing(payload: dict) -> dict:
     return _save_writing(payload)
 
 
+def writing_source_commit_epoch(source_path: Path) -> str | None:
+    git = shutil.which("git")
+    if not git:
+        return None
+    try:
+        relative_source = source_path.resolve().relative_to(ROOT).as_posix()
+        process = subprocess.run(
+            [git, "log", "-1", "--format=%ct", "--", relative_source],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired, ValueError):
+        return None
+    epoch = process.stdout.strip()
+    return epoch if process.returncode == 0 and epoch.isdigit() else None
+
+
 def _compile_writing(payload: dict) -> dict:
     result = _save_writing(payload)
     source_path, pdf_path, _ = writing_document_paths(payload["id"])
@@ -980,6 +1002,9 @@ def _compile_writing(payload: dict) -> dict:
             environment = os.environ.copy()
             environment["TECTONIC_UNTRUSTED_MODE"] = "1"
             environment["TZ"] = "Asia/Singapore"
+            source_commit_epoch = writing_source_commit_epoch(source_path)
+            if source_commit_epoch:
+                environment["SOURCE_DATE_EPOCH"] = source_commit_epoch
             process = subprocess.run(
                 [
                     tectonic,

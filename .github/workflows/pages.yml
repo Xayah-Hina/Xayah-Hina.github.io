@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -35,12 +37,21 @@ jobs:
       - name: Build dictionary data
         run: python dictionary/build.py build
 
+      - name: Restore writing PDFs
+        id: writing-pdf-cache
+        uses: actions/cache@v5
+        with:
+          path: writing/**/*.pdf
+          key: ${{ runner.os }}-writing-pdfs-v2-tectonic-0.16.9-${{ hashFiles('writing/**/*.tex', 'assets/fonts/**', 'assets/images/**') }}
+
       - name: Setup Tectonic
+        if: steps.writing-pdf-cache.outputs.cache-hit != 'true'
         uses: wtfjoke/setup-tectonic@v4
         with:
           tectonic-version: 0.16.9
 
       - name: Build writing documents
+        if: steps.writing-pdf-cache.outputs.cache-hit != 'true'
         shell: bash
         env:
           TZ: Asia/Singapore
@@ -52,7 +63,13 @@ jobs:
 
           for source in "${sources[@]}"; do
             output_dir="$(dirname "$source")"
-            tectonic -X compile --untrusted --outdir "$output_dir" "$source"
+            source_date_epoch="$(git log -1 --format=%ct -- "$source")"
+            if [[ -z "$source_date_epoch" ]]; then
+              echo "Could not determine the last commit date for: $source" >&2
+              exit 1
+            fi
+            SOURCE_DATE_EPOCH="$source_date_epoch" \
+              tectonic -X compile --untrusted --outdir "$output_dir" "$source"
             pdf="${source%.tex}.pdf"
             if [[ ! -s "$pdf" ]]; then
               echo "Expected PDF was not generated: $pdf" >&2
