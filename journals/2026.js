@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260721-043704-498f",
+    "publishedAt": "2026-07-21T04:37:04+08:00",
+    "content": "之前提到了月度总结/年度总结甚至日报的方案，但我总感觉还缺少了两样重要的东西。\n\n一个是知识库（或者叫沉淀库），存放所有可复现的知识和技能，比如快速写Native Vulkan App的框架，上手就能弹的曲子（指完全自己重新制谱重新标指法重新练习的有唯一弹法的谱），看过的论文（深度解析每一处要点）之类的。\n\n另一个就是Context（具体名字我还没想好），也就是目前手头在做的工作，每个周期（比如每个月/每年）compact一遍。记忆力实在不好，很多工作做着做着就会丢Context，得好好想办法解决这个问题。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260721-041113-ed39",
     "publishedAt": "2026-07-21T04:11:13+08:00",
     "content": "TODO\n研究一下Deep Scattering: Rendering Atmospheric Clouds with Radiance-Predicting Neural Networks\n这看起来很Promising。",
