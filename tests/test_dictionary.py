@@ -246,7 +246,7 @@ class LocalDictionaryTests(unittest.TestCase):
         self.assertTrue(allowed(Request("http://localhost:8765")))
         self.assertTrue(allowed(Request("http://127.0.0.1:8765")))
         self.assertTrue(allowed(Request(None)))
-        self.assertFalse(allowed(Request("https://i.xayah.me")))
+        self.assertFalse(allowed(Request("https://xayah.me")))
         self.assertFalse(allowed(Request("http://localhost:9999")))
 
     def test_pending_status_clears_stale_message(self):

@@ -144,7 +144,7 @@ export default [
   {
     "id": "20260717-103417-0121",
     "publishedAt": "2026-07-17T10:34:17+08:00",
-    "content": "做完了，希望能好好用上这个私人词典。\n\nhttps://i.xayah.me/dictionary",
+    "content": "做完了，希望能好好用上这个私人词典。\n\nhttps://xayah.me/dictionary",
     "images": [],
     "relatedWriting": null
   },
