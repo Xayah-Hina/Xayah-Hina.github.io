@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260721-041113-ed39",
+    "publishedAt": "2026-07-21T04:11:13+08:00",
+    "content": "TODO\n研究一下Deep Scattering: Rendering Atmospheric Clouds with Radiance-Predicting Neural Networks\n这看起来很Promising。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260721-034858-43dd",
     "publishedAt": "2026-07-21T03:48:58+08:00",
     "content": "有点苦恼，想不出一个初步的well-defined的目标验证问题。\n\n今天看到胡渊鸣的新文章提到业内共识在2028年左右实现AGI，这确实有点超出我目前的认知。我至今仍然把Agent当作一个大号的自动补全机器，对于真正的End to End目前的我无法想象。CG整个产业真的要重新发明一遍吗？对于PhD期间之前思考好的方向，是否要进行及时修正？\n\n但我真的看不到真正AI给这个领域进行颠覆的方向和未来…… 是我太过愚钝短视了吗？",
