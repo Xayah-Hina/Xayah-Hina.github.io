@@ -336,27 +336,18 @@ def safe_monthly_image_path(src: str, year: str, month: str) -> Path:
 
 def validate_monthly_text(value, field: str, maximum: int = 100_000) -> str:
     if not isinstance(value, str):
-        raise JournalError(f"Monthly review {field} is invalid.")
+        raise JournalError(f"Monthly note {field} is invalid.")
     result = value.strip()
     if len(result) > maximum:
-        raise JournalError(f"Monthly review {field} is too long.")
+        raise JournalError(f"Monthly note {field} is too long.")
     return result
 
 
-def normalize_monthly_review(value, year: str, month: str) -> dict:
+def normalize_monthly_note(value, year: str, month: str) -> dict:
     if not isinstance(value, dict):
-        raise JournalError(f"Monthly review {month} is invalid.")
+        raise JournalError(f"Monthly note {month} is invalid.")
     if not MONTH_PATTERN.fullmatch(month) or month[:4] != year:
-        raise JournalError(f"Monthly review {month} does not belong to {year}.")
-
-    highlights = value.get("highlights", [])
-    if not isinstance(highlights, list) or len(highlights) > 20:
-        raise JournalError("Monthly review highlights are invalid.")
-    normalized_highlights = []
-    for highlight in highlights:
-        normalized = validate_monthly_text(highlight, "highlight", 5_000)
-        if normalized:
-            normalized_highlights.append(normalized)
+        raise JournalError(f"Monthly note {month} does not belong to {year}.")
 
     report_image = value.get("reportImage")
     normalized_image = None
@@ -371,19 +362,17 @@ def normalize_monthly_review(value, year: str, month: str) -> dict:
         normalized_image = {"src": src, "alt": alt}
 
     result = {
-        "summary": validate_monthly_text(value.get("summary", ""), "summary"),
-        "highlights": normalized_highlights,
-        "next": validate_monthly_text(value.get("next", ""), "next steps"),
+        "note": validate_monthly_text(value.get("note", ""), "content"),
         "reportImage": normalized_image,
     }
     updated_at = value.get("updatedAt")
     if updated_at is not None:
         if not isinstance(updated_at, str):
-            raise JournalError("Monthly review update time is invalid.")
+            raise JournalError("Monthly note update time is invalid.")
         try:
             datetime.fromisoformat(updated_at)
         except ValueError as error:
-            raise JournalError("Monthly review update time is invalid.") from error
+            raise JournalError("Monthly note update time is invalid.") from error
         result["updatedAt"] = updated_at
     return result
 
@@ -392,24 +381,24 @@ def read_monthly_year(year: str) -> dict[str, dict]:
     path = JOURNAL_MONTHLY / f"{year}.js"
     if not path.exists():
         return {}
-    reviews = module_data(path, dict)
+    notes = module_data(path, dict)
     return {
-        month: normalize_monthly_review(review, year, month)
-        for month, review in reviews.items()
+        month: normalize_monthly_note(note, year, month)
+        for month, note in notes.items()
     }
 
 
-def write_monthly_state(year: str, reviews: dict[str, dict]) -> None:
+def write_monthly_state(year: str, notes: dict[str, dict]) -> None:
     path = JOURNAL_MONTHLY / f"{year}.js"
     previous = path.read_bytes() if path.exists() else None
-    ordered = dict(sorted(reviews.items(), reverse=True))
+    ordered = dict(sorted(notes.items(), reverse=True))
     try:
         atomic_write(path, module_source(ordered))
     except Exception:
         try:
             restore_file(path, previous)
         except Exception as rollback_error:
-            print(f"Monthly review rollback failed: {rollback_error}")
+            print(f"Monthly note rollback failed: {rollback_error}")
         raise
 
 
@@ -708,8 +697,8 @@ def delete_journal(payload: dict) -> dict:
     }
 
 
-def monthly_review_without_updated_at(review: dict) -> dict:
-    value = json.loads(json.dumps(review, ensure_ascii=False))
+def monthly_note_without_updated_at(note: dict) -> dict:
+    value = json.loads(json.dumps(note, ensure_ascii=False))
     value.pop("updatedAt", None)
     return value
 
@@ -755,40 +744,33 @@ def prepare_monthly_report_image(payload: dict, original: dict | None, year: str
     }, (path, content)
 
 
-def save_monthly_review(payload: dict) -> dict:
+def save_monthly_note(payload: dict) -> dict:
     year = str(payload.get("year", ""))
     month = str(payload.get("month", ""))
     if not re.fullmatch(r"\d{4}", year) or not MONTH_PATTERN.fullmatch(month) or month[:4] != year:
-        raise JournalError("Monthly review date is invalid.")
+        raise JournalError("Monthly note date is invalid.")
     if year not in catalog_years():
         raise JournalError("The Journal year is no longer available.")
     if not any(str(entry.get("publishedAt", ""))[:7] == month for entry in read_year(year)):
         raise JournalError("The Journal month is no longer available.")
 
-    review = payload.get("review")
-    if not isinstance(review, dict):
-        raise JournalError("Monthly review is invalid.")
-    previous_reviews = read_monthly_year(year)
-    original = previous_reviews.get(month)
+    note = payload.get("note")
+    if not isinstance(note, dict):
+        raise JournalError("Monthly note is invalid.")
+    previous_notes = read_monthly_year(year)
+    original = previous_notes.get(month)
     report_image, new_file = prepare_monthly_report_image(payload, original, year, month)
-    candidate = normalize_monthly_review({
-        "summary": review.get("summary", ""),
-        "highlights": review.get("highlights", []),
-        "next": review.get("next", ""),
+    candidate = normalize_monthly_note({
+        "note": note.get("content", ""),
         "reportImage": report_image,
     }, year, month)
-    has_content = bool(
-        candidate["summary"]
-        or candidate["highlights"]
-        or candidate["next"]
-        or candidate["reportImage"]
-    )
+    has_content = bool(candidate["note"] or candidate["reportImage"])
 
-    if original and has_content and monthly_review_without_updated_at(original) == candidate:
+    if original and has_content and monthly_note_without_updated_at(original) == candidate:
         return {
             "year": year,
             "month": month,
-            "reviews": previous_reviews,
+            "notes": previous_notes,
             "status": "unchanged",
             "cleanupFailures": [],
         }
@@ -796,18 +778,18 @@ def save_monthly_review(payload: dict) -> dict:
         return {
             "year": year,
             "month": month,
-            "reviews": previous_reviews,
+            "notes": previous_notes,
             "status": "unchanged",
             "cleanupFailures": [],
         }
 
-    next_reviews = dict(previous_reviews)
+    next_notes = dict(previous_notes)
     if has_content:
         candidate["updatedAt"] = singapore_timestamp()
-        next_reviews[month] = candidate
+        next_notes[month] = candidate
         status = "updated" if original else "created"
     else:
-        next_reviews.pop(month, None)
+        next_notes.pop(month, None)
         status = "cleared"
 
     written = None
@@ -818,7 +800,7 @@ def save_monthly_review(payload: dict) -> dict:
                 raise JournalError(f"Monthly report image {path.name} already exists.")
             atomic_write(path, content)
             written = path
-        write_monthly_state(year, next_reviews)
+        write_monthly_state(year, next_notes)
     except Exception:
         if written:
             written.unlink(missing_ok=True)
@@ -836,7 +818,7 @@ def save_monthly_review(payload: dict) -> dict:
     return {
         "year": year,
         "month": month,
-        "reviews": next_reviews,
+        "notes": next_notes,
         "status": status,
         "cleanupFailures": cleanup_failures,
     }
@@ -1576,7 +1558,7 @@ def publish_message(path: str, payload: dict, result: dict) -> str:
     if path == "/api/journal/delete":
         return f"Journal: delete {payload.get('id', 'entry')}"
     if path == "/api/journal/monthly/save":
-        return f"Journal: update monthly review {payload.get('month', 'month')}"
+        return f"Journal: update monthly note {payload.get('month', 'month')}"
     if path == "/api/writing/delete":
         return f"Writing: delete {payload.get('id', 'entry')}"
     if path == "/api/writing/publish":
@@ -1655,7 +1637,7 @@ class LocalSiteHandler(SimpleHTTPRequestHandler):
         actions = {
             "/api/journal/save": save_journal,
             "/api/journal/delete": delete_journal,
-            "/api/journal/monthly/save": save_monthly_review,
+            "/api/journal/monthly/save": save_monthly_note,
             "/api/writing/open": open_writing,
             "/api/writing/publish": publish_writing,
             "/api/writing/create": create_writing,

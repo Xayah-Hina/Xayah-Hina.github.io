@@ -546,8 +546,7 @@
       white-space: nowrap;
     }
 
-    .journal-month-summary,
-    .journal-month-next p {
+    .journal-month-note {
       margin: 0;
       color: var(--text-secondary);
       line-height: 1.7;
@@ -557,27 +556,6 @@
 
     .journal-month-placeholder {
       color: var(--muted);
-    }
-
-    .journal-month-section-title {
-      margin: 0 0 0.35rem;
-      color: var(--subtle);
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    .journal-month-highlights {
-      margin: 0;
-      padding-left: 1.2rem;
-      color: var(--text-secondary);
-      line-height: 1.65;
-    }
-
-    .journal-month-next {
-      padding-top: 0.75rem;
-      border-top: 1px solid var(--line);
     }
 
     .journal-month-report-button {
@@ -910,7 +888,7 @@
     }
 
     .journal-monthly-editor-form .field-textarea {
-      min-height: 5.5rem;
+      min-height: 14rem;
     }
 
     .monthly-editor-image:empty {
@@ -1446,7 +1424,7 @@
     <dialog class="journal-dialog" aria-labelledby="journal-monthly-editor-title">
       <form class="journal-editor-form journal-monthly-editor-form" novalidate>
         <header class="dialog-header">
-          <h2 id="journal-monthly-editor-title" class="dialog-title">Edit Monthly Review</h2>
+          <h2 id="journal-monthly-editor-title" class="dialog-title">Edit Monthly Note</h2>
           <button class="dialog-close" type="button" data-monthly-editor-action="close" aria-label="Close">×</button>
         </header>
 
@@ -1454,19 +1432,8 @@
           <p class="editor-published-at monthly-editor-month"></p>
 
           <label class="field-group">
-            <span class="field-label">Summary</span>
-            <textarea class="field-textarea" name="summary" placeholder="What defined this month?"></textarea>
-          </label>
-
-          <label class="field-group">
-            <span class="field-label">Highlights</span>
-            <textarea class="field-textarea" name="highlights" placeholder="One highlight per line"></textarea>
-            <span class="field-hint">One item per line, up to 20 items.</span>
-          </label>
-
-          <label class="field-group">
-            <span class="field-label">Next</span>
-            <textarea class="field-textarea" name="next" placeholder="Next month's focus or current context"></textarea>
+            <span class="field-label">Note</span>
+            <textarea class="field-textarea" name="note" placeholder="Write this month freely..."></textarea>
           </label>
 
           <div class="field-group">
@@ -1476,7 +1443,7 @@
             <div class="monthly-editor-image"></div>
           </div>
 
-          <p class="field-hint">Saving every field empty clears the saved review and restores the placeholder panel.</p>
+          <p class="field-hint">Saving the note and report image empty clears the saved note and restores the placeholder panel.</p>
           <p class="editor-message" role="alert"></p>
         </div>
 
@@ -1751,39 +1718,34 @@
 
       function validateJournalMonthly(value, year) {
         if (!value || typeof value !== "object" || Array.isArray(value)) {
-          throw new TypeError(`Journal monthly reviews for ${year} must export an object.`);
+          throw new TypeError(`Journal monthly notes for ${year} must export an object.`);
         }
-        const reviews = new Map();
+        const notes = new Map();
 
-        for (const [month, review] of Object.entries(value)) {
+        for (const [month, note] of Object.entries(value)) {
           if (!/^\d{4}-(?:0[1-9]|1[0-2])$/.test(month) || month.slice(0, 4) !== year) {
-            throw new TypeError(`Monthly review ${month} does not belong to ${year}.`);
+            throw new TypeError(`Monthly note ${month} does not belong to ${year}.`);
           }
-          if (!review || typeof review !== "object" || Array.isArray(review)) {
-            throw new TypeError(`Monthly review ${month} is invalid.`);
+          if (!note || typeof note !== "object" || Array.isArray(note)) {
+            throw new TypeError(`Monthly note ${month} is invalid.`);
           }
-          if (
-            typeof review.summary !== "string"
-            || !Array.isArray(review.highlights)
-            || review.highlights.some((item) => typeof item !== "string")
-            || typeof review.next !== "string"
-          ) {
-            throw new TypeError(`Monthly review ${month} has invalid content.`);
+          if (typeof note.note !== "string") {
+            throw new TypeError(`Monthly note ${month} has invalid content.`);
           }
-          if (review.reportImage && (
-            typeof review.reportImage.src !== "string"
-            || typeof review.reportImage.alt !== "string"
-            || !review.reportImage.src.startsWith(`journals/monthly/images/${year}/${month}-report-`)
+          if (note.reportImage && (
+            typeof note.reportImage.src !== "string"
+            || typeof note.reportImage.alt !== "string"
+            || !note.reportImage.src.startsWith(`journals/monthly/images/${year}/${month}-report-`)
           )) {
-            throw new TypeError(`Monthly review ${month} has an invalid report image.`);
+            throw new TypeError(`Monthly note ${month} has an invalid report image.`);
           }
-          if (review.updatedAt && Number.isNaN(Date.parse(review.updatedAt))) {
-            throw new TypeError(`Monthly review ${month} has an invalid update time.`);
+          if (note.updatedAt && Number.isNaN(Date.parse(note.updatedAt))) {
+            throw new TypeError(`Monthly note ${month} has an invalid update time.`);
           }
-          reviews.set(month, structuredClone(review));
+          notes.set(month, structuredClone(note));
         }
 
-        return reviews;
+        return notes;
       }
 
       function validateWritingEntries(value, year) {
@@ -1844,9 +1806,9 @@
         ])
           .then(([module, monthlyModule]) => {
             const entries = validateJournalEntries(module.default, year);
-            const reviews = validateJournalMonthly(monthlyModule.default, year);
+            const notes = validateJournalMonthly(monthlyModule.default, year);
             journalEntriesByYear.set(year, entries);
-            journalMonthlyByYear.set(year, reviews);
+            journalMonthlyByYear.set(year, notes);
             return entries;
           })
           .catch((error) => {
@@ -2105,13 +2067,13 @@
       }
 
       function renderJournalMonthPanel(month, monthEntries, timeZone) {
-        const review = journalMonthlyByYear.get(month.slice(0, 4))?.get(month);
+        const note = journalMonthlyByYear.get(month.slice(0, 4))?.get(month);
         const panel = document.createElement("aside");
         const header = document.createElement("header");
         const heading = document.createElement("div");
         const title = document.createElement("h3");
         const footer = document.createElement("footer");
-        const titleId = `monthly-review-${month}`;
+        const titleId = `monthly-note-${month}`;
 
         panel.className = "journal-month-panel";
         panel.setAttribute("aria-labelledby", titleId);
@@ -2119,7 +2081,7 @@
         heading.className = "journal-month-panel-heading";
         title.className = "journal-month-panel-title";
         title.id = titleId;
-        title.textContent = "Monthly Review";
+        title.textContent = "Monthly Note";
         heading.append(title);
 
         if (month === currentJournalMonth(timeZone)) {
@@ -2136,58 +2098,30 @@
           edit.type = "button";
           edit.dataset.journalMonthlyAction = "edit";
           edit.dataset.journalMonth = month;
-          edit.textContent = "Edit review";
+          edit.textContent = "Edit note";
           header.append(edit);
         }
         panel.append(header);
 
-        if (review?.summary) {
-          const summary = document.createElement("p");
-          summary.className = "journal-month-summary";
-          summary.textContent = review.summary;
-          panel.append(summary);
-        }
-
-        if (review?.highlights.length) {
-          const section = document.createElement("section");
-          const sectionTitle = document.createElement("h4");
-          const list = document.createElement("ul");
-          sectionTitle.className = "journal-month-section-title";
-          sectionTitle.textContent = "Highlights";
-          list.className = "journal-month-highlights";
-          for (const highlight of review.highlights) {
-            const item = document.createElement("li");
-            item.textContent = highlight;
-            list.append(item);
-          }
-          section.append(sectionTitle, list);
-          panel.append(section);
-        }
-
-        if (review?.next) {
-          const section = document.createElement("section");
-          const sectionTitle = document.createElement("h4");
+        if (note?.note) {
           const content = document.createElement("p");
-          section.className = "journal-month-next";
-          sectionTitle.className = "journal-month-section-title";
-          sectionTitle.textContent = "Next";
-          content.textContent = review.next;
-          section.append(sectionTitle, content);
-          panel.append(section);
+          content.className = "journal-month-note";
+          content.textContent = note.note;
+          panel.append(content);
         }
 
-        if (review?.reportImage) {
+        if (note?.reportImage) {
           const button = document.createElement("button");
           const image = document.createElement("img");
-          const alt = review.reportImage.alt || `${formatJournalMonth(month)} monthly report`;
+          const alt = note.reportImage.alt || `${formatJournalMonth(month)} monthly report`;
           button.className = "journal-month-report-button";
           button.type = "button";
           button.dataset.journalImage = "";
-          button.dataset.imageSrc = review.reportImage.src;
+          button.dataset.imageSrc = note.reportImage.src;
           button.dataset.imageAlt = alt;
           button.setAttribute("aria-label", `View larger: ${alt}`);
           image.className = "journal-month-report-image";
-          image.src = review.reportImage.src;
+          image.src = note.reportImage.src;
           image.alt = alt;
           image.loading = "lazy";
           image.decoding = "async";
@@ -2195,21 +2129,21 @@
           panel.append(button);
         }
 
-        if (!review) {
+        if (!note) {
           const placeholder = document.createElement("p");
-          placeholder.className = "journal-month-summary journal-month-placeholder";
+          placeholder.className = "journal-month-note journal-month-placeholder";
           placeholder.textContent = month === currentJournalMonth(timeZone)
             ? "This month is still being written."
-            : "No monthly review has been published.";
+            : "No monthly note has been published.";
           panel.append(placeholder);
         }
 
         footer.className = "journal-month-panel-footer";
         footer.append(`${monthEntries.length} Journal ${monthEntries.length === 1 ? "entry" : "entries"}`);
-        if (review?.updatedAt) {
+        if (note?.updatedAt) {
           const updated = document.createElement("time");
-          updated.dateTime = review.updatedAt;
-          updated.textContent = `Updated ${formatJournalTimestamp(review.updatedAt, timeZone)}`;
+          updated.dateTime = note.updatedAt;
+          updated.textContent = `Updated ${formatJournalTimestamp(note.updatedAt, timeZone)}`;
           footer.append(" · ", updated);
         }
         panel.append(footer);
@@ -2460,7 +2394,7 @@
           removeEditorImage(button.dataset.removeImage);
         });
 
-        authoring.monthlyForm.addEventListener("submit", saveMonthlyReview);
+        authoring.monthlyForm.addEventListener("submit", saveMonthlyNote);
         authoring.monthlyForm.elements.reportImage.addEventListener("change", addMonthlyReportImage);
         authoring.monthlyDialog.addEventListener("cancel", (event) => {
           event.preventDefault();
@@ -3117,26 +3051,24 @@
         if (!canAuthorJournal() || authoring.busy || !/^\d{4}-\d{2}$/.test(month || "")) return;
         resetMonthlyEditor();
         authoring.monthlyMonth = month;
-        const review = journalMonthlyByYear.get(month.slice(0, 4))?.get(month);
+        const note = journalMonthlyByYear.get(month.slice(0, 4))?.get(month);
         const form = authoring.monthlyForm.elements;
-        form.summary.value = review?.summary || "";
-        form.highlights.value = review?.highlights.join("\n") || "";
-        form.next.value = review?.next || "";
-        if (review?.reportImage) {
+        form.note.value = note?.note || "";
+        if (note?.reportImage) {
           authoring.monthlyImage = {
             key: crypto.randomUUID(),
             kind: "existing",
-            src: review.reportImage.src,
-            alt: review.reportImage.alt || "",
-            previewUrl: new URL(review.reportImage.src, location.href).href
+            src: note.reportImage.src,
+            alt: note.reportImage.alt || "",
+            previewUrl: new URL(note.reportImage.src, location.href).href
           };
           renderMonthlyReportImage();
         }
         const monthLabel = formatJournalMonth(month);
-        authoring.monthlyDialog.querySelector(".dialog-title").textContent = `${monthLabel} Monthly Review`;
+        authoring.monthlyDialog.querySelector(".dialog-title").textContent = `${monthLabel} Monthly Note`;
         authoring.monthlyDialog.querySelector(".monthly-editor-month").textContent = `Permanent panel below ${monthLabel}`;
         authoring.monthlyDialog.showModal();
-        form.summary.focus();
+        form.note.focus();
       }
 
       function resetMonthlyEditor() {
@@ -3220,20 +3152,11 @@
         element.dataset.kind = kind;
       }
 
-      async function saveMonthlyReview(event) {
+      async function saveMonthlyNote(event) {
         event.preventDefault();
         if (!canAuthorJournal() || authoring.busy || !authoring.monthlyMonth) return;
 
         const form = authoring.monthlyForm.elements;
-        const highlights = form.highlights.value
-          .split(/\r?\n/)
-          .map((item) => item.trim())
-          .filter(Boolean);
-        if (highlights.length > 20) {
-          setMonthlyEditorMessage("Use no more than 20 highlights.", "error");
-          return;
-        }
-
         setAuthoringBusy(true);
         setMonthlyEditorMessage("Saving...");
         let completed = false;
@@ -3249,29 +3172,27 @@
           const result = await localJournalRequest("monthly/save", {
             year: month.slice(0, 4),
             month,
-            review: {
-              summary: form.summary.value.trim(),
-              highlights,
-              next: form.next.value.trim()
+            note: {
+              content: form.note.value.trim()
             },
             reportImage,
             uploads
           });
           const resultYear = String(result.year || "");
-          journalMonthlyByYear.set(resultYear, validateJournalMonthly(result.reviews, resultYear));
+          journalMonthlyByYear.set(resultYear, validateJournalMonthly(result.notes, resultYear));
           if (state.section === "journal" && state.years.journal === resultYear) renderArchive();
 
           const cleanupFailures = Array.isArray(result.cleanupFailures) ? result.cleanupFailures : [];
           const feedback = operationSyncFeedback(result, cleanupFailures.length > 0
-            ? `Monthly review saved, but ${cleanupFailures.length} old report image could not be removed.`
+            ? `Monthly note saved, but ${cleanupFailures.length} old report image could not be removed.`
             : (result.status === "unchanged"
-              ? "No monthly review changes to save."
-              : (result.status === "cleared" ? "Monthly review cleared." : "Monthly review saved locally.")),
+              ? "No monthly note changes to save."
+              : (result.status === "cleared" ? "Monthly note cleared." : "Monthly note saved locally.")),
           cleanupFailures.length > 0 ? "error" : "status");
           setAuthoringStatus(feedback.message, feedback.kind);
           completed = true;
         } catch (error) {
-          setMonthlyEditorMessage(error.message || "The monthly review could not be saved.", "error");
+          setMonthlyEditorMessage(error.message || "The monthly note could not be saved.", "error");
         } finally {
           setAuthoringBusy(false);
           if (completed) closeMonthlyEditor();
