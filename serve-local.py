@@ -35,6 +35,7 @@ from dictionary.build import (
 ROOT = Path(__file__).resolve().parent
 JOURNALS = ROOT / "journals"
 JOURNAL_CATALOG = JOURNALS / "catalog.js"
+JOURNAL_MONTHLY = JOURNALS / "monthly"
 WRITING = ROOT / "writing"
 WRITING_CATALOG = WRITING / "catalog.js"
 DICTIONARY = ROOT / "dictionary"
@@ -53,6 +54,10 @@ ALLOWED_IMAGE_TYPES = {
 ID_PATTERN = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,126}[a-z0-9])?$")
 IMAGE_PATH_PATTERN = re.compile(
     r"^journals/images/(?P<year>\d{4})/(?P<name>[A-Za-z0-9._-]+)$"
+)
+MONTH_PATTERN = re.compile(r"^\d{4}-(?:0[1-9]|1[0-2])$")
+MONTHLY_IMAGE_PATH_PATTERN = re.compile(
+    r"^journals/monthly/images/(?P<year>\d{4})/(?P<name>[A-Za-z0-9._-]+)$"
 )
 WRITING_ID_PATTERN = re.compile(r"^\d{8}-\d{6}$")
 MUTATION_LOCK = threading.RLock()
@@ -316,6 +321,98 @@ def read_year(year: str, required: bool = True) -> list[dict]:
     return entries
 
 
+def safe_monthly_image_path(src: str, year: str, month: str) -> Path:
+    match = MONTHLY_IMAGE_PATH_PATTERN.fullmatch(src)
+    if not match or match.group("year") != year:
+        raise JournalError("A monthly report image path is invalid.")
+    name = match.group("name")
+    if not name.startswith(f"{month}-report-") or name == ".gitkeep":
+        raise JournalError("A monthly report image does not belong to this month.")
+    path = JOURNAL_MONTHLY / "images" / year / name
+    if JOURNAL_MONTHLY not in path.resolve().parents:
+        raise JournalError("A monthly report image path escapes the journals directory.")
+    return path
+
+
+def validate_monthly_text(value, field: str, maximum: int = 100_000) -> str:
+    if not isinstance(value, str):
+        raise JournalError(f"Monthly review {field} is invalid.")
+    result = value.strip()
+    if len(result) > maximum:
+        raise JournalError(f"Monthly review {field} is too long.")
+    return result
+
+
+def normalize_monthly_review(value, year: str, month: str) -> dict:
+    if not isinstance(value, dict):
+        raise JournalError(f"Monthly review {month} is invalid.")
+    if not MONTH_PATTERN.fullmatch(month) or month[:4] != year:
+        raise JournalError(f"Monthly review {month} does not belong to {year}.")
+
+    highlights = value.get("highlights", [])
+    if not isinstance(highlights, list) or len(highlights) > 20:
+        raise JournalError("Monthly review highlights are invalid.")
+    normalized_highlights = []
+    for highlight in highlights:
+        normalized = validate_monthly_text(highlight, "highlight", 5_000)
+        if normalized:
+            normalized_highlights.append(normalized)
+
+    report_image = value.get("reportImage")
+    normalized_image = None
+    if report_image is not None:
+        if not isinstance(report_image, dict):
+            raise JournalError("Monthly report image is invalid.")
+        src = report_image.get("src")
+        alt = validate_monthly_text(report_image.get("alt", ""), "image alternative text", 5_000)
+        if not isinstance(src, str):
+            raise JournalError("Monthly report image is invalid.")
+        safe_monthly_image_path(src, year, month)
+        normalized_image = {"src": src, "alt": alt}
+
+    result = {
+        "summary": validate_monthly_text(value.get("summary", ""), "summary"),
+        "highlights": normalized_highlights,
+        "next": validate_monthly_text(value.get("next", ""), "next steps"),
+        "reportImage": normalized_image,
+    }
+    updated_at = value.get("updatedAt")
+    if updated_at is not None:
+        if not isinstance(updated_at, str):
+            raise JournalError("Monthly review update time is invalid.")
+        try:
+            datetime.fromisoformat(updated_at)
+        except ValueError as error:
+            raise JournalError("Monthly review update time is invalid.") from error
+        result["updatedAt"] = updated_at
+    return result
+
+
+def read_monthly_year(year: str) -> dict[str, dict]:
+    path = JOURNAL_MONTHLY / f"{year}.js"
+    if not path.exists():
+        return {}
+    reviews = module_data(path, dict)
+    return {
+        month: normalize_monthly_review(review, year, month)
+        for month, review in reviews.items()
+    }
+
+
+def write_monthly_state(year: str, reviews: dict[str, dict]) -> None:
+    path = JOURNAL_MONTHLY / f"{year}.js"
+    previous = path.read_bytes() if path.exists() else None
+    ordered = dict(sorted(reviews.items(), reverse=True))
+    try:
+        atomic_write(path, module_source(ordered))
+    except Exception:
+        try:
+            restore_file(path, previous)
+        except Exception as rollback_error:
+            print(f"Monthly review rollback failed: {rollback_error}")
+        raise
+
+
 def normalize_years(years) -> list[str]:
     normalized = {str(year) for year in years if re.fullmatch(r"\d{4}", str(year))}
     return sorted(normalized, reverse=True)
@@ -398,17 +495,22 @@ def journal_without_updated_at(entry: dict) -> dict:
 
 def write_journal_state(year: str, entries: list[dict], years: list[str]) -> None:
     year_path = JOURNALS / f"{year}.js"
+    monthly_path = JOURNAL_MONTHLY / f"{year}.js"
     previous_year = year_path.read_bytes() if year_path.exists() else None
+    previous_monthly = monthly_path.read_bytes() if monthly_path.exists() else None
     previous_catalog = JOURNAL_CATALOG.read_bytes() if JOURNAL_CATALOG.exists() else None
     try:
         if entries:
             atomic_write(year_path, module_source(entries))
+            if not monthly_path.exists():
+                atomic_write(monthly_path, module_source({}))
         else:
             year_path.unlink(missing_ok=True)
         atomic_write(JOURNAL_CATALOG, module_source({"years": [int(value) for value in years]}))
     except Exception:
         try:
             restore_file(year_path, previous_year)
+            restore_file(monthly_path, previous_monthly)
             restore_file(JOURNAL_CATALOG, previous_catalog)
         except Exception as rollback_error:
             print(f"Journal rollback failed: {rollback_error}")
@@ -602,6 +704,140 @@ def delete_journal(payload: dict) -> dict:
         "years": next_years,
         "entries": next_entries,
         "status": "deleted",
+        "cleanupFailures": cleanup_failures,
+    }
+
+
+def monthly_review_without_updated_at(review: dict) -> dict:
+    value = json.loads(json.dumps(review, ensure_ascii=False))
+    value.pop("updatedAt", None)
+    return value
+
+
+def prepare_monthly_report_image(payload: dict, original: dict | None, year: str, month: str):
+    spec = payload.get("reportImage")
+    uploads = payload.get("uploads")
+    if not isinstance(uploads, list):
+        raise JournalError("Monthly report image uploads are invalid.")
+
+    original_image = (original or {}).get("reportImage")
+    if spec is None:
+        if uploads:
+            raise JournalError("The request contains an unused monthly report image upload.")
+        return None, None
+    if not isinstance(spec, dict) or spec.get("kind") not in {"existing", "new"}:
+        raise JournalError("Monthly report image is invalid.")
+
+    alt = validate_monthly_text(spec.get("alt", ""), "image alternative text", 5_000)
+    if spec["kind"] == "existing":
+        src = spec.get("src")
+        if not original_image or src != original_image.get("src") or uploads:
+            raise JournalError("The existing monthly report image is invalid.")
+        path = safe_monthly_image_path(src, year, month)
+        if not path.exists():
+            raise JournalError(f"Existing monthly report image {path.name} is missing.")
+        return {"src": src, "alt": alt}, None
+
+    key = spec.get("key")
+    if (
+        len(uploads) != 1
+        or not isinstance(uploads[0], dict)
+        or not isinstance(key, str)
+        or uploads[0].get("key") != key
+    ):
+        raise JournalError("A monthly report image upload does not match its descriptor.")
+    content, extension = image_bytes(uploads[0])
+    name = f"{month}-report-{secrets.token_hex(4)}.{extension}"
+    path = JOURNAL_MONTHLY / "images" / year / name
+    return {
+        "src": f"journals/monthly/images/{year}/{name}",
+        "alt": alt,
+    }, (path, content)
+
+
+def save_monthly_review(payload: dict) -> dict:
+    year = str(payload.get("year", ""))
+    month = str(payload.get("month", ""))
+    if not re.fullmatch(r"\d{4}", year) or not MONTH_PATTERN.fullmatch(month) or month[:4] != year:
+        raise JournalError("Monthly review date is invalid.")
+    if year not in catalog_years():
+        raise JournalError("The Journal year is no longer available.")
+    if not any(str(entry.get("publishedAt", ""))[:7] == month for entry in read_year(year)):
+        raise JournalError("The Journal month is no longer available.")
+
+    review = payload.get("review")
+    if not isinstance(review, dict):
+        raise JournalError("Monthly review is invalid.")
+    previous_reviews = read_monthly_year(year)
+    original = previous_reviews.get(month)
+    report_image, new_file = prepare_monthly_report_image(payload, original, year, month)
+    candidate = normalize_monthly_review({
+        "summary": review.get("summary", ""),
+        "highlights": review.get("highlights", []),
+        "next": review.get("next", ""),
+        "reportImage": report_image,
+    }, year, month)
+    has_content = bool(
+        candidate["summary"]
+        or candidate["highlights"]
+        or candidate["next"]
+        or candidate["reportImage"]
+    )
+
+    if original and has_content and monthly_review_without_updated_at(original) == candidate:
+        return {
+            "year": year,
+            "month": month,
+            "reviews": previous_reviews,
+            "status": "unchanged",
+            "cleanupFailures": [],
+        }
+    if not original and not has_content:
+        return {
+            "year": year,
+            "month": month,
+            "reviews": previous_reviews,
+            "status": "unchanged",
+            "cleanupFailures": [],
+        }
+
+    next_reviews = dict(previous_reviews)
+    if has_content:
+        candidate["updatedAt"] = singapore_timestamp()
+        next_reviews[month] = candidate
+        status = "updated" if original else "created"
+    else:
+        next_reviews.pop(month, None)
+        status = "cleared"
+
+    written = None
+    try:
+        if new_file:
+            path, content = new_file
+            if path.exists():
+                raise JournalError(f"Monthly report image {path.name} already exists.")
+            atomic_write(path, content)
+            written = path
+        write_monthly_state(year, next_reviews)
+    except Exception:
+        if written:
+            written.unlink(missing_ok=True)
+        raise
+
+    cleanup_failures = []
+    original_image = (original or {}).get("reportImage")
+    retained_src = candidate["reportImage"]["src"] if has_content and candidate["reportImage"] else None
+    if original_image and original_image.get("src") != retained_src:
+        try:
+            safe_monthly_image_path(original_image.get("src", ""), year, month).unlink(missing_ok=True)
+        except (JournalError, OSError):
+            cleanup_failures.append(str(original_image.get("src", "")))
+
+    return {
+        "year": year,
+        "month": month,
+        "reviews": next_reviews,
+        "status": status,
         "cleanupFailures": cleanup_failures,
     }
 
@@ -1309,6 +1545,7 @@ def publish_dictionary(_payload: dict) -> dict:
 JOURNAL_PUBLISH_ENDPOINTS = {
     "/api/journal/save",
     "/api/journal/delete",
+    "/api/journal/monthly/save",
 }
 
 WRITING_LOCAL_ENDPOINTS = {
@@ -1338,6 +1575,8 @@ def publish_message(path: str, payload: dict, result: dict) -> str:
         return f"Journal: {action} {journal_id}"
     if path == "/api/journal/delete":
         return f"Journal: delete {payload.get('id', 'entry')}"
+    if path == "/api/journal/monthly/save":
+        return f"Journal: update monthly review {payload.get('month', 'month')}"
     if path == "/api/writing/delete":
         return f"Writing: delete {payload.get('id', 'entry')}"
     if path == "/api/writing/publish":
@@ -1391,6 +1630,8 @@ class LocalSiteHandler(SimpleHTTPRequestHandler):
             }
             try:
                 status["journalYears"] = catalog_years()
+                for year in status["journalYears"]:
+                    read_monthly_year(year)
             except (LocalEditorError, OSError) as error:
                 status["journalError"] = str(error)
             try:
@@ -1414,6 +1655,7 @@ class LocalSiteHandler(SimpleHTTPRequestHandler):
         actions = {
             "/api/journal/save": save_journal,
             "/api/journal/delete": delete_journal,
+            "/api/journal/monthly/save": save_monthly_review,
             "/api/writing/open": open_writing,
             "/api/writing/publish": publish_writing,
             "/api/writing/create": create_writing,

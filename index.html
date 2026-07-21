@@ -501,6 +501,115 @@
       content: "";
     }
 
+    .journal-month-panel {
+      display: grid;
+      margin: 0 0 0.35rem;
+      padding: 1rem;
+      gap: 0.85rem;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--link);
+      border-radius: 0.65rem;
+    }
+
+    .journal-month-panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .journal-month-panel-heading {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      gap: 0.55rem;
+    }
+
+    .journal-month-panel-title {
+      margin: 0;
+      color: var(--text);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .journal-month-status {
+      padding: 0.12rem 0.42rem;
+      color: var(--link);
+      background: var(--page);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .journal-month-summary,
+    .journal-month-next p {
+      margin: 0;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .journal-month-placeholder {
+      color: var(--muted);
+    }
+
+    .journal-month-section-title {
+      margin: 0 0 0.35rem;
+      color: var(--subtle);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .journal-month-highlights {
+      margin: 0;
+      padding-left: 1.2rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    .journal-month-next {
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--line);
+    }
+
+    .journal-month-report-button {
+      display: block;
+      width: fit-content;
+      max-width: 100%;
+      padding: 0;
+      overflow: hidden;
+      background: var(--page);
+      border: 1px solid var(--line);
+      border-radius: 0.5rem;
+      cursor: zoom-in;
+    }
+
+    .journal-month-report-image {
+      display: block;
+      width: auto;
+      max-width: 100%;
+      max-height: 28rem;
+      object-fit: contain;
+    }
+
+    .journal-month-panel-footer {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      color: var(--subtle);
+      font-size: 0.75rem;
+      font-variant-numeric: tabular-nums;
+    }
+
     .journal-feed {
       display: grid;
       gap: 0;
@@ -798,6 +907,14 @@
       padding: 0.65rem;
       line-height: 1.6;
       resize: vertical;
+    }
+
+    .journal-monthly-editor-form .field-textarea {
+      min-height: 5.5rem;
+    }
+
+    .monthly-editor-image:empty {
+      display: none;
     }
 
     .field-hint,
@@ -1165,6 +1282,11 @@
         justify-content: flex-end;
       }
 
+      .journal-month-panel-header {
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
       .editor-image-item {
         grid-template-columns: 3.75rem minmax(0, 1fr);
       }
@@ -1320,6 +1442,52 @@
     </dialog>
   </template>
 
+  <template id="journal-monthly-editor-template">
+    <dialog class="journal-dialog" aria-labelledby="journal-monthly-editor-title">
+      <form class="journal-editor-form journal-monthly-editor-form" novalidate>
+        <header class="dialog-header">
+          <h2 id="journal-monthly-editor-title" class="dialog-title">Edit Monthly Review</h2>
+          <button class="dialog-close" type="button" data-monthly-editor-action="close" aria-label="Close">×</button>
+        </header>
+
+        <div class="dialog-body">
+          <p class="editor-published-at monthly-editor-month"></p>
+
+          <label class="field-group">
+            <span class="field-label">Summary</span>
+            <textarea class="field-textarea" name="summary" placeholder="What defined this month?"></textarea>
+          </label>
+
+          <label class="field-group">
+            <span class="field-label">Highlights</span>
+            <textarea class="field-textarea" name="highlights" placeholder="One highlight per line"></textarea>
+            <span class="field-hint">One item per line, up to 20 items.</span>
+          </label>
+
+          <label class="field-group">
+            <span class="field-label">Next</span>
+            <textarea class="field-textarea" name="next" placeholder="Next month's focus or current context"></textarea>
+          </label>
+
+          <div class="field-group">
+            <label class="field-label" for="journal-monthly-image">Report image</label>
+            <input id="journal-monthly-image" class="field-input" name="reportImage" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif">
+            <span class="field-hint">Optional. JPEG, PNG, WebP, GIF, or AVIF.</span>
+            <div class="monthly-editor-image"></div>
+          </div>
+
+          <p class="field-hint">Saving every field empty clears the saved review and restores the placeholder panel.</p>
+          <p class="editor-message" role="alert"></p>
+        </div>
+
+        <footer class="dialog-actions">
+          <button class="control-button" type="button" data-monthly-editor-action="close">Cancel</button>
+          <button class="control-button control-button-primary" type="submit">Save review</button>
+        </footer>
+      </form>
+    </dialog>
+  </template>
+
   <template id="confirm-template">
     <dialog class="journal-dialog" aria-labelledby="confirm-title">
       <div class="confirm-dialog-body">
@@ -1432,6 +1600,7 @@
       const writingLoadPromises = new Map();
       const writingLoadErrors = new Map();
       const journalEntriesByYear = new Map();
+      const journalMonthlyByYear = new Map();
       const journalLoadPromises = new Map();
       const journalLoadErrors = new Map();
       let writingCatalogError = null;
@@ -1478,6 +1647,10 @@
         relatedWritingChoices: [],
         originalEntry: null,
         originalBody: "",
+        monthlyDialog: null,
+        monthlyForm: null,
+        monthlyMonth: "",
+        monthlyImage: null,
         busy: false,
         confirmDialog: null,
         confirmResolver: null
@@ -1576,6 +1749,43 @@
         return sortEntries(value, "journal");
       }
 
+      function validateJournalMonthly(value, year) {
+        if (!value || typeof value !== "object" || Array.isArray(value)) {
+          throw new TypeError(`Journal monthly reviews for ${year} must export an object.`);
+        }
+        const reviews = new Map();
+
+        for (const [month, review] of Object.entries(value)) {
+          if (!/^\d{4}-(?:0[1-9]|1[0-2])$/.test(month) || month.slice(0, 4) !== year) {
+            throw new TypeError(`Monthly review ${month} does not belong to ${year}.`);
+          }
+          if (!review || typeof review !== "object" || Array.isArray(review)) {
+            throw new TypeError(`Monthly review ${month} is invalid.`);
+          }
+          if (
+            typeof review.summary !== "string"
+            || !Array.isArray(review.highlights)
+            || review.highlights.some((item) => typeof item !== "string")
+            || typeof review.next !== "string"
+          ) {
+            throw new TypeError(`Monthly review ${month} has invalid content.`);
+          }
+          if (review.reportImage && (
+            typeof review.reportImage.src !== "string"
+            || typeof review.reportImage.alt !== "string"
+            || !review.reportImage.src.startsWith(`journals/monthly/images/${year}/${month}-report-`)
+          )) {
+            throw new TypeError(`Monthly review ${month} has an invalid report image.`);
+          }
+          if (review.updatedAt && Number.isNaN(Date.parse(review.updatedAt))) {
+            throw new TypeError(`Monthly review ${month} has an invalid update time.`);
+          }
+          reviews.set(month, structuredClone(review));
+        }
+
+        return reviews;
+      }
+
       function validateWritingEntries(value, year) {
         if (!Array.isArray(value)) throw new TypeError(`Writing ${year} must export an array.`);
         const ids = new Set();
@@ -1628,10 +1838,15 @@
         if (journalLoadPromises.has(year)) return journalLoadPromises.get(year);
 
         journalLoadErrors.delete(year);
-        const promise = importDataModule(`journals/${year}.js`)
-          .then((module) => {
+        const promise = Promise.all([
+          importDataModule(`journals/${year}.js`),
+          importDataModule(`journals/monthly/${year}.js`)
+        ])
+          .then(([module, monthlyModule]) => {
             const entries = validateJournalEntries(module.default, year);
+            const reviews = validateJournalMonthly(monthlyModule.default, year);
             journalEntriesByYear.set(year, entries);
+            journalMonthlyByYear.set(year, reviews);
             return entries;
           })
           .catch((error) => {
@@ -1731,6 +1946,16 @@
           year: "numeric",
           timeZone: "UTC"
         }).format(new Date(`${monthKey}-01T00:00:00Z`));
+      }
+
+      function currentJournalMonth(timeZone) {
+        const parts = new Intl.DateTimeFormat("en", {
+          year: "numeric",
+          month: "2-digit",
+          timeZone
+        }).formatToParts(new Date());
+        const value = (type) => parts.find((part) => part.type === type)?.value || "";
+        return `${value("year")}-${value("month")}`;
       }
 
       function renderSectionSwitch() {
@@ -1879,6 +2104,118 @@
         return fragment;
       }
 
+      function renderJournalMonthPanel(month, monthEntries, timeZone) {
+        const review = journalMonthlyByYear.get(month.slice(0, 4))?.get(month);
+        const panel = document.createElement("aside");
+        const header = document.createElement("header");
+        const heading = document.createElement("div");
+        const title = document.createElement("h3");
+        const footer = document.createElement("footer");
+        const titleId = `monthly-review-${month}`;
+
+        panel.className = "journal-month-panel";
+        panel.setAttribute("aria-labelledby", titleId);
+        header.className = "journal-month-panel-header";
+        heading.className = "journal-month-panel-heading";
+        title.className = "journal-month-panel-title";
+        title.id = titleId;
+        title.textContent = "Monthly Review";
+        heading.append(title);
+
+        if (month === currentJournalMonth(timeZone)) {
+          const status = document.createElement("span");
+          status.className = "journal-month-status";
+          status.textContent = "In progress";
+          heading.append(status);
+        }
+        header.append(heading);
+
+        if (canAuthorJournal()) {
+          const edit = document.createElement("button");
+          edit.className = "journal-action-button";
+          edit.type = "button";
+          edit.dataset.journalMonthlyAction = "edit";
+          edit.dataset.journalMonth = month;
+          edit.textContent = "Edit review";
+          header.append(edit);
+        }
+        panel.append(header);
+
+        if (review?.summary) {
+          const summary = document.createElement("p");
+          summary.className = "journal-month-summary";
+          summary.textContent = review.summary;
+          panel.append(summary);
+        }
+
+        if (review?.highlights.length) {
+          const section = document.createElement("section");
+          const sectionTitle = document.createElement("h4");
+          const list = document.createElement("ul");
+          sectionTitle.className = "journal-month-section-title";
+          sectionTitle.textContent = "Highlights";
+          list.className = "journal-month-highlights";
+          for (const highlight of review.highlights) {
+            const item = document.createElement("li");
+            item.textContent = highlight;
+            list.append(item);
+          }
+          section.append(sectionTitle, list);
+          panel.append(section);
+        }
+
+        if (review?.next) {
+          const section = document.createElement("section");
+          const sectionTitle = document.createElement("h4");
+          const content = document.createElement("p");
+          section.className = "journal-month-next";
+          sectionTitle.className = "journal-month-section-title";
+          sectionTitle.textContent = "Next";
+          content.textContent = review.next;
+          section.append(sectionTitle, content);
+          panel.append(section);
+        }
+
+        if (review?.reportImage) {
+          const button = document.createElement("button");
+          const image = document.createElement("img");
+          const alt = review.reportImage.alt || `${formatJournalMonth(month)} monthly report`;
+          button.className = "journal-month-report-button";
+          button.type = "button";
+          button.dataset.journalImage = "";
+          button.dataset.imageSrc = review.reportImage.src;
+          button.dataset.imageAlt = alt;
+          button.setAttribute("aria-label", `View larger: ${alt}`);
+          image.className = "journal-month-report-image";
+          image.src = review.reportImage.src;
+          image.alt = alt;
+          image.loading = "lazy";
+          image.decoding = "async";
+          button.append(image);
+          panel.append(button);
+        }
+
+        if (!review) {
+          const placeholder = document.createElement("p");
+          placeholder.className = "journal-month-summary journal-month-placeholder";
+          placeholder.textContent = month === currentJournalMonth(timeZone)
+            ? "This month is still being written."
+            : "No monthly review has been published.";
+          panel.append(placeholder);
+        }
+
+        footer.className = "journal-month-panel-footer";
+        footer.append(`${monthEntries.length} Journal ${monthEntries.length === 1 ? "entry" : "entries"}`);
+        if (review?.updatedAt) {
+          const updated = document.createElement("time");
+          updated.dateTime = review.updatedAt;
+          updated.textContent = `Updated ${formatJournalTimestamp(review.updatedAt, timeZone)}`;
+          footer.append(" · ", updated);
+        }
+        panel.append(footer);
+        return panel;
+      }
+
       function visibleEntries() {
         const query = state.queries[state.section].trim().toLocaleLowerCase();
         const year = state.years[state.section];
@@ -1914,6 +2251,7 @@
         for (const [month, monthEntries] of groups) {
           const section = document.createElement("section");
           const heading = document.createElement("h2");
+          const panel = renderJournalMonthPanel(month, monthEntries, timeZone);
           const feed = document.createElement("div");
 
           section.className = "journal-month-group";
@@ -1927,7 +2265,7 @@
             feed.append(renderJournalEntry(entry, timeZone));
           }
 
-          section.append(heading, feed);
+          section.append(heading, panel, feed);
           archiveList.append(section);
         }
       }
@@ -2088,6 +2426,11 @@
         authoring.editorForm = editorFragment.querySelector("form");
         document.body.append(editorFragment);
 
+        const monthlyEditorFragment = byId("journal-monthly-editor-template").content.cloneNode(true);
+        authoring.monthlyDialog = monthlyEditorFragment.querySelector("dialog");
+        authoring.monthlyForm = monthlyEditorFragment.querySelector("form");
+        document.body.append(monthlyEditorFragment);
+
         const confirmFragment = byId("confirm-template").content.cloneNode(true);
         authoring.confirmDialog = confirmFragment.querySelector("dialog");
         document.body.append(confirmFragment);
@@ -2117,7 +2460,30 @@
           removeEditorImage(button.dataset.removeImage);
         });
 
+        authoring.monthlyForm.addEventListener("submit", saveMonthlyReview);
+        authoring.monthlyForm.elements.reportImage.addEventListener("change", addMonthlyReportImage);
+        authoring.monthlyDialog.addEventListener("cancel", (event) => {
+          event.preventDefault();
+          if (!authoring.busy) closeMonthlyEditor();
+        });
+        for (const button of authoring.monthlyDialog.querySelectorAll('[data-monthly-editor-action="close"]')) {
+          button.addEventListener("click", closeMonthlyEditor);
+        }
+        authoring.monthlyDialog.querySelector(".monthly-editor-image").addEventListener("input", (event) => {
+          if (authoring.monthlyImage && event.target.matches("input")) {
+            authoring.monthlyImage.alt = event.target.value;
+          }
+        });
+        authoring.monthlyDialog.querySelector(".monthly-editor-image").addEventListener("click", (event) => {
+          if (event.target.closest("[data-remove-monthly-image]")) removeMonthlyReportImage();
+        });
+
         byId("archive-list").addEventListener("click", (event) => {
+          const monthlyButton = event.target.closest("[data-journal-monthly-action]");
+          if (monthlyButton && canAuthorJournal() && !authoring.busy) {
+            openMonthlyEditor(monthlyButton.dataset.journalMonth);
+            return;
+          }
           const button = event.target.closest("[data-journal-action]");
           if (!button || !canAuthorJournal() || authoring.busy) return;
           if (button.dataset.journalAction === "edit") openEditEditor(button.dataset.journalId);
@@ -2243,6 +2609,9 @@
         if (authoring.newButton) authoring.newButton.disabled = busy || !canAuthorJournal();
         if (authoring.editorForm) {
           for (const control of authoring.editorForm.elements) control.disabled = busy;
+        }
+        if (authoring.monthlyForm) {
+          for (const control of authoring.monthlyForm.elements) control.disabled = busy;
         }
       }
 
@@ -2741,6 +3110,171 @@
           remove.textContent = "Remove";
           item.append(image, alt, remove);
           list.append(item);
+        }
+      }
+
+      function openMonthlyEditor(month) {
+        if (!canAuthorJournal() || authoring.busy || !/^\d{4}-\d{2}$/.test(month || "")) return;
+        resetMonthlyEditor();
+        authoring.monthlyMonth = month;
+        const review = journalMonthlyByYear.get(month.slice(0, 4))?.get(month);
+        const form = authoring.monthlyForm.elements;
+        form.summary.value = review?.summary || "";
+        form.highlights.value = review?.highlights.join("\n") || "";
+        form.next.value = review?.next || "";
+        if (review?.reportImage) {
+          authoring.monthlyImage = {
+            key: crypto.randomUUID(),
+            kind: "existing",
+            src: review.reportImage.src,
+            alt: review.reportImage.alt || "",
+            previewUrl: new URL(review.reportImage.src, location.href).href
+          };
+          renderMonthlyReportImage();
+        }
+        const monthLabel = formatJournalMonth(month);
+        authoring.monthlyDialog.querySelector(".dialog-title").textContent = `${monthLabel} Monthly Review`;
+        authoring.monthlyDialog.querySelector(".monthly-editor-month").textContent = `Permanent panel below ${monthLabel}`;
+        authoring.monthlyDialog.showModal();
+        form.summary.focus();
+      }
+
+      function resetMonthlyEditor() {
+        if (authoring.monthlyImage?.kind === "new") {
+          URL.revokeObjectURL(authoring.monthlyImage.previewUrl);
+        }
+        authoring.monthlyMonth = "";
+        authoring.monthlyImage = null;
+        authoring.monthlyForm?.reset();
+        authoring.monthlyDialog?.querySelector(".monthly-editor-image").replaceChildren();
+        setMonthlyEditorMessage("");
+      }
+
+      function closeMonthlyEditor() {
+        if (authoring.busy) return;
+        if (authoring.monthlyDialog.open) authoring.monthlyDialog.close();
+        resetMonthlyEditor();
+      }
+
+      function addMonthlyReportImage(event) {
+        const acceptedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
+        const file = event.currentTarget.files[0];
+        event.currentTarget.value = "";
+        if (!file) return;
+        if (!acceptedTypes.has(file.type)) {
+          setMonthlyEditorMessage(`Unsupported image: ${file.name}`, "error");
+          return;
+        }
+        if (authoring.monthlyImage?.kind === "new") {
+          URL.revokeObjectURL(authoring.monthlyImage.previewUrl);
+        }
+        authoring.monthlyImage = {
+          key: crypto.randomUUID(),
+          kind: "new",
+          file,
+          alt: "",
+          previewUrl: URL.createObjectURL(file)
+        };
+        renderMonthlyReportImage();
+        setMonthlyEditorMessage("");
+      }
+
+      function removeMonthlyReportImage() {
+        if (authoring.monthlyImage?.kind === "new") {
+          URL.revokeObjectURL(authoring.monthlyImage.previewUrl);
+        }
+        authoring.monthlyImage = null;
+        renderMonthlyReportImage();
+      }
+
+      function renderMonthlyReportImage() {
+        const container = authoring.monthlyDialog.querySelector(".monthly-editor-image");
+        container.replaceChildren();
+        if (!authoring.monthlyImage) return;
+
+        const item = document.createElement("div");
+        const image = document.createElement("img");
+        const alt = document.createElement("input");
+        const remove = document.createElement("button");
+        item.className = "editor-image-item";
+        image.className = "editor-image-preview";
+        image.src = authoring.monthlyImage.previewUrl;
+        image.alt = "";
+        alt.className = "field-input";
+        alt.type = "text";
+        alt.value = authoring.monthlyImage.alt;
+        alt.placeholder = "Alternative text (optional)";
+        alt.setAttribute("aria-label", "Monthly report image alternative text");
+        remove.className = "editor-image-remove";
+        remove.type = "button";
+        remove.dataset.removeMonthlyImage = "";
+        remove.textContent = "Remove";
+        item.append(image, alt, remove);
+        container.append(item);
+      }
+
+      function setMonthlyEditorMessage(message, kind = "status") {
+        if (!authoring.monthlyDialog) return;
+        const element = authoring.monthlyDialog.querySelector(".editor-message");
+        element.textContent = message;
+        element.dataset.kind = kind;
+      }
+
+      async function saveMonthlyReview(event) {
+        event.preventDefault();
+        if (!canAuthorJournal() || authoring.busy || !authoring.monthlyMonth) return;
+
+        const form = authoring.monthlyForm.elements;
+        const highlights = form.highlights.value
+          .split(/\r?\n/)
+          .map((item) => item.trim())
+          .filter(Boolean);
+        if (highlights.length > 20) {
+          setMonthlyEditorMessage("Use no more than 20 highlights.", "error");
+          return;
+        }
+
+        setAuthoringBusy(true);
+        setMonthlyEditorMessage("Saving...");
+        let completed = false;
+        try {
+          const month = authoring.monthlyMonth;
+          const image = authoring.monthlyImage;
+          const reportImage = image
+            ? (image.kind === "existing"
+              ? { kind: "existing", src: image.src, alt: image.alt.trim() }
+              : { kind: "new", key: image.key, alt: image.alt.trim() })
+            : null;
+          const uploads = image?.kind === "new" ? [await encodeImageFile(image)] : [];
+          const result = await localJournalRequest("monthly/save", {
+            year: month.slice(0, 4),
+            month,
+            review: {
+              summary: form.summary.value.trim(),
+              highlights,
+              next: form.next.value.trim()
+            },
+            reportImage,
+            uploads
+          });
+          const resultYear = String(result.year || "");
+          journalMonthlyByYear.set(resultYear, validateJournalMonthly(result.reviews, resultYear));
+          if (state.section === "journal" && state.years.journal === resultYear) renderArchive();
+
+          const cleanupFailures = Array.isArray(result.cleanupFailures) ? result.cleanupFailures : [];
+          const feedback = operationSyncFeedback(result, cleanupFailures.length > 0
+            ? `Monthly review saved, but ${cleanupFailures.length} old report image could not be removed.`
+            : (result.status === "unchanged"
+              ? "No monthly review changes to save."
+              : (result.status === "cleared" ? "Monthly review cleared." : "Monthly review saved locally.")),
+          cleanupFailures.length > 0 ? "error" : "status");
+          setAuthoringStatus(feedback.message, feedback.kind);
+          completed = true;
+        } catch (error) {
+          setMonthlyEditorMessage(error.message || "The monthly review could not be saved.", "error");
+        } finally {
+          setAuthoringBusy(false);
+          if (completed) closeMonthlyEditor();
         }
       }
 
