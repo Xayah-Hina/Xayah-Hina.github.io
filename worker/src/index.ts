@@ -36,7 +36,7 @@ async function editorStatus(env: Env): Promise<Response> {
   return jsonResponse({
     journalError,
     writingError,
-    compiler: "Tectonic 0.16.9 via GitHub Actions",
+    compiler: "On-demand Tectonic 0.16.9 via GitHub Actions · PDFs stored in R2",
     publishing: {
       enabled: true,
       state: "ready",
@@ -49,8 +49,8 @@ async function editorStatus(env: Env): Promise<Response> {
 
 async function editorApi(request: Request, env: Env, url: URL): Promise<Response> {
   if (request.method === "GET" && url.pathname === "/api/editor/status") return editorStatus(env);
-  const preview = url.pathname.match(/^\/api\/writing\/preview\/(\d{8}-\d{6})\.pdf$/);
-  if (request.method === "GET" && preview) return previewWriting(env, preview[1]);
+  const preview = url.pathname.match(/^\/api\/writing\/preview\/(\d{8}-\d{6})\/([a-f0-9]{64})\.pdf$/);
+  if (request.method === "GET" && preview) return previewWriting(env, preview[1], preview[2]);
   if (request.method !== "POST") throw new HttpError(405, "This Editor endpoint requires POST.");
   const origin = request.headers.get("origin");
   if (origin !== env.EDITOR_ORIGIN) throw new HttpError(403, "The Editor request origin was rejected.");
@@ -106,7 +106,12 @@ async function publicMedia(request: Request, env: Env, url: URL): Promise<Respon
   if (url.pathname.startsWith("/_build/")) {
     if (!buildAuthorized(request, env)) throw new HttpError(403, "Build authorization failed.");
     if (request.method === "GET" && url.pathname === "/_build/writing/source") {
-      return buildSource(env, url.searchParams.get("id") || "", url.searchParams.get("job") || "");
+      return buildSource(
+        env,
+        url.searchParams.get("id") || "",
+        url.searchParams.get("job") || "",
+        url.searchParams.get("source_hash") || "",
+      );
     }
     if (request.method === "POST" && url.pathname === "/_build/writing/complete") return completeBuild(env, request);
     throw new HttpError(404, "Unknown build endpoint.");
@@ -114,13 +119,23 @@ async function publicMedia(request: Request, env: Env, url: URL): Promise<Respon
   if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "Published media is read-only.");
   const publishedPath = /^(?:\/(?:journals|monthly)\/\d{4}|\/writing\/\d{8}-\d{6})\/[A-Za-z0-9._-]+$/;
   if (!publishedPath.test(url.pathname)) throw new HttpError(404, "Published media was not found.");
-  const key = `published${url.pathname}`;
+  const stableWritingPdf = url.pathname.match(/^\/writing\/(\d{8}-\d{6})\/\1\.pdf$/);
+  let key = `published${url.pathname}`;
+  if (stableWritingPdf) {
+    const pointer = await env.CONTENT.get(`private/writing/current/${stableWritingPdf[1]}.json`);
+    if (!pointer) throw new HttpError(404, "Published media was not found.");
+    const value = await pointer.json<{ sourceHash?: unknown }>();
+    if (typeof value.sourceHash !== "string" || !/^[a-f0-9]{64}$/.test(value.sourceHash)) {
+      throw new HttpError(500, "Published Writing PDF metadata is invalid.");
+    }
+    key = `published/writing/${stableWritingPdf[1]}/${value.sourceHash}.pdf`;
+  }
   const object = request.method === "HEAD" ? await env.CONTENT.head(key) : await env.CONTENT.get(key);
   if (!object) throw new HttpError(404, "Published media was not found.");
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("ETag", object.httpEtag);
-  headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  headers.set("Cache-Control", stableWritingPdf ? "public, max-age=0, must-revalidate" : "public, max-age=31536000, immutable");
   headers.set("X-Content-Type-Options", "nosniff");
   const body = request.method === "HEAD" ? null : (object as R2ObjectBody).body;
   return new Response(request.method === "HEAD" ? null : body, { headers });

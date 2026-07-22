@@ -11,6 +11,10 @@ on:
         description: Editor build job id
         required: true
         type: string
+      source_hash:
+        description: SHA-256 fingerprint of this source revision
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -28,10 +32,12 @@ jobs:
         env:
           WRITING_ID: ${{ inputs.writing_id }}
           JOB_ID: ${{ inputs.job_id }}
+          SOURCE_HASH: ${{ inputs.source_hash }}
         run: |
           set -euo pipefail
           [[ "$WRITING_ID" =~ ^[0-9]{8}-[0-9]{6}$ ]]
           [[ "$JOB_ID" =~ ^[0-9]{8}-[0-9]{6}-[0-9]+-[a-f0-9]{8}$ ]]
+          [[ "$SOURCE_HASH" =~ ^[a-f0-9]{64}$ ]]
 
       - name: Checkout published site assets
         uses: actions/checkout@v6
@@ -46,6 +52,7 @@ jobs:
         env:
           WRITING_ID: ${{ inputs.writing_id }}
           JOB_ID: ${{ inputs.job_id }}
+          SOURCE_HASH: ${{ inputs.source_hash }}
           BUILD_TOKEN: ${{ secrets.WRITING_BUILD_TOKEN }}
           TZ: Asia/Singapore
         run: |
@@ -61,15 +68,35 @@ jobs:
             --get \
             --data-urlencode "id=$WRITING_ID" \
             --data-urlencode "job=$JOB_ID" \
+            --data-urlencode "source_hash=$SOURCE_HASH" \
             --output "$source" \
             "https://media.xayah.me/_build/writing/source"
 
-          jq -r --arg id "$WRITING_ID" '.[$id][]? | [.name, .url] | @tsv' writing/assets.json |
-          while IFS=$'\t' read -r name url; do
+          jq -r --arg id "$WRITING_ID" '.[$id][]? | [.name, .url, .sha256] | @tsv' writing/assets.json |
+          while IFS=$'\t' read -r name url sha256; do
             [[ "$name" =~ ^[A-Za-z0-9._-]+$ ]]
             [[ "$url" == "https://media.xayah.me/writing/$WRITING_ID/$name" ]]
-            curl --fail-with-body --silent --show-error --output "$directory/$name" "$url"
+            [[ "$sha256" =~ ^[a-f0-9]{64}$ ]]
+            destination="$directory/$name"
+            curl --fail-with-body --silent --show-error --output "$destination" "$url"
+            printf '%s  %s\n' "$sha256" "$destination" | sha256sum --check --status
           done
+
+          calculated_hash="$(WRITING_ID="$WRITING_ID" SOURCE_PATH="$source" node <<'NODE'
+          const crypto = require("crypto");
+          const fs = require("fs");
+          const id = process.env.WRITING_ID;
+          const normalizeText = (value) => value.replace(/\r\n?/g, "\n");
+          const source = normalizeText(fs.readFileSync(process.env.SOURCE_PATH, "utf8"));
+          const bibliographyPath = `writing/${id}/${id}.bib`;
+          const bibliography = fs.existsSync(bibliographyPath) ? normalizeText(fs.readFileSync(bibliographyPath, "utf8")) : "";
+          const manifest = JSON.parse(fs.readFileSync("writing/assets.json", "utf8"));
+          const assets = (manifest[id] || []).slice().sort((left, right) => left.name.localeCompare(right.name));
+          const material = JSON.stringify({ build: "writing-build-v1|tectonic-0.16.9", source, bibliography, assets });
+          process.stdout.write(crypto.createHash("sha256").update(material).digest("hex"));
+          NODE
+          )"
+          [[ "$calculated_hash" == "$SOURCE_HASH" ]]
 
           set +e
           tectonic -X compile --untrusted --outdir "$directory" "$source" >"$log_file" 2>&1
@@ -87,6 +114,7 @@ jobs:
             --header "Authorization: Bearer $BUILD_TOKEN"
             --form "id=$WRITING_ID"
             --form "job=$JOB_ID"
+            --form "source_hash=$SOURCE_HASH"
             --form "ok=$ok"
             --form "log=<$log_file"
           )

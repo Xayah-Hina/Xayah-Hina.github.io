@@ -24,21 +24,29 @@ export interface WritingEntry {
   id: string;
   title: string;
   summary?: string;
+  pdf?: WritingPdf;
+}
+
+export interface WritingPdf {
+  url: string;
+  sourceHash: string;
+  compiler: string;
 }
 
 export interface WritingDraft extends WritingEntry {
   source: string;
+  sourceHash: string;
   savedAt: string;
 }
 
 export interface BuildStatus {
   id: string;
   jobId: string;
+  sourceHash: string;
   state: "queued" | "running" | "succeeded" | "failed";
   log: string;
   createdAt: string;
   finishedAt?: string;
-  previewVersion?: number;
 }
 
 export interface JournalImage {

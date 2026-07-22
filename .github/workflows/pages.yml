@@ -23,8 +23,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -34,71 +32,9 @@ jobs:
       - name: Build dictionary data
         run: python dictionary/build.py build
 
-      - name: Restore writing PDFs
-        id: writing-pdf-cache
-        uses: actions/cache@v5
-        with:
-          path: writing/**/*.pdf
-          key: ${{ runner.os }}-writing-pdfs-v3-tectonic-0.16.9-${{ hashFiles('writing/**/*.tex', 'writing/assets.json', 'assets/fonts/**') }}
-
-      - name: Setup Tectonic
-        if: steps.writing-pdf-cache.outputs.cache-hit != 'true'
-        uses: wtfjoke/setup-tectonic@v4
-        with:
-          tectonic-version: 0.16.9
-
-      - name: Fetch writing assets
-        if: steps.writing-pdf-cache.outputs.cache-hit != 'true'
+      - name: Remove build-only fonts
         shell: bash
-        run: |
-          set -euo pipefail
-          jq -r 'to_entries[] | .key as $id | .value[] | [$id, .name, .url] | @tsv' writing/assets.json |
-          while IFS=$'\t' read -r writing_id name url; do
-            [[ "$writing_id" =~ ^[0-9]{8}-[0-9]{6}$ ]]
-            [[ "$name" =~ ^[A-Za-z0-9._-]+$ ]]
-            [[ "$url" == "https://media.xayah.me/writing/$writing_id/$name" ]]
-            destination="writing/$writing_id/$name"
-            mkdir -p "$(dirname "$destination")"
-            curl --fail-with-body --silent --show-error --output "$destination" "$url"
-          done
-
-      - name: Build writing documents
-        if: steps.writing-pdf-cache.outputs.cache-hit != 'true'
-        shell: bash
-        env:
-          TZ: Asia/Singapore
-        run: |
-          set -euo pipefail
-          mapfile -d '' sources < <(
-            find writing -mindepth 2 -maxdepth 2 -type f -name '*.tex' -print0 | sort -z
-          )
-
-          for source in "${sources[@]}"; do
-            output_dir="$(dirname "$source")"
-            source_date_epoch="$(git log -1 --format=%ct -- "$source")"
-            if [[ -z "$source_date_epoch" ]]; then
-              echo "Could not determine the last commit date for: $source" >&2
-              exit 1
-            fi
-            SOURCE_DATE_EPOCH="$source_date_epoch" \
-              tectonic -X compile --untrusted --outdir "$output_dir" "$source"
-            pdf="${source%.tex}.pdf"
-            if [[ ! -s "$pdf" ]]; then
-              echo "Expected PDF was not generated: $pdf" >&2
-              exit 1
-            fi
-          done
-
-      - name: Remove build-only assets
-        shell: bash
-        run: |
-          rm -rf assets/fonts
-          jq -r 'to_entries[] | .key as $id | .value[] | [$id, .name] | @tsv' writing/assets.json |
-          while IFS=$'\t' read -r writing_id name; do
-            [[ "$writing_id" =~ ^[0-9]{8}-[0-9]{6}$ ]]
-            [[ "$name" =~ ^[A-Za-z0-9._-]+$ ]]
-            rm -f -- "writing/$writing_id/$name"
-          done
+        run: rm -rf assets/fonts
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

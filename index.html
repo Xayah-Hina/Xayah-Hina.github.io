@@ -1632,7 +1632,8 @@
         current: null,
         baseline: null,
         publishEnabled: false,
-        unpublished: false
+        unpublished: false,
+        compiled: false
       };
 
       async function importDataModule(path, version = moduleVersion) {
@@ -1751,6 +1752,15 @@
           }
           if (entry.summary !== undefined && typeof entry.summary !== "string") {
             throw new TypeError(`Writing ${entry.id} has an invalid summary.`);
+          }
+          if (entry.pdf !== undefined && (
+            !entry.pdf
+            || typeof entry.pdf !== "object"
+            || !/^[a-f0-9]{64}$/.test(entry.pdf.sourceHash || "")
+            || entry.pdf.compiler !== "Tectonic 0.16.9"
+            || entry.pdf.url !== `https://media.xayah.me/writing/${entry.id}/${entry.pdf.sourceHash}.pdf`
+          )) {
+            throw new TypeError(`Writing ${entry.id} has invalid PDF metadata.`);
           }
           ids.add(entry.id);
         }
@@ -1964,10 +1974,14 @@
 
         const anchor = document.createElement("a");
         anchor.className = "entry-title-link";
-        anchor.href = `writing/${entry.id}/${entry.id}.pdf`;
         anchor.textContent = entry.title;
-        anchor.target = "_blank";
-        anchor.rel = "noopener";
+        if (entry.pdf) {
+          anchor.href = entry.pdf.url;
+          anchor.target = "_blank";
+          anchor.rel = "noopener";
+        } else {
+          anchor.setAttribute("aria-disabled", "true");
+        }
         title.append(anchor);
 
         if (entry.summary) {
@@ -2041,7 +2055,7 @@
         media.hidden = images.length === 0;
 
         if (entry.relatedWriting) {
-          related.href = `writing/${entry.relatedWriting.id}/${entry.relatedWriting.id}.pdf`;
+          related.href = `https://media.xayah.me/writing/${entry.relatedWriting.id}/${entry.relatedWriting.id}.pdf`;
           related.textContent = `Related writing: ${entry.relatedWriting.title}`;
           related.target = "_blank";
           related.rel = "noopener";
@@ -2612,10 +2626,14 @@
         if (!writingAuthoring.current || writingAuthoring.busy) return;
         const dirty = writingEditorIsDirty();
         const publish = writingAuthoring.editor.querySelector('[data-writing-editor-action="publish"]');
-        publish.disabled = dirty || !writingAuthoring.publishEnabled || !writingAuthoring.unpublished;
+        publish.disabled = dirty || !writingAuthoring.publishEnabled || !writingAuthoring.unpublished || !writingAuthoring.compiled;
         setWritingEditorStatus(dirty
           ? "Unsaved changes."
-          : (writingAuthoring.unpublished ? "Private draft saved · Unpublished changes." : "Saved and published."));
+          : (writingAuthoring.unpublished
+            ? (writingAuthoring.compiled
+              ? "Private draft compiled · Ready to publish."
+              : "Private draft saved · Compile this source before publishing.")
+            : "Saved and published."));
       }
 
       function setWritingEditorStatus(message, kind = "status") {
@@ -2634,7 +2652,7 @@
         if (writingAuthoring.editor) {
           for (const control of writingAuthoring.editor.querySelectorAll("button, input, textarea")) control.disabled = busy;
           const publish = writingAuthoring.editor.querySelector('[data-writing-editor-action="publish"]');
-          publish.disabled = busy || !writingAuthoring.publishEnabled || !writingAuthoring.unpublished;
+          publish.disabled = busy || !writingAuthoring.publishEnabled || !writingAuthoring.unpublished || !writingAuthoring.compiled || writingEditorIsDirty();
         }
       }
 
@@ -2724,6 +2742,7 @@
           writingAuthoring.publishEnabled = Boolean(result.sync.enabled);
           writingAuthoring.unpublished = Boolean(result.sync.writingPending);
         }
+        writingAuthoring.compiled = Boolean(result.compiled);
         writingAuthoring.current = {
           year: String(result.year),
           id: result.entry.id
@@ -2740,7 +2759,9 @@
         document.body.classList.add("writing-editor-open");
         setWritingEditorView("source");
         setWritingEditorStatus(writingAuthoring.unpublished
-          ? "Private draft saved · Unpublished changes."
+          ? (writingAuthoring.compiled
+            ? "Private draft compiled · Ready to publish."
+            : "Private draft saved · Compile this source before publishing.")
           : "Saved and published.");
         writingAuthoring.source.focus();
       }
@@ -2826,7 +2847,7 @@
             const feedback = operationSyncFeedback(result,
               compilation.ok
                 ? "Saved and compiled successfully."
-                : "Saved, but compilation failed. The last successful PDF is still shown.",
+                : "Saved, but compilation failed. Fix the source and compile again.",
             compilation.ok ? "status" : "error");
             setWritingEditorStatus(feedback.message, feedback.kind);
             if (compilation.ok && matchMedia("(max-width: 42rem)").matches) setWritingEditorView("preview");
@@ -2847,6 +2868,10 @@
           setWritingEditorStatus("Save the current changes as a private draft before publishing.", "error");
           return;
         }
+        if (!writingAuthoring.compiled) {
+          setWritingEditorStatus("Compile the current source successfully before publishing.", "error");
+          return;
+        }
 
         setWritingEditorBusy(true);
         setWritingEditorStatus("Publishing...");
@@ -2855,7 +2880,8 @@
             year: writingAuthoring.current.year,
             id: writingAuthoring.current.id
           });
-          writingAuthoring.unpublished = Boolean(result.sync?.writingPending);
+          applyWritingServerData(result);
+          showWritingEditorData(result);
           const feedback = operationSyncFeedback(result, "Writing published.");
           setWritingEditorStatus(feedback.message, feedback.kind);
         } catch (error) {

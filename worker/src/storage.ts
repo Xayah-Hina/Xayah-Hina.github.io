@@ -2,8 +2,8 @@ import type { BuildStatus, Env, WritingDraft } from "./types";
 import { HttpError } from "./utils";
 
 export const draftKey = (id: string) => `private/writing/drafts/${id}.json`;
-export const previewKey = (id: string) => `private/writing/previews/${id}.pdf`;
-export const buildKey = (jobId: string) => `private/writing/builds/${jobId}.json`;
+export const previewKey = (id: string, sourceHash: string) => `private/writing/previews/${id}/${sourceHash}.pdf`;
+export const buildKey = (jobId: string) => `private/writing/builds/${jobId.slice(0, 15)}/${jobId}.json`;
 
 async function readJson<T>(env: Env, key: string): Promise<T | null> {
   const object = await env.CONTENT.get(key);
@@ -58,6 +58,23 @@ export async function putBuild(env: Env, status: BuildStatus): Promise<void> {
   });
 }
 
+export async function deleteBuild(env: Env, jobId: string): Promise<void> {
+  await env.CONTENT.delete(buildKey(jobId));
+}
+
+export async function deletePrefix(env: Env, prefix: string): Promise<void> {
+  while (true) {
+    const page = await env.CONTENT.list({ prefix, limit: 1000 });
+    if (!page.objects.length) return;
+    if (page.objects.length) await env.CONTENT.delete(page.objects.map((object) => object.key));
+  }
+}
+
 export async function deleteWritingObjects(env: Env, id: string): Promise<void> {
-  await env.CONTENT.delete([draftKey(id), previewKey(id)]);
+  await env.CONTENT.delete([draftKey(id), `private/writing/previews/${id}.pdf`, `private/writing/current/${id}.json`]);
+  await Promise.all([
+    deletePrefix(env, `private/writing/builds/${id}/`),
+    deletePrefix(env, `private/writing/previews/${id}/`),
+    deletePrefix(env, `published/writing/${id}/`),
+  ]);
 }
