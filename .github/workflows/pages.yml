@@ -39,13 +39,28 @@ jobs:
         uses: actions/cache@v5
         with:
           path: writing/**/*.pdf
-          key: ${{ runner.os }}-writing-pdfs-v2-tectonic-0.16.9-${{ hashFiles('writing/**/*.tex', 'assets/fonts/**', 'assets/images/**') }}
+          key: ${{ runner.os }}-writing-pdfs-v3-tectonic-0.16.9-${{ hashFiles('writing/**/*.tex', 'writing/assets.json', 'assets/fonts/**') }}
 
       - name: Setup Tectonic
         if: steps.writing-pdf-cache.outputs.cache-hit != 'true'
         uses: wtfjoke/setup-tectonic@v4
         with:
           tectonic-version: 0.16.9
+
+      - name: Fetch writing assets
+        if: steps.writing-pdf-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -r 'to_entries[] | .key as $id | .value[] | [$id, .name, .url] | @tsv' writing/assets.json |
+          while IFS=$'\t' read -r writing_id name url; do
+            [[ "$writing_id" =~ ^[0-9]{8}-[0-9]{6}$ ]]
+            [[ "$name" =~ ^[A-Za-z0-9._-]+$ ]]
+            [[ "$url" == "https://media.xayah.me/writing/$writing_id/$name" ]]
+            destination="writing/$writing_id/$name"
+            mkdir -p "$(dirname "$destination")"
+            curl --fail-with-body --silent --show-error --output "$destination" "$url"
+          done
 
       - name: Build writing documents
         if: steps.writing-pdf-cache.outputs.cache-hit != 'true'
@@ -74,9 +89,16 @@ jobs:
             fi
           done
 
-      - name: Remove build-only fonts
+      - name: Remove build-only assets
         shell: bash
-        run: rm -rf assets/fonts
+        run: |
+          rm -rf assets/fonts
+          jq -r 'to_entries[] | .key as $id | .value[] | [$id, .name] | @tsv' writing/assets.json |
+          while IFS=$'\t' read -r writing_id name; do
+            [[ "$writing_id" =~ ^[0-9]{8}-[0-9]{6}$ ]]
+            [[ "$name" =~ ^[A-Za-z0-9._-]+$ ]]
+            rm -f -- "writing/$writing_id/$name"
+          done
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

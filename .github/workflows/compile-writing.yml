@@ -64,6 +64,13 @@ jobs:
             --output "$source" \
             "https://media.xayah.me/_build/writing/source"
 
+          jq -r --arg id "$WRITING_ID" '.[$id][]? | [.name, .url] | @tsv' writing/assets.json |
+          while IFS=$'\t' read -r name url; do
+            [[ "$name" =~ ^[A-Za-z0-9._-]+$ ]]
+            [[ "$url" == "https://media.xayah.me/writing/$WRITING_ID/$name" ]]
+            curl --fail-with-body --silent --show-error --output "$directory/$name" "$url"
+          done
+
           set +e
           tectonic -X compile --untrusted --outdir "$directory" "$source" >"$log_file" 2>&1
           compile_exit=$?

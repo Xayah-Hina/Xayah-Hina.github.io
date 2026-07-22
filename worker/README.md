@@ -5,7 +5,7 @@ This Worker serves the authenticated editor at `editor.xayah.me`, public immutab
 ## Data ownership
 
 - GitHub `master`: published Journal, Monthly Note, and Writing source/metadata.
-- Private R2 bucket: unpublished Writing drafts, Writing preview PDFs, build status, and published Journal media.
+- Private R2 bucket: unpublished Writing drafts, Writing preview PDFs, build status, and published site media.
 - GitHub Actions: asynchronous Tectonic compilation for private Writing previews.
 
 No D1 database is used.

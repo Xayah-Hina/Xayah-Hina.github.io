@@ -112,7 +112,8 @@ async function publicMedia(request: Request, env: Env, url: URL): Promise<Respon
     throw new HttpError(404, "Unknown build endpoint.");
   }
   if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "Published media is read-only.");
-  if (!/^\/(?:journals|monthly)\/\d{4}\/[A-Za-z0-9._-]+$/.test(url.pathname)) throw new HttpError(404, "Published media was not found.");
+  const publishedPath = /^(?:\/(?:journals|monthly)\/\d{4}|\/writing\/\d{8}-\d{6})\/[A-Za-z0-9._-]+$/;
+  if (!publishedPath.test(url.pathname)) throw new HttpError(404, "Published media was not found.");
   const key = `published${url.pathname}`;
   const object = request.method === "HEAD" ? await env.CONTENT.head(key) : await env.CONTENT.get(key);
   if (!object) throw new HttpError(404, "Published media was not found.");
