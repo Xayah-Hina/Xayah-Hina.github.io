@@ -1,0 +1,152 @@
+import { verifyAccess } from "./auth";
+import { deleteJournal, journalYears, saveJournal, saveMonthlyNote } from "./journal";
+import type { Env } from "./types";
+import { HttpError, jsonResponse, readJsonObject, secureEqual } from "./utils";
+import {
+  buildSource,
+  compilationStatus,
+  compileWriting,
+  completeBuild,
+  createWriting,
+  deleteWriting,
+  editorWritingCatalog,
+  editorWritingYear,
+  openWriting,
+  previewWriting,
+  publishWriting,
+  saveWriting,
+  writingStatus,
+} from "./writing";
+
+async function editorStatus(env: Env): Promise<Response> {
+  let journalError: string | null = null;
+  let writingError: string | null = null;
+  let journalValues: string[] = [];
+  let writingValues: string[] = [];
+  let writingPending = false;
+  try {
+    journalValues = await journalYears(env);
+  } catch (error) {
+    journalError = error instanceof Error ? error.message : "Journal data could not be loaded.";
+  }
+  try {
+    const status = await writingStatus(env);
+    writingValues = status.years;
+    writingPending = status.pending;
+  } catch (error) {
+    writingError = error instanceof Error ? error.message : "Writing data could not be loaded.";
+  }
+  return jsonResponse({
+    authoring: true,
+    token: "cloudflare-access",
+    journalYears: journalValues,
+    writingYears: writingValues,
+    journalError,
+    writingError,
+    tectonicVersion: "Tectonic 0.16.9 via GitHub Actions",
+    autoPublish: {
+      enabled: true,
+      state: "ready",
+      message: "Remote publishing is ready.",
+      branch: env.GITHUB_BRANCH,
+      writingPending,
+    },
+  });
+}
+
+async function editorApi(request: Request, env: Env, url: URL): Promise<Response> {
+  if (request.method === "GET" && url.pathname === "/api/local/status") return editorStatus(env);
+  const preview = url.pathname.match(/^\/api\/writing\/preview\/(\d{8}-\d{6})\.pdf$/);
+  if (request.method === "GET" && preview) return previewWriting(env, preview[1]);
+  if (request.method !== "POST") throw new HttpError(405, "This Editor endpoint requires POST.");
+  const origin = request.headers.get("origin");
+  if (origin !== env.EDITOR_ORIGIN) throw new HttpError(403, "The Editor request origin was rejected.");
+  const payload = await readJsonObject(request);
+  const actions: Record<string, (env: Env, payload: Record<string, unknown>) => Promise<unknown>> = {
+    "/api/journal/save": saveJournal,
+    "/api/journal/delete": deleteJournal,
+    "/api/journal/monthly/save": saveMonthlyNote,
+    "/api/writing/open": openWriting,
+    "/api/writing/create": createWriting,
+    "/api/writing/save": saveWriting,
+    "/api/writing/compile": compileWriting,
+    "/api/writing/compile/status": compilationStatus,
+    "/api/writing/publish": publishWriting,
+    "/api/writing/delete": deleteWriting,
+  };
+  const action = actions[url.pathname];
+  if (!action) throw new HttpError(404, "Unknown Editor endpoint.");
+  return jsonResponse(await action(env, payload));
+}
+
+async function proxyPublicSite(request: Request, env: Env, url: URL): Promise<Response> {
+  const target = new URL(`${url.pathname}${url.search}`, env.PUBLIC_SITE_ORIGIN);
+  const headers = new Headers();
+  const accept = request.headers.get("accept");
+  if (accept) headers.set("Accept", accept);
+  const response = await fetch(target, { method: request.method === "HEAD" ? "HEAD" : "GET", headers, redirect: "follow" });
+  const resultHeaders = new Headers(response.headers);
+  resultHeaders.set("X-Robots-Tag", "noindex, nofollow");
+  if (url.pathname === "/" || url.pathname.endsWith(".html") || url.pathname.startsWith("/writing/") || url.pathname.startsWith("/journals/")) {
+    resultHeaders.set("Cache-Control", "private, no-store");
+  }
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers: resultHeaders });
+}
+
+async function handleEditor(request: Request, env: Env, url: URL): Promise<Response> {
+  await verifyAccess(request, env);
+  if (url.pathname.startsWith("/api/")) return editorApi(request, env, url);
+  if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "The Editor only accepts read requests outside its API.");
+  if (url.pathname === "/writing/catalog.js") return editorWritingCatalog(env);
+  const year = url.pathname.match(/^\/writing\/(\d{4})\.js$/);
+  if (year) return editorWritingYear(env, year[1]);
+  return proxyPublicSite(request, env, url);
+}
+
+function buildAuthorized(request: Request, env: Env): boolean {
+  const authorization = request.headers.get("authorization");
+  const value = authorization?.startsWith("Bearer ") ? authorization.slice(7) : null;
+  return secureEqual(value, env.BUILD_CALLBACK_TOKEN);
+}
+
+async function publicMedia(request: Request, env: Env, url: URL): Promise<Response> {
+  if (url.pathname.startsWith("/_build/")) {
+    if (!buildAuthorized(request, env)) throw new HttpError(403, "Build authorization failed.");
+    if (request.method === "GET" && url.pathname === "/_build/writing/source") {
+      return buildSource(env, url.searchParams.get("id") || "", url.searchParams.get("job") || "");
+    }
+    if (request.method === "POST" && url.pathname === "/_build/writing/complete") return completeBuild(env, request);
+    throw new HttpError(404, "Unknown build endpoint.");
+  }
+  if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "Published media is read-only.");
+  if (!/^\/(?:journals|monthly)\/\d{4}\/[A-Za-z0-9._-]+$/.test(url.pathname)) throw new HttpError(404, "Published media was not found.");
+  const object = await env.CONTENT.get(`published${url.pathname}`, request.method === "HEAD" ? { onlyIf: request.headers } : { onlyIf: request.headers });
+  if (!object) throw new HttpError(404, "Published media was not found.");
+  if (!object.body) return new Response(null, { status: 304, headers: { ETag: object.httpEtag } });
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("ETag", object.httpEtag);
+  headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  headers.set("X-Content-Type-Options", "nosniff");
+  return new Response(request.method === "HEAD" ? null : object.body, { headers });
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    try {
+      if (url.hostname === new URL(env.EDITOR_ORIGIN).hostname) return await handleEditor(request, env, url);
+      if (url.hostname === new URL(env.MEDIA_ORIGIN).hostname) return await publicMedia(request, env, url);
+      throw new HttpError(404, "Unknown hostname.");
+    } catch (error) {
+      if (error instanceof HttpError) {
+        if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/_build/")) return jsonResponse({ error: error.message }, error.status);
+        return new Response(error.message, { status: error.status, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+      }
+      console.error(error);
+      const message = error instanceof Error ? error.message : "Unexpected Worker error.";
+      if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/_build/")) return jsonResponse({ error: message }, 500);
+      return new Response("The Editor backend encountered an unexpected error.", { status: 500 });
+    }
+  },
+} satisfies ExportedHandler<Env>;

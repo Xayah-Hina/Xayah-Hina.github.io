@@ -1,0 +1,4 @@
+GITHUB_TOKEN=github_pat_replace_me
+BUILD_CALLBACK_TOKEN=replace_with_a_random_64_character_secret
+ACCESS_TEAM_DOMAIN=https://your-team-name.cloudflareaccess.com
+ACCESS_AUD=replace_with_the_access_application_aud

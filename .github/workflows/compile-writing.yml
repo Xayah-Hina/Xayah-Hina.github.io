@@ -1,0 +1,94 @@
+name: Compile private Writing preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      writing_id:
+        description: Writing id
+        required: true
+        type: string
+      job_id:
+        description: Editor build job id
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: writing-preview-${{ inputs.writing_id }}
+  cancel-in-progress: false
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate request
+        shell: bash
+        env:
+          WRITING_ID: ${{ inputs.writing_id }}
+          JOB_ID: ${{ inputs.job_id }}
+        run: |
+          set -euo pipefail
+          [[ "$WRITING_ID" =~ ^[0-9]{8}-[0-9]{6}$ ]]
+          [[ "$JOB_ID" =~ ^[0-9]{8}-[0-9]{6}-[0-9]+-[a-f0-9]{8}$ ]]
+
+      - name: Checkout published site assets
+        uses: actions/checkout@v6
+
+      - name: Setup Tectonic
+        uses: wtfjoke/setup-tectonic@v4
+        with:
+          tectonic-version: 0.16.9
+
+      - name: Fetch, compile, and return private preview
+        shell: bash
+        env:
+          WRITING_ID: ${{ inputs.writing_id }}
+          JOB_ID: ${{ inputs.job_id }}
+          BUILD_TOKEN: ${{ secrets.WRITING_BUILD_TOKEN }}
+          TZ: Asia/Singapore
+        run: |
+          set -euo pipefail
+          directory="writing/$WRITING_ID"
+          source="$directory/$WRITING_ID.tex"
+          pdf="$directory/$WRITING_ID.pdf"
+          log_file="$RUNNER_TEMP/tectonic.log"
+          mkdir -p "$directory"
+
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer $BUILD_TOKEN" \
+            --get \
+            --data-urlencode "id=$WRITING_ID" \
+            --data-urlencode "job=$JOB_ID" \
+            --output "$source" \
+            "https://media.xayah.me/_build/writing/source"
+
+          set +e
+          tectonic -X compile --untrusted --outdir "$directory" "$source" >"$log_file" 2>&1
+          compile_exit=$?
+          set -e
+
+          ok=false
+          if [[ $compile_exit -eq 0 && -s "$pdf" ]] && head -c 5 "$pdf" | grep -q '^%PDF-'; then
+            ok=true
+          fi
+
+          callback=(
+            --fail-with-body --silent --show-error
+            --request POST
+            --header "Authorization: Bearer $BUILD_TOKEN"
+            --form "id=$WRITING_ID"
+            --form "job=$JOB_ID"
+            --form "ok=$ok"
+            --form "log=<$log_file"
+          )
+          if [[ "$ok" == true ]]; then
+            callback+=(--form "pdf=@$pdf;type=application/pdf")
+          fi
+          curl "${callback[@]}" "https://media.xayah.me/_build/writing/complete"
+
+          if [[ "$ok" != true ]]; then
+            tail -n 200 "$log_file" >&2
+            exit 1
+          fi

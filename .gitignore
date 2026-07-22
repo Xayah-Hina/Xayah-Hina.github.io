@@ -4,3 +4,6 @@ __pycache__/
 *.pyc
 dictionary/generated/
 dictionary/export/
+worker/node_modules/
+worker/.wrangler/
+worker/.dev.vars

@@ -1562,6 +1562,7 @@
       const moduleVersion = Date.now().toString();
       const loopbackHosts = new Set(["localhost", "127.0.0.1", "[::1]"]);
       const isLoopback = location.protocol === "http:" && loopbackHosts.has(location.hostname);
+      const isCloudEditor = location.protocol === "https:" && location.hostname === "editor.xayah.me";
       const isFilePage = location.protocol === "file:";
       const writingEntriesByYear = new Map();
       const writingLoadPromises = new Map();
@@ -1735,7 +1736,10 @@
           if (note.reportImage && (
             typeof note.reportImage.src !== "string"
             || typeof note.reportImage.alt !== "string"
-            || !note.reportImage.src.startsWith(`journals/monthly/images/${year}/${month}-report-`)
+            || !(
+              note.reportImage.src.startsWith(`journals/monthly/images/${year}/${month}-report-`)
+              || note.reportImage.src.startsWith(`https://media.xayah.me/monthly/${year}/${month}-report-`)
+            )
           )) {
             throw new TypeError(`Monthly note ${month} has an invalid report image.`);
           }
@@ -2347,11 +2351,13 @@
           return;
         }
 
-        if (!isLoopback) return;
+        if (!isLoopback && !isCloudEditor) return;
 
         const rowFragment = byId("journal-authoring-template").content.cloneNode(true);
         authoring.row = rowFragment.querySelector(".journal-authoring");
+        authoring.row.setAttribute("aria-label", isCloudEditor ? "Cloud Journal editor" : "Local Journal editor");
         authoring.status = rowFragment.querySelector(".journal-authoring-status");
+        authoring.status.textContent = `Starting ${isCloudEditor ? "Cloud" : "local"} editor...`;
         authoring.newButton = rowFragment.querySelector('[data-authoring-action="new"]');
         journalSlot.append(rowFragment);
 
@@ -2434,7 +2440,9 @@
 
         const writingRowFragment = byId("writing-authoring-template").content.cloneNode(true);
         writingAuthoring.status = writingRowFragment.querySelector(".writing-authoring-status");
+        writingAuthoring.status.textContent = `Starting ${isCloudEditor ? "Cloud" : "local"} editor...`;
         writingAuthoring.newButton = writingRowFragment.querySelector('[data-writing-action="new"]');
+        writingRowFragment.querySelector(".journal-authoring").setAttribute("aria-label", isCloudEditor ? "Cloud Writing editor" : "Local Writing editor");
         writingSlot.append(writingRowFragment);
 
         const createFragment = byId("writing-create-template").content.cloneNode(true);
@@ -2500,7 +2508,7 @@
           const response = await fetch("/api/local/status", { cache: "no-store" });
           const result = await response.json();
           if (!response.ok || !result.authoring || typeof result.token !== "string") {
-            throw new Error(result.error || "The local editor service is unavailable.");
+            throw new Error(result.error || `The ${isCloudEditor ? "Cloud" : "local"} editor service is unavailable.`);
           }
           authoring.apiToken = result.token;
           authoring.connected = !result.journalError;
@@ -2510,16 +2518,16 @@
           writingAuthoring.newButton.disabled = !canAuthorWriting();
           const journalInitial = initialSyncFeedback(result.autoPublish,
             journalCatalogError || result.journalError
-              ? (result.journalError || "Journal catalog failed to load; local editing is disabled.")
-              : "Local editing is enabled.",
+              ? (result.journalError || `Journal catalog failed to load; ${isCloudEditor ? "Cloud" : "local"} editing is disabled.`)
+              : `${isCloudEditor ? "Cloud" : "Local"} editing is enabled.`,
           journalCatalogError || result.journalError ? "error" : "status");
           setAuthoringStatus(journalInitial.message, journalInitial.kind);
           const writingInitial = initialSyncFeedback(result.autoPublish,
             writingCatalogError || result.writingError
-            ? (result.writingError || "Writing catalog failed to load; local editing is disabled.")
+            ? (result.writingError || `Writing catalog failed to load; ${isCloudEditor ? "Cloud" : "local"} editing is disabled.`)
             : (result.tectonicVersion
-              ? `Local Writing editor is enabled · ${result.tectonicVersion}`
-              : "Local Writing editor is enabled, but Tectonic is unavailable."),
+              ? `${isCloudEditor ? "Cloud" : "Local"} Writing editor is enabled · ${result.tectonicVersion}`
+              : `${isCloudEditor ? "Cloud" : "Local"} Writing editor is enabled, but Tectonic is unavailable.`),
           writingCatalogError || result.writingError || !result.tectonicVersion ? "error" : "status", true);
           setWritingAuthoringStatus(writingInitial.message, writingInitial.kind);
           renderArchive();
@@ -2529,8 +2537,11 @@
           authoring.apiToken = "";
           authoring.newButton.disabled = true;
           writingAuthoring.newButton.disabled = true;
-          setAuthoringStatus("Local editor unavailable. Start the site with serve-local.cmd.", "error");
-          setWritingAuthoringStatus("Local editor unavailable. Start the site with serve-local.cmd.", "error");
+          const message = isCloudEditor
+            ? "Cloud editor unavailable. Reload the page or sign in through Cloudflare Access again."
+            : "Local editor unavailable. Start the site with serve-local.cmd.";
+          setAuthoringStatus(message, "error");
+          setWritingAuthoringStatus(message, "error");
         }
       }
 
@@ -2574,7 +2585,9 @@
           return { message: `${localMessage} Writing changes are pending Publish.`, kind: localKind };
         }
         const branch = sync.branch ? ` on ${sync.branch}` : "";
-        return { message: `${localMessage} Auto-push enabled${branch}.`, kind: localKind };
+        return { message: isCloudEditor
+          ? `${localMessage} Cloud publishing enabled${branch}.`
+          : `${localMessage} Auto-push enabled${branch}.`, kind: localKind };
       }
 
       function operationSyncFeedback(result, localMessage, localKind = "status") {
@@ -2589,7 +2602,7 @@
         if (sync.state === "pending") {
           return { message: `${localMessage} Unpublished changes.`, kind: localKind };
         }
-        return { message: `${localMessage} Saved locally, but auto-push failed: ${sync.message}`, kind: "error" };
+        return { message: `${localMessage} ${isCloudEditor ? "Cloud publish" : "Auto-push"} failed: ${sync.message}`, kind: "error" };
       }
 
       async function localSiteRequest(path, payload) {
@@ -2605,9 +2618,9 @@
         try {
           result = await response.json();
         } catch (error) {
-          throw new Error("The local editor returned an invalid response.");
+          throw new Error(`The ${isCloudEditor ? "Cloud" : "local"} editor returned an invalid response.`);
         }
-        if (!response.ok) throw new Error(result.error || "The local editor request failed.");
+        if (!response.ok) throw new Error(result.error || `The ${isCloudEditor ? "Cloud" : "local"} editor request failed.`);
         return result;
       }
 
@@ -2644,7 +2657,7 @@
         publish.disabled = dirty || !writingAuthoring.publishEnabled || !writingAuthoring.unpublished;
         setWritingEditorStatus(dirty
           ? "Unsaved changes."
-          : (writingAuthoring.unpublished ? "Saved locally · Unpublished changes." : "Saved and published."));
+          : (writingAuthoring.unpublished ? `${isCloudEditor ? "Private draft saved" : "Saved locally"} · Unpublished changes.` : "Saved and published."));
       }
 
       function setWritingEditorStatus(message, kind = "status") {
@@ -2705,7 +2718,7 @@
           applyWritingServerData(result, true);
           writingAuthoring.createDialog.close();
           showWritingEditorData(result);
-          const feedback = operationSyncFeedback(result, "Writing created locally.");
+          const feedback = operationSyncFeedback(result, isCloudEditor ? "Private Writing draft created." : "Writing created locally.");
           setWritingEditorStatus(feedback.message, feedback.kind);
         } catch (error) {
           writingDialogMessage(writingAuthoring.createDialog, error.message || "Writing could not be created.", "error");
@@ -2769,7 +2782,7 @@
         document.body.classList.add("writing-editor-open");
         setWritingEditorView("source");
         setWritingEditorStatus(writingAuthoring.unpublished
-          ? "Saved locally · Unpublished changes."
+          ? `${isCloudEditor ? "Private draft saved" : "Saved locally"} · Unpublished changes.`
           : "Saved and published.");
         writingAuthoring.source.focus();
       }
@@ -2793,7 +2806,7 @@
       function requestCloseWritingEditor() {
         if (writingAuthoring.busy) return;
         if (writingEditorIsDirty() && !window.confirm("Discard unsaved Writing changes?")) return;
-        if (writingAuthoring.unpublished && !window.confirm("Leave these Writing changes saved locally but unpublished?")) return;
+        if (writingAuthoring.unpublished && !window.confirm(`Leave these Writing changes saved ${isCloudEditor ? "as a private cloud draft" : "locally"} but unpublished?`)) return;
         writingAuthoring.editor.hidden = true;
         writingAuthoring.frame.removeAttribute("src");
         writingAuthoring.current = null;
@@ -2807,6 +2820,18 @@
         for (const button of writingAuthoring.editor.querySelectorAll("[data-writing-view]")) {
           button.setAttribute("aria-pressed", String(button.dataset.writingView === view));
         }
+      }
+
+      async function waitForWritingCompilation(id, jobId) {
+        for (let attempt = 0; attempt < 90; attempt += 1) {
+          await new Promise((resolve) => window.setTimeout(resolve, 2000));
+          const result = await localWritingRequest("compile/status", { id, jobId });
+          const compilation = result.compile || {};
+          writingAuthoring.log.textContent = compilation.log || "Compilation is still running.";
+          if (!compilation.pending) return result;
+          setWritingEditorStatus(`Compiling on GitHub Actions${".".repeat((attempt % 3) + 1)}`);
+        }
+        throw new Error("Compilation is still running after three minutes. The draft is saved; try opening it again shortly.");
       }
 
       async function saveWritingDocument(compile) {
@@ -2826,11 +2851,18 @@
         setWritingEditorBusy(true);
         setWritingEditorStatus(compile ? "Saving and compiling..." : "Saving...");
         try {
-          const result = await localWritingRequest(compile ? "compile" : "save", payload);
+          let result = await localWritingRequest(compile ? "compile" : "save", payload);
           applyWritingServerData(result);
           showWritingEditorData(result);
           if (compile) {
-            const compilation = result.compile || { ok: false, log: "No compilation result was returned." };
+            let compilation = result.compile || { ok: false, log: "No compilation result was returned." };
+            if (compilation.pending && compilation.jobId) {
+              writingAuthoring.log.textContent = compilation.log || "Compilation queued on GitHub Actions.";
+              result = await waitForWritingCompilation(payload.id, compilation.jobId);
+              applyWritingServerData(result);
+              showWritingEditorData(result);
+              compilation = result.compile || { ok: false, log: "No compilation result was returned." };
+            }
             writingAuthoring.log.textContent = compilation.log;
             writingAuthoring.editor.querySelector(".writing-compile-log").open = !compilation.ok;
             const feedback = operationSyncFeedback(result,
@@ -2841,7 +2873,7 @@
             setWritingEditorStatus(feedback.message, feedback.kind);
             if (compilation.ok && matchMedia("(max-width: 42rem)").matches) setWritingEditorView("preview");
           } else {
-            const feedback = operationSyncFeedback(result, "Writing saved locally.");
+            const feedback = operationSyncFeedback(result, isCloudEditor ? "Private Writing draft saved." : "Writing saved locally.");
             setWritingEditorStatus(feedback.message, feedback.kind);
           }
         } catch (error) {
@@ -2854,7 +2886,7 @@
       async function publishWritingDocument() {
         if (!writingAuthoring.current || writingAuthoring.busy || !writingAuthoring.publishEnabled) return;
         if (writingEditorIsDirty()) {
-          setWritingEditorStatus("Save the current changes locally before publishing.", "error");
+          setWritingEditorStatus(`Save the current changes ${isCloudEditor ? "as a private draft" : "locally"} before publishing.`, "error");
           return;
         }
 
@@ -2879,7 +2911,7 @@
         const entry = (writingEntriesByYear.get(year) || []).find((candidate) => candidate.id === id);
         if (!entry || !(await confirmDeletion(
           "Delete Writing?",
-          "This permanently removes the Writing entry, TeX source, PDF, and its local directory."
+          `This permanently removes the Writing entry, TeX source, PDF, and its ${isCloudEditor ? "private cloud draft" : "local directory"}.`
         ))) return;
 
         setWritingEditorBusy(true);
@@ -2887,7 +2919,7 @@
         try {
           const result = await localWritingRequest("delete", { year, id });
           applyWritingServerData(result);
-          const feedback = operationSyncFeedback(result, "Writing deleted locally.");
+          const feedback = operationSyncFeedback(result, isCloudEditor ? "Writing deleted." : "Writing deleted locally.");
           setWritingAuthoringStatus(feedback.message, feedback.kind);
         } catch (error) {
           setWritingAuthoringStatus(error.message || "The Writing entry could not be deleted.", "error");
@@ -3187,7 +3219,7 @@
             ? `Monthly note saved, but ${cleanupFailures.length} old report image could not be removed.`
             : (result.status === "unchanged"
               ? "No monthly note changes to save."
-              : (result.status === "cleared" ? "Monthly note cleared." : "Monthly note saved locally.")),
+              : (result.status === "cleared" ? "Monthly note cleared." : (isCloudEditor ? "Monthly note saved." : "Monthly note saved locally."))),
           cleanupFailures.length > 0 ? "error" : "status");
           setAuthoringStatus(feedback.message, feedback.kind);
           completed = true;
@@ -3339,7 +3371,9 @@
             ? `Journal saved, but ${cleanupFailures.length} old image file could not be removed.`
             : (result.status === "unchanged"
               ? "No Journal changes to save."
-              : (result.status === "updated" ? "Journal updated locally." : "Journal published locally.")),
+              : (result.status === "updated"
+                ? (isCloudEditor ? "Journal updated." : "Journal updated locally.")
+                : (isCloudEditor ? "Journal published." : "Journal published locally."))),
           cleanupFailures.length > 0 ? "error" : "status");
           setAuthoringStatus(feedback.message, feedback.kind);
           completed = true;
@@ -3357,7 +3391,7 @@
         const entry = previousEntries.find((candidate) => candidate.id === id);
         if (!entry || !(await confirmDeletion(
           "Delete Journal?",
-          "This permanently removes the Journal entry and its images from the local site folder."
+          `This permanently removes the Journal entry and its images from the ${isCloudEditor ? "published site" : "local site folder"}.`
         ))) return;
 
         setAuthoringBusy(true);
@@ -3373,7 +3407,7 @@
           applyJournalData(year, nextEntries, nextYears, "replace");
           const feedback = operationSyncFeedback(result, cleanupFailures.length > 0
             ? `Journal deleted, but ${cleanupFailures.length} image file could not be removed.`
-            : "Journal deleted locally.",
+            : (isCloudEditor ? "Journal deleted." : "Journal deleted locally."),
           cleanupFailures.length > 0 ? "error" : "status");
           setAuthoringStatus(feedback.message, feedback.kind);
         } catch (error) {
