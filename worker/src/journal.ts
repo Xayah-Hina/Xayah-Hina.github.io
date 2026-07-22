@@ -143,7 +143,7 @@ function parseUploads(value: unknown): Map<string, Upload> {
     if (!bytes.length || bytes.length > 32 * 1024 * 1024) throw new HttpError(400, "Each image must be between 1 byte and 32 MiB.");
     const valid = (
       (type === "image/jpeg" && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff)
-      || (type === "image/png" && new TextDecoder().decode(bytes.subarray(1, 4)) === "PNG")
+      || (type === "image/png" && bytes[0] === 0x89 && new TextDecoder().decode(bytes.subarray(1, 4)) === "PNG")
       || (type === "image/webp" && new TextDecoder().decode(bytes.subarray(0, 4)) === "RIFF" && new TextDecoder().decode(bytes.subarray(8, 12)) === "WEBP")
       || (type === "image/gif" && ["GIF87a", "GIF89a"].includes(new TextDecoder().decode(bytes.subarray(0, 6))))
       || (type === "image/avif" && new TextDecoder().decode(bytes.subarray(4, 8)) === "ftyp" && ["avif", "avis"].includes(new TextDecoder().decode(bytes.subarray(8, 12))))
@@ -223,6 +223,7 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
   let nextIndex = 1;
   const images: JournalImage[] = [];
   const newKeys: string[] = [];
+  const pendingUploads: Array<{ objectKey: string; upload: Upload }> = [];
   for (const raw of payload.images) {
     const spec = asRecord(raw, "A Journal image descriptor is invalid.");
     const kind = spec.kind;
@@ -243,17 +244,23 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
     usedIndices.add(nextIndex);
     nextIndex += 1;
     const objectKey = `published/journals/${year}/${name}`;
-    await env.CONTENT.put(objectKey, upload.bytes, { httpMetadata: { contentType: upload.type } });
-    newKeys.push(objectKey);
+    pendingUploads.push({ objectKey, upload });
     images.push({ src: `${env.MEDIA_ORIGIN}/journals/${year}/${name}`, alt });
   }
   if (usedUploads.size !== uploads.size) {
-    await env.CONTENT.delete(newKeys);
     throw new HttpError(400, "The request contains an unused image upload.");
   }
   if (!content && images.length === 0) {
-    await env.CONTENT.delete(newKeys);
     throw new HttpError(400, "Add content or at least one image.");
+  }
+  try {
+    for (const { objectKey, upload } of pendingUploads) {
+      await env.CONTENT.put(objectKey, upload.bytes, { httpMetadata: { contentType: upload.type } });
+      newKeys.push(objectKey);
+    }
+  } catch (error) {
+    await env.CONTENT.delete(newKeys);
+    throw error;
   }
 
   const candidate: JournalEntry = { id, publishedAt, content, images, relatedWriting };

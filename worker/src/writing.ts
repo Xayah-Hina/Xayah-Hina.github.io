@@ -11,7 +11,7 @@ import {
   putBuild,
   putDraft,
 } from "./storage";
-import type { BuildStatus, Env, SyncStatus, WritingDraft, WritingEntry } from "./types";
+import type { BuildStatus, Env, FileChange, SyncStatus, WritingDraft, WritingEntry } from "./types";
 import {
   asRecord,
   HttpError,
@@ -307,7 +307,7 @@ export async function deleteWriting(env: Env, payload: Record<string, unknown>) 
     const nextEntries = entries.filter((entry) => entry.id !== id);
     const nextYears = nextEntries.length > 0 ? years : years.filter((value) => value !== year);
     const directoryPaths = await listPaths(env, `writing/${id}/`);
-    const changes = directoryPaths.map((path) => ({ path, content: null as null }));
+    const changes: FileChange[] = directoryPaths.map((path) => ({ path, content: null }));
     changes.push({ path: `writing/${year}.js`, content: nextEntries.length ? moduleSource(nextEntries) : null });
     if (!nextEntries.length) changes.push({ path: "writing/catalog.js", content: moduleSource({ years: nextYears.map(Number) }) });
     await commitFiles(env, `Writing: delete ${id}`, changes);

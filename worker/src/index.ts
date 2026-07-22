@@ -120,15 +120,16 @@ async function publicMedia(request: Request, env: Env, url: URL): Promise<Respon
   }
   if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "Published media is read-only.");
   if (!/^\/(?:journals|monthly)\/\d{4}\/[A-Za-z0-9._-]+$/.test(url.pathname)) throw new HttpError(404, "Published media was not found.");
-  const object = await env.CONTENT.get(`published${url.pathname}`, request.method === "HEAD" ? { onlyIf: request.headers } : { onlyIf: request.headers });
+  const key = `published${url.pathname}`;
+  const object = request.method === "HEAD" ? await env.CONTENT.head(key) : await env.CONTENT.get(key);
   if (!object) throw new HttpError(404, "Published media was not found.");
-  if (!object.body) return new Response(null, { status: 304, headers: { ETag: object.httpEtag } });
   const headers = new Headers();
   object.writeHttpMetadata(headers);
   headers.set("ETag", object.httpEtag);
   headers.set("Cache-Control", "public, max-age=31536000, immutable");
   headers.set("X-Content-Type-Options", "nosniff");
-  return new Response(request.method === "HEAD" ? null : object.body, { headers });
+  const body = request.method === "HEAD" ? null : (object as R2ObjectBody).body;
+  return new Response(request.method === "HEAD" ? null : body, { headers });
 }
 
 export default {
