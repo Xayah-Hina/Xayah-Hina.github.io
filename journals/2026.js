@@ -349,7 +349,7 @@ export default [
     "content": "这是一条新的日记\n\nHello 小睦~",
     "images": [
       {
-        "src": "journals/images/2026/20260715-075446-98f1-01.png",
+        "src": "https://media.xayah.me/journals/2026/20260715-075446-98f1-01.png",
         "alt": "若叶睦"
       }
     ],

@@ -168,13 +168,6 @@ function mediaKey(env: Env, src: string): string | null {
   return `published${url.pathname}`;
 }
 
-function legacyImagePath(src: string, kind: "journal" | "monthly"): string | null {
-  const pattern = kind === "journal"
-    ? /^journals\/images\/\d{4}\/[A-Za-z0-9._-]+$/
-    : /^journals\/monthly\/images\/\d{4}\/[A-Za-z0-9._-]+$/;
-  return pattern.test(src) ? src : null;
-}
-
 function withoutUpdatedAt<T extends { updatedAt?: string }>(value: T): Omit<T, "updatedAt"> {
   const clone = structuredClone(value) as T;
   delete clone.updatedAt;
@@ -282,10 +275,6 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
     { path: "journals/catalog.js", content: moduleSource({ years: nextYears.map(Number) }) },
   ];
   if (!years.includes(year)) changes.push({ path: `journals/monthly/${year}.js`, content: moduleSource({}) });
-  for (const src of removed) {
-    const legacy = legacyImagePath(src, "journal");
-    if (legacy) changes.push({ path: legacy, content: null });
-  }
   try {
     await commitFiles(env, `${original ? "Journal: update" : "Journal: publish"} ${id}`, changes);
   } catch (error) {
@@ -317,10 +306,6 @@ export async function deleteJournal(env: Env, payload: Record<string, unknown>) 
     { path: `journals/${year}.js`, content: entries.length ? moduleSource(entries) : null },
     { path: "journals/catalog.js", content: moduleSource({ years: nextYears.map(Number) }) },
   ];
-  for (const image of original.images) {
-    const legacy = legacyImagePath(image.src, "journal");
-    if (legacy) changes.push({ path: legacy, content: null });
-  }
   await commitFiles(env, `Journal: delete ${id}`, changes);
   const cleanupFailures = await cleanupMedia(env, original.images.map((image) => image.src));
   return {
@@ -388,10 +373,6 @@ export async function saveMonthlyNote(env: Env, payload: Record<string, unknown>
   }
   const changes: FileChange[] = [{ path: `journals/monthly/${year}.js`, content: moduleSource(notes) }];
   const oldSrc = original?.reportImage?.src;
-  if (oldSrc && oldSrc !== reportImage?.src) {
-    const legacy = legacyImagePath(oldSrc, "monthly");
-    if (legacy) changes.push({ path: legacy, content: null });
-  }
   try {
     await commitFiles(env, `Journal: update monthly note ${month}`, changes);
   } catch (error) {

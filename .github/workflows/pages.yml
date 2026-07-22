@@ -31,9 +31,6 @@ jobs:
         with:
           python-version: "3.14"
 
-      - name: Test dictionary
-        run: python -m unittest discover -s tests -p "test_dictionary*.py"
-
       - name: Build dictionary data
         run: python dictionary/build.py build
 

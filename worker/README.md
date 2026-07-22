@@ -21,6 +21,9 @@ Set these Worker secrets with `wrangler secret put`:
 
 - `GITHUB_TOKEN`: repository-scoped fine-grained token with Contents and Actions read/write access.
 - `BUILD_CALLBACK_TOKEN`: random shared secret also stored as the GitHub Actions secret `WRITING_BUILD_TOKEN`.
+
+Set these Worker variables in the Cloudflare dashboard:
+
 - `ACCESS_TEAM_DOMAIN`: full `https://<team>.cloudflareaccess.com` URL.
 - `ACCESS_AUD`: the Access application's Audience tag.
 

@@ -21,33 +21,26 @@ import {
 async function editorStatus(env: Env): Promise<Response> {
   let journalError: string | null = null;
   let writingError: string | null = null;
-  let journalValues: string[] = [];
-  let writingValues: string[] = [];
   let writingPending = false;
   try {
-    journalValues = await journalYears(env);
+    await journalYears(env);
   } catch (error) {
     journalError = error instanceof Error ? error.message : "Journal data could not be loaded.";
   }
   try {
     const status = await writingStatus(env);
-    writingValues = status.years;
     writingPending = status.pending;
   } catch (error) {
     writingError = error instanceof Error ? error.message : "Writing data could not be loaded.";
   }
   return jsonResponse({
-    authoring: true,
-    token: "cloudflare-access",
-    journalYears: journalValues,
-    writingYears: writingValues,
     journalError,
     writingError,
-    tectonicVersion: "Tectonic 0.16.9 via GitHub Actions",
-    autoPublish: {
+    compiler: "Tectonic 0.16.9 via GitHub Actions",
+    publishing: {
       enabled: true,
       state: "ready",
-      message: "Remote publishing is ready.",
+      message: "Cloud publishing is ready.",
       branch: env.GITHUB_BRANCH,
       writingPending,
     },
@@ -55,7 +48,7 @@ async function editorStatus(env: Env): Promise<Response> {
 }
 
 async function editorApi(request: Request, env: Env, url: URL): Promise<Response> {
-  if (request.method === "GET" && url.pathname === "/api/local/status") return editorStatus(env);
+  if (request.method === "GET" && url.pathname === "/api/editor/status") return editorStatus(env);
   const preview = url.pathname.match(/^\/api\/writing\/preview\/(\d{8}-\d{6})\.pdf$/);
   if (request.method === "GET" && preview) return previewWriting(env, preview[1]);
   if (request.method !== "POST") throw new HttpError(405, "This Editor endpoint requires POST.");

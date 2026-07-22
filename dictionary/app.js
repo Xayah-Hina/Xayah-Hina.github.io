@@ -19,19 +19,8 @@ const elements = {
   wordListCount: byId("word-list-count"),
   wordList: byId("word-list"),
   entry: byId("dictionary-entry"),
-  authoring: byId("local-authoring"),
-  localStatus: byId("local-status"),
-  publishButton: byId("publish-button"),
-  editor: byId("personal-editor"),
-  personalForm: byId("personal-form"),
-  editorTitle: byId("editor-title"),
-  editorMessage: byId("editor-message"),
-  examplesEditorList: byId("examples-editor-list"),
-  exampleTemplate: byId("example-editor-template"),
 };
 
-const loopbackHosts = new Set(["localhost", "127.0.0.1", "[::1]"]);
-const isLoopback = location.protocol === "http:" && loopbackHosts.has(location.hostname);
 const SUGGESTION_LIMIT = 16;
 const LOCATOR_PREFIX_LENGTH = 5;
 const RELATION_LABELS = {
@@ -59,10 +48,6 @@ const state = {
   suggestionEntries: [],
   activeSuggestion: -1,
   navigationVersion: 0,
-  apiToken: "",
-  authoring: false,
-  editorBaseline: "",
-  editorBusy: false,
 };
 
 function canonicalKey(value) {
@@ -387,12 +372,6 @@ function renderPersonal(parent, personal) {
   const section = makeElement("section", "entry-section personal-section");
   const heading = makeElement("div", "personal-heading");
   heading.append(makeElement("h3", "", "Personal Knowledge"));
-  if (state.authoring) {
-    const edit = makeElement("button", "text-button", "Edit");
-    edit.type = "button";
-    edit.dataset.action = "edit-personal";
-    heading.append(edit);
-  }
   section.append(heading);
   if (!personal) {
     section.append(makeElement("p", "unavailable", "No personal knowledge has been published for this entry."));
@@ -573,175 +552,6 @@ function refreshActiveView() {
   updateUrl({ prefix: state.prefix, word: state.currentEntry?.word || state.oovWord }, false);
 }
 
-function editorSnapshot() {
-  const form = elements.personalForm.elements;
-  const examples = [...elements.examplesEditorList.querySelectorAll(".example-editor-item")].map((item) => {
-    const value = (field) => item.querySelector(`[data-example-field="${field}"]`).value;
-    return {
-      id: value("id"),
-      sentence: value("sentence").trim(),
-      translation: value("translation").trim(),
-      source: value("source").trim(),
-      comment: value("comment").trim(),
-    };
-  }).filter((example) => Object.entries(example).some(([key, value]) => key !== "id" && value));
-  return {
-    summary: form.summary.value.trim(),
-    usageNotes: form.usageNotes.value.trim(),
-    confusionNotes: form.confusionNotes.value.trim(),
-    examples,
-  };
-}
-
-function serializedEditor() {
-  return JSON.stringify(editorSnapshot());
-}
-
-function renumberExamples() {
-  [...elements.examplesEditorList.querySelectorAll(".example-editor-item")].forEach((item, index) => {
-    item.querySelector("[data-example-number]").textContent = `Example ${index + 1}`;
-  });
-}
-
-function addExampleEditor(example = {}) {
-  const fragment = elements.exampleTemplate.content.cloneNode(true);
-  const item = fragment.querySelector(".example-editor-item");
-  for (const field of ["id", "sentence", "translation", "source", "comment"]) {
-    item.querySelector(`[data-example-field="${field}"]`).value = example[field] || "";
-  }
-  elements.examplesEditorList.append(fragment);
-  renumberExamples();
-}
-
-async function localRequest(path, payload) {
-  const response = await fetch(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Local-Token": state.apiToken },
-    body: JSON.stringify(payload),
-  });
-  let result;
-  try {
-    result = await response.json();
-  } catch {
-    throw new Error("The local editor returned an invalid response.");
-  }
-  if (!response.ok) throw new Error(result.error || "The local dictionary request failed.");
-  return result;
-}
-
-function updateLocalStatus(sync, fallback = "Local editing is enabled.") {
-  if (!sync?.enabled) {
-    elements.localStatus.textContent = fallback;
-    elements.publishButton.disabled = true;
-    return;
-  }
-  const pending = Boolean(sync.dictionaryPending);
-  elements.localStatus.textContent = pending ? "Saved locally · Unpublished changes." : (sync.message || fallback);
-  elements.publishButton.disabled = !pending;
-}
-
-async function openEditor() {
-  if (!state.authoring || !state.currentEntry || state.editorBusy) return;
-  elements.editorMessage.textContent = "Loading…";
-  try {
-    const result = await localRequest("/api/dictionary/open", { entryId: state.currentEntry.entryId });
-    const personal = result.personal;
-    const form = elements.personalForm.elements;
-    form.summary.value = personal.summary || "";
-    form.usageNotes.value = personal.usageNotes || "";
-    form.confusionNotes.value = personal.confusionNotes || "";
-    clear(elements.examplesEditorList);
-    for (const example of personal.examples || []) addExampleEditor(example);
-    elements.editorTitle.textContent = `Edit ${state.currentEntry.word}`;
-    elements.editorMessage.textContent = "";
-    state.editorBaseline = serializedEditor();
-    elements.editor.showModal();
-    form.summary.focus();
-  } catch (error) {
-    const message = error.message || "The personal entry could not be opened.";
-    elements.localStatus.textContent = message;
-    setPageStatus(message, true);
-  }
-}
-
-function editorIsDirty() {
-  return elements.editor.open && serializedEditor() !== state.editorBaseline;
-}
-
-function closeEditor() {
-  if (state.editorBusy) return;
-  if (editorIsDirty() && !window.confirm("Discard unsaved Personal Knowledge changes?")) return;
-  elements.editor.close();
-}
-
-function setEditorBusy(busy) {
-  state.editorBusy = busy;
-  for (const control of elements.personalForm.querySelectorAll("button, input, textarea")) control.disabled = busy;
-}
-
-async function saveEditor(event) {
-  event.preventDefault();
-  if (!state.currentEntry || state.editorBusy) return;
-  const personal = editorSnapshot();
-  const missingSentence = personal.examples.some((example) => !example.sentence);
-  if (missingSentence) {
-    elements.editorMessage.textContent = "Every non-empty example needs an English sentence.";
-    return;
-  }
-  setEditorBusy(true);
-  elements.editorMessage.textContent = "Saving…";
-  try {
-    const result = await localRequest("/api/dictionary/save", { entryId: state.currentEntry.entryId, personal });
-    state.personalCache.set(state.currentEntry.entryId, result.personalHasContent ? result.personal : null);
-    elements.editor.close();
-    renderEntry(state.currentEntry, state.personalCache.get(state.currentEntry.entryId));
-    updateLocalStatus(result.sync, result.status === "unchanged" ? "No local changes were needed." : "Saved locally.");
-  } catch (error) {
-    elements.editorMessage.textContent = error.message || "The personal entry could not be saved.";
-  } finally {
-    setEditorBusy(false);
-  }
-}
-
-async function publishPersonal() {
-  if (!state.authoring || state.editorBusy) return;
-  elements.publishButton.disabled = true;
-  elements.localStatus.textContent = "Publishing…";
-  try {
-    const result = await localRequest("/api/dictionary/publish", {});
-    updateLocalStatus(result.sync, "Personal Knowledge is published.");
-  } catch (error) {
-    elements.localStatus.textContent = error.message || "Personal Knowledge could not be published.";
-    elements.publishButton.disabled = false;
-  }
-}
-
-async function setupLocalAuthoring() {
-  if (!isLoopback) return;
-  elements.authoring.hidden = false;
-  try {
-    const response = await fetch("/api/local/status", { cache: "no-store" });
-    if (!response.ok) throw new Error("Start the site with serve-local.cmd to edit.");
-    let result;
-    try {
-      result = await response.json();
-    } catch {
-      throw new Error("Start the site with serve-local.cmd to edit.");
-    }
-    if (!response.ok || !result.authoring || !result.token || result.dictionaryError) {
-      throw new Error(result.dictionaryError || result.error || "The local dictionary editor is unavailable.");
-    }
-    state.apiToken = result.token;
-    state.authoring = true;
-    updateLocalStatus(result.autoPublish);
-    if (state.currentEntry) renderEntry(state.currentEntry, state.personalCache.get(state.currentEntry.entryId) || null);
-  } catch (error) {
-    state.authoring = false;
-    elements.localStatus.textContent = error.message || "Start the site with serve-local.cmd to edit.";
-    elements.publishButton.disabled = true;
-  }
-}
-
 function bindEvents() {
   elements.searchForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -807,38 +617,8 @@ function bindEvents() {
   elements.entry.addEventListener("click", (event) => {
     const target = event.target.closest("[data-entry-id]");
     if (target) showWord(state.byEntryId.get(target.dataset.entryId));
-    if (event.target.closest('[data-action="edit-personal"]')) openEditor();
   });
-  elements.personalForm.addEventListener("submit", saveEditor);
-  elements.personalForm.addEventListener("click", (event) => {
-    const action = event.target.closest("[data-editor-action]")?.dataset.editorAction;
-    if (action === "close") closeEditor();
-    if (action === "add-example") {
-      addExampleEditor();
-      elements.examplesEditorList.lastElementChild.querySelector('[data-example-field="sentence"]').focus();
-    }
-    if (event.target.closest('[data-example-action="remove"]')) {
-      event.target.closest(".example-editor-item").remove();
-      renumberExamples();
-    }
-  });
-  elements.personalForm.addEventListener("keydown", (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
-      event.preventDefault();
-      elements.personalForm.requestSubmit();
-    }
-  });
-  elements.editor.addEventListener("cancel", (event) => {
-    event.preventDefault();
-    closeEditor();
-  });
-  elements.publishButton.addEventListener("click", publishPersonal);
   window.addEventListener("popstate", () => applyLocation(false));
-  window.addEventListener("beforeunload", (event) => {
-    if (!editorIsDirty()) return;
-    event.preventDefault();
-    event.returnValue = "";
-  });
 }
 
 async function initialize() {
@@ -858,7 +638,6 @@ async function initialize() {
   elements.workspace.hidden = false;
   setPageStatus("");
   applyLocation(false);
-  await setupLocalAuthoring();
 }
 
 initialize().catch((error) => {
