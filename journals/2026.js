@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260723-171024-792e",
+    "publishedAt": "2026-07-23T17:10:24+08:00",
+    "content": "第N + 1次开始刷Leetcode。Leetcode真的会刷上瘾……",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260723-051526-822a",
     "publishedAt": "2026-07-23T05:15:26+08:00",
     "content": "想个办法有个页面专门放刷leetcode的记录",
