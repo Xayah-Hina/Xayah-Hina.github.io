@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260723-201010-5ece",
+    "publishedAt": "2026-07-23T20:10:10+08:00",
+    "content": "TODO\n梁文峰的投资者交流会报告需要抽时间看一下，有必要写个心得报告。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260723-171024-792e",
     "publishedAt": "2026-07-23T17:10:24+08:00",
     "content": "第N + 1次开始刷Leetcode。Leetcode真的会刷上瘾……",
