@@ -19,8 +19,18 @@ const elements = {
   wordListCount: byId("word-list-count"),
   wordList: byId("word-list"),
   entry: byId("dictionary-entry"),
+  authoring: byId("cloud-authoring"),
+  cloudStatus: byId("cloud-status"),
+  publishButton: byId("publish-button"),
+  editor: byId("personal-editor"),
+  personalForm: byId("personal-form"),
+  editorTitle: byId("editor-title"),
+  editorMessage: byId("editor-message"),
+  examplesEditorList: byId("examples-editor-list"),
+  exampleTemplate: byId("example-editor-template"),
 };
 
+const isCloudEditor = location.origin === "https://editor.xayah.me";
 const SUGGESTION_LIMIT = 16;
 const LOCATOR_PREFIX_LENGTH = 5;
 const RELATION_LABELS = {
@@ -48,6 +58,11 @@ const state = {
   suggestionEntries: [],
   activeSuggestion: -1,
   navigationVersion: 0,
+  authoring: false,
+  editorBaseline: "",
+  editorBusy: false,
+  dictionaryPendingCount: 0,
+  unpublishedEntryIds: new Set(),
 };
 
 function canonicalKey(value) {
@@ -372,6 +387,17 @@ function renderPersonal(parent, personal) {
   const section = makeElement("section", "entry-section personal-section");
   const heading = makeElement("div", "personal-heading");
   heading.append(makeElement("h3", "", "Personal Knowledge"));
+  if (state.authoring) {
+    const actions = makeElement("div", "personal-actions");
+    if (state.unpublishedEntryIds.has(state.currentEntry?.entryId)) {
+      actions.append(makeElement("span", "draft-badge", "Private draft"));
+    }
+    const edit = makeElement("button", "text-button", "Edit");
+    edit.type = "button";
+    edit.dataset.action = "edit-personal";
+    actions.append(edit);
+    heading.append(actions);
+  }
   section.append(heading);
   if (!personal) {
     section.append(makeElement("p", "unavailable", "No personal knowledge has been published for this entry."));
@@ -552,6 +578,214 @@ function refreshActiveView() {
   updateUrl({ prefix: state.prefix, word: state.currentEntry?.word || state.oovWord }, false);
 }
 
+function editorSnapshot() {
+  const form = elements.personalForm.elements;
+  const examples = [...elements.examplesEditorList.querySelectorAll(".example-editor-item")].map((item) => {
+    const value = (field) => item.querySelector(`[data-example-field="${field}"]`).value;
+    return {
+      id: value("id"),
+      sentence: value("sentence").trim(),
+      translation: value("translation").trim(),
+      source: value("source").trim(),
+      comment: value("comment").trim(),
+    };
+  }).filter((example) => Object.entries(example).some(([key, value]) => key !== "id" && value));
+  return {
+    summary: form.summary.value.trim(),
+    usageNotes: form.usageNotes.value.trim(),
+    confusionNotes: form.confusionNotes.value.trim(),
+    examples,
+  };
+}
+
+function serializedEditor() {
+  return JSON.stringify(editorSnapshot());
+}
+
+function renumberExamples() {
+  [...elements.examplesEditorList.querySelectorAll(".example-editor-item")].forEach((item, index) => {
+    item.querySelector("[data-example-number]").textContent = `Example ${index + 1}`;
+  });
+}
+
+function addExampleEditor(example = {}) {
+  const fragment = elements.exampleTemplate.content.cloneNode(true);
+  const item = fragment.querySelector(".example-editor-item");
+  for (const field of ["id", "sentence", "translation", "source", "comment"]) {
+    item.querySelector(`[data-example-field="${field}"]`).value = example[field] || "";
+  }
+  elements.examplesEditorList.append(fragment);
+  renumberExamples();
+}
+
+async function cloudRequest(path, payload) {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    throw new Error("The cloud Dictionary editor returned an invalid response.");
+  }
+  if (!response.ok) throw new Error(result.error || "The cloud Dictionary request failed.");
+  return result;
+}
+
+function updateCloudStatus(sync, fallback = "Cloud Dictionary editing is ready.") {
+  if (!sync?.enabled) {
+    elements.cloudStatus.textContent = fallback;
+    elements.publishButton.disabled = true;
+    return;
+  }
+  const count = Number(sync.dictionaryPendingCount);
+  if (Number.isInteger(count) && count >= 0) state.dictionaryPendingCount = count;
+  const pending = state.dictionaryPendingCount;
+  elements.cloudStatus.textContent = pending
+    ? `${pending} private ${pending === 1 ? "draft" : "drafts"} waiting to be published.`
+    : (sync.message || fallback);
+  elements.publishButton.disabled = state.editorBusy || pending === 0;
+}
+
+function updateEntryDraftState(entryId, unpublished) {
+  if (unpublished) state.unpublishedEntryIds.add(entryId);
+  else state.unpublishedEntryIds.delete(entryId);
+}
+
+function applyDictionaryResult(result) {
+  const personal = result.personalHasContent ? result.personal : null;
+  state.personalCache.set(result.entryId, personal);
+  updateEntryDraftState(result.entryId, Boolean(result.unpublished));
+  updateCloudStatus(result.sync);
+  if (state.currentEntry?.entryId === result.entryId) renderEntry(state.currentEntry, personal);
+}
+
+function setEditorBusy(busy) {
+  state.editorBusy = busy;
+  for (const control of elements.personalForm.querySelectorAll("button, input, textarea")) control.disabled = busy;
+  elements.publishButton.disabled = busy || state.dictionaryPendingCount === 0;
+}
+
+async function openEditor() {
+  if (!state.authoring || !state.currentEntry || !state.selectedKey || state.editorBusy) return;
+  const selectedKey = state.selectedKey;
+  setEditorBusy(true);
+  elements.cloudStatus.textContent = `Loading ${state.currentEntry.word}…`;
+  try {
+    const result = await cloudRequest("/api/dictionary/open", {
+      entryId: selectedKey.entryId,
+      shard: selectedKey.shard,
+    });
+    if (state.selectedKey?.entryId !== selectedKey.entryId) return;
+    applyDictionaryResult(result);
+    const personal = result.personal;
+    const form = elements.personalForm.elements;
+    form.summary.value = personal.summary || "";
+    form.usageNotes.value = personal.usageNotes || "";
+    form.confusionNotes.value = personal.confusionNotes || "";
+    clear(elements.examplesEditorList);
+    for (const example of personal.examples || []) addExampleEditor(example);
+    elements.editorTitle.textContent = `Edit ${state.currentEntry.word}`;
+    elements.editorMessage.textContent = result.unpublished ? "Loaded private draft from R2." : "";
+    state.editorBaseline = serializedEditor();
+    setEditorBusy(false);
+    elements.editor.showModal();
+    form.summary.focus();
+  } catch (error) {
+    elements.cloudStatus.textContent = error.message || "Personal Knowledge could not be opened.";
+    setPageStatus(error.message || "Personal Knowledge could not be opened.", true);
+  } finally {
+    if (!elements.editor.open) setEditorBusy(false);
+  }
+}
+
+function editorIsDirty() {
+  return elements.editor.open && serializedEditor() !== state.editorBaseline;
+}
+
+function closeEditor() {
+  if (state.editorBusy) return;
+  if (editorIsDirty() && !window.confirm("Discard unsaved Personal Knowledge changes?")) return;
+  elements.editor.close();
+}
+
+async function saveEditor(event) {
+  event.preventDefault();
+  if (!state.currentEntry || !state.selectedKey || state.editorBusy) return;
+  const selectedKey = state.selectedKey;
+  const personal = editorSnapshot();
+  if (personal.examples.some((example) => !example.sentence)) {
+    elements.editorMessage.textContent = "Every non-empty example needs an English sentence.";
+    return;
+  }
+  setEditorBusy(true);
+  elements.editorMessage.textContent = "Saving private draft…";
+  try {
+    const result = await cloudRequest("/api/dictionary/save", {
+      entryId: selectedKey.entryId,
+      shard: selectedKey.shard,
+      personal,
+    });
+    applyDictionaryResult(result);
+    state.editorBaseline = JSON.stringify({
+      summary: result.personal.summary || "",
+      usageNotes: result.personal.usageNotes || "",
+      confusionNotes: result.personal.confusionNotes || "",
+      examples: (result.personal.examples || []).map(({ id, sentence, translation, source, comment }) => ({
+        id, sentence, translation, source, comment,
+      })),
+    });
+    elements.editor.close();
+  } catch (error) {
+    elements.editorMessage.textContent = error.message || "Personal Knowledge could not be saved.";
+  } finally {
+    setEditorBusy(false);
+  }
+}
+
+async function publishPersonal() {
+  if (!state.authoring || state.editorBusy || state.dictionaryPendingCount === 0) return;
+  setEditorBusy(true);
+  elements.cloudStatus.textContent = "Publishing Personal Knowledge to GitHub…";
+  try {
+    const result = await cloudRequest("/api/dictionary/publish", {});
+    for (const entryId of result.publishedEntryIds || []) state.unpublishedEntryIds.delete(entryId);
+    updateCloudStatus(result.sync, "Personal Knowledge is published.");
+    if (state.currentEntry) {
+      renderEntry(state.currentEntry, state.personalCache.get(state.currentEntry.entryId) || null);
+    }
+  } catch (error) {
+    elements.cloudStatus.textContent = error.message || "Personal Knowledge could not be published.";
+  } finally {
+    setEditorBusy(false);
+  }
+}
+
+async function setupCloudAuthoring() {
+  if (!isCloudEditor) return;
+  elements.authoring.hidden = false;
+  try {
+    const response = await fetch("/api/editor/status", { cache: "no-store" });
+    let result;
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error("The cloud Editor returned an invalid status response.");
+    }
+    if (!response.ok) throw new Error(result.error || "The cloud Editor is unavailable.");
+    if (result.dictionaryError) throw new Error(result.dictionaryError);
+    state.authoring = true;
+    updateCloudStatus(result.publishing);
+    if (state.currentEntry) renderEntry(state.currentEntry, state.personalCache.get(state.currentEntry.entryId) || null);
+  } catch (error) {
+    state.authoring = false;
+    elements.cloudStatus.textContent = error.message || "The cloud Dictionary editor is unavailable.";
+    elements.publishButton.disabled = true;
+  }
+}
+
 function bindEvents() {
   elements.searchForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -617,8 +851,38 @@ function bindEvents() {
   elements.entry.addEventListener("click", (event) => {
     const target = event.target.closest("[data-entry-id]");
     if (target) showWord(state.byEntryId.get(target.dataset.entryId));
+    if (event.target.closest('[data-action="edit-personal"]')) openEditor();
   });
+  elements.personalForm.addEventListener("submit", saveEditor);
+  elements.personalForm.addEventListener("click", (event) => {
+    const action = event.target.closest("[data-editor-action]")?.dataset.editorAction;
+    if (action === "close") closeEditor();
+    if (action === "add-example") {
+      addExampleEditor();
+      elements.examplesEditorList.lastElementChild.querySelector('[data-example-field="sentence"]').focus();
+    }
+    if (event.target.closest('[data-example-action="remove"]')) {
+      event.target.closest(".example-editor-item").remove();
+      renumberExamples();
+    }
+  });
+  elements.personalForm.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") {
+      event.preventDefault();
+      elements.personalForm.requestSubmit();
+    }
+  });
+  elements.editor.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeEditor();
+  });
+  elements.publishButton.addEventListener("click", publishPersonal);
   window.addEventListener("popstate", () => applyLocation(false));
+  window.addEventListener("beforeunload", (event) => {
+    if (!editorIsDirty()) return;
+    event.preventDefault();
+    event.returnValue = "";
+  });
 }
 
 async function initialize() {
@@ -637,6 +901,7 @@ async function initialize() {
   populateBrowseViews();
   elements.workspace.hidden = false;
   setPageStatus("");
+  await setupCloudAuthoring();
   applyLocation(false);
 }
 

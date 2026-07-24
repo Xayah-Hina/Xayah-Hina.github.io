@@ -38,6 +38,14 @@
       </form>
     </header>
 
+    <section id="cloud-authoring" class="cloud-authoring" hidden aria-live="polite">
+      <div>
+        <strong>Cloud editing</strong>
+        <span id="cloud-status">Connecting…</span>
+      </div>
+      <button id="publish-button" type="button" disabled>Publish personal knowledge</button>
+    </section>
+
     <p id="page-status" class="page-status" role="status">Loading dictionary data…</p>
 
     <div id="dictionary-workspace" class="dictionary-workspace" hidden>
@@ -69,6 +77,74 @@
   <footer class="site-footer">
     <p>Base definitions: <a href="https://github.com/skywind3000/ECDICT">ECDICT</a> · <a href="SOURCES.md">Data provenance</a></p>
   </footer>
+
+  <dialog id="personal-editor" class="editor-dialog" aria-labelledby="editor-title">
+    <form id="personal-form" class="editor-form" novalidate>
+      <header class="editor-header">
+        <div>
+          <p class="panel-kicker">Personal Knowledge</p>
+          <h2 id="editor-title">Edit entry</h2>
+        </div>
+        <button class="icon-button" type="button" data-editor-action="close" aria-label="Close editor">×</button>
+      </header>
+      <div class="editor-body">
+        <label class="field-group">
+          <span>Chinese summary</span>
+          <textarea name="summary" rows="3" placeholder="用自己的中文总结这个词"></textarea>
+        </label>
+        <label class="field-group">
+          <span>Usage notes</span>
+          <textarea name="usageNotes" rows="4" placeholder="记录语境、搭配或使用心得"></textarea>
+        </label>
+        <label class="field-group">
+          <span>Confusion notes</span>
+          <textarea name="confusionNotes" rows="3" placeholder="记录相似词、易错点或辨析"></textarea>
+        </label>
+
+        <section class="examples-editor" aria-labelledby="examples-editor-title">
+          <div class="examples-editor-heading">
+            <h3 id="examples-editor-title">Examples</h3>
+            <button type="button" data-editor-action="add-example">Add example</button>
+          </div>
+          <div id="examples-editor-list" class="examples-editor-list"></div>
+        </section>
+        <p id="editor-message" class="editor-message" role="alert"></p>
+      </div>
+      <div class="editor-actions">
+        <button type="button" data-editor-action="close">Cancel</button>
+        <button class="primary-button" type="submit">Save private draft</button>
+      </div>
+    </form>
+  </dialog>
+
+  <template id="example-editor-template">
+    <fieldset class="example-editor-item">
+      <legend>Example</legend>
+      <input type="hidden" data-example-field="id">
+      <div class="example-editor-toolbar">
+        <span data-example-number>Example</span>
+        <button type="button" data-example-action="remove">Remove</button>
+      </div>
+      <label class="field-group">
+        <span>Sentence</span>
+        <textarea data-example-field="sentence" rows="2" required></textarea>
+      </label>
+      <label class="field-group">
+        <span>Chinese translation</span>
+        <textarea data-example-field="translation" rows="2"></textarea>
+      </label>
+      <div class="example-editor-columns">
+        <label class="field-group">
+          <span>Source</span>
+          <input data-example-field="source" type="text">
+        </label>
+        <label class="field-group">
+          <span>Comment</span>
+          <input data-example-field="comment" type="text">
+        </label>
+      </div>
+    </fieldset>
+  </template>
 
   <script type="module" src="app.js"></script>
 </body>

@@ -1,11 +1,11 @@
 # Cloud Editor Worker
 
-This Worker serves the authenticated editor at `editor.xayah.me`, public immutable media at `media.xayah.me`, and the API used by the existing Journal and Writing UI.
+This Worker serves the authenticated editor at `editor.xayah.me`, public immutable media at `media.xayah.me`, and the API used by the Journal, Writing, and Dictionary authoring UI.
 
 ## Data ownership
 
-- GitHub `master`: published Journal, Monthly Note, and Writing source/metadata.
-- Private R2 bucket: unpublished Writing drafts, Writing preview PDFs, build status, and published site media.
+- GitHub `master`: published Journal, Monthly Note, Writing source/metadata, and Dictionary Personal Knowledge.
+- Private R2 bucket: unpublished Writing and Dictionary drafts, Writing preview PDFs, build status, and published site media.
 - GitHub Actions: asynchronous Tectonic compilation for private Writing previews.
 
 No D1 database is used.

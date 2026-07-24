@@ -1,4 +1,5 @@
 import { verifyAccess } from "./auth";
+import { dictionaryStatus, openDictionary, publishDictionary, saveDictionary } from "./dictionary";
 import { deleteJournal, journalYears, saveJournal, saveMonthlyNote } from "./journal";
 import type { Env } from "./types";
 import { HttpError, jsonResponse, readJsonObject, secureEqual } from "./utils";
@@ -21,7 +22,10 @@ import {
 async function editorStatus(env: Env): Promise<Response> {
   let journalError: string | null = null;
   let writingError: string | null = null;
+  let dictionaryError: string | null = null;
   let writingPending = false;
+  let dictionaryPending = false;
+  let dictionaryPendingCount = 0;
   try {
     await journalYears(env);
   } catch (error) {
@@ -33,9 +37,17 @@ async function editorStatus(env: Env): Promise<Response> {
   } catch (error) {
     writingError = error instanceof Error ? error.message : "Writing data could not be loaded.";
   }
+  try {
+    const status = await dictionaryStatus(env);
+    dictionaryPending = status.pending;
+    dictionaryPendingCount = status.pendingCount;
+  } catch (error) {
+    dictionaryError = error instanceof Error ? error.message : "Dictionary data could not be loaded.";
+  }
   return jsonResponse({
     journalError,
     writingError,
+    dictionaryError,
     compiler: "On-demand Tectonic 0.16.9 via GitHub Actions · PDFs stored in R2",
     publishing: {
       enabled: true,
@@ -43,6 +55,8 @@ async function editorStatus(env: Env): Promise<Response> {
       message: "Cloud publishing is ready.",
       branch: env.GITHUB_BRANCH,
       writingPending,
+      dictionaryPending,
+      dictionaryPendingCount,
     },
   });
 }
@@ -66,6 +80,9 @@ async function editorApi(request: Request, env: Env, url: URL): Promise<Response
     "/api/writing/compile/status": compilationStatus,
     "/api/writing/publish": publishWriting,
     "/api/writing/delete": deleteWriting,
+    "/api/dictionary/open": openDictionary,
+    "/api/dictionary/save": saveDictionary,
+    "/api/dictionary/publish": publishDictionary,
   };
   const action = actions[url.pathname];
   if (!action) throw new HttpError(404, "Unknown Editor endpoint.");
@@ -80,7 +97,13 @@ async function proxyPublicSite(request: Request, env: Env, url: URL): Promise<Re
   const response = await fetch(target, { method: request.method === "HEAD" ? "HEAD" : "GET", headers, redirect: "follow" });
   const resultHeaders = new Headers(response.headers);
   resultHeaders.set("X-Robots-Tag", "noindex, nofollow");
-  if (url.pathname === "/" || url.pathname.endsWith(".html") || url.pathname.startsWith("/writing/") || url.pathname.startsWith("/journals/")) {
+  if (
+    url.pathname === "/"
+    || url.pathname.endsWith(".html")
+    || url.pathname.startsWith("/writing/")
+    || url.pathname.startsWith("/journals/")
+    || url.pathname.startsWith("/dictionary/")
+  ) {
     resultHeaders.set("Cache-Control", "private, no-store");
   }
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers: resultHeaders });
@@ -90,6 +113,9 @@ async function handleEditor(request: Request, env: Env, url: URL): Promise<Respo
   await verifyAccess(request, env);
   if (url.pathname.startsWith("/api/")) return editorApi(request, env, url);
   if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "The Editor only accepts read requests outside its API.");
+  if (url.pathname === "/dictionary") {
+    return Response.redirect(`${env.EDITOR_ORIGIN}/dictionary/${url.search}`, 308);
+  }
   if (url.pathname === "/writing/catalog.js") return editorWritingCatalog(env);
   const year = url.pathname.match(/^\/writing\/(\d{4})\.js$/);
   if (year) return editorWritingYear(env, year[1]);
