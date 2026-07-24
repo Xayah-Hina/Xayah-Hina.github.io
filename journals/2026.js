@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260724-150541-c95b",
+    "publishedAt": "2026-07-24T15:05:41+08:00",
+    "content": "精确是最好的优化器。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260724-125955-0e8e",
     "publishedAt": "2026-07-24T12:59:55+08:00",
     "content": "先一口气刷够50题然后再作下一步打算吧。",
