@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260725-110333-bec2",
+    "publishedAt": "2026-07-25T11:03:33+08:00",
+    "content": "今天看了下Cloudfare后台，发现这个页面国外的访问者比我想象的多啊。是否应该以后完全用英语写呢？考虑一下吧。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260724-150541-c95b",
     "publishedAt": "2026-07-24T15:05:41+08:00",
     "content": "精确是最好的优化器。",
