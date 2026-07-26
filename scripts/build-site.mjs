@@ -101,6 +101,7 @@ function articleHtml(entry, rendered, assets) {
   <meta name="twitter:card" content="summary">
   <link rel="canonical" href="${url}">
   <link rel="icon" href="https://raw.githubusercontent.com/Xayah-Graphics/imagebed/7772e40fee3de8f8ca11134d04ef5f5816b8ef60/Hatsune.Miku.full.1961310.JPG">
+  <link rel="stylesheet" href="/assets/generated/${assetsManifest.typographyCss}">
   <link rel="stylesheet" href="/assets/generated/${assetsManifest.shellCss}">
   <link rel="stylesheet" href="/assets/generated/${assetsManifest.katexCss}">
   <link rel="stylesheet" href="/assets/generated/${assetsManifest.readerCss}">
@@ -162,9 +163,21 @@ await copyTree("journals");
 
 const generatedAssets = path.join(output, "assets", "generated");
 await fs.mkdir(generatedAssets, { recursive: true });
+const fontPackages = [
+  { name: "geist", styles: ["index.css", "wght-italic.css"] },
+  { name: "geist-mono", styles: ["index.css", "wght-italic.css"] },
+  { name: "noto-sans-sc", styles: ["index.css"] },
+  { name: "noto-serif-sc", styles: ["index.css"] },
+];
+const typographyCssSource = Buffer.from((await Promise.all(fontPackages.flatMap(({ name, styles }) => (
+  styles.map(async (style) => {
+    const source = await fs.readFile(path.join(root, "node_modules", "@fontsource-variable", name, style), "utf8");
+    return source.replaceAll("./files/", "./fonts/");
+  })
+)))).join("\n"));
 const shellCssSource = await fs.readFile(path.join(root, "site", "site-shell.css"));
 const readerCssSource = await fs.readFile(path.join(root, "site", "writing-reader.css"));
-  const readerJsSource = await fs.readFile(path.join(root, "site", "writing-reader.js"));
+const readerJsSource = await fs.readFile(path.join(root, "site", "writing-reader.js"));
 const articleAuthoringJsSource = await fs.readFile(path.join(root, "site", "writing-article-authoring.js"));
 const katexCssSource = await fs.readFile(path.join(root, "node_modules", "katex", "dist", "katex.min.css"));
 const authoringJsBundle = await esbuild({
@@ -185,6 +198,7 @@ const authoringJsSource = authoringJsBundle.outputFiles[0]?.contents;
 const authoringCssSource = authoringCssBundle.outputFiles[0]?.contents;
 if (!authoringJsSource || !authoringCssSource) throw new Error("Writing authoring assets could not be bundled.");
 const assetsManifest = {
+  typographyCss: `typography.${hash(typographyCssSource)}.css`,
   shellCss: `site-shell.${hash(shellCssSource)}.css`,
   readerCss: `writing-reader.${hash(readerCssSource)}.css`,
   readerJs: `writing-reader.${hash(readerJsSource)}.js`,
@@ -194,6 +208,7 @@ const assetsManifest = {
   katexCss: `katex.${hash(katexCssSource)}.css`,
 };
 await Promise.all([
+  fs.writeFile(path.join(generatedAssets, assetsManifest.typographyCss), typographyCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.shellCss), shellCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.readerCss), readerCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.readerJs), readerJsSource),
@@ -206,11 +221,13 @@ await Promise.all([
   fs.writeFile(path.join(generatedAssets, "katex.css"), katexCssSource),
 ]);
 const shellPlaceholder = "__SITE_SHELL_CSS__";
+const typographyPlaceholder = "__TYPOGRAPHY_CSS__";
 const katexPlaceholder = "__KATEX_CSS__";
 const authoringCssPlaceholder = "__WRITING_AUTHORING_CSS__";
 const authoringJsPlaceholder = "__WRITING_AUTHORING_JS__";
 const htmlReplacements = new Map([
   ["index.html", [
+    [typographyPlaceholder, assetsManifest.typographyCss],
     [shellPlaceholder, assetsManifest.shellCss],
     [katexPlaceholder, assetsManifest.katexCss],
     [authoringCssPlaceholder, assetsManifest.authoringCss],
@@ -231,6 +248,13 @@ for (const [relative, replacements] of htmlReplacements) {
 const katexFontsSource = path.join(root, "node_modules", "katex", "dist", "fonts");
 const katexFontsDestination = path.join(generatedAssets, "fonts");
 await fs.cp(katexFontsSource, katexFontsDestination, { recursive: true });
+for (const { name } of fontPackages) {
+  const packageRoot = path.join(root, "node_modules", "@fontsource-variable", name);
+  for (const file of await fs.readdir(path.join(packageRoot, "files"))) {
+    await fs.copyFile(path.join(packageRoot, "files", file), path.join(katexFontsDestination, file));
+  }
+  await fs.copyFile(path.join(packageRoot, "LICENSE"), path.join(katexFontsDestination, `LICENSE-${name}.txt`));
+}
 
 const writingRoot = path.join(root, "writing");
 const entries = [];

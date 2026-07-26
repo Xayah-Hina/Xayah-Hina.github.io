@@ -33,9 +33,9 @@
   --crepe-color-hover: var(--card-hover);
   --crepe-color-selected: color-mix(in srgb, var(--link), transparent 78%);
   --crepe-color-inline-area: var(--line);
-  --crepe-font-title: ui-sans-serif, system-ui, "Noto Sans SC", sans-serif;
-  --crepe-font-default: ui-serif, Georgia, "Noto Serif SC", "Songti SC", SimSun, serif;
-  --crepe-font-code: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  --crepe-font-title: var(--font-sans);
+  --crepe-font-default: var(--font-serif);
+  --crepe-font-code: var(--font-mono);
   --crepe-shadow-1: var(--shadow);
   --crepe-shadow-2: var(--shadow);
   min-height: 100%;
@@ -141,7 +141,7 @@
   width: 100%;
   margin: 1.6rem 0;
   border-collapse: collapse;
-  font-family: ui-sans-serif, system-ui, "Noto Sans SC", sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.92rem;
 }
 
@@ -218,7 +218,7 @@
 
 .writing-composer-image-caption {
   color: var(--muted);
-  font-family: ui-sans-serif, system-ui, "Noto Sans SC", sans-serif;
+  font-family: var(--font-sans);
   font-size: 0.78rem;
   line-height: 1.55;
   text-align: center;

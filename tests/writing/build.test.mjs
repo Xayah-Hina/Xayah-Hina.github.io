@@ -24,13 +24,15 @@ function filesBelow(directory) {
 test("allowlisted build produces four static articles and no source artifacts", () => {
   execFileSync(process.execPath, ["scripts/build-site.mjs"], { cwd: root, stdio: "pipe" });
   const homepage = fs.readFileSync(path.join(site, "index.html"), "utf8");
+  const typographyMatch = homepage.match(/href="\/assets\/generated\/(typography\.[a-f0-9]{12}\.css)"/);
   const shellMatch = homepage.match(/href="\/assets\/generated\/(site-shell\.[a-f0-9]{12}\.css)"/);
   const authoringCssMatch = homepage.match(/href="\/assets\/generated\/(writing-authoring\.[a-f0-9]{12}\.css)"/);
   const authoringJsMatch = homepage.match(/import\("\/assets\/generated\/(writing-authoring\.[a-f0-9]{12}\.js)"\)/);
+  assert.ok(typographyMatch, "homepage should load the local variable font definitions");
   assert.ok(shellMatch, "homepage should load the hashed shared site shell");
   assert.ok(authoringCssMatch, "homepage should load the hashed visual editor theme");
   assert.ok(authoringJsMatch, "homepage should lazy-load the hashed visual editor");
-  assert.doesNotMatch(homepage, /__(?:SITE_SHELL_CSS|KATEX_CSS|WRITING_AUTHORING_(?:CSS|JS))__/);
+  assert.doesNotMatch(homepage, /__(?:TYPOGRAPHY_CSS|SITE_SHELL_CSS|KATEX_CSS|WRITING_AUTHORING_(?:CSS|JS))__/);
   assert.match(homepage, /fetch\("\/api\/authoring\/status"/);
   assert.doesNotMatch(homepage, /\/api\/editor\/status|editor\.xayah\.me/);
   assert.doesNotMatch(homepage, /class="section-switch-button"[^>]*href="\/api\/session"/);
@@ -40,6 +42,7 @@ test("allowlisted build produces four static articles and no source artifacts", 
   assert.match(homepage, /data-writing-view="visual" aria-pressed="true">Visual/);
   assert.match(homepage, /data-writing-view="source" aria-pressed="false">Markdown/);
   assert.match(homepage, /<meta name="theme-color" media="\(prefers-color-scheme: dark\)" content="#090c10">/);
+  const typographyCss = fs.readFileSync(path.join(site, "assets", "generated", typographyMatch[1]), "utf8");
   const shellCss = fs.readFileSync(path.join(site, "assets", "generated", shellMatch[1]), "utf8");
   const authoringCss = fs.readFileSync(path.join(site, "assets", "generated", authoringCssMatch[1]), "utf8");
   const authoringJs = fs.readFileSync(path.join(site, "assets", "generated", authoringJsMatch[1]), "utf8");
@@ -48,6 +51,16 @@ test("allowlisted build produces four static articles and no source artifacts", 
   assert.match(shellCss, /--card-hover: #1a2027;/);
   assert.match(shellCss, /--line: #252c35;/);
   assert.match(shellCss, /--link: #86bdf2;/);
+  assert.match(typographyCss, /font-family: 'Geist Variable'/);
+  assert.match(typographyCss, /font-family: 'Geist Mono Variable'/);
+  assert.match(typographyCss, /font-family: 'Noto Sans SC Variable'/);
+  assert.match(typographyCss, /font-family: 'Noto Serif SC Variable'/);
+  assert.doesNotMatch(typographyCss, /https?:\/\//);
+  assert.match(shellCss, /--font-sans: "Geist Variable", "Noto Sans SC Variable"/);
+  assert.match(shellCss, /--font-serif: "Noto Serif SC Variable"/);
+  assert.match(shellCss, /--font-mono: "Geist Mono Variable", "Noto Sans SC Variable"/);
+  assert.match(authoringCss, /--crepe-font-default:\s*var\(--font-serif\)/);
+  assert.match(authoringCss, /--crepe-font-code:\s*var\(--font-mono\)/);
   assert.match(authoringCss, /\.writing-composer-root/);
   assert.match(authoringJs, /Start writing/);
   assert.equal(fs.existsSync(path.join(site, "assets", "generated", "writing-preview.js")), false);
@@ -61,9 +74,15 @@ test("allowlisted build produces four static articles and no source artifacts", 
     assert.match(html, /<h1 class="writing-title">/);
     assert.match(html, /<meta name="theme-color" media="\(prefers-color-scheme: dark\)" content="#090c10">/);
     assert.match(html, new RegExp(`href="/assets/generated/${shellMatch[1].replaceAll(".", "\\.")}"`));
+    assert.match(html, new RegExp(`href="/assets/generated/${typographyMatch[1].replaceAll(".", "\\.")}"`));
     assert.match(html, /<nav class="site-nav" aria-label="Site navigation">/);
     assert.match(html, /class="section-switch-button" href="\/#writing\/2026" aria-current="page"/);
     assert.doesNotMatch(html, /class="section-switch-button"[^>]*data-auth-link/);
+    const readerAsset = html.match(/href="\/assets\/generated\/(writing-reader\.[a-f0-9]{12}\.css)"/);
+    assert.ok(readerAsset, "article should load the hashed reader stylesheet");
+    const readerCss = fs.readFileSync(path.join(site, "assets", "generated", readerAsset[1]), "utf8");
+    assert.match(readerCss, /\.writing-body[\s\S]*font-family: var\(--font-serif\)/);
+    assert.match(readerCss, /\.writing-body h2[\s\S]*font-family: var\(--font-sans\)/);
     assert.match(html, new RegExp(`data-edit-writing="${id}" hidden>Edit</button>`));
     assert.match(html, /writing-article-authoring\.[a-f0-9]{12}\.js/);
     assert.match(html, /<footer class="site-footer">[\s\S]*class="footer-auth-link" data-auth-link href="\/api\/session">Log in<\/a>/);
@@ -75,6 +94,10 @@ test("allowlisted build produces four static articles and no source artifacts", 
   assert.match(catalog, /"years": \[\s+2026/);
   assert.equal((year.match(/"article":/g) || []).length, 4);
   const outputFiles = filesBelow(site);
+  const fontFiles = outputFiles.filter((file) => file.endsWith(".woff2"));
+  assert.ok(fontFiles.length > 200, "the local unicode-range font assets should be allowlisted");
+  assert.ok(outputFiles.some((file) => file.endsWith("LICENSE-geist.txt")));
+  assert.ok(outputFiles.some((file) => file.endsWith("LICENSE-noto-serif-sc.txt")));
   const forbidden = outputFiles.filter((file) => /\.(?:md|tex|bib|pdf)$/i.test(file));
   assert.deepEqual(forbidden, []);
   assert.equal(outputFiles.some((file) => path.basename(file).startsWith(".")), false);

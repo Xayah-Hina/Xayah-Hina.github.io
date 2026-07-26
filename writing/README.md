@@ -61,3 +61,12 @@ npm run build
 ```
 
 Only `_site` is uploaded to Pages. Markdown, Worker source, TeX, and repository internals must never appear in that directory.
+
+## Typography
+
+The shared site shell and Writing editor use Geist Sans with Noto Sans SC for
+Chinese text. Published Writing body copy uses Noto Serif SC, while code and
+Markdown source use Geist Mono. Exact Fontsource package versions are pinned in
+`package.json`; the Pages build publishes the fonts locally as Unicode-range
+WOFF2 chunks and includes their licenses. Public pages never depend on a runtime
+font CDN.
