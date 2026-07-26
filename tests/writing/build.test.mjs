@@ -33,6 +33,8 @@ test("allowlisted build produces four static articles and no source artifacts", 
   assert.doesNotMatch(homepage, /__(?:SITE_SHELL_CSS|KATEX_CSS|WRITING_AUTHORING_(?:CSS|JS))__/);
   assert.match(homepage, /fetch\("\/api\/authoring\/status"/);
   assert.doesNotMatch(homepage, /\/api\/editor\/status|editor\.xayah\.me/);
+  assert.doesNotMatch(homepage, /class="section-switch-button"[^>]*href="\/api\/session"/);
+  assert.match(homepage, /<footer class="site-footer">[\s\S]*id="auth-link" class="footer-auth-link" href="\/api\/session">Log in<\/a>/);
   assert.doesNotMatch(homepage, /writing-preview(?:-frame|-pane|\.js)/);
   assert.match(homepage, /class="writing-composer-root"/);
   assert.match(homepage, /data-writing-view="visual" aria-pressed="true">Visual/);
@@ -61,10 +63,10 @@ test("allowlisted build produces four static articles and no source artifacts", 
     assert.match(html, new RegExp(`href="/assets/generated/${shellMatch[1].replaceAll(".", "\\.")}"`));
     assert.match(html, /<nav class="site-nav" aria-label="Site navigation">/);
     assert.match(html, /class="section-switch-button" href="\/#writing\/2026" aria-current="page"/);
-    assert.match(html, /data-auth-link href="\/api\/session">Log in<\/a>/);
+    assert.doesNotMatch(html, /class="section-switch-button"[^>]*data-auth-link/);
     assert.match(html, new RegExp(`data-edit-writing="${id}" hidden>Edit</button>`));
     assert.match(html, /writing-article-authoring\.[a-f0-9]{12}\.js/);
-    assert.match(html, /<footer class="site-footer">/);
+    assert.match(html, /<footer class="site-footer">[\s\S]*class="footer-auth-link" data-auth-link href="\/api\/session">Log in<\/a>/);
     assert.match(html, /In solitude, where we are least alone\./);
     assert.doesNotMatch(html, /class="writing-(?:nav|footer)"/);
   }

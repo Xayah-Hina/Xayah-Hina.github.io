@@ -1117,7 +1117,6 @@
     <div id="section-switch" class="section-switch" role="group" aria-label="Choose a section">
       <button class="section-switch-button" type="button" data-section="writing" aria-pressed="true">Writing</button>
       <button class="section-switch-button" type="button" data-section="journal" aria-pressed="false">Journal</button>
-      <a id="auth-link" class="section-switch-button" href="/api/session">Log in</a>
     </div>
   </nav>
 
@@ -1146,7 +1145,10 @@
       <blockquote class="footer-quote">
         <p>In solitude, where we are least alone.</p>
       </blockquote>
-      <p id="footer-text" class="footer-meta">© 2026 Xayah Hina. All rights reserved.</p>
+      <div class="footer-meta-group">
+        <p id="footer-text" class="footer-meta">© 2026 Xayah Hina. All rights reserved.</p>
+        <a id="auth-link" class="footer-auth-link" href="/api/session">Log in</a>
+      </div>
     </div>
   </footer>
 

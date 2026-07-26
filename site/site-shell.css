@@ -216,10 +216,42 @@ textarea {
   margin: 0;
 }
 
+.footer-meta-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
 .footer-meta {
   color: var(--subtle);
   font-size: 0.8125rem;
   letter-spacing: 0.015em;
+}
+
+.footer-auth-link {
+  color: var(--subtle);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  transition: color 150ms ease;
+}
+
+.footer-auth-link::before {
+  margin-right: 0.45rem;
+  color: var(--line);
+  content: "·";
+}
+
+.footer-auth-link:hover {
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.footer-auth-link:focus-visible {
+  border-radius: 0.15rem;
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
 }
 
 @media (max-width: 42rem) {
@@ -239,6 +271,10 @@ textarea {
     align-items: center;
     flex-direction: column;
     gap: 0.4rem;
+  }
+
+  .footer-meta-group {
+    justify-content: center;
   }
 }
 

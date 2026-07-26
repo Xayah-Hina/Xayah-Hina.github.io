@@ -113,7 +113,6 @@ function articleHtml(entry, rendered, assets) {
     <div class="section-switch" role="group" aria-label="Choose a section">
       <a class="section-switch-button" href="/#writing/${metadata.id.slice(0, 4)}" aria-current="page">Writing</a>
       <a class="section-switch-button" href="/#journal/${metadata.id.slice(0, 4)}">Journal</a>
-      <a class="section-switch-button" data-auth-link href="/api/session">Log in</a>
     </div>
   </nav>
   <main id="article" class="article-container">
@@ -141,7 +140,10 @@ function articleHtml(entry, rendered, assets) {
   <footer class="site-footer">
     <div class="footer-inner">
       <blockquote class="footer-quote"><p>In solitude, where we are least alone.</p></blockquote>
-      <p class="footer-meta">© ${new Date().getFullYear()} Xayah Hina. All rights reserved.</p>
+      <div class="footer-meta-group">
+        <p class="footer-meta">© ${new Date().getFullYear()} Xayah Hina. All rights reserved.</p>
+        <a class="footer-auth-link" data-auth-link href="/api/session">Log in</a>
+      </div>
     </div>
   </footer>
   ${hasToc ? `<script type="module" src="/assets/generated/${assetsManifest.readerJs}"></script>` : ""}
