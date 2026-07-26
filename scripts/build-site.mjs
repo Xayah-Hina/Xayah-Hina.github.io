@@ -158,12 +158,13 @@ await copyTree("journals");
 await copyTree("dictionary", (nested, entry) => {
   const first = nested.split(path.sep)[0];
   if (entry.isDirectory()) return ["generated", "licenses"].includes(first);
-  return ["index.html", "app.js", "styles.css"].includes(nested) || first === "generated" || first === "licenses";
+  return ["index.html", "app.js"].includes(nested) || first === "generated" || first === "licenses";
 });
 
 const generatedAssets = path.join(output, "assets", "generated");
 await fs.mkdir(generatedAssets, { recursive: true });
 const shellCssSource = await fs.readFile(path.join(root, "site", "site-shell.css"));
+const dictionaryCssSource = await fs.readFile(path.join(root, "dictionary", "styles.css"));
 const readerCssSource = await fs.readFile(path.join(root, "site", "writing-reader.css"));
 const readerJsSource = await fs.readFile(path.join(root, "site", "writing-reader.js"));
 const katexCssSource = await fs.readFile(path.join(root, "node_modules", "katex", "dist", "katex.min.css"));
@@ -177,12 +178,14 @@ const previewBundle = await esbuild({
 });
 const assetsManifest = {
   shellCss: `site-shell.${hash(shellCssSource)}.css`,
+  dictionaryCss: `styles.${hash(dictionaryCssSource)}.css`,
   readerCss: `writing-reader.${hash(readerCssSource)}.css`,
   readerJs: `writing-reader.${hash(readerJsSource)}.js`,
   katexCss: `katex.${hash(katexCssSource)}.css`,
 };
 await Promise.all([
   fs.writeFile(path.join(generatedAssets, assetsManifest.shellCss), shellCssSource),
+  fs.writeFile(path.join(output, "dictionary", assetsManifest.dictionaryCss), dictionaryCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.readerCss), readerCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.readerJs), readerJsSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.katexCss), katexCssSource),
@@ -192,15 +195,23 @@ await Promise.all([
   fs.writeFile(path.join(generatedAssets, "writing-preview.js"), previewBundle.outputFiles[0].contents),
 ]);
 const shellPlaceholder = "__SITE_SHELL_CSS__";
-for (const relative of ["index.html", path.join("dictionary", "index.html")]) {
+const htmlReplacements = new Map([
+  ["index.html", [[shellPlaceholder, assetsManifest.shellCss]]],
+  [path.join("dictionary", "index.html"), [
+    [shellPlaceholder, assetsManifest.shellCss],
+    ["__DICTIONARY_CSS__", assetsManifest.dictionaryCss],
+  ]],
+]);
+for (const [relative, replacements] of htmlReplacements) {
   const source = await fs.readFile(path.join(root, relative), "utf8");
-  if (source.split(shellPlaceholder).length !== 2) {
-    throw new Error(`${relative} must contain exactly one ${shellPlaceholder} placeholder.`);
+  let rendered = source;
+  for (const [placeholder, value] of replacements) {
+    if (rendered.split(placeholder).length !== 2) {
+      throw new Error(`${relative} must contain exactly one ${placeholder} placeholder.`);
+    }
+    rendered = rendered.replace(placeholder, value);
   }
-  await fs.writeFile(
-    path.join(output, relative),
-    source.replace(shellPlaceholder, assetsManifest.shellCss),
-  );
+  await fs.writeFile(path.join(output, relative), rendered);
 }
 const katexFontsSource = path.join(root, "node_modules", "katex", "dist", "fonts");
 const katexFontsDestination = path.join(generatedAssets, "fonts");

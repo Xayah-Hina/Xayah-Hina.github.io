@@ -37,9 +37,12 @@ test("allowlisted build produces four static articles and no source artifacts", 
   const dictionaryHtml = fs.readFileSync(path.join(site, "dictionary", "index.html"), "utf8");
   assert.match(dictionaryHtml, new RegExp(`href="/assets/generated/${shellMatch[1].replaceAll(".", "\\.")}"`));
   assert.match(dictionaryHtml, /<meta name="theme-color" media="\(prefers-color-scheme: dark\)" content="#090c10">/);
-  assert.doesNotMatch(dictionaryHtml, /__SITE_SHELL_CSS__/);
-  assert.ok(dictionaryHtml.indexOf(shellMatch[1]) < dictionaryHtml.indexOf('href="styles.css"'));
-  const dictionaryCss = fs.readFileSync(path.join(site, "dictionary", "styles.css"), "utf8");
+  assert.doesNotMatch(dictionaryHtml, /__(?:SITE_SHELL|DICTIONARY_CSS)__/);
+  const dictionaryCssMatch = dictionaryHtml.match(/href="(styles\.[a-f0-9]{12}\.css)"/);
+  assert.ok(dictionaryCssMatch, "Dictionary should load content-addressed component CSS");
+  assert.ok(dictionaryHtml.indexOf(shellMatch[1]) < dictionaryHtml.indexOf(dictionaryCssMatch[1]));
+  const dictionaryCss = fs.readFileSync(path.join(site, "dictionary", dictionaryCssMatch[1]), "utf8");
+  assert.equal(fs.existsSync(path.join(site, "dictionary", "styles.css")), false);
   assert.doesNotMatch(dictionaryCss, /--(?:page|text|card|link):/);
   assert.doesNotMatch(dictionaryCss, /#(?:111827|182233|1d4ed8)/i);
   assert.match(dictionaryCss, /background: var\(--link-soft\)/);
