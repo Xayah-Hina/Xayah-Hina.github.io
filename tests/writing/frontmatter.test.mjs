@@ -56,4 +56,5 @@ test("Writing body rejects H1 and canonicalizes content-addressed image referenc
     [`${hash}.png`],
   );
   assert.throws(() => referencedAssets("![Alt](./photo.png)"), /not content-addressed/i);
+  assert.throws(() => referencedAssets("![Alt](https://example.com/photo.png)"), /not content-addressed/i);
 });

@@ -41,12 +41,6 @@ dialog?.addEventListener("cancel", (event) => {
   event.preventDefault();
   closeDialog();
 });
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && dialog?.open) {
-    event.preventDefault();
-    closeDialog();
-  }
-});
 
 for (const link of links) {
   link.addEventListener("click", () => {

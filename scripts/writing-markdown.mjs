@@ -69,10 +69,11 @@ export function renderMarkdown(source, options = {}) {
     const srcIndex = token.attrIndex("src");
     if (srcIndex >= 0) {
       let src = token.attrs[srcIndex][1];
-      if (src.startsWith("./") && options.assetBase) {
+      const localAsset = src.startsWith("./");
+      if (localAsset && options.assetBase) {
         src = `${String(options.assetBase).replace(/\/$/, "")}/${src.slice(2)}`;
       }
-      token.attrs[srcIndex][1] = safeUrl(src) || "";
+      token.attrs[srcIndex][1] = localAsset ? (safeUrl(src) || "") : "";
       token.attrSet("loading", "lazy");
       token.attrSet("decoding", "async");
     }

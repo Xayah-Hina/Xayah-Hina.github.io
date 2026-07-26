@@ -9,12 +9,12 @@ import {
   editorWritingCatalog,
   editorWritingYear,
   openWriting,
+  pendingWriting,
   previewWritingAsset,
   publishWriting,
   saveWriting,
   uploadWritingAsset,
   writingDeploymentStatus,
-  writingStatus,
 } from "./writing";
 
 async function editorStatus(env: Env): Promise<Response> {
@@ -30,8 +30,7 @@ async function editorStatus(env: Env): Promise<Response> {
     journalError = error instanceof Error ? error.message : "Journal data could not be loaded.";
   }
   try {
-    const status = await writingStatus(env);
-    writingPending = status.pending;
+    writingPending = await pendingWriting(env);
   } catch (error) {
     writingError = error instanceof Error ? error.message : "Writing data could not be loaded.";
   }
@@ -46,7 +45,6 @@ async function editorStatus(env: Env): Promise<Response> {
     journalError,
     writingError,
     dictionaryError,
-    renderer: "Markdown · private R2 autosave · static GitHub Pages",
     publishing: {
       enabled: true,
       state: "ready",

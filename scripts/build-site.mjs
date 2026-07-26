@@ -20,18 +20,8 @@ const escapeHtml = (value) => String(value)
 const moduleSource = (value) => `export default ${JSON.stringify(value, null, 2)};\n`;
 const hash = (value) => crypto.createHash("sha256").update(value).digest("hex").slice(0, 12);
 
-async function exists(target) {
-  try {
-    await fs.access(target);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 async function copyFile(relative) {
   const source = path.join(root, relative);
-  if (!(await exists(source))) return;
   const destination = path.join(output, relative);
   await fs.mkdir(path.dirname(destination), { recursive: true });
   await fs.copyFile(source, destination);
@@ -39,7 +29,6 @@ async function copyFile(relative) {
 
 async function copyTree(relative, filter = () => true) {
   const source = path.join(root, relative);
-  if (!(await exists(source))) return;
   const walk = async (directory, nested = "") => {
     for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
       const child = path.join(directory, entry.name);
@@ -147,14 +136,13 @@ function articleHtml(entry, rendered, assets) {
 await fs.rm(output, { recursive: true, force: true });
 await fs.mkdir(output, { recursive: true });
 
-for (const file of ["index.html", "CNAME", ".nojekyll"]) await copyFile(file);
+for (const file of ["index.html", "CNAME"]) await copyFile(file);
 await copyTree("journals");
 await copyTree("dictionary", (nested, entry) => {
   const first = nested.split(path.sep)[0];
   if (entry.isDirectory()) return ["generated", "licenses"].includes(first);
   return ["index.html", "app.js", "styles.css"].includes(nested) || first === "generated" || first === "licenses";
 });
-await copyTree("assets", (nested) => nested.split(path.sep)[0] !== "fonts");
 
 const generatedAssets = path.join(output, "assets", "generated");
 await fs.mkdir(generatedAssets, { recursive: true });
@@ -162,7 +150,7 @@ const readerCssSource = await fs.readFile(path.join(root, "site", "writing-reade
 const readerJsSource = await fs.readFile(path.join(root, "site", "writing-reader.js"));
 const katexCssSource = await fs.readFile(path.join(root, "node_modules", "katex", "dist", "katex.min.css"));
 const previewBundle = await esbuild({
-  entryPoints: [path.join(root, "site", "writing-preview-entry.mjs")],
+  entryPoints: [path.join(root, "scripts", "writing-markdown.mjs")],
   bundle: true,
   format: "esm",
   platform: "browser",
@@ -188,13 +176,9 @@ await fs.cp(katexFontsSource, katexFontsDestination, { recursive: true });
 
 const writingRoot = path.join(root, "writing");
 const entries = [];
-const ids = new Set();
 for (const directory of await fs.readdir(writingRoot, { withFileTypes: true })) {
   if (!directory.isDirectory() || !/^\d{8}-\d{6}$/.test(directory.name)) continue;
   const sourcePath = path.join(writingRoot, directory.name, `${directory.name}.md`);
-  if (!(await exists(sourcePath))) continue;
-  if (ids.has(directory.name)) throw new Error(`Duplicate Writing id ${directory.name}.`);
-  ids.add(directory.name);
   const parsed = parseWritingSource(await fs.readFile(sourcePath, "utf8"), directory.name);
   const sourceHash = writingSourceHash(parsed.source);
   const assetNames = referencedAssets(parsed.body);
@@ -204,7 +188,6 @@ for (const directory of await fs.readdir(writingRoot, { withFileTypes: true })) 
   const entry = {
     ...parsed,
     sourceHash,
-    assets: assetNames,
   };
   entries.push(entry);
   const destination = path.join(output, "writing", directory.name, "index.html");

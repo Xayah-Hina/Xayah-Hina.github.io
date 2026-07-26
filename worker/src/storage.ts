@@ -1,7 +1,7 @@
 import type { Env, WritingDraft } from "./types";
 import { HttpError } from "./utils";
 
-export const draftKey = (id: string) => `private/writing/drafts/${id}.json`;
+const draftKey = (id: string) => `private/writing/drafts/${id}.json`;
 export const privateWritingAssetKey = (id: string, name: string) => `private/writing/assets/${id}/${name}`;
 export const publishedWritingAssetKey = (id: string, name: string) => `published/writing/${id}/${name}`;
 
@@ -37,14 +37,14 @@ export async function putDraftConditional(
   return result !== null;
 }
 
-export async function listDraftsVersioned(env: Env): Promise<Array<{ draft: WritingDraft; etag: string }>> {
-  const drafts: Array<{ draft: WritingDraft; etag: string }> = [];
+export async function listDrafts(env: Env): Promise<WritingDraft[]> {
+  const drafts: WritingDraft[] = [];
   let cursor: string | undefined;
   do {
     const page = await env.CONTENT.list({ prefix: "private/writing/drafts/", cursor, limit: 1000 });
     for (const object of page.objects) {
       const draft = await readJson<WritingDraft>(env, object.key);
-      if (draft) drafts.push({ draft, etag: object.etag });
+      if (draft) drafts.push(draft);
     }
     cursor = page.truncated ? page.cursor : undefined;
   } while (cursor);
@@ -56,7 +56,7 @@ export async function hasDrafts(env: Env): Promise<boolean> {
   return result.objects.length > 0;
 }
 
-export async function deletePrefix(env: Env, prefix: string): Promise<void> {
+async function deletePrefix(env: Env, prefix: string): Promise<void> {
   while (true) {
     const page = await env.CONTENT.list({ prefix, limit: 1000 });
     if (!page.objects.length) return;
@@ -65,10 +65,8 @@ export async function deletePrefix(env: Env, prefix: string): Promise<void> {
 }
 
 export async function deleteWritingObjects(env: Env, id: string): Promise<void> {
-  await env.CONTENT.delete([draftKey(id), `private/writing/current/${id}.json`]);
+  await env.CONTENT.delete(draftKey(id));
   await Promise.all([
-    deletePrefix(env, `private/writing/builds/${id}/`),
-    deletePrefix(env, `private/writing/previews/${id}/`),
     deletePrefix(env, `private/writing/assets/${id}/`),
     deletePrefix(env, `published/writing/${id}/`),
   ]);

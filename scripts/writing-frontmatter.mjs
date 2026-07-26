@@ -1,8 +1,8 @@
 import crypto from "node:crypto";
 
-export const WRITING_ID = /^\d{8}-\d{6}$/;
-export const WRITING_ASSET = /^\.\/([a-f0-9]{64})\.(jpe?g|png|webp|gif|avif)$/i;
-export const FRONT_MATTER_KEYS = [
+const WRITING_ID = /^\d{8}-\d{6}$/;
+const WRITING_ASSET = /^\.\/([a-f0-9]{64})\.(jpe?g|png|webp|gif|avif)$/i;
+const FRONT_MATTER_KEYS = [
   "id",
   "title",
   "summary",
@@ -12,7 +12,7 @@ export const FRONT_MATTER_KEYS = [
   "status",
 ];
 
-export function normalizeText(value) {
+function normalizeText(value) {
   return String(value).replace(/\r\n?/g, "\n");
 }
 
@@ -23,7 +23,7 @@ function requireString(value, label, maximum) {
   return value;
 }
 
-export function validateWritingMetadata(value, expectedId = "") {
+function validateWritingMetadata(value, expectedId = "") {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("Writing front matter is invalid.");
   }
@@ -81,7 +81,7 @@ export function parseWritingSource(source, expectedId = "") {
     }
   }
   const metadata = validateWritingMetadata(frontMatter, expectedId);
-  const body = match[2].trimEnd();
+  const body = match[2].trim();
   if (!body || body.length > 2_000_000) throw new Error(`Writing ${metadata.id} body is invalid.`);
   if (/^#\s+/m.test(body)) throw new Error(`Writing ${metadata.id} body must not contain an H1 heading.`);
   return { metadata, body: `${body}\n`, source: serializeWritingSource(metadata, body) };
@@ -106,7 +106,7 @@ export function writingSourceHash(source) {
 
 export function referencedAssets(body) {
   const assets = new Set();
-  const pattern = /!\[[^\]]*\]\((\.\/[A-Za-z0-9._-]+)(?:\s+(?:"[^"]*"|'[^']*'))?\)/g;
+  const pattern = /!\[[^\]]*\]\(([^)\s]+)(?:\s+(?:"[^"]*"|'[^']*'))?\)/g;
   for (const match of body.matchAll(pattern)) {
     const valid = WRITING_ASSET.exec(match[1]);
     if (!valid) throw new Error(`Writing image ${match[1]} is not content-addressed.`);

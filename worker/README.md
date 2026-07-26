@@ -33,18 +33,6 @@ Never commit `.dev.vars` or any real secret.
 
 The editor saves metadata and Markdown body to `private/writing/drafts/<id>.json`. Each save includes the previous `savedAt`; conditional R2 writes return HTTP 409 instead of overwriting a newer tab.
 
-If an unpublished draft still uses the former TeX shape (`source` without `body`), the Worker converts its document body and headings to Markdown on first read, derives immutable creation metadata from the draft ID, preserves `savedAt`, and replaces the object through an ETag-guarded write. The migration never publishes the draft.
-
 Images are uploaded to `private/writing/assets/<id>/<sha256>.<ext>`. Publish copies only referenced images to the immutable `published/writing/<id>/` prefix, deterministically serializes Front matter, and commits `writing/<id>/<id>.md`. The editor polls `/api/writing/deploy/status` until the public page exposes the matching `x-writing-revision`.
 
-Old public media is removed only after the new page revision is live.
-
-## Production cutover order
-
-1. Push the site build while the existing Worker remains online, then wait for all four `/writing/<id>/` pages to expose the source hash from the generated yearly module.
-2. Deploy this Worker. The final media route intentionally no longer serves PDFs or non-hashed Writing images.
-3. Call `/api/writing/deploy/status` once for each migrated article. A matching live revision deletes its legacy PDF/pointer/preview/build objects and any non-hashed public Writing media while retaining the referenced hash image.
-4. Confirm every HTML page and referenced image returns 200 and every former PDF URL returns 404.
-5. Remove the obsolete Cloudflare `BUILD_CALLBACK_TOKEN` Worker secret and GitHub `WRITING_BUILD_TOKEN` Actions secret.
-
-Do not perform steps 2–5 before step 1 is live: the old public site still depends on the PDF media route.
+Unreferenced public Writing images are removed only after the new page revision is live.

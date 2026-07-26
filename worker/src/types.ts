@@ -35,11 +35,10 @@ export interface WritingArticle {
   sourceHash: string;
 }
 
-export interface WritingDraft extends WritingEntry {
+export interface WritingDraft extends Omit<WritingEntry, "article"> {
   body: string;
   savedAt: string;
   sourceHash: string;
-  publishedRevision?: string;
 }
 
 export interface JournalImage {

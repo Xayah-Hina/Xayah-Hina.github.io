@@ -1689,7 +1689,6 @@
         saveTimer: null,
         savePromise: null,
         renderer: null,
-        suppressAutosave: false,
         publishEnabled: false,
         unpublished: false
       };
@@ -2526,7 +2525,7 @@
         writingAuthoring.editor.addEventListener("click", (event) => {
           const action = event.target.closest("[data-writing-editor-action]")?.dataset.writingEditorAction;
           if (action === "close") requestCloseWritingEditor();
-          if (action === "save") void queueWritingSave(true).catch(() => {});
+          if (action === "save") void saveWritingNow().catch(() => {});
           if (action === "publish") publishWritingDocument();
           const view = event.target.closest("[data-writing-view]")?.dataset.writingView;
           if (view) setWritingEditorView(view);
@@ -2556,7 +2555,7 @@
         writingAuthoring.editor.addEventListener("keydown", (event) => {
           if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === "s") {
             event.preventDefault();
-            void queueWritingSave(true).catch(() => {});
+            void saveWritingNow().catch(() => {});
           }
         });
         byId("archive-list").addEventListener("click", (event) => {
@@ -2827,10 +2826,11 @@
           writingAuthoring.frame.hidden = true;
           writingAuthoring.frame.removeAttribute("srcdoc");
           writingAuthoring.emptyPreview.hidden = false;
+          writingAuthoring.emptyPreview.textContent = "Start writing to create a preview.";
           return;
         }
         try {
-          writingAuthoring.renderer ||= import("/assets/generated/writing-preview.js");
+          writingAuthoring.renderer ||= import(`/assets/generated/writing-preview.js?v=${moduleVersion}`);
           const { renderMarkdown } = await writingAuthoring.renderer;
           const rendered = renderMarkdown(body, {
             assetBase: `/api/writing/assets/preview/${writingAuthoring.current.id}`
@@ -2844,8 +2844,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <base target="_blank">
-  <link rel="stylesheet" href="/assets/generated/katex.css">
-  <link rel="stylesheet" href="/assets/generated/writing-reader.css">
+  <link rel="stylesheet" href="/assets/generated/katex.css?v=${moduleVersion}">
+  <link rel="stylesheet" href="/assets/generated/writing-reader.css?v=${moduleVersion}">
 </head>
 <body>
   <main class="writing-layout">
@@ -2860,6 +2860,7 @@
 </html>`;
           writingAuthoring.frame.hidden = false;
           writingAuthoring.emptyPreview.hidden = true;
+          writingAuthoring.emptyPreview.textContent = "Start writing to create a preview.";
         } catch (error) {
           writingAuthoring.frame.hidden = true;
           writingAuthoring.emptyPreview.hidden = false;
@@ -2873,7 +2874,7 @@
       }
 
       function scheduleWritingChanges() {
-        if (writingAuthoring.suppressAutosave || !writingAuthoring.current) return;
+        if (!writingAuthoring.current) return;
         scheduleWritingPreview();
         updateWritingEditorStatus();
         window.clearTimeout(writingAuthoring.saveTimer);
@@ -2883,7 +2884,6 @@
       }
 
       function showWritingEditorData(result) {
-        writingAuthoring.suppressAutosave = true;
         if (result.sync) {
           writingAuthoring.publishEnabled = Boolean(result.sync.enabled);
           writingAuthoring.unpublished = Boolean(result.sync.writingPending);
@@ -2906,7 +2906,6 @@
         setWritingEditorStatus(writingAuthoring.unpublished
           ? "Private draft saved · Ready to publish."
           : "Saved and published.");
-        writingAuthoring.suppressAutosave = false;
         renderWritingPreview();
         writingAuthoring.source.focus();
       }
@@ -2931,7 +2930,7 @@
         if (writingAuthoring.busy) return;
         if (writingEditorIsDirty()) {
           try {
-            await queueWritingSave(true);
+            await saveWritingNow();
           } catch {
             if (!window.confirm("The private draft could not be saved. Leave and discard these changes?")) return;
           }
@@ -2967,14 +2966,8 @@
         };
       }
 
-      function queueWritingSave(immediate = false) {
+      function saveWritingNow() {
         window.clearTimeout(writingAuthoring.saveTimer);
-        if (!immediate) {
-          writingAuthoring.saveTimer = window.setTimeout(() => {
-            void saveWritingDocument().catch(() => {});
-          }, 800);
-          return Promise.resolve();
-        }
         return saveWritingDocument();
       }
 
@@ -2982,8 +2975,8 @@
         if (!writingAuthoring.current || writingAuthoring.busy) return;
         if (writingAuthoring.savePromise) {
           await writingAuthoring.savePromise;
-          if (!writingEditorIsDirty()) return;
         }
+        if (!writingEditorIsDirty()) return;
         const payload = writingSavePayload();
         const snapshot = writingEditorSnapshot();
         if (!payload.title || !payload.summary || !payload.body.trim()) {

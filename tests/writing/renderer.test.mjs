@@ -50,10 +50,13 @@ test("raw HTML and unsafe protocols never become executable markup", () => {
 [unsafe](javascript:alert(1))
 
 [safe](https://example.com)
+
+![remote](https://example.com/tracker.png)
 `);
   assert.doesNotMatch(rendered.html, /<script>/);
   assert.match(rendered.html, /&lt;script&gt;/);
   assert.doesNotMatch(rendered.html, /href="javascript:/i);
   assert.match(rendered.html, /href="https:\/\/example\.com"/);
   assert.match(rendered.html, /rel="noopener noreferrer"/);
+  assert.doesNotMatch(rendered.html, /tracker\.png/);
 });
