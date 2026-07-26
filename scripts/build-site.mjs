@@ -191,15 +191,17 @@ await Promise.all([
   fs.writeFile(path.join(generatedAssets, "katex.css"), katexCssSource),
   fs.writeFile(path.join(generatedAssets, "writing-preview.js"), previewBundle.outputFiles[0].contents),
 ]);
-const indexPlaceholder = "__SITE_SHELL_CSS__";
-const indexSource = await fs.readFile(path.join(root, "index.html"), "utf8");
-if (indexSource.split(indexPlaceholder).length !== 2) {
-  throw new Error(`Homepage must contain exactly one ${indexPlaceholder} placeholder.`);
+const shellPlaceholder = "__SITE_SHELL_CSS__";
+for (const relative of ["index.html", path.join("dictionary", "index.html")]) {
+  const source = await fs.readFile(path.join(root, relative), "utf8");
+  if (source.split(shellPlaceholder).length !== 2) {
+    throw new Error(`${relative} must contain exactly one ${shellPlaceholder} placeholder.`);
+  }
+  await fs.writeFile(
+    path.join(output, relative),
+    source.replace(shellPlaceholder, assetsManifest.shellCss),
+  );
 }
-await fs.writeFile(
-  path.join(output, "index.html"),
-  indexSource.replace(indexPlaceholder, assetsManifest.shellCss),
-);
 const katexFontsSource = path.join(root, "node_modules", "katex", "dist", "fonts");
 const katexFontsDestination = path.join(generatedAssets, "fonts");
 await fs.cp(katexFontsSource, katexFontsDestination, { recursive: true });

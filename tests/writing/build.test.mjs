@@ -34,6 +34,15 @@ test("allowlisted build produces four static articles and no source artifacts", 
   assert.match(shellCss, /--card-hover: #1a2027;/);
   assert.match(shellCss, /--line: #252c35;/);
   assert.match(shellCss, /--link: #86bdf2;/);
+  const dictionaryHtml = fs.readFileSync(path.join(site, "dictionary", "index.html"), "utf8");
+  assert.match(dictionaryHtml, new RegExp(`href="/assets/generated/${shellMatch[1].replaceAll(".", "\\.")}"`));
+  assert.match(dictionaryHtml, /<meta name="theme-color" media="\(prefers-color-scheme: dark\)" content="#090c10">/);
+  assert.doesNotMatch(dictionaryHtml, /__SITE_SHELL_CSS__/);
+  assert.ok(dictionaryHtml.indexOf(shellMatch[1]) < dictionaryHtml.indexOf('href="styles.css"'));
+  const dictionaryCss = fs.readFileSync(path.join(site, "dictionary", "styles.css"), "utf8");
+  assert.doesNotMatch(dictionaryCss, /--(?:page|text|card|link):/);
+  assert.doesNotMatch(dictionaryCss, /#(?:111827|182233|1d4ed8)/i);
+  assert.match(dictionaryCss, /background: var\(--link-soft\)/);
   for (const id of ids) {
     const html = fs.readFileSync(path.join(site, "writing", id, "index.html"), "utf8");
     assert.match(html, new RegExp(`<link rel="canonical" href="https://xayah\\.me/writing/${id}/">`));
