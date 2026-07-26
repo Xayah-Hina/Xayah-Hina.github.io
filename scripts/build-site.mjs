@@ -155,11 +155,6 @@ await fs.mkdir(output, { recursive: true });
 
 await copyFile("CNAME");
 await copyTree("journals");
-await fs.mkdir(path.join(output, "dictionary"), { recursive: true });
-await fs.copyFile(
-  path.join(root, "site", "dictionary-redirect.html"),
-  path.join(output, "dictionary", "index.html"),
-);
 
 const generatedAssets = path.join(output, "assets", "generated");
 await fs.mkdir(generatedAssets, { recursive: true });

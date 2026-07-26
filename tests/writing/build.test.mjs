@@ -34,11 +34,7 @@ test("allowlisted build produces four static articles and no source artifacts", 
   assert.match(shellCss, /--card-hover: #1a2027;/);
   assert.match(shellCss, /--line: #252c35;/);
   assert.match(shellCss, /--link: #86bdf2;/);
-  const dictionaryDirectory = path.join(site, "dictionary");
-  const dictionaryHtml = fs.readFileSync(path.join(dictionaryDirectory, "index.html"), "utf8");
-  assert.match(dictionaryHtml, /url=https:\/\/dictionary\.xayah\.me\//);
-  assert.match(dictionaryHtml, /location\.replace\(`https:\/\/dictionary\.xayah\.me\//);
-  assert.deepEqual(fs.readdirSync(dictionaryDirectory), ["index.html"]);
+  assert.equal(fs.existsSync(path.join(site, "dictionary")), false);
   for (const id of ids) {
     const html = fs.readFileSync(path.join(site, "writing", id, "index.html"), "utf8");
     assert.match(html, new RegExp(`<link rel="canonical" href="https://xayah\\.me/writing/${id}/">`));
@@ -61,6 +57,7 @@ test("allowlisted build produces four static articles and no source artifacts", 
   const forbidden = filesBelow(site).filter((file) => /\.(?:md|tex|bib|pdf)$/i.test(file));
   assert.deepEqual(forbidden, []);
   assert.equal(filesBelow(site).some((file) => file.includes(`${path.sep}worker${path.sep}`)), false);
+  assert.equal(filesBelow(site).some((file) => file.includes(`${path.sep}dictionary${path.sep}`)), false);
 });
 
 test("homepage inline scripts remain syntactically valid", () => {
