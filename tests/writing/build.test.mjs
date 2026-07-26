@@ -27,6 +27,13 @@ test("allowlisted build produces four static articles and no source artifacts", 
   const shellMatch = homepage.match(/href="\/assets\/generated\/(site-shell\.[a-f0-9]{12}\.css)"/);
   assert.ok(shellMatch, "homepage should load the hashed shared site shell");
   assert.doesNotMatch(homepage, /__SITE_SHELL_CSS__/);
+  assert.match(homepage, /<meta name="theme-color" media="\(prefers-color-scheme: dark\)" content="#090c10">/);
+  const shellCss = fs.readFileSync(path.join(site, "assets", "generated", shellMatch[1]), "utf8");
+  assert.match(shellCss, /--page: #090c10;/);
+  assert.match(shellCss, /--card: #14191f;/);
+  assert.match(shellCss, /--card-hover: #1a2027;/);
+  assert.match(shellCss, /--line: #252c35;/);
+  assert.match(shellCss, /--link: #86bdf2;/);
   for (const id of ids) {
     const html = fs.readFileSync(path.join(site, "writing", id, "index.html"), "utf8");
     assert.match(html, new RegExp(`<link rel="canonical" href="https://xayah\\.me/writing/${id}/">`));
@@ -34,6 +41,7 @@ test("allowlisted build produces four static articles and no source artifacts", 
     assert.match(html, /<meta name="x-writing-revision" content="[a-f0-9]{64}">/);
     assert.match(html, /<script type="application\/ld\+json">/);
     assert.match(html, /<h1 class="writing-title">/);
+    assert.match(html, /<meta name="theme-color" media="\(prefers-color-scheme: dark\)" content="#090c10">/);
     assert.match(html, new RegExp(`href="/assets/generated/${shellMatch[1].replaceAll(".", "\\.")}"`));
     assert.match(html, /<nav class="site-nav" aria-label="Site navigation">/);
     assert.match(html, /class="section-switch-button" href="\/#writing\/2026" aria-current="page"/);

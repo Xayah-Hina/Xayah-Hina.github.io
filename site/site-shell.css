@@ -21,19 +21,19 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --page: #111827;
-    --text: #f3f4f6;
-    --text-secondary: #d1d5db;
-    --muted: #9ca3af;
-    --subtle: #9ca3af;
-    --line: #1f2937;
-    --card: #1f2937;
-    --card-hover: #253142;
-    --link: #93c5fd;
-    --link-soft: #172554;
-    --focus: #60a5fa;
-    --code: #182131;
-    --shadow: 0 12px 26px rgba(0, 0, 0, 0.3);
+    --page: #090c10;
+    --text: #f0f2f4;
+    --text-secondary: #d2d6dc;
+    --muted: #9da5ae;
+    --subtle: #858e99;
+    --line: #252c35;
+    --card: #14191f;
+    --card-hover: #1a2027;
+    --link: #86bdf2;
+    --link-soft: #13283b;
+    --focus: #78b7ef;
+    --code: #11161c;
+    --shadow: 0 12px 26px rgba(0, 0, 0, 0.42);
   }
 }
 

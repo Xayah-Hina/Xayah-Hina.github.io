@@ -91,7 +91,7 @@ function articleHtml(entry, rendered, assets) {
   <meta name="description" content="${escapeHtml(metadata.summary)}">
   <meta name="x-writing-revision" content="${sourceHash}">
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
-  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111827">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#090c10">
   <meta property="og:type" content="article">
   <meta property="og:title" content="${escapeHtml(metadata.title)}">
   <meta property="og:description" content="${escapeHtml(metadata.summary)}">
