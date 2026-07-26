@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260726-232757-2fe0",
+    "publishedAt": "2026-07-26T23:27:57+08:00",
+    "content": "把editor功能集成到本page了。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260726-192811-f5d0",
     "publishedAt": "2026-07-26T19:28:11+08:00",
     "content": "重心要回到项目进度这边了。（codex额度用不完太浪费了）\n\n下一步我得好好想想怎么写项目文档了，必须沉下心照顾到每一个细节。",
