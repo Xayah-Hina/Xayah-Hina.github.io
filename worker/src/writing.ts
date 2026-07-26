@@ -4,7 +4,7 @@ import {
   deleteWritingObjects,
   getDraftVersioned,
   hasDrafts,
-  listDrafts,
+  listDraftsVersioned,
   privateWritingAssetKey,
   publishedWritingAssetKey,
   putDraftConditional,
@@ -169,8 +169,87 @@ function validateDraft(value: WritingDraft): WritingDraft {
   return { ...metadata, body, savedAt: value.savedAt, sourceHash, ...(publishedRevision ? { publishedRevision } : {}) };
 }
 
+function writingTimestampFromId(id: string): string {
+  return `${id.slice(0, 4)}-${id.slice(4, 6)}-${id.slice(6, 8)}T${id.slice(9, 11)}:${id.slice(11, 13)}:${id.slice(13, 15)}+08:00`;
+}
+
+function legacyTexBody(sourceValue: unknown): string {
+  if (typeof sourceValue !== "string" || !sourceValue.trim() || sourceValue.length > MAX_BODY) {
+    throw new HttpError(500, "A legacy Writing draft has invalid TeX source.");
+  }
+  const source = normalizeText(sourceValue);
+  const document = /\\begin\{document\}([\s\S]*?)\\end\{document\}/.exec(source)?.[1] || source;
+  let body = document
+    .replace(/^[ \t]*%.*$/gm, "")
+    .replace(/\\maketitle\b/g, "")
+    .replace(/\\begin\{abstract\}[\s\S]*?\\end\{abstract\}/g, "")
+    .replace(/\\section\*?\{([^{}]*)\}/g, "## $1")
+    .replace(/\\subsection\*?\{([^{}]*)\}/g, "### $1")
+    .replace(/\\subsubsection\*?\{([^{}]*)\}/g, "#### $1")
+    .replace(/\\(?:textbf|bfseries)\{([^{}]*)\}/g, "**$1**")
+    .replace(/\\(?:emph|textit)\{([^{}]*)\}/g, "*$1*")
+    .replace(/\\texttt\{([^{}]*)\}/g, "`$1`")
+    .replace(/\\href\{([^{}]*)\}\{([^{}]*)\}/g, "[$2]($1)")
+    .replace(/\\url\{([^{}]*)\}/g, "<$1>")
+    .replace(/\\begin\{(?:itemize|enumerate)\}/g, "")
+    .replace(/\\end\{(?:itemize|enumerate)\}/g, "")
+    .replace(/^[ \t]*\\item\s*/gm, "- ")
+    .replace(/\\\(([\s\S]*?)\\\)/g, "$$$1$$")
+    .replace(/\\\[([\s\S]*?)\\\]/g, "$$$$$1$$$$")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  if (!body) body = "## Notes\n";
+  if (!/^##\s+/m.test(body)) body = `## Notes\n\n${body}`;
+  return normalizeBody(body);
+}
+
+function isLegacyDraft(value: WritingDraft): boolean {
+  const record = value as unknown as Record<string, unknown>;
+  return typeof record.source === "string" && typeof record.body !== "string";
+}
+
+async function normalizeStoredDraftVersioned(
+  env: Env,
+  value: WritingDraft,
+  etag: string,
+): Promise<{ draft: WritingDraft; etag: string }> {
+  if (!isLegacyDraft(value)) return { draft: validateDraft(value), etag };
+  const record = asRecord(value, "A legacy Writing draft is invalid.");
+  const id = validateId(record.id);
+  const title = requiredString(record.title, "Writing title", 200);
+  const summary = requiredString(record.summary ?? title, "Writing summary", 5000);
+  const savedAt = validateTimestamp(record.savedAt, "Stored Writing draft timestamp");
+  const createdAt = writingTimestampFromId(id);
+  const body = legacyTexBody(record.source);
+  const metadata = {
+    id,
+    title,
+    summary,
+    createdAt,
+    updatedAt: createdAt,
+    lang: /[\u3400-\u9fff]/u.test(`${title}\n${summary}\n${body}`) ? "zh-CN" : "en",
+    status: "incomplete" as const,
+  };
+  const migratedDraft: WritingDraft = {
+    ...metadata,
+    body,
+    savedAt,
+    sourceHash: await sha256(serializeWriting(metadata, body)),
+  };
+  await putDraftConditional(env, migratedDraft, etag);
+  const current = await getDraftVersioned(env, id);
+  if (!current) throw new HttpError(409, `Legacy Writing draft ${id} changed while it was being migrated.`);
+  if (isLegacyDraft(current.draft)) {
+    if (current.etag === etag) throw new HttpError(500, `Legacy Writing draft ${id} could not be migrated.`);
+    return normalizeStoredDraftVersioned(env, current.draft, current.etag);
+  }
+  return { draft: validateDraft(current.draft), etag: current.etag };
+}
+
 async function allDrafts(env: Env): Promise<WritingDraft[]> {
-  return (await listDrafts(env)).map(validateDraft);
+  return Promise.all((await listDraftsVersioned(env))
+    .map(async ({ draft, etag }) => (await normalizeStoredDraftVersioned(env, draft, etag)).draft));
 }
 
 async function publishedWriting(env: Env): Promise<PublishedWriting[]> {
@@ -291,7 +370,9 @@ async function findWriting(
 ): Promise<{ draftVersion: { draft: WritingDraft; etag: string } | null; publishedArticle: PublishedWriting | null; published: PublishedWriting[] }> {
   validateId(id);
   const [rawDraft, published] = await Promise.all([getDraftVersioned(env, id), publishedWriting(env)]);
-  const draftVersion = rawDraft ? { draft: validateDraft(rawDraft.draft), etag: rawDraft.etag } : null;
+  const draftVersion = rawDraft
+    ? await normalizeStoredDraftVersioned(env, rawDraft.draft, rawDraft.etag)
+    : null;
   const publishedArticle = published.find((article) => article.entry.id === id) || null;
   if (!draftVersion && !publishedArticle) throw new HttpError(404, "The Writing entry is no longer available.");
   return { draftVersion, publishedArticle, published };
@@ -590,7 +671,7 @@ export async function writingDeploymentStatus(env: Env, payload: Record<string, 
             const currentDraft = await getDraftVersioned(env, id);
             const privateKeep = new Set<string>();
             if (currentDraft) {
-              const draft = validateDraft(currentDraft.draft);
+              const draft = (await normalizeStoredDraftVersioned(env, currentDraft.draft, currentDraft.etag)).draft;
               if (draft.sourceHash !== revision) {
                 for (const name of referencedAssets(draft.body)) privateKeep.add(name);
               }

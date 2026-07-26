@@ -37,14 +37,14 @@ export async function putDraftConditional(
   return result !== null;
 }
 
-export async function listDrafts(env: Env): Promise<WritingDraft[]> {
-  const drafts: WritingDraft[] = [];
+export async function listDraftsVersioned(env: Env): Promise<Array<{ draft: WritingDraft; etag: string }>> {
+  const drafts: Array<{ draft: WritingDraft; etag: string }> = [];
   let cursor: string | undefined;
   do {
     const page = await env.CONTENT.list({ prefix: "private/writing/drafts/", cursor, limit: 1000 });
     for (const object of page.objects) {
       const draft = await readJson<WritingDraft>(env, object.key);
-      if (draft) drafts.push(draft);
+      if (draft) drafts.push({ draft, etag: object.etag });
     }
     cursor = page.truncated ? page.cursor : undefined;
   } while (cursor);

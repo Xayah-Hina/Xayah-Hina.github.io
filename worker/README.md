@@ -33,6 +33,8 @@ Never commit `.dev.vars` or any real secret.
 
 The editor saves metadata and Markdown body to `private/writing/drafts/<id>.json`. Each save includes the previous `savedAt`; conditional R2 writes return HTTP 409 instead of overwriting a newer tab.
 
+If an unpublished draft still uses the former TeX shape (`source` without `body`), the Worker converts its document body and headings to Markdown on first read, derives immutable creation metadata from the draft ID, preserves `savedAt`, and replaces the object through an ETag-guarded write. The migration never publishes the draft.
+
 Images are uploaded to `private/writing/assets/<id>/<sha256>.<ext>`. Publish copies only referenced images to the immutable `published/writing/<id>/` prefix, deterministically serializes Front matter, and commits `writing/<id>/<id>.md`. The editor polls `/api/writing/deploy/status` until the public page exposes the matching `x-writing-revision`.
 
 Old public media is removed only after the new page revision is live.
