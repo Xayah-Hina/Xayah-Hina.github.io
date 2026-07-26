@@ -164,7 +164,8 @@ await copyTree("dictionary", (nested, entry) => {
 const generatedAssets = path.join(output, "assets", "generated");
 await fs.mkdir(generatedAssets, { recursive: true });
 const shellCssSource = await fs.readFile(path.join(root, "site", "site-shell.css"));
-const dictionaryCssSource = await fs.readFile(path.join(root, "dictionary", "styles.css"));
+const dictionaryCssSource = (await fs.readFile(path.join(root, "dictionary", "styles.css"), "utf8"))
+  .replaceAll("\r\n", "\n");
 const readerCssSource = await fs.readFile(path.join(root, "site", "writing-reader.css"));
 const readerJsSource = await fs.readFile(path.join(root, "site", "writing-reader.js"));
 const katexCssSource = await fs.readFile(path.join(root, "node_modules", "katex", "dist", "katex.min.css"));
