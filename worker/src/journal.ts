@@ -1,5 +1,5 @@
 import { commitFiles, readDataModule } from "./github";
-import { pendingWriting } from "./writing";
+import { pendingWriting, publishedWritingById } from "./writing";
 import type { Env, FileChange, JournalEntry, JournalImage, MonthlyNote, SyncStatus } from "./types";
 import {
   asRecord,
@@ -121,13 +121,9 @@ async function validateRelated(env: Env, value: unknown): Promise<JournalEntry["
   const record = asRecord(value, "Related Writing is invalid.");
   const id = requiredString(record.id, "Related Writing id", 64);
   if (!/^\d{8}-\d{6}$/.test(id)) throw new HttpError(400, "Related Writing is invalid.");
-  const entries = await readDataModule<unknown>(env, `writing/${id.slice(0, 4)}.js`, env.GITHUB_BRANCH, false);
-  if (entries === null || !Array.isArray(entries)) throw new HttpError(400, "Related Writing must be published before it can be linked.");
-  const match = entries
-    .map((entry) => asRecord(entry, "Published Writing data is invalid."))
-    .find((entry) => entry.id === id);
+  const match = await publishedWritingById(env, id);
   if (!match) throw new HttpError(400, "Related Writing must be published before it can be linked.");
-  return { id, title: requiredString(match.title, "Related Writing title", 200) };
+  return { id, title: match.title };
 }
 
 function parseUploads(value: unknown): Map<string, Upload> {

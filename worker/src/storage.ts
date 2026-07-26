@@ -1,9 +1,9 @@
-import type { BuildStatus, Env, WritingDraft } from "./types";
+import type { Env, WritingDraft } from "./types";
 import { HttpError } from "./utils";
 
 export const draftKey = (id: string) => `private/writing/drafts/${id}.json`;
-export const previewKey = (id: string, sourceHash: string) => `private/writing/previews/${id}/${sourceHash}.pdf`;
-export const buildKey = (jobId: string) => `private/writing/builds/${jobId.slice(0, 15)}/${jobId}.json`;
+export const privateWritingAssetKey = (id: string, name: string) => `private/writing/assets/${id}/${name}`;
+export const publishedWritingAssetKey = (id: string, name: string) => `published/writing/${id}/${name}`;
 
 async function readJson<T>(env: Env, key: string): Promise<T | null> {
   const object = await env.CONTENT.get(key);
@@ -15,18 +15,26 @@ async function readJson<T>(env: Env, key: string): Promise<T | null> {
   }
 }
 
-export async function getDraft(env: Env, id: string): Promise<WritingDraft | null> {
-  return readJson<WritingDraft>(env, draftKey(id));
+export async function getDraftVersioned(env: Env, id: string): Promise<{ draft: WritingDraft; etag: string } | null> {
+  const object = await env.CONTENT.get(draftKey(id));
+  if (!object) return null;
+  try {
+    return { draft: await object.json<WritingDraft>(), etag: object.etag };
+  } catch {
+    throw new HttpError(500, `Stored editor data is invalid: ${draftKey(id)}`);
+  }
 }
 
-export async function putDraft(env: Env, draft: WritingDraft): Promise<void> {
-  await env.CONTENT.put(draftKey(draft.id), JSON.stringify(draft), {
+export async function putDraftConditional(
+  env: Env,
+  draft: WritingDraft,
+  etag: string | null,
+): Promise<boolean> {
+  const result = await env.CONTENT.put(draftKey(draft.id), JSON.stringify(draft), {
     httpMetadata: { contentType: "application/json; charset=utf-8" },
+    onlyIf: etag ? { etagMatches: etag } : { etagDoesNotMatch: "*" },
   });
-}
-
-export async function deleteDraft(env: Env, id: string): Promise<void> {
-  await env.CONTENT.delete(draftKey(id));
+  return result !== null;
 }
 
 export async function listDrafts(env: Env): Promise<WritingDraft[]> {
@@ -48,20 +56,6 @@ export async function hasDrafts(env: Env): Promise<boolean> {
   return result.objects.length > 0;
 }
 
-export async function getBuild(env: Env, jobId: string): Promise<BuildStatus | null> {
-  return readJson<BuildStatus>(env, buildKey(jobId));
-}
-
-export async function putBuild(env: Env, status: BuildStatus): Promise<void> {
-  await env.CONTENT.put(buildKey(status.jobId), JSON.stringify(status), {
-    httpMetadata: { contentType: "application/json; charset=utf-8" },
-  });
-}
-
-export async function deleteBuild(env: Env, jobId: string): Promise<void> {
-  await env.CONTENT.delete(buildKey(jobId));
-}
-
 export async function deletePrefix(env: Env, prefix: string): Promise<void> {
   while (true) {
     const page = await env.CONTENT.list({ prefix, limit: 1000 });
@@ -71,10 +65,11 @@ export async function deletePrefix(env: Env, prefix: string): Promise<void> {
 }
 
 export async function deleteWritingObjects(env: Env, id: string): Promise<void> {
-  await env.CONTENT.delete([draftKey(id), `private/writing/previews/${id}.pdf`, `private/writing/current/${id}.json`]);
+  await env.CONTENT.delete([draftKey(id), `private/writing/current/${id}.json`]);
   await Promise.all([
     deletePrefix(env, `private/writing/builds/${id}/`),
     deletePrefix(env, `private/writing/previews/${id}/`),
+    deletePrefix(env, `private/writing/assets/${id}/`),
     deletePrefix(env, `published/writing/${id}/`),
   ]);
 }

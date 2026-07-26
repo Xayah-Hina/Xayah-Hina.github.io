@@ -1,13 +1,10 @@
 .idea/
-writing/**/*.pdf
-writing/**/*.aux
-writing/**/*.log
-writing/**/*.out
-writing/**/*.synctex.gz
 __pycache__/
 *.pyc
 dictionary/generated/
 dictionary/export/
+node_modules/
+_site/
 worker/node_modules/
 worker/.wrangler/
 worker/.dev.vars

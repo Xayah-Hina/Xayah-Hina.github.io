@@ -108,18 +108,6 @@ export function decodeUtf8Base64(value: string): string {
   return new TextDecoder().decode(decodeBase64(value.replace(/\s/g, "")));
 }
 
-export function secureEqual(left: string | null, right: string | undefined): boolean {
-  if (!left || !right) return false;
-  const leftBytes = new TextEncoder().encode(left);
-  const rightBytes = new TextEncoder().encode(right);
-  const length = Math.max(leftBytes.length, rightBytes.length);
-  let difference = leftBytes.length ^ rightBytes.length;
-  for (let index = 0; index < length; index += 1) {
-    difference |= (leftBytes[index] || 0) ^ (rightBytes[index] || 0);
-  }
-  return difference === 0;
-}
-
 export function normalizeYears(values: unknown[]): string[] {
   return [...new Set(values.map(String).filter((year) => /^\d{4}$/.test(year)))]
     .sort((left, right) => right.localeCompare(left));

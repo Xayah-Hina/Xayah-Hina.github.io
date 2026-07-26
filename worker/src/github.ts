@@ -23,6 +23,14 @@ interface GitHubTree {
   truncated: boolean;
 }
 
+interface GitHubWorkflowRuns {
+  workflow_runs: Array<{
+    head_sha: string;
+    status: string;
+    conclusion: string | null;
+  }>;
+}
+
 const API_VERSION = "2022-11-28";
 
 function repoPath(env: Env): string {
@@ -141,10 +149,20 @@ export async function commitFiles(env: Env, message: string, changes: FileChange
   return commit.sha;
 }
 
-export async function dispatchWorkflow(env: Env, workflow: string, inputs: Record<string, string>): Promise<void> {
-  await githubRequest(env, `${repoPath(env)}/actions/workflows/${encodeURIComponent(workflow)}/dispatches`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ref: env.GITHUB_BRANCH, inputs }),
-  }, [204]);
+export async function workflowRunState(
+  env: Env,
+  workflow: string,
+  headSha: string,
+): Promise<"queued" | "deploying" | "failed"> {
+  const query = new URLSearchParams({ head_sha: headSha, per_page: "10" });
+  const runs = await githubRequest<GitHubWorkflowRuns>(
+    env,
+    `${repoPath(env)}/actions/workflows/${encodeURIComponent(workflow)}/runs?${query}`,
+  );
+  const run = runs.workflow_runs.find((candidate) => candidate.head_sha === headSha);
+  if (!run) return "queued";
+  if (run.status !== "completed") {
+    return ["queued", "requested", "waiting", "pending"].includes(run.status) ? "queued" : "deploying";
+  }
+  return run.conclusion === "success" ? "deploying" : "failed";
 }

@@ -446,6 +446,20 @@
       text-underline-offset: 0.18em;
     }
 
+    .entry-status {
+      display: inline-flex;
+      margin-left: 0.55rem;
+      padding: 0.1rem 0.4rem;
+      vertical-align: 0.15em;
+      color: var(--link);
+      background: color-mix(in srgb, var(--link), transparent 88%);
+      border: 1px solid color-mix(in srgb, var(--link), transparent 62%);
+      border-radius: 999px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
     .entry-summary {
       margin-top: 0.5rem;
     }
@@ -1044,7 +1058,7 @@
       gap: 0.65rem;
       background: var(--card);
       border-bottom: 1px solid var(--line);
-      grid-template-columns: minmax(10rem, 0.55fr) minmax(16rem, 1.45fr);
+      grid-template-columns: minmax(10rem, 0.7fr) minmax(16rem, 1.3fr) minmax(7rem, 0.35fr) minmax(7rem, 0.35fr);
     }
 
     .writing-editor-details .field-input {
@@ -1094,27 +1108,44 @@
       outline-offset: -2px;
     }
 
-    .writing-compile-log {
-      max-height: 12rem;
-      overflow: auto;
+    .writing-asset-toolbar {
+      display: flex;
+      align-items: center;
+      min-height: 2.8rem;
+      padding: 0.45rem 0.7rem;
+      gap: 0.65rem;
       background: var(--card);
       border-top: 1px solid var(--line);
     }
 
-    .writing-compile-log summary {
-      padding: 0.45rem 0.7rem;
+    .writing-asset-label {
+      display: inline-flex;
+      align-items: center;
+      min-height: 1.9rem;
+      padding: 0.25rem 0.6rem;
       color: var(--muted);
+      background: var(--page);
+      border: 1px solid var(--line);
+      border-radius: 0.4rem;
       font-size: 0.75rem;
       cursor: pointer;
     }
 
-    .writing-compile-output {
-      margin: 0;
-      padding: 0 0.7rem 0.7rem;
-      overflow-wrap: anywhere;
-      color: var(--text-secondary);
-      font: 0.72rem/1.5 ui-monospace, "Cascadia Code", Consolas, monospace;
-      white-space: pre-wrap;
+    .writing-asset-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+
+    .writing-asset-hint {
+      color: var(--subtle);
+      font-size: 0.72rem;
+    }
+
+    .writing-source-pane[data-drop-active="true"] {
+      box-shadow: inset 0 0 0 3px var(--focus);
     }
 
     .writing-preview-frame {
@@ -1480,7 +1511,14 @@
           </label>
           <label class="field-group">
             <span class="field-label">Summary</span>
-            <textarea class="field-textarea" name="summary" placeholder="Optional archive summary"></textarea>
+            <textarea class="field-textarea" name="summary" required></textarea>
+          </label>
+          <label class="field-group">
+            <span class="field-label">Language</span>
+            <select class="field-input" name="lang">
+              <option value="zh-CN">简体中文</option>
+              <option value="en">English</option>
+            </select>
           </label>
           <p class="editor-message" role="alert"></p>
         </div>
@@ -1501,8 +1539,7 @@
           <p class="writing-editor-status" aria-live="polite">Ready.</p>
         </div>
         <div class="writing-editor-actions">
-          <button class="control-button" type="button" data-writing-editor-action="save">Save</button>
-          <button class="control-button" type="button" data-writing-editor-action="compile">Save &amp; Compile</button>
+          <button class="control-button" type="button" data-writing-editor-action="save">Save now</button>
           <button class="control-button control-button-primary" type="button" data-writing-editor-action="publish" disabled>Publish</button>
         </div>
       </header>
@@ -1521,21 +1558,35 @@
         </label>
         <label class="field-group">
           <span class="field-label">Summary</span>
-          <textarea class="field-input writing-summary-input" rows="1" placeholder="Optional archive summary"></textarea>
+          <textarea class="field-input writing-summary-input" rows="1"></textarea>
+        </label>
+        <label class="field-group">
+          <span class="field-label">Language</span>
+          <select class="field-input writing-lang-input">
+            <option value="zh-CN">简体中文</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <label class="field-group">
+          <span class="field-label">Status</span>
+          <select class="field-input writing-status-input">
+            <option value="incomplete">未完成</option>
+            <option value="complete">Complete</option>
+          </select>
         </label>
       </div>
 
       <div class="writing-workspace" data-view="source">
-        <section class="writing-source-pane" aria-label="TeX source">
-          <textarea class="writing-source" aria-label="TeX source" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
-          <details class="writing-compile-log">
-            <summary>Compilation log</summary>
-            <pre class="writing-compile-output">No compilation has run in this editor session.</pre>
-          </details>
+        <section class="writing-source-pane" aria-label="Markdown source">
+          <textarea class="writing-source" aria-label="Markdown body" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
+          <div class="writing-asset-toolbar">
+            <label class="writing-asset-label">Insert image<input class="writing-asset-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" multiple></label>
+            <span class="writing-asset-hint">Choose, paste, or drop an image. It is uploaded privately until Publish.</span>
+          </div>
         </section>
-        <section class="writing-preview-pane" aria-label="PDF preview">
-          <iframe class="writing-preview-frame" title="PDF preview"></iframe>
-          <p class="writing-preview-empty" hidden>Compile this document to create its PDF preview.</p>
+        <section class="writing-preview-pane" aria-label="Markdown preview">
+          <iframe class="writing-preview-frame" title="Markdown preview" sandbox="allow-same-origin"></iframe>
+          <p class="writing-preview-empty" hidden>Start writing to create a preview.</p>
         </section>
       </div>
     </section>
@@ -1626,14 +1677,21 @@
         source: null,
         title: null,
         summary: null,
-        log: null,
+        lang: null,
+        writingStatus: null,
+        assetInput: null,
         frame: null,
         emptyPreview: null,
         current: null,
         baseline: null,
+        savedAt: null,
+        renderTimer: null,
+        saveTimer: null,
+        savePromise: null,
+        renderer: null,
+        suppressAutosave: false,
         publishEnabled: false,
-        unpublished: false,
-        compiled: false
+        unpublished: false
       };
 
       async function importDataModule(path, version = moduleVersion) {
@@ -1750,17 +1808,27 @@
           if (typeof entry.title !== "string" || !entry.title.trim()) {
             throw new TypeError(`Writing ${entry.id} has an invalid title.`);
           }
-          if (entry.summary !== undefined && typeof entry.summary !== "string") {
+          if (typeof entry.summary !== "string" || !entry.summary.trim()) {
             throw new TypeError(`Writing ${entry.id} has an invalid summary.`);
           }
-          if (entry.pdf !== undefined && (
-            !entry.pdf
-            || typeof entry.pdf !== "object"
-            || !/^[a-f0-9]{64}$/.test(entry.pdf.sourceHash || "")
-            || entry.pdf.compiler !== "Tectonic 0.16.9"
-            || entry.pdf.url !== `https://media.xayah.me/writing/${entry.id}/${entry.pdf.sourceHash}.pdf`
+          if (
+            typeof entry.createdAt !== "string"
+            || typeof entry.updatedAt !== "string"
+            || Number.isNaN(Date.parse(entry.createdAt))
+            || Number.isNaN(Date.parse(entry.updatedAt))
+            || typeof entry.lang !== "string"
+            || !/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(entry.lang)
+            || !["complete", "incomplete"].includes(entry.status)
+          ) {
+            throw new TypeError(`Writing ${entry.id} has invalid article metadata.`);
+          }
+          if (entry.article !== undefined && (
+            !entry.article
+            || typeof entry.article !== "object"
+            || !/^[a-f0-9]{64}$/.test(entry.article.sourceHash || "")
+            || entry.article.url !== `https://xayah.me/writing/${entry.id}/`
           )) {
-            throw new TypeError(`Writing ${entry.id} has invalid PDF metadata.`);
+            throw new TypeError(`Writing ${entry.id} has invalid article metadata.`);
           }
           ids.add(entry.id);
         }
@@ -1975,14 +2043,18 @@
         const anchor = document.createElement("a");
         anchor.className = "entry-title-link";
         anchor.textContent = entry.title;
-        if (entry.pdf) {
-          anchor.href = entry.pdf.url;
-          anchor.target = "_blank";
-          anchor.rel = "noopener";
+        if (entry.article) {
+          anchor.href = entry.article.url;
         } else {
           anchor.setAttribute("aria-disabled", "true");
         }
         title.append(anchor);
+        if (entry.status === "incomplete") {
+          const badge = document.createElement("span");
+          badge.className = "entry-status";
+          badge.textContent = "未完成";
+          title.append(badge);
+        }
 
         if (entry.summary) {
           const paragraph = document.createElement("p");
@@ -2055,10 +2127,8 @@
         media.hidden = images.length === 0;
 
         if (entry.relatedWriting) {
-          related.href = `https://media.xayah.me/writing/${entry.relatedWriting.id}/${entry.relatedWriting.id}.pdf`;
+          related.href = `/writing/${entry.relatedWriting.id}/`;
           related.textContent = `Related writing: ${entry.relatedWriting.title}`;
-          related.target = "_blank";
-          related.rel = "noopener";
         } else {
           related.hidden = true;
         }
@@ -2436,7 +2506,9 @@
         writingAuthoring.source = writingEditorFragment.querySelector(".writing-source");
         writingAuthoring.title = writingEditorFragment.querySelector(".writing-title-input");
         writingAuthoring.summary = writingEditorFragment.querySelector(".writing-summary-input");
-        writingAuthoring.log = writingEditorFragment.querySelector(".writing-compile-output");
+        writingAuthoring.lang = writingEditorFragment.querySelector(".writing-lang-input");
+        writingAuthoring.writingStatus = writingEditorFragment.querySelector(".writing-status-input");
+        writingAuthoring.assetInput = writingEditorFragment.querySelector(".writing-asset-input");
         writingAuthoring.frame = writingEditorFragment.querySelector(".writing-preview-frame");
         writingAuthoring.emptyPreview = writingEditorFragment.querySelector(".writing-preview-empty");
         document.body.append(writingEditorFragment);
@@ -2454,19 +2526,37 @@
         writingAuthoring.editor.addEventListener("click", (event) => {
           const action = event.target.closest("[data-writing-editor-action]")?.dataset.writingEditorAction;
           if (action === "close") requestCloseWritingEditor();
-          if (action === "save") saveWritingDocument(false);
-          if (action === "compile") saveWritingDocument(true);
+          if (action === "save") void queueWritingSave(true).catch(() => {});
           if (action === "publish") publishWritingDocument();
           const view = event.target.closest("[data-writing-view]")?.dataset.writingView;
           if (view) setWritingEditorView(view);
         });
-        for (const input of [writingAuthoring.source, writingAuthoring.title, writingAuthoring.summary]) {
-          input.addEventListener("input", updateWritingEditorStatus);
+        for (const input of [writingAuthoring.source, writingAuthoring.title, writingAuthoring.summary, writingAuthoring.lang, writingAuthoring.writingStatus]) {
+          input.addEventListener("input", scheduleWritingChanges);
         }
+        writingAuthoring.assetInput.addEventListener("change", (event) => {
+          uploadWritingImages([...event.currentTarget.files]);
+          event.currentTarget.value = "";
+        });
+        writingAuthoring.source.addEventListener("paste", handleWritingImagePaste);
+        const writingSourcePane = writingAuthoring.editor.querySelector(".writing-source-pane");
+        writingSourcePane.addEventListener("dragover", (event) => {
+          if (![...event.dataTransfer.types].includes("Files")) return;
+          event.preventDefault();
+          writingSourcePane.dataset.dropActive = "true";
+        });
+        writingSourcePane.addEventListener("dragleave", () => delete writingSourcePane.dataset.dropActive);
+        writingSourcePane.addEventListener("drop", (event) => {
+          delete writingSourcePane.dataset.dropActive;
+          const files = [...event.dataTransfer.files].filter((file) => file.type.startsWith("image/"));
+          if (!files.length) return;
+          event.preventDefault();
+          uploadWritingImages(files);
+        });
         writingAuthoring.editor.addEventListener("keydown", (event) => {
           if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === "s") {
             event.preventDefault();
-            saveWritingDocument(true);
+            void queueWritingSave(true).catch(() => {});
           }
         });
         byId("archive-list").addEventListener("click", (event) => {
@@ -2504,11 +2594,9 @@
           setAuthoringStatus(journalInitial.message, journalInitial.kind);
           const writingInitial = initialPublishingFeedback(result.publishing,
             writingCatalogError || result.writingError
-            ? (result.writingError || "Writing catalog failed to load; Cloud editing is disabled.")
-            : (result.compiler
-              ? `Cloud Writing editor is enabled · ${result.compiler}`
-              : "Cloud Writing editor is enabled, but its compiler is unavailable."),
-          writingCatalogError || result.writingError || !result.compiler ? "error" : "status", true);
+              ? (result.writingError || "Writing catalog failed to load; Cloud editing is disabled.")
+              : "Cloud Markdown editor is enabled · drafts auto-save privately.",
+          writingCatalogError || result.writingError ? "error" : "status", true);
           setWritingAuthoringStatus(writingInitial.message, writingInitial.kind);
           renderArchive();
         } catch (error) {
@@ -2609,7 +2697,9 @@
         return JSON.stringify({
           title: writingAuthoring.title.value,
           summary: writingAuthoring.summary.value,
-          source: writingAuthoring.source.value
+          lang: writingAuthoring.lang.value,
+          status: writingAuthoring.writingStatus.value,
+          body: writingAuthoring.source.value
         });
       }
 
@@ -2626,13 +2716,11 @@
         if (!writingAuthoring.current || writingAuthoring.busy) return;
         const dirty = writingEditorIsDirty();
         const publish = writingAuthoring.editor.querySelector('[data-writing-editor-action="publish"]');
-        publish.disabled = dirty || !writingAuthoring.publishEnabled || !writingAuthoring.unpublished || !writingAuthoring.compiled;
+        publish.disabled = dirty || !writingAuthoring.publishEnabled || !writingAuthoring.unpublished || Boolean(writingAuthoring.savePromise);
         setWritingEditorStatus(dirty
-          ? "Unsaved changes."
+          ? "Saving draft..."
           : (writingAuthoring.unpublished
-            ? (writingAuthoring.compiled
-              ? "Private draft compiled · Ready to publish."
-              : "Private draft saved · Compile this source before publishing.")
+            ? "Private draft saved · Ready to publish."
             : "Saved and published."));
       }
 
@@ -2647,12 +2735,12 @@
         writingAuthoring.busy = busy;
         if (writingAuthoring.newButton) writingAuthoring.newButton.disabled = busy || !canAuthorWriting();
         if (writingAuthoring.createDialog) {
-          for (const control of writingAuthoring.createDialog.querySelectorAll("button, input, textarea")) control.disabled = busy;
+          for (const control of writingAuthoring.createDialog.querySelectorAll("button, input, textarea, select")) control.disabled = busy;
         }
         if (writingAuthoring.editor) {
-          for (const control of writingAuthoring.editor.querySelectorAll("button, input, textarea")) control.disabled = busy;
+          for (const control of writingAuthoring.editor.querySelectorAll("button, input, textarea, select")) control.disabled = busy;
           const publish = writingAuthoring.editor.querySelector('[data-writing-editor-action="publish"]');
-          publish.disabled = busy || !writingAuthoring.publishEnabled || !writingAuthoring.unpublished || !writingAuthoring.compiled || writingEditorIsDirty();
+          publish.disabled = busy || !writingAuthoring.publishEnabled || !writingAuthoring.unpublished || writingEditorIsDirty() || Boolean(writingAuthoring.savePromise);
         }
       }
 
@@ -2680,10 +2768,12 @@
         const form = writingAuthoring.createForm.elements;
         const payload = {
           title: form.title.value.trim(),
-          summary: form.summary.value.trim()
+          summary: form.summary.value.trim(),
+          lang: form.lang.value,
+          status: "incomplete"
         };
-        if (!payload.title) {
-          writingDialogMessage(writingAuthoring.createDialog, "Title is required.", "error");
+        if (!payload.title || !payload.summary) {
+          writingDialogMessage(writingAuthoring.createDialog, "Title and summary are required.", "error");
           return;
         }
 
@@ -2722,47 +2812,102 @@
         }
       }
 
-      function setWritingPreview(pdfUrl, pdfExists, version) {
-        if (!pdfExists) {
+      function previewEscape(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      async function renderWritingPreview() {
+        if (!writingAuthoring.current) return;
+        const body = writingAuthoring.source.value.trim();
+        if (!body) {
           writingAuthoring.frame.hidden = true;
-          writingAuthoring.frame.removeAttribute("src");
+          writingAuthoring.frame.removeAttribute("srcdoc");
           writingAuthoring.emptyPreview.hidden = false;
           return;
         }
-        const url = new URL(pdfUrl, location.href);
-        url.searchParams.set("v", String(version || Date.now()));
-        url.hash = "view=FitH";
-        writingAuthoring.frame.src = url.href;
-        writingAuthoring.frame.hidden = false;
-        writingAuthoring.emptyPreview.hidden = true;
+        try {
+          writingAuthoring.renderer ||= import("/assets/generated/writing-preview.js");
+          const { renderMarkdown } = await writingAuthoring.renderer;
+          const rendered = renderMarkdown(body, {
+            assetBase: `/api/writing/assets/preview/${writingAuthoring.current.id}`
+          });
+          const badge = writingAuthoring.writingStatus.value === "incomplete"
+            ? '<span class="writing-status">未完成</span>'
+            : "";
+          writingAuthoring.frame.srcdoc = `<!doctype html>
+<html lang="${previewEscape(writingAuthoring.lang.value)}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base target="_blank">
+  <link rel="stylesheet" href="/assets/generated/katex.css">
+  <link rel="stylesheet" href="/assets/generated/writing-reader.css">
+</head>
+<body>
+  <main class="writing-layout">
+    <header class="writing-header">
+      <div class="writing-kicker"><span>Writing preview</span>${badge}</div>
+      <h1 class="writing-title">${previewEscape(writingAuthoring.title.value || "Untitled")}</h1>
+      <p class="writing-summary">${previewEscape(writingAuthoring.summary.value)}</p>
+    </header>
+    <article class="writing-body">${rendered.html}</article>
+  </main>
+</body>
+</html>`;
+          writingAuthoring.frame.hidden = false;
+          writingAuthoring.emptyPreview.hidden = true;
+        } catch (error) {
+          writingAuthoring.frame.hidden = true;
+          writingAuthoring.emptyPreview.hidden = false;
+          writingAuthoring.emptyPreview.textContent = error.message || "Markdown preview failed.";
+        }
+      }
+
+      function scheduleWritingPreview() {
+        window.clearTimeout(writingAuthoring.renderTimer);
+        writingAuthoring.renderTimer = window.setTimeout(renderWritingPreview, 200);
+      }
+
+      function scheduleWritingChanges() {
+        if (writingAuthoring.suppressAutosave || !writingAuthoring.current) return;
+        scheduleWritingPreview();
+        updateWritingEditorStatus();
+        window.clearTimeout(writingAuthoring.saveTimer);
+        writingAuthoring.saveTimer = window.setTimeout(() => {
+          void saveWritingDocument().catch(() => {});
+        }, 800);
       }
 
       function showWritingEditorData(result) {
+        writingAuthoring.suppressAutosave = true;
         if (result.sync) {
           writingAuthoring.publishEnabled = Boolean(result.sync.enabled);
           writingAuthoring.unpublished = Boolean(result.sync.writingPending);
         }
-        writingAuthoring.compiled = Boolean(result.compiled);
         writingAuthoring.current = {
           year: String(result.year),
           id: result.entry.id
         };
-        writingAuthoring.source.value = result.source;
+        writingAuthoring.source.value = result.body;
         writingAuthoring.title.value = result.entry.title;
         writingAuthoring.summary.value = result.entry.summary || "";
+        writingAuthoring.lang.value = result.entry.lang || "zh-CN";
+        writingAuthoring.writingStatus.value = result.entry.status || "incomplete";
+        writingAuthoring.savedAt = result.savedAt || null;
         writingAuthoring.editor.querySelector(".writing-editor-title").textContent = result.entry.title;
-        writingAuthoring.log.textContent = "No compilation has run in this editor session.";
-        writingAuthoring.editor.querySelector(".writing-compile-log").open = false;
-        setWritingPreview(result.pdfUrl, result.pdfExists, result.pdfVersion);
         writingAuthoring.baseline = writingEditorSnapshot();
         writingAuthoring.editor.hidden = false;
         document.body.classList.add("writing-editor-open");
         setWritingEditorView("source");
         setWritingEditorStatus(writingAuthoring.unpublished
-          ? (writingAuthoring.compiled
-            ? "Private draft compiled · Ready to publish."
-            : "Private draft saved · Compile this source before publishing.")
+          ? "Private draft saved · Ready to publish."
           : "Saved and published.");
+        writingAuthoring.suppressAutosave = false;
+        renderWritingPreview();
         writingAuthoring.source.focus();
       }
 
@@ -2782,14 +2927,21 @@
         }
       }
 
-      function requestCloseWritingEditor() {
+      async function requestCloseWritingEditor() {
         if (writingAuthoring.busy) return;
-        if (writingEditorIsDirty() && !window.confirm("Discard unsaved Writing changes?")) return;
+        if (writingEditorIsDirty()) {
+          try {
+            await queueWritingSave(true);
+          } catch {
+            if (!window.confirm("The private draft could not be saved. Leave and discard these changes?")) return;
+          }
+        }
         if (writingAuthoring.unpublished && !window.confirm("Leave these Writing changes saved as a private cloud draft but unpublished?")) return;
         writingAuthoring.editor.hidden = true;
-        writingAuthoring.frame.removeAttribute("src");
+        writingAuthoring.frame.removeAttribute("srcdoc");
         writingAuthoring.current = null;
         writingAuthoring.baseline = null;
+        writingAuthoring.savedAt = null;
         document.body.classList.remove("writing-editor-open");
       }
 
@@ -2801,89 +2953,152 @@
         }
       }
 
-      async function waitForWritingCompilation(id, jobId) {
-        for (let attempt = 0; attempt < 90; attempt += 1) {
-          await new Promise((resolve) => window.setTimeout(resolve, 2000));
-          const result = await writingRequest("compile/status", { id, jobId });
-          const compilation = result.compile || {};
-          writingAuthoring.log.textContent = compilation.log || "Compilation is still running.";
-          if (!compilation.pending) return result;
-          setWritingEditorStatus(`Compiling on GitHub Actions${".".repeat((attempt % 3) + 1)}`);
-        }
-        throw new Error("Compilation is still running after three minutes. The draft is saved; try opening it again shortly.");
-      }
-
-      async function saveWritingDocument(compile) {
-        if (!writingAuthoring.current || writingAuthoring.busy) return;
-        const payload = {
+      function writingSavePayload() {
+        if (!writingAuthoring.current) return null;
+        return {
           year: writingAuthoring.current.year,
           id: writingAuthoring.current.id,
           title: writingAuthoring.title.value.trim(),
           summary: writingAuthoring.summary.value.trim(),
-          source: writingAuthoring.source.value
+          lang: writingAuthoring.lang.value,
+          status: writingAuthoring.writingStatus.value,
+          body: writingAuthoring.source.value,
+          baseSavedAt: writingAuthoring.savedAt
         };
-        if (!payload.title || !payload.source.trim()) {
-          setWritingEditorStatus("Title and TeX source are required.", "error");
-          return;
-        }
+      }
 
-        setWritingEditorBusy(true);
-        setWritingEditorStatus(compile ? "Saving and compiling..." : "Saving...");
+      function queueWritingSave(immediate = false) {
+        window.clearTimeout(writingAuthoring.saveTimer);
+        if (!immediate) {
+          writingAuthoring.saveTimer = window.setTimeout(() => {
+            void saveWritingDocument().catch(() => {});
+          }, 800);
+          return Promise.resolve();
+        }
+        return saveWritingDocument();
+      }
+
+      async function saveWritingDocument() {
+        if (!writingAuthoring.current || writingAuthoring.busy) return;
+        if (writingAuthoring.savePromise) {
+          await writingAuthoring.savePromise;
+          if (!writingEditorIsDirty()) return;
+        }
+        const payload = writingSavePayload();
+        const snapshot = writingEditorSnapshot();
+        if (!payload.title || !payload.summary || !payload.body.trim()) {
+          setWritingEditorStatus("Title, summary, and Markdown body are required.", "error");
+          throw new Error("Writing fields are incomplete.");
+        }
+        setWritingEditorStatus("Saving private draft...");
+        const request = writingRequest("save", payload);
+        writingAuthoring.savePromise = request;
         try {
-          let result = await writingRequest(compile ? "compile" : "save", payload);
+          const result = await request;
           applyWritingServerData(result);
-          showWritingEditorData(result);
-          if (compile) {
-            let compilation = result.compile || { ok: false, log: "No compilation result was returned." };
-            if (compilation.pending && compilation.jobId) {
-              writingAuthoring.log.textContent = compilation.log || "Compilation queued on GitHub Actions.";
-              result = await waitForWritingCompilation(payload.id, compilation.jobId);
-              applyWritingServerData(result);
-              showWritingEditorData(result);
-              compilation = result.compile || { ok: false, log: "No compilation result was returned." };
-            }
-            writingAuthoring.log.textContent = compilation.log;
-            writingAuthoring.editor.querySelector(".writing-compile-log").open = !compilation.ok;
-            const feedback = operationSyncFeedback(result,
-              compilation.ok
-                ? "Saved and compiled successfully."
-                : "Saved, but compilation failed. Fix the source and compile again.",
-            compilation.ok ? "status" : "error");
-            setWritingEditorStatus(feedback.message, feedback.kind);
-            if (compilation.ok && matchMedia("(max-width: 42rem)").matches) setWritingEditorView("preview");
+          writingAuthoring.savedAt = result.savedAt;
+          writingAuthoring.unpublished = Boolean(result.sync?.writingPending);
+          writingAuthoring.baseline = snapshot;
+          if (writingEditorSnapshot() === snapshot) {
+            setWritingEditorStatus("Private draft saved · Ready to publish.");
           } else {
-            const feedback = operationSyncFeedback(result, "Private Writing draft saved.");
-            setWritingEditorStatus(feedback.message, feedback.kind);
+            scheduleWritingChanges();
           }
         } catch (error) {
           setWritingEditorStatus(error.message || "Writing could not be saved.", "error");
+          throw error;
         } finally {
-          setWritingEditorBusy(false);
+          if (writingAuthoring.savePromise === request) writingAuthoring.savePromise = null;
+          updateWritingEditorStatus();
         }
+      }
+
+      function insertWritingImage(name, alt) {
+        const source = writingAuthoring.source;
+        const start = source.selectionStart;
+        const end = source.selectionEnd;
+        const prefix = start > 0 && source.value[start - 1] !== "\n" ? "\n\n" : "";
+        const suffix = end < source.value.length && source.value[end] !== "\n" ? "\n\n" : "\n";
+        source.setRangeText(`${prefix}![${alt}](./${name} "${alt}")${suffix}`, start, end, "end");
+        source.focus();
+        scheduleWritingChanges();
+      }
+
+      async function uploadWritingImages(files) {
+        if (!writingAuthoring.current || writingAuthoring.busy || !files.length) return;
+        const accepted = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
+        const images = files.filter((file) => accepted.has(file.type));
+        if (images.length !== files.length) {
+          setWritingEditorStatus("Only JPEG, PNG, WebP, GIF, and AVIF images are supported.", "error");
+          return;
+        }
+        setWritingEditorStatus(`Uploading ${images.length} image${images.length === 1 ? "" : "s"}...`);
+        try {
+          for (const file of images) {
+            const form = new FormData();
+            form.append("id", writingAuthoring.current.id);
+            form.append("file", file);
+            const response = await fetch("/api/writing/assets/upload", { method: "POST", body: form });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Image upload failed.");
+            const alt = file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim() || "Image";
+            insertWritingImage(result.name, alt);
+          }
+          setWritingEditorStatus("Image uploaded privately · Saving draft...");
+        } catch (error) {
+          setWritingEditorStatus(error.message || "Image upload failed.", "error");
+        }
+      }
+
+      function handleWritingImagePaste(event) {
+        const files = [...event.clipboardData.files].filter((file) => file.type.startsWith("image/"));
+        if (!files.length) return;
+        event.preventDefault();
+        uploadWritingImages(files);
+      }
+
+      async function waitForWritingDeployment(id, revision, commitSha) {
+        for (let attempt = 0; attempt < 100; attempt += 1) {
+          if (attempt > 0) await new Promise((resolve) => window.setTimeout(resolve, 3000));
+          const deployment = await writingRequest("deploy/status", { id, revision, commitSha });
+          if (deployment.state === "live") return deployment;
+          if (deployment.state === "failed") throw new Error(deployment.message || "GitHub Pages deployment failed.");
+          setWritingEditorStatus(`Deploying${".".repeat((attempt % 3) + 1)}`);
+        }
+        return { state: "timeout" };
       }
 
       async function publishWritingDocument() {
         if (!writingAuthoring.current || writingAuthoring.busy || !writingAuthoring.publishEnabled) return;
-        if (writingEditorIsDirty()) {
-          setWritingEditorStatus("Save the current changes as a private draft before publishing.", "error");
+        window.clearTimeout(writingAuthoring.saveTimer);
+        try {
+          await saveWritingDocument();
+        } catch {
           return;
         }
-        if (!writingAuthoring.compiled) {
-          setWritingEditorStatus("Compile the current source successfully before publishing.", "error");
+        if (writingEditorIsDirty()) {
+          setWritingEditorStatus("The latest changes are still being saved.", "error");
           return;
         }
 
         setWritingEditorBusy(true);
-        setWritingEditorStatus("Publishing...");
+        setWritingEditorStatus("Publishing to GitHub...");
         try {
           const result = await writingRequest("publish", {
             year: writingAuthoring.current.year,
             id: writingAuthoring.current.id
           });
           applyWritingServerData(result);
-          showWritingEditorData(result);
-          const feedback = operationSyncFeedback(result, "Writing published.");
-          setWritingEditorStatus(feedback.message, feedback.kind);
+          writingAuthoring.unpublished = Boolean(result.sync?.writingPending);
+          writingAuthoring.savedAt = result.savedAt || writingAuthoring.savedAt;
+          writingAuthoring.baseline = writingEditorSnapshot();
+          const deployment = await waitForWritingDeployment(result.entry.id, result.revision, result.commitSha);
+          setWritingEditorStatus(deployment.state === "live"
+            ? (writingAuthoring.unpublished
+              ? "Published revision is live; a newer private draft remains."
+              : "Published · Live.")
+            : "Published to GitHub; deployment status is still unknown.",
+          deployment.state === "live" ? "status" : "error");
         } catch (error) {
           setWritingEditorStatus(error.message || "Writing could not be published.", "error");
         } finally {
@@ -2895,7 +3110,7 @@
         const entry = (writingEntriesByYear.get(year) || []).find((candidate) => candidate.id === id);
         if (!entry || !(await confirmDeletion(
           "Delete Writing?",
-          "This permanently removes the Writing entry, TeX source, PDF, and its private cloud draft."
+          "This permanently removes the Markdown article, its media, and its private cloud draft."
         ))) return;
 
         setWritingEditorBusy(true);

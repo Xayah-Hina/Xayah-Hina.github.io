@@ -24,17 +24,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.14"
 
-      - name: Build dictionary data
-        run: python dictionary/build.py build
+      - name: Install site dependencies
+        run: npm ci
 
-      - name: Remove build-only fonts
-        shell: bash
-        run: rm -rf assets/fonts
+      - name: Build allowlisted site
+        run: npm run build
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -42,7 +47,7 @@ jobs:
       - name: Upload site
         uses: actions/upload-pages-artifact@v4
         with:
-          path: .
+          path: _site
 
       - name: Deploy
         id: deployment

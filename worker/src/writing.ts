@@ -1,46 +1,52 @@
-import { commitFiles, dispatchWorkflow, listPaths, readDataModule, readTextFile } from "./github";
+import { commitFiles, listPaths, readTextFile, workflowRunState } from "./github";
 import {
-  deleteDraft,
-  deleteBuild,
   deletePrefix,
   deleteWritingObjects,
-  getBuild,
-  getDraft,
+  getDraftVersioned,
   hasDrafts,
   listDrafts,
-  previewKey,
-  putBuild,
-  putDraft,
+  privateWritingAssetKey,
+  publishedWritingAssetKey,
+  putDraftConditional,
 } from "./storage";
-import type { BuildStatus, Env, FileChange, SyncStatus, WritingDraft, WritingEntry, WritingPdf } from "./types";
+import type { Env, FileChange, SyncStatus, WritingDraft, WritingEntry } from "./types";
 import {
   asRecord,
   HttpError,
-  jsonResponse,
   moduleSource,
   normalizeYears,
-  randomHex,
   requiredString,
   singaporeTimestamp,
   writingIdNow,
 } from "./utils";
-import { writingSourceTemplate } from "./writing-template";
 
 const WRITING_ID = /^\d{8}-\d{6}$/;
-const SHA256 = /^[a-f0-9]{64}$/;
-const COMPILER = "Tectonic 0.16.9";
-const BUILD_FINGERPRINT = "writing-build-v1|tectonic-0.16.9";
+const SOURCE_HASH = /^[a-f0-9]{64}$/;
+const LANGUAGE = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
+const ASSET_NAME = /^([a-f0-9]{64})\.(jpg|jpeg|png|webp|gif|avif)$/;
+const FRONT_MATTER_KEYS = ["id", "title", "summary", "createdAt", "updatedAt", "lang", "status"] as const;
+const MAX_BODY = 2_000_000;
+const MAX_IMAGE = 32 * 1024 * 1024;
 
-interface WritingAsset {
-  name: string;
-  url: string;
-  sha256: string;
+type WritingStatus = WritingEntry["status"];
+
+interface PublishedWriting {
+  entry: WritingEntry;
+  body: string;
+  source: string;
 }
 
-type WritingAssetManifest = Record<string, WritingAsset[]>;
+interface ImageFormat {
+  mime: string;
+  extension: "jpg" | "png" | "webp" | "gif" | "avif";
+}
 
 function normalizeText(value: string): string {
   return value.replace(/\r\n?/g, "\n");
+}
+
+function savedAtNow(): string {
+  return new Date().toISOString();
 }
 
 function validateId(value: unknown, year?: string): string {
@@ -50,525 +56,607 @@ function validateId(value: unknown, year?: string): string {
   return value;
 }
 
-function validateSourceHash(value: unknown): string {
-  if (typeof value !== "string" || !SHA256.test(value)) throw new HttpError(400, "Writing source hash is invalid.");
+function validateHash(value: unknown, label = "Writing revision"): string {
+  if (typeof value !== "string" || !SOURCE_HASH.test(value)) throw new HttpError(400, `${label} is invalid.`);
   return value;
 }
 
-function validatePdf(value: unknown, id: string): WritingPdf | undefined {
-  if (value === undefined) return undefined;
-  const record = asRecord(value, `Writing ${id} has invalid PDF metadata.`);
-  const sourceHash = validateSourceHash(record.sourceHash);
-  const compiler = requiredString(record.compiler, "Writing PDF compiler", 100);
-  const url = requiredString(record.url, "Writing PDF URL", 500);
-  const expected = `https://media.xayah.me/writing/${id}/${sourceHash}.pdf`;
-  if (url !== expected || compiler !== COMPILER) throw new HttpError(502, `Writing ${id} has invalid PDF metadata.`);
-  return { url, sourceHash, compiler };
+function validateTimestamp(value: unknown, label: string): string {
+  if (typeof value !== "string" || value.length > 40 || Number.isNaN(Date.parse(value))) {
+    throw new HttpError(400, `${label} is invalid.`);
+  }
+  return value;
 }
 
-function validateEntry(value: unknown, year: string): WritingEntry {
-  const record = asRecord(value, `Writing ${year} contains an invalid entry.`);
-  const id = validateId(record.id, year);
+function validateLanguage(value: unknown): string {
+  const lang = requiredString(value, "Writing language", 35);
+  if (!LANGUAGE.test(lang)) throw new HttpError(400, "Writing language is invalid.");
+  return lang;
+}
+
+function validateStatus(value: unknown): WritingStatus {
+  if (value !== "complete" && value !== "incomplete") throw new HttpError(400, "Writing status is invalid.");
+  return value;
+}
+
+function validateMetadata(value: unknown, expectedId = ""): Omit<WritingEntry, "article"> {
+  const record = asRecord(value, "Writing metadata is invalid.");
+  const id = validateId(record.id);
+  if (expectedId && id !== expectedId) throw new HttpError(400, `Writing id ${id} does not match its directory.`);
   const title = requiredString(record.title, "Writing title", 200);
-  const summary = requiredString(record.summary ?? "", "Writing summary", 5000, true);
-  const pdf = validatePdf(record.pdf, id);
-  return { id, title, ...(summary ? { summary } : {}), ...(pdf ? { pdf } : {}) };
+  const summary = requiredString(record.summary, "Writing summary", 5000);
+  const createdAt = validateTimestamp(record.createdAt, "Writing creation time");
+  const updatedAt = validateTimestamp(record.updatedAt, "Writing update time");
+  if (Date.parse(updatedAt) < Date.parse(createdAt)) throw new HttpError(400, "Writing update time precedes its creation time.");
+  const expectedCreatedPrefix = `${id.slice(0, 4)}-${id.slice(4, 6)}-${id.slice(6, 8)}T${id.slice(9, 11)}:${id.slice(11, 13)}:${id.slice(13, 15)}`;
+  if (!createdAt.startsWith(expectedCreatedPrefix)) throw new HttpError(400, "Writing creation time does not match its id.");
+  const lang = validateLanguage(record.lang);
+  const status = validateStatus(record.status);
+  return { id, title, summary, createdAt, updatedAt, lang, status };
 }
 
-function validateEntries(value: unknown, year: string): WritingEntry[] {
-  if (!Array.isArray(value)) throw new HttpError(502, `writing/${year}.js must export an array.`);
-  const ids = new Set<string>();
-  const entries = value.map((item) => validateEntry(item, year));
-  for (const entry of entries) {
-    if (ids.has(entry.id)) throw new HttpError(502, `writing/${year}.js contains duplicate ids.`);
-    ids.add(entry.id);
-  }
-  return entries.sort((left, right) => right.id.localeCompare(left.id));
+function normalizeBody(value: unknown): string {
+  if (typeof value !== "string") throw new HttpError(400, "Writing Markdown body is invalid.");
+  const body = normalizeText(value).trim();
+  if (!body || body.length > MAX_BODY) throw new HttpError(400, "Writing Markdown body is invalid or too long.");
+  if (/^#\s+/m.test(body)) throw new HttpError(400, "Writing Markdown body must not contain an H1 heading.");
+  return `${body}\n`;
 }
 
-function validateDraft(value: WritingDraft): WritingDraft {
-  const entry = validateEntry(value, String(value.id || "").slice(0, 4));
-  if (typeof value.source !== "string" || !value.source.trim() || value.source.length > 2_000_000) {
-    throw new HttpError(500, `Stored Writing draft ${entry.id} has invalid source.`);
-  }
-  const sourceHash = validateSourceHash(value.sourceHash);
-  if (typeof value.savedAt !== "string" || Number.isNaN(Date.parse(value.savedAt))) {
-    throw new HttpError(500, `Stored Writing draft ${entry.id} has an invalid timestamp.`);
-  }
-  return { ...entry, source: value.source, sourceHash, savedAt: value.savedAt };
+function serializeWriting(entry: Omit<WritingEntry, "article">, body: string): string {
+  const metadata = validateMetadata(entry, entry.id);
+  const normalizedBody = normalizeBody(body);
+  const frontMatter = FRONT_MATTER_KEYS
+    .map((key) => `${key}: ${JSON.stringify(metadata[key])}`)
+    .join("\n");
+  return `---\n${frontMatter}\n---\n\n${normalizedBody}`;
 }
 
-function validateAssetManifest(value: unknown, env: Env): WritingAssetManifest {
-  const record = asRecord(value, "writing/assets.json must contain an object.");
-  const manifest: WritingAssetManifest = {};
-  for (const [id, rawAssets] of Object.entries(record)) {
-    validateId(id);
-    if (!Array.isArray(rawAssets)) throw new HttpError(502, `Writing asset list ${id} is invalid.`);
-    const names = new Set<string>();
-    manifest[id] = rawAssets.map((value) => {
-      const asset = asRecord(value, `Writing asset ${id} is invalid.`);
-      const name = requiredString(asset.name, "Writing asset name", 255);
-      const url = requiredString(asset.url, "Writing asset URL", 500);
-      const sha256 = validateSourceHash(asset.sha256);
-      if (!/^[A-Za-z0-9._-]+$/.test(name) || names.has(name)) throw new HttpError(502, `Writing asset name ${id}/${name} is invalid.`);
-      if (url !== `${env.MEDIA_ORIGIN}/writing/${id}/${name}`) throw new HttpError(502, `Writing asset URL ${id}/${name} is invalid.`);
-      names.add(name);
-      return { name, url, sha256 };
-    });
+function parseWritingSource(source: string, expectedId: string): { metadata: Omit<WritingEntry, "article">; body: string; source: string } {
+  const normalized = normalizeText(source);
+  const match = /^---\n([\s\S]*?)\n---\n(?:\n)?([\s\S]*)$/.exec(normalized);
+  if (!match) throw new HttpError(502, `Writing ${expectedId} must start with strict front matter.`);
+  const lines = match[1].split("\n");
+  if (lines.length !== FRONT_MATTER_KEYS.length) throw new HttpError(502, `Writing ${expectedId} has invalid front matter.`);
+  const raw: Record<string, unknown> = {};
+  for (let index = 0; index < FRONT_MATTER_KEYS.length; index += 1) {
+    const key = FRONT_MATTER_KEYS[index];
+    const prefix = `${key}: `;
+    if (!lines[index].startsWith(prefix)) throw new HttpError(502, `Writing ${expectedId} front matter is missing ${key} or is out of order.`);
+    try {
+      raw[key] = JSON.parse(lines[index].slice(prefix.length));
+    } catch {
+      throw new HttpError(502, `Writing ${expectedId} front matter field ${key} is invalid.`);
+    }
   }
-  return manifest;
-}
-
-async function assetManifest(env: Env): Promise<WritingAssetManifest> {
-  const source = await readTextFile(env, "writing/assets.json");
-  if (!source) throw new HttpError(502, "writing/assets.json is missing.");
+  let metadata: Omit<WritingEntry, "article">;
   try {
-    return validateAssetManifest(JSON.parse(source), env);
+    metadata = validateMetadata(raw, expectedId);
   } catch (error) {
-    if (error instanceof HttpError) throw error;
-    throw new HttpError(502, "writing/assets.json is not valid JSON.");
+    if (error instanceof HttpError) throw new HttpError(502, error.message);
+    throw error;
   }
+  let body: string;
+  try {
+    body = normalizeBody(match[2]);
+  } catch (error) {
+    if (error instanceof HttpError) throw new HttpError(502, error.message);
+    throw error;
+  }
+  return { metadata, body, source: serializeWriting(metadata, body) };
 }
 
-async function writingSourceHash(env: Env, id: string, source: string): Promise<string> {
-  const assets = ((await assetManifest(env))[id] || [])
-    .slice()
-    .sort((left, right) => left.name.localeCompare(right.name));
-  const bibliography = normalizeText(await readTextFile(env, `writing/${id}/${id}.bib`, env.GITHUB_BRANCH, false) || "");
-  const material = JSON.stringify({ build: BUILD_FINGERPRINT, source: normalizeText(source), bibliography, assets });
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(material));
+async function sha256(value: string | Uint8Array): Promise<string> {
+  const bytes = typeof value === "string" ? new TextEncoder().encode(value) : value;
+  const digest = await crypto.subtle.digest("SHA-256", Uint8Array.from(bytes).buffer);
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function publishedPdfKey(id: string, sourceHash: string): string {
-  return `published/writing/${id}/${sourceHash}.pdf`;
+function articleUrl(env: Env, id: string): string {
+  return `${env.PUBLIC_SITE_ORIGIN.replace(/\/$/, "")}/writing/${id}/`;
 }
 
-function currentPdfKey(id: string): string {
-  return `private/writing/current/${id}.json`;
-}
-
-function publishedPdf(id: string, sourceHash: string, env: Env): WritingPdf {
-  return {
-    url: `${env.MEDIA_ORIGIN}/writing/${id}/${sourceHash}.pdf`,
-    sourceHash,
-    compiler: COMPILER,
-  };
-}
-
-async function publishedYears(env: Env): Promise<string[]> {
-  const catalog = await readDataModule<{ years?: unknown[] }>(env, "writing/catalog.js");
-  if (!catalog || !Array.isArray(catalog.years)) throw new HttpError(502, "writing/catalog.js must contain a years array.");
-  return normalizeYears(catalog.years);
-}
-
-async function publishedEntries(env: Env, year: string, required = true): Promise<WritingEntry[]> {
-  const raw = await readDataModule<unknown>(env, `writing/${year}.js`, env.GITHUB_BRANCH, required);
-  return raw === null ? [] : validateEntries(raw, year);
+function validateDraft(value: WritingDraft): WritingDraft {
+  const metadata = validateMetadata(value, String(value.id || ""));
+  const body = normalizeBody(value.body);
+  const sourceHash = validateHash(value.sourceHash, "Stored Writing source hash");
+  if (typeof value.savedAt !== "string" || Number.isNaN(Date.parse(value.savedAt))) {
+    throw new HttpError(500, `Stored Writing draft ${metadata.id} has an invalid timestamp.`);
+  }
+  const publishedRevision = value.publishedRevision === undefined
+    ? undefined
+    : validateHash(value.publishedRevision, "Stored published revision");
+  return { ...metadata, body, savedAt: value.savedAt, sourceHash, ...(publishedRevision ? { publishedRevision } : {}) };
 }
 
 async function allDrafts(env: Env): Promise<WritingDraft[]> {
   return (await listDrafts(env)).map(validateDraft);
 }
 
+async function publishedWriting(env: Env): Promise<PublishedWriting[]> {
+  const paths = (await listPaths(env, "writing/"))
+    .filter((path) => /^writing\/(\d{8}-\d{6})\/\1\.md$/.test(path))
+    .sort();
+  const articles = await Promise.all(paths.map(async (path) => {
+    const id = path.split("/")[1];
+    const raw = await readTextFile(env, path);
+    if (raw === null) throw new HttpError(502, `Writing source ${path} is missing.`);
+    const parsed = parseWritingSource(raw, id);
+    const sourceHash = await sha256(parsed.source);
+    return {
+      ...parsed,
+      entry: {
+        ...parsed.metadata,
+        article: { url: articleUrl(env, id), sourceHash },
+      },
+    };
+  }));
+  const ids = new Set<string>();
+  for (const article of articles) {
+    if (ids.has(article.entry.id)) throw new HttpError(502, `Writing ${article.entry.id} is duplicated.`);
+    ids.add(article.entry.id);
+  }
+  return articles.sort((left, right) => right.entry.id.localeCompare(left.entry.id));
+}
+
 function draftEntry(draft: WritingDraft, published?: WritingEntry): WritingEntry {
   return {
     id: draft.id,
     title: draft.title,
-    ...(draft.summary ? { summary: draft.summary } : {}),
-    ...(published?.pdf ? { pdf: published.pdf } : {}),
+    summary: draft.summary,
+    createdAt: draft.createdAt,
+    updatedAt: draft.updatedAt,
+    lang: draft.lang,
+    status: draft.status,
+    ...(published?.article ? { article: published.article } : {}),
   };
 }
 
-function mergedEntries(published: WritingEntry[], drafts: WritingDraft[], year: string): WritingEntry[] {
-  const entries = new Map(published.map((entry) => [entry.id, entry]));
+function mergedEntries(published: PublishedWriting[], drafts: WritingDraft[], year: string): WritingEntry[] {
+  const entries = new Map(
+    published
+      .filter((article) => article.entry.id.startsWith(year))
+      .map((article) => [article.entry.id, article.entry]),
+  );
   for (const draft of drafts) {
-    if (draft.id.slice(0, 4) !== year) continue;
+    if (!draft.id.startsWith(year)) continue;
     entries.set(draft.id, draftEntry(draft, entries.get(draft.id)));
   }
   return [...entries.values()].sort((left, right) => right.id.localeCompare(left.id));
 }
 
-async function collection(env: Env, year: string, drafts?: WritingDraft[]): Promise<{ years: string[]; entries: WritingEntry[] }> {
-  const draftValues = drafts || await allDrafts(env);
-  const publicYears = await publishedYears(env);
-  const years = normalizeYears([...publicYears, ...draftValues.map((draft) => draft.id.slice(0, 4))]);
-  const entries = mergedEntries(await publishedEntries(env, year, publicYears.includes(year)), draftValues, year);
-  return { years, entries };
+function isDraftPending(draft: WritingDraft, published?: WritingEntry): boolean {
+  return draft.sourceHash !== published?.article?.sourceHash;
 }
 
-function sync(env: Env, state: SyncStatus["state"], message: string, writingPending: boolean): SyncStatus {
+async function collection(
+  env: Env,
+  year: string,
+  drafts?: WritingDraft[],
+  published?: PublishedWriting[],
+): Promise<{ years: string[]; entries: WritingEntry[]; pending: boolean }> {
+  const draftValues = drafts || await allDrafts(env);
+  const publicValues = published || await publishedWriting(env);
+  const publishedById = new Map(publicValues.map((article) => [article.entry.id, article.entry]));
+  const pending = draftValues.some((draft) => isDraftPending(draft, publishedById.get(draft.id)));
+  return {
+    years: normalizeYears([
+      ...publicValues.map((article) => article.entry.id.slice(0, 4)),
+      ...draftValues.map((draft) => draft.id.slice(0, 4)),
+    ]),
+    entries: mergedEntries(publicValues, draftValues, year),
+    pending,
+  };
+}
+
+function sync(env: Env, pending: boolean, message?: string): SyncStatus {
   return {
     enabled: true,
-    state,
-    message,
+    state: pending ? "pending" : "synced",
+    message: message || (pending ? "Draft saved privately in R2." : "Published Markdown loaded from GitHub."),
     branch: env.GITHUB_BRANCH,
-    writingPending,
+    writingPending: pending,
   };
 }
 
-async function findWriting(env: Env, year: string, id: string): Promise<{ entry: WritingEntry; draft: WritingDraft | null; published: WritingEntry | null }> {
-  validateId(id, year);
-  const draftValue = await getDraft(env, id);
-  const draft = draftValue ? validateDraft(draftValue) : null;
-  const years = await publishedYears(env);
-  const published = years.includes(year)
-    ? (await publishedEntries(env, year)).find((entry) => entry.id === id) || null
-    : null;
-  if (!draft && !published) throw new HttpError(404, "The Writing entry is no longer available.");
+async function editorData(
+  env: Env,
+  draft: WritingDraft | null,
+  publishedArticle: PublishedWriting | null,
+  allDraftValues?: WritingDraft[],
+  allPublishedValues?: PublishedWriting[],
+) {
+  const entry = draft
+    ? draftEntry(draft, publishedArticle?.entry)
+    : publishedArticle?.entry;
+  if (!entry) throw new HttpError(404, "The Writing entry is no longer available.");
+  const body = draft?.body || publishedArticle!.body;
+  const pending = draft ? isDraftPending(draft, publishedArticle?.entry) : false;
+  const values = await collection(env, entry.id.slice(0, 4), allDraftValues, allPublishedValues);
   return {
-    entry: draft ? draftEntry(draft, published || undefined) : published!,
-    draft,
-    published,
-  };
-}
-
-async function editorData(env: Env, year: string, entry: WritingEntry, source: string, sourceHash: string, pending: boolean) {
-  const values = await collection(env, year);
-  const preview = await env.CONTENT.head(previewKey(entry.id, sourceHash));
-  const published = entry.pdf?.sourceHash === sourceHash
-    ? await env.CONTENT.head(publishedPdfKey(entry.id, sourceHash))
-    : null;
-  const compiled = Boolean(preview || published);
-  const pdfUrl = preview
-    ? `/api/writing/preview/${entry.id}/${sourceHash}.pdf`
-    : (published ? entry.pdf!.url : "");
-  return {
-    year,
+    year: entry.id.slice(0, 4),
     entry,
-    source,
-    sourceHash,
-    compiled,
-    pdfUrl,
-    pdfExists: compiled,
-    pdfVersion: sourceHash,
-    ...values,
-    sync: sync(env, pending ? "pending" : "ready", pending ? "Draft saved privately in R2." : "Published source loaded from GitHub.", pending),
+    body,
+    savedAt: draft?.savedAt || null,
+    revision: draft?.sourceHash || publishedArticle?.entry.article?.sourceHash,
+    years: values.years,
+    entries: values.entries,
+    sync: sync(env, pending),
   };
 }
 
-async function draftFromPayload(env: Env, payload: Record<string, unknown>): Promise<WritingDraft> {
-  const year = requiredString(payload.year, "Writing year", 4);
-  if (!/^\d{4}$/.test(year)) throw new HttpError(400, "Writing year is invalid.");
-  const id = validateId(payload.id, year);
-  const title = requiredString(payload.title, "Writing title", 200);
-  const summary = requiredString(payload.summary ?? "", "Writing summary", 5000, true);
-  const source = typeof payload.source === "string" ? normalizeText(payload.source).trimEnd() + "\n" : "";
-  if (!source.trim() || source.length > 2_000_000) throw new HttpError(400, "Writing source is invalid or too long.");
-  const sourceHash = await writingSourceHash(env, id, source);
-  return { id, title, ...(summary ? { summary } : {}), source, sourceHash, savedAt: singaporeTimestamp() };
+async function findWriting(
+  env: Env,
+  id: string,
+): Promise<{ draftVersion: { draft: WritingDraft; etag: string } | null; publishedArticle: PublishedWriting | null; published: PublishedWriting[] }> {
+  validateId(id);
+  const [rawDraft, published] = await Promise.all([getDraftVersioned(env, id), publishedWriting(env)]);
+  const draftVersion = rawDraft ? { draft: validateDraft(rawDraft.draft), etag: rawDraft.etag } : null;
+  const publishedArticle = published.find((article) => article.entry.id === id) || null;
+  if (!draftVersion && !publishedArticle) throw new HttpError(404, "The Writing entry is no longer available.");
+  return { draftVersion, publishedArticle, published };
+}
+
+function referencedAssets(body: string): string[] {
+  const names = new Set<string>();
+  const image = /!\[[^\]]*\]\(([^)\s]+)(?:\s+(?:"[^"]*"|'[^']*'))?\)/g;
+  for (const match of body.matchAll(image)) {
+    const destination = match[1];
+    const asset = /^\.\/([a-f0-9]{64}\.(?:jpe?g|png|webp|gif|avif))$/i.exec(destination);
+    if (!asset) throw new HttpError(400, `Writing image ${destination} is not a content-addressed local image.`);
+    const name = asset[1].toLowerCase();
+    if (!ASSET_NAME.test(name)) throw new HttpError(400, `Writing image ${destination} is invalid.`);
+    names.add(name);
+  }
+  return [...names].sort();
+}
+
+function imageFormat(bytes: Uint8Array, declaredMime: string): ImageFormat {
+  const text = (start: number, end: number) => new TextDecoder().decode(bytes.subarray(start, end));
+  let detected: ImageFormat | null = null;
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    detected = { mime: "image/jpeg", extension: "jpg" };
+  } else if (
+    bytes.length >= 8
+    && [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every((value, index) => bytes[index] === value)
+  ) {
+    detected = { mime: "image/png", extension: "png" };
+  } else if (bytes.length >= 12 && text(0, 4) === "RIFF" && text(8, 12) === "WEBP") {
+    detected = { mime: "image/webp", extension: "webp" };
+  } else if (bytes.length >= 6 && ["GIF87a", "GIF89a"].includes(text(0, 6))) {
+    detected = { mime: "image/gif", extension: "gif" };
+  } else if (bytes.length >= 16 && text(4, 8) === "ftyp") {
+    const brands = [text(8, 12)];
+    for (let offset = 16; offset + 4 <= Math.min(bytes.length, 64); offset += 4) brands.push(text(offset, offset + 4));
+    if (brands.some((brand) => brand === "avif" || brand === "avis")) {
+      detected = { mime: "image/avif", extension: "avif" };
+    }
+  }
+  if (!detected || detected.mime !== declaredMime) throw new HttpError(400, "The uploaded file does not match its declared image format.");
+  return detected;
+}
+
+async function copyReferencedAssets(env: Env, id: string, names: string[]): Promise<string[]> {
+  const copied: string[] = [];
+  try {
+    for (const name of names) {
+      const publicKey = publishedWritingAssetKey(id, name);
+      if (await env.CONTENT.head(publicKey)) continue;
+      const privateObject = await env.CONTENT.get(privateWritingAssetKey(id, name));
+      if (!privateObject) throw new HttpError(409, `Referenced image ${name} has not been uploaded.`);
+      await env.CONTENT.put(publicKey, privateObject.body, {
+        httpMetadata: privateObject.httpMetadata,
+        customMetadata: { ...(privateObject.customMetadata || {}), source: "writing-publish" },
+      });
+      copied.push(publicKey);
+    }
+    return copied;
+  } catch (error) {
+    if (copied.length) await env.CONTENT.delete(copied);
+    throw error;
+  }
+}
+
+async function deleteObjectsExcept(env: Env, prefix: string, keep: Set<string>): Promise<void> {
+  let cursor: string | undefined;
+  do {
+    const page = await env.CONTENT.list({ prefix, cursor, limit: 1000 });
+    const stale = page.objects.filter((object) => !keep.has(object.key.slice(prefix.length))).map((object) => object.key);
+    if (stale.length) await env.CONTENT.delete(stale);
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
 }
 
 export async function editorWritingCatalog(env: Env): Promise<Response> {
-  const drafts = await allDrafts(env);
-  const years = normalizeYears([...(await publishedYears(env)), ...drafts.map((draft) => draft.id.slice(0, 4))]);
-  return new Response(moduleSource({ years: years.map(Number) }), {
+  const values = await collection(env, writingIdNow().slice(0, 4));
+  return new Response(moduleSource({ years: values.years.map(Number) }), {
     headers: { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" },
   });
 }
 
 export async function editorWritingYear(env: Env, year: string): Promise<Response> {
   if (!/^\d{4}$/.test(year)) throw new HttpError(404, "Writing year was not found.");
-  const drafts = await allDrafts(env);
-  const publicYears = await publishedYears(env);
-  const entries = mergedEntries(await publishedEntries(env, year, publicYears.includes(year)), drafts, year);
-  return new Response(moduleSource(entries), {
+  const values = await collection(env, year);
+  return new Response(moduleSource(values.entries), {
     headers: { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" },
   });
 }
 
 export async function writingStatus(env: Env): Promise<{ years: string[]; pending: boolean }> {
-  const drafts = await allDrafts(env);
-  return {
-    years: normalizeYears([...(await publishedYears(env)), ...drafts.map((draft) => draft.id.slice(0, 4))]),
-    pending: drafts.length > 0,
-  };
+  const values = await collection(env, writingIdNow().slice(0, 4));
+  return { years: values.years, pending: values.pending };
 }
 
 export async function openWriting(env: Env, payload: Record<string, unknown>) {
   const year = requiredString(payload.year, "Writing year", 4);
   const id = validateId(payload.id, year);
-  const found = await findWriting(env, year, id);
-  const source = found.draft?.source || await readTextFile(env, `writing/${id}/${id}.tex`);
-  if (!source) throw new HttpError(502, `Missing source file ${id}.tex.`);
-  const sourceHash = found.draft?.sourceHash || await writingSourceHash(env, id, source);
-  return editorData(env, year, found.entry, source, sourceHash, Boolean(found.draft));
+  const found = await findWriting(env, id);
+  return editorData(env, found.draftVersion?.draft || null, found.publishedArticle, undefined, found.published);
 }
 
 export async function createWriting(env: Env, payload: Record<string, unknown>) {
   const title = requiredString(payload.title, "Writing title", 200);
-  const summary = requiredString(payload.summary ?? "", "Writing summary", 5000, true);
+  const summary = requiredString(payload.summary, "Writing summary", 5000);
+  const lang = validateLanguage(payload.lang);
+  const status = validateStatus(payload.status);
   const id = writingIdNow();
-  const year = id.slice(0, 4);
-  const existing = (await collection(env, year)).entries.some((entry) => entry.id === id);
-  if (existing || await getDraft(env, id)) throw new HttpError(409, "A Writing entry already exists for this second. Try again in a moment.");
-  const source = writingSourceTemplate(id, title, summary);
-  const draft: WritingDraft = {
-    id,
-    title,
-    ...(summary ? { summary } : {}),
-    source,
-    sourceHash: await writingSourceHash(env, id, source),
-    savedAt: singaporeTimestamp(),
-  };
-  await putDraft(env, draft);
-  return editorData(env, year, validateEntry(draft, year), draft.source, draft.sourceHash, true);
+  const existing = await findWriting(env, id).catch((error) => {
+    if (error instanceof HttpError && error.status === 404) return null;
+    throw error;
+  });
+  if (existing) throw new HttpError(409, "A Writing entry already exists for this second. Try again in a moment.");
+  const timestamp = singaporeTimestamp();
+  const metadata = { id, title, summary, createdAt: timestamp, updatedAt: timestamp, lang, status };
+  const body = "## Notes\n\nStart writing here.\n";
+  const sourceHash = await sha256(serializeWriting(metadata, body));
+  const draft: WritingDraft = { ...metadata, body, savedAt: savedAtNow(), sourceHash };
+  if (!(await putDraftConditional(env, draft, null))) {
+    throw new HttpError(409, "A Writing entry already exists for this second. Try again in a moment.");
+  }
+  return editorData(env, draft, null);
 }
 
 export async function saveWriting(env: Env, payload: Record<string, unknown>) {
-  const draft = await draftFromPayload(env, payload);
-  const found = await findWriting(env, draft.id.slice(0, 4), draft.id);
-  await putDraft(env, draft);
-  return editorData(env, draft.id.slice(0, 4), draftEntry(draft, found.published || undefined), draft.source, draft.sourceHash, true);
-}
-
-export async function compileWriting(env: Env, payload: Record<string, unknown>) {
-  const saved = await saveWriting(env, payload);
-  const id = saved.entry.id as string;
-  const sourceHash = saved.sourceHash as string;
-  if (saved.compiled) {
-    return {
-      ...saved,
-      compile: {
-        pending: false,
-        ok: true,
-        reused: true,
-        log: "The current source is unchanged; its existing PDF was reused from R2.",
-      },
-    };
+  const year = requiredString(payload.year, "Writing year", 4);
+  const id = validateId(payload.id, year);
+  const found = await findWriting(env, id);
+  const current = found.draftVersion;
+  const baseSavedAt = payload.baseSavedAt;
+  if (
+    (current && (typeof baseSavedAt !== "string" || baseSavedAt !== current.draft.savedAt))
+    || (!current && baseSavedAt !== null && baseSavedAt !== undefined)
+  ) {
+    throw new HttpError(409, "This Writing changed in another tab. Reload it before saving.");
   }
-  const jobId = `${id}-${Date.now()}-${randomHex(4)}`;
-  const status: BuildStatus = {
+  const title = requiredString(payload.title, "Writing title", 200);
+  const summary = requiredString(payload.summary, "Writing summary", 5000);
+  const lang = validateLanguage(payload.lang);
+  const status = validateStatus(payload.status);
+  const body = normalizeBody(payload.body);
+  const previous = current?.draft || found.publishedArticle?.entry;
+  if (!previous) throw new HttpError(404, "The Writing entry is no longer available.");
+  const metadata = {
     id,
-    jobId,
+    title,
+    summary,
+    createdAt: previous.createdAt,
+    updatedAt: previous.updatedAt,
+    lang,
+    status,
+  };
+  const sourceHash = await sha256(serializeWriting(metadata, body));
+  const draft: WritingDraft = {
+    ...metadata,
+    body,
+    savedAt: savedAtNow(),
     sourceHash,
-    state: "queued",
-    log: "Compilation queued on GitHub Actions.",
-    createdAt: singaporeTimestamp(),
+    ...(current?.draft.publishedRevision ? { publishedRevision: current.draft.publishedRevision } : {}),
   };
-  await deletePrefix(env, `private/writing/builds/${id}/`);
-  await putBuild(env, status);
-  try {
-    await dispatchWorkflow(env, "compile-writing.yml", { writing_id: id, job_id: jobId, source_hash: sourceHash });
-    return { ...saved, compile: { pending: true, jobId, ok: null, log: status.log } };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "The compilation workflow could not be started.";
-    status.state = "failed";
-    status.log = message;
-    status.finishedAt = singaporeTimestamp();
-    await putBuild(env, status);
-    return { ...saved, compile: { pending: false, jobId, ok: false, log: message } };
+  if (!(await putDraftConditional(env, draft, current?.etag || null))) {
+    throw new HttpError(409, "This Writing changed in another tab. Reload it before saving.");
   }
+  return editorData(env, draft, found.publishedArticle, undefined, found.published);
 }
 
-export async function compilationStatus(env: Env, payload: Record<string, unknown>) {
-  const id = validateId(payload.id);
-  const jobId = requiredString(payload.jobId, "Compilation job", 160);
-  const status = await getBuild(env, jobId);
-  if (!status || status.id !== id) throw new HttpError(404, "The compilation job was not found.");
-  const draftValue = await getDraft(env, id);
-  if (!draftValue) throw new HttpError(404, "The Writing draft is no longer available.");
-  const draft = validateDraft(draftValue);
-  const found = await findWriting(env, id.slice(0, 4), id);
-  const data = await editorData(env, id.slice(0, 4), draftEntry(draft, found.published || undefined), draft.source, draft.sourceHash, true);
-  const pending = status.state === "queued" || status.state === "running";
-  const current = status.sourceHash === draft.sourceHash;
-  const result = {
-    ...data,
-    compile: {
-      pending,
-      jobId,
-      ok: pending ? null : status.state === "succeeded" && current && data.compiled,
-      log: current ? status.log : `${status.log}\n\nThe draft changed after this build started. Compile the current source again.`,
-    },
+export async function uploadWritingAsset(env: Env, request: Request) {
+  const contentType = request.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().startsWith("multipart/form-data")) throw new HttpError(415, "Expected a multipart image upload.");
+  const declared = Number(request.headers.get("content-length") || "0");
+  if (Number.isFinite(declared) && declared > MAX_IMAGE + 1024 * 1024) throw new HttpError(413, "The uploaded image is too large.");
+  const form = await request.formData();
+  const id = validateId(form.get("id"));
+  await findWriting(env, id);
+  const file = form.get("file");
+  if (!(file instanceof File) || file.size < 1 || file.size > MAX_IMAGE) {
+    throw new HttpError(400, "Each image must be between 1 byte and 32 MiB.");
+  }
+  if (!["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"].includes(file.type)) {
+    throw new HttpError(400, "Only JPEG, PNG, WebP, GIF, and AVIF images are supported.");
+  }
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const format = imageFormat(bytes, file.type);
+  const name = `${await sha256(bytes)}.${format.extension}`;
+  const privateKey = privateWritingAssetKey(id, name);
+  const publicKey = publishedWritingAssetKey(id, name);
+  const duplicate = Boolean(await env.CONTENT.head(privateKey) || await env.CONTENT.head(publicKey));
+  if (!duplicate) {
+    await env.CONTENT.put(privateKey, bytes, {
+      httpMetadata: { contentType: format.mime },
+      customMetadata: { sha256: name.slice(0, 64), originalName: file.name.slice(0, 500) },
+      onlyIf: { etagDoesNotMatch: "*" },
+    });
+  }
+  return {
+    id,
+    name,
+    previewUrl: `/api/writing/assets/preview/${id}/${name}`,
+    deduplicated: duplicate,
   };
-  if (!pending) await deleteBuild(env, jobId);
-  return result;
 }
 
-async function updateCurrentPdf(env: Env, id: string, pdf: WritingPdf): Promise<void> {
-  await env.CONTENT.put(currentPdfKey(id), JSON.stringify(pdf), {
-    httpMetadata: { contentType: "application/json; charset=utf-8" },
-  });
-}
-
-async function cleanupPublishedPdfs(env: Env, id: string, keepHashes: Set<string>): Promise<void> {
-  let cursor: string | undefined;
-  do {
-    const page = await env.CONTENT.list({ prefix: `published/writing/${id}/`, cursor, limit: 1000 });
-    const stale = page.objects
-      .filter((object) => object.key.endsWith(".pdf"))
-      .filter((object) => !keepHashes.has(object.key.slice(object.key.lastIndexOf("/") + 1, -4)))
-      .map((object) => object.key);
-    if (stale.length) await env.CONTENT.delete(stale);
-    cursor = page.truncated ? page.cursor : undefined;
-  } while (cursor);
+export async function previewWritingAsset(env: Env, idValue: string, nameValue: string): Promise<Response> {
+  const id = validateId(idValue);
+  const name = nameValue.toLowerCase();
+  if (!ASSET_NAME.test(name)) throw new HttpError(404, "Writing image was not found.");
+  const object = await env.CONTENT.get(privateWritingAssetKey(id, name))
+    || await env.CONTENT.get(publishedWritingAssetKey(id, name));
+  if (!object) throw new HttpError(404, "Writing image was not found.");
+  const headers = new Headers();
+  object.writeHttpMetadata(headers);
+  headers.set("Cache-Control", "private, no-store");
+  headers.set("ETag", object.httpEtag);
+  headers.set("X-Content-Type-Options", "nosniff");
+  return new Response(object.body, { headers });
 }
 
 export async function publishWriting(env: Env, payload: Record<string, unknown>) {
   const year = requiredString(payload.year, "Writing year", 4);
   const id = validateId(payload.id, year);
-  const draftValue = await getDraft(env, id);
-  if (!draftValue) throw new HttpError(400, "There are no unpublished changes to publish.");
-  const draft = validateDraft(draftValue);
-  const years = await publishedYears(env);
-  const entries = await publishedEntries(env, year, years.includes(year));
-  const previous = entries.find((candidate) => candidate.id === id) || null;
-  const sourceHash = draft.sourceHash;
-  const publicKey = publishedPdfKey(id, sourceHash);
-  const preview = await env.CONTENT.get(previewKey(id, sourceHash));
-  const existingPublic = await env.CONTENT.head(publicKey);
-  if (!preview && !existingPublic) {
-    throw new HttpError(409, "Compile the current source successfully before publishing.");
+  const found = await findWriting(env, id);
+  if (!found.draftVersion) throw new HttpError(400, "There are no private Writing changes to publish.");
+  const draft = found.draftVersion.draft;
+  if (!isDraftPending(draft, found.publishedArticle?.entry)) {
+    throw new HttpError(400, "The current Writing is already published.");
   }
-
-  let uploaded = false;
-  if (preview && !existingPublic) {
-    await env.CONTENT.put(publicKey, preview.body, {
-      httpMetadata: { contentType: "application/pdf" },
-      customMetadata: { sourceHash, compiler: COMPILER },
-    });
-    uploaded = true;
-  }
-  const pdf = publishedPdf(id, sourceHash, env);
-  const entry: WritingEntry = {
+  const metadata = {
     id,
     title: draft.title,
-    ...(draft.summary ? { summary: draft.summary } : {}),
-    pdf,
+    summary: draft.summary,
+    createdAt: draft.createdAt,
+    updatedAt: singaporeTimestamp(),
+    lang: draft.lang,
+    status: draft.status,
   };
-  const nextEntries = [...entries.filter((candidate) => candidate.id !== id), entry]
-    .sort((left, right) => right.id.localeCompare(left.id));
-  const nextYears = normalizeYears([...years, year]);
+  const source = serializeWriting(metadata, draft.body);
+  const revision = await sha256(source);
+  const assets = referencedAssets(draft.body);
+  const copied = await copyReferencedAssets(env, id, assets);
+  let commitSha: string;
   try {
-    await commitFiles(env, `Writing: publish ${id}`, [
-      { path: `writing/${id}/${id}.tex`, content: draft.source },
-      { path: `writing/${year}.js`, content: moduleSource(nextEntries) },
-      { path: "writing/catalog.js", content: moduleSource({ years: nextYears.map(Number) }) },
+    commitSha = await commitFiles(env, `Writing: publish ${id}`, [
+      { path: `writing/${id}/${id}.md`, content: source },
     ]);
   } catch (error) {
-    if (uploaded) await env.CONTENT.delete(publicKey);
+    if (copied.length) await env.CONTENT.delete(copied);
     throw error;
   }
-  await updateCurrentPdf(env, id, pdf);
-  await deleteDraft(env, id);
-  await deletePrefix(env, `private/writing/previews/${id}/`);
-  const keepHashes = new Set([sourceHash]);
-  if (previous?.pdf?.sourceHash) keepHashes.add(previous.pdf.sourceHash);
-  try {
-    await cleanupPublishedPdfs(env, id, keepHashes);
-  } catch (error) {
-    console.warn("Could not clean old Writing PDFs", error);
-  }
-  const data = await editorData(env, year, entry, draft.source, sourceHash, false);
+
+  const publishedEntry: WritingEntry = {
+    ...metadata,
+    article: { url: articleUrl(env, id), sourceHash: revision },
+  };
+  const syncedDraft: WritingDraft = {
+    ...metadata,
+    article: publishedEntry.article,
+    body: draft.body,
+    savedAt: savedAtNow(),
+    sourceHash: revision,
+    publishedRevision: revision,
+  };
+  const synchronized = await putDraftConditional(env, syncedDraft, found.draftVersion.etag);
+  const responseDraft = synchronized
+    ? syncedDraft
+    : validateDraft((await getDraftVersioned(env, id))?.draft || syncedDraft);
+  const response = await editorData(env, responseDraft, { entry: publishedEntry, body: draft.body, source });
   return {
-    ...data,
+    ...response,
+    commitSha,
+    revision,
     status: "published",
-    sync: sync(env, "synced", "Published source metadata to GitHub and its PDF to R2.", false),
+    sync: sync(env, !synchronized, synchronized
+      ? "Committed Markdown to GitHub. Waiting for Pages."
+      : "Committed Markdown, but a newer private draft exists in another tab."),
+  };
+}
+
+export async function writingDeploymentStatus(env: Env, payload: Record<string, unknown>) {
+  const id = validateId(payload.id);
+  const revision = validateHash(payload.revision);
+  const commitSha = requiredString(payload.commitSha, "GitHub commit", 64);
+  if (!/^[a-f0-9]{40,64}$/.test(commitSha)) throw new HttpError(400, "GitHub commit is invalid.");
+  try {
+    const response = await fetch(`${articleUrl(env, id)}?revision=${revision}&t=${Date.now()}`, {
+      headers: { "Cache-Control": "no-cache" },
+    });
+    if (response.ok) {
+      const html = await response.text();
+      const liveRevision = /<meta\s+name=["']x-writing-revision["']\s+content=["']([a-f0-9]{64})["']/i.exec(html)?.[1];
+      if (liveRevision === revision) {
+        try {
+          const published = await publishedWriting(env);
+          const article = published.find((candidate) => candidate.entry.id === id);
+          if (article?.entry.article?.sourceHash === revision) {
+            const liveAssets = new Set(referencedAssets(article.body));
+            const currentDraft = await getDraftVersioned(env, id);
+            const privateKeep = new Set<string>();
+            if (currentDraft) {
+              const draft = validateDraft(currentDraft.draft);
+              if (draft.sourceHash !== revision) {
+                for (const name of referencedAssets(draft.body)) privateKeep.add(name);
+              }
+            }
+            await Promise.all([
+              deleteObjectsExcept(env, `private/writing/assets/${id}/`, privateKeep),
+              deleteObjectsExcept(env, `published/writing/${id}/`, liveAssets),
+              deletePrefix(env, `private/writing/builds/${id}/`),
+              deletePrefix(env, `private/writing/previews/${id}/`),
+              env.CONTENT.delete([
+                `private/writing/current/${id}.json`,
+                `private/writing/previews/${id}.pdf`,
+              ]),
+            ]);
+          }
+        } catch (error) {
+          console.warn("The Writing page is live, but old media cleanup was deferred", error);
+        }
+        return { state: "live", revision, message: "The public article is live." };
+      }
+    }
+  } catch (error) {
+    console.warn("Could not inspect the public Writing revision", error);
+  }
+  const workflow = await workflowRunState(env, "pages.yml", commitSha);
+  if (workflow === "failed") return { state: "failed", revision, message: "GitHub Pages reported a failed deployment." };
+  return {
+    state: workflow,
+    revision,
+    message: workflow === "queued" ? "The Pages deployment is queued." : "The Pages deployment is in progress.",
   };
 }
 
 export async function deleteWriting(env: Env, payload: Record<string, unknown>) {
   const year = requiredString(payload.year, "Writing year", 4);
   const id = validateId(payload.id, year);
-  const found = await findWriting(env, year, id);
-  if (found.published) {
-    const years = await publishedYears(env);
-    const entries = await publishedEntries(env, year);
-    const nextEntries = entries.filter((entry) => entry.id !== id);
-    const nextYears = nextEntries.length > 0 ? years : years.filter((value) => value !== year);
-    const directoryPaths = await listPaths(env, `writing/${id}/`);
-    const manifest = await assetManifest(env);
-    const changes: FileChange[] = directoryPaths.map((path) => ({ path, content: null }));
-    changes.push({ path: `writing/${year}.js`, content: nextEntries.length ? moduleSource(nextEntries) : null });
-    if (manifest[id]) {
-      delete manifest[id];
-      changes.push({ path: "writing/assets.json", content: `${JSON.stringify(manifest, null, 2)}\n` });
-    }
-    if (!nextEntries.length) changes.push({ path: "writing/catalog.js", content: moduleSource({ years: nextYears.map(Number) }) });
-    await commitFiles(env, `Writing: delete ${id}`, changes);
+  const [draftVersion, paths] = await Promise.all([
+    getDraftVersioned(env, id),
+    listPaths(env, `writing/${id}/`),
+  ]);
+  const tracked = paths.filter((path) => path.startsWith(`writing/${id}/`));
+  if (!draftVersion && !tracked.length) throw new HttpError(404, "The Writing entry is no longer available.");
+  let commitSha: string | null = null;
+  if (tracked.length) {
+    const changes: FileChange[] = tracked.map((path) => ({ path, content: null }));
+    commitSha = await commitFiles(env, `Writing: delete ${id}`, changes);
   }
   await deleteWritingObjects(env, id);
   const values = await collection(env, year);
   return {
     year,
-    ...values,
+    entries: values.entries,
+    years: values.years,
+    commitSha,
     status: "deleted",
-    sync: sync(env, found.published ? "synced" : "unchanged", found.published ? "Deleted from GitHub and R2." : "Private draft deleted.", false),
+    sync: sync(env, values.pending, "Writing deleted from GitHub and R2."),
   };
 }
 
-export async function previewWriting(env: Env, id: string, sourceHash: string): Promise<Response> {
-  validateId(id);
-  validateSourceHash(sourceHash);
-  const object = await env.CONTENT.get(previewKey(id, sourceHash));
-  if (!object) throw new HttpError(404, "No compiled preview is available for the current source.");
-  const headers = new Headers();
-  object.writeHttpMetadata(headers);
-  headers.set("Content-Type", "application/pdf");
-  headers.set("Cache-Control", "private, no-store");
-  headers.set("Content-Disposition", `inline; filename="${id}.pdf"`);
-  return new Response(object.body, { headers });
-}
-
-export async function buildSource(env: Env, id: string, jobId: string, sourceHash: string): Promise<Response> {
-  validateId(id);
-  validateSourceHash(sourceHash);
-  const status = await getBuild(env, jobId);
-  if (!status || status.id !== id || status.sourceHash !== sourceHash || !["queued", "running"].includes(status.state)) {
-    throw new HttpError(404, "The compilation job is unavailable.");
-  }
-  const draftValue = await getDraft(env, id);
-  if (!draftValue) throw new HttpError(404, "The Writing draft is unavailable.");
-  const draft = validateDraft(draftValue);
-  if (draft.sourceHash !== sourceHash) {
-    status.state = "failed";
-    status.log = "The draft changed before compilation started. Compile the current source again.";
-    status.finishedAt = singaporeTimestamp();
-    await putBuild(env, status);
-    throw new HttpError(409, status.log);
-  }
-  status.state = "running";
-  status.log = "Tectonic is compiling this source revision on GitHub Actions.";
-  await putBuild(env, status);
-  return new Response(draft.source, {
-    headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
-  });
-}
-
-export async function completeBuild(env: Env, request: Request): Promise<Response> {
-  const form = await request.formData();
-  const id = validateId(form.get("id"));
-  const jobId = requiredString(form.get("job"), "Compilation job", 160);
-  const sourceHash = validateSourceHash(form.get("source_hash"));
-  const status = await getBuild(env, jobId);
-  if (!status || status.id !== id || status.sourceHash !== sourceHash || !["queued", "running"].includes(status.state)) {
-    throw new HttpError(404, "The compilation job is unavailable.");
-  }
-  const ok = form.get("ok") === "true";
-  const rawLog = typeof form.get("log") === "string" ? String(form.get("log")) : "";
-  const log = rawLog.slice(-200_000) || (ok ? "Compilation completed successfully." : "Compilation failed without a log.");
-  if (ok) {
-    const pdf = form.get("pdf");
-    if (!(pdf instanceof File) || pdf.size < 5 || pdf.size > 50 * 1024 * 1024) {
-      throw new HttpError(400, "The compiled PDF is missing or invalid.");
-    }
-    const bytes = new Uint8Array(await pdf.arrayBuffer());
-    if (new TextDecoder().decode(bytes.subarray(0, 5)) !== "%PDF-") {
-      throw new HttpError(400, "The compiled file is not a PDF.");
-    }
-    await env.CONTENT.put(previewKey(id, sourceHash), bytes, {
-      httpMetadata: { contentType: "application/pdf" },
-      customMetadata: { sourceHash, compiler: COMPILER },
-    });
-  }
-  status.state = ok ? "succeeded" : "failed";
-  status.log = log;
-  status.finishedAt = singaporeTimestamp();
-  await putBuild(env, status);
-  return jsonResponse({ ok: true, state: status.state });
+export async function publishedWritingById(env: Env, idValue: string): Promise<WritingEntry | null> {
+  const id = validateId(idValue);
+  return (await publishedWriting(env)).find((article) => article.entry.id === id)?.entry || null;
 }
 
 export async function pendingWriting(env: Env): Promise<boolean> {
-  return hasDrafts(env);
+  if (!(await hasDrafts(env))) return false;
+  const values = await collection(env, writingIdNow().slice(0, 4));
+  return values.pending;
 }

@@ -1,7 +1,6 @@
 export interface Env {
   CONTENT: R2Bucket;
   GITHUB_TOKEN?: string;
-  BUILD_CALLBACK_TOKEN?: string;
   ACCESS_TEAM_DOMAIN?: string;
   ACCESS_AUD?: string;
   GITHUB_OWNER: string;
@@ -23,30 +22,24 @@ export interface SyncStatus {
 export interface WritingEntry {
   id: string;
   title: string;
-  summary?: string;
-  pdf?: WritingPdf;
+  summary: string;
+  createdAt: string;
+  updatedAt: string;
+  lang: string;
+  status: "complete" | "incomplete";
+  article?: WritingArticle;
 }
 
-export interface WritingPdf {
+export interface WritingArticle {
   url: string;
   sourceHash: string;
-  compiler: string;
 }
 
 export interface WritingDraft extends WritingEntry {
-  source: string;
-  sourceHash: string;
+  body: string;
   savedAt: string;
-}
-
-export interface BuildStatus {
-  id: string;
-  jobId: string;
   sourceHash: string;
-  state: "queued" | "running" | "succeeded" | "failed";
-  log: string;
-  createdAt: string;
-  finishedAt?: string;
+  publishedRevision?: string;
 }
 
 export interface JournalImage {
