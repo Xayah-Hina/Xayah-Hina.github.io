@@ -23,6 +23,10 @@ function filesBelow(directory) {
 
 test("allowlisted build produces four static articles and no source artifacts", () => {
   execFileSync(process.execPath, ["scripts/build-site.mjs"], { cwd: root, stdio: "pipe" });
+  const homepage = fs.readFileSync(path.join(site, "index.html"), "utf8");
+  const shellMatch = homepage.match(/href="\/assets\/generated\/(site-shell\.[a-f0-9]{12}\.css)"/);
+  assert.ok(shellMatch, "homepage should load the hashed shared site shell");
+  assert.doesNotMatch(homepage, /__SITE_SHELL_CSS__/);
   for (const id of ids) {
     const html = fs.readFileSync(path.join(site, "writing", id, "index.html"), "utf8");
     assert.match(html, new RegExp(`<link rel="canonical" href="https://xayah\\.me/writing/${id}/">`));
@@ -30,6 +34,12 @@ test("allowlisted build produces four static articles and no source artifacts", 
     assert.match(html, /<meta name="x-writing-revision" content="[a-f0-9]{64}">/);
     assert.match(html, /<script type="application\/ld\+json">/);
     assert.match(html, /<h1 class="writing-title">/);
+    assert.match(html, new RegExp(`href="/assets/generated/${shellMatch[1].replaceAll(".", "\\.")}"`));
+    assert.match(html, /<nav class="site-nav" aria-label="Site navigation">/);
+    assert.match(html, /class="section-switch-button" href="\/#writing\/2026" aria-current="page"/);
+    assert.match(html, /<footer class="site-footer">/);
+    assert.match(html, /In solitude, where we are least alone\./);
+    assert.doesNotMatch(html, /class="writing-(?:nav|footer)"/);
   }
   const catalog = fs.readFileSync(path.join(site, "writing", "catalog.js"), "utf8");
   const year = fs.readFileSync(path.join(site, "writing", "2026.js"), "utf8");

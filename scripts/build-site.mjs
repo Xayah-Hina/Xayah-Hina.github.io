@@ -86,9 +86,12 @@ function articleHtml(entry, rendered, assets) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(metadata.summary)}">
   <meta name="x-writing-revision" content="${sourceHash}">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#111827">
   <meta property="og:type" content="article">
   <meta property="og:title" content="${escapeHtml(metadata.title)}">
   <meta property="og:description" content="${escapeHtml(metadata.summary)}">
@@ -98,34 +101,48 @@ function articleHtml(entry, rendered, assets) {
   <meta name="twitter:card" content="summary">
   <link rel="canonical" href="${url}">
   <link rel="icon" href="https://raw.githubusercontent.com/Xayah-Graphics/imagebed/7772e40fee3de8f8ca11134d04ef5f5816b8ef60/Hatsune.Miku.full.1961310.JPG">
+  <link rel="stylesheet" href="/assets/generated/${assetsManifest.shellCss}">
   <link rel="stylesheet" href="/assets/generated/${assetsManifest.katexCss}">
   <link rel="stylesheet" href="/assets/generated/${assetsManifest.readerCss}">
   <script type="application/ld+json">${jsonLd}</script>
 </head>
 <body>
   <a class="skip-link" href="#article">Skip to article</a>
-  <nav class="writing-nav" aria-label="Writing navigation"><a href="/#writing/${metadata.id.slice(0, 4)}">← Writing archive</a></nav>
-  <main id="article" class="writing-layout">
-    <header class="writing-header">
-      <div class="writing-kicker"><span>Writing</span>${status}</div>
-      <h1 class="writing-title">${escapeHtml(metadata.title)}</h1>
-      <p class="writing-summary">${escapeHtml(metadata.summary)}</p>
-      <div class="writing-meta">
-        <span>Xayah Hina</span><span aria-hidden="true">·</span>
-        <time datetime="${metadata.createdAt}">${escapeHtml(formatDate(metadata.createdAt, metadata.lang))}</time>
-        ${metadata.updatedAt !== metadata.createdAt ? `<span aria-hidden="true">·</span><span>Updated <time datetime="${metadata.updatedAt}">${escapeHtml(formatDate(metadata.updatedAt, metadata.lang))}</time></span>` : ""}
-      </div>
-    </header>
-    ${hasToc ? `<noscript><style>.toc-fab{display:none!important}</style><nav class="toc-noscript" aria-label="Table of contents"><p class="toc-title">Contents</p>${toc}</nav></noscript>` : ""}
-    <article class="writing-body">${rendered.html}</article>
-    ${hasToc ? `<aside class="toc-rail" aria-label="Table of contents"><div class="toc-rail-inner"><p class="toc-title">Contents</p>${toc}</div></aside>` : ""}
+  <nav class="site-nav" aria-label="Site navigation">
+    <a class="site-name" href="/">Xayah Hina</a>
+    <div class="section-switch" role="group" aria-label="Choose a section">
+      <a class="section-switch-button" href="/#writing/${metadata.id.slice(0, 4)}" aria-current="page">Writing</a>
+      <a class="section-switch-button" href="/#journal/${metadata.id.slice(0, 4)}">Journal</a>
+    </div>
+  </nav>
+  <main id="article" class="article-container">
+    <div class="writing-layout">
+      <header class="writing-header">
+        <div class="writing-kicker"><a href="/#writing/${metadata.id.slice(0, 4)}">Writing</a>${status}</div>
+        <h1 class="writing-title">${escapeHtml(metadata.title)}</h1>
+        <p class="writing-summary">${escapeHtml(metadata.summary)}</p>
+        <div class="writing-meta">
+          <span>Xayah Hina</span><span aria-hidden="true">·</span>
+          <time datetime="${metadata.createdAt}">${escapeHtml(formatDate(metadata.createdAt, metadata.lang))}</time>
+          ${metadata.updatedAt !== metadata.createdAt ? `<span aria-hidden="true">·</span><span>Updated <time datetime="${metadata.updatedAt}">${escapeHtml(formatDate(metadata.updatedAt, metadata.lang))}</time></span>` : ""}
+        </div>
+      </header>
+      ${hasToc ? `<noscript><style>.toc-fab{display:none!important}</style><nav class="toc-noscript" aria-label="Table of contents"><p class="toc-title">Contents</p>${toc}</nav></noscript>` : ""}
+      <article class="writing-body">${rendered.html}</article>
+      ${hasToc ? `<aside class="toc-rail" aria-label="Table of contents"><div class="toc-rail-inner"><p class="toc-title">Contents</p>${toc}</div></aside>` : ""}
+    </div>
   </main>
   ${hasToc ? `<button class="toc-fab" type="button" data-toc-open aria-haspopup="dialog" aria-controls="writing-contents"><b aria-hidden="true">☰</b><span>Contents</span></button>
   <dialog id="writing-contents" class="toc-dialog" data-toc-dialog aria-labelledby="writing-contents-title">
     <div class="toc-dialog-header"><strong id="writing-contents-title">Contents</strong><button class="toc-close" type="button" data-toc-close aria-label="Close contents">×</button></div>
     ${toc}
   </dialog>` : ""}
-  <footer class="writing-footer">© ${new Date(metadata.createdAt).getFullYear()} Xayah Hina</footer>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <blockquote class="footer-quote"><p>In solitude, where we are least alone.</p></blockquote>
+      <p class="footer-meta">© ${new Date().getFullYear()} Xayah Hina. All rights reserved.</p>
+    </div>
+  </footer>
   ${hasToc ? `<script type="module" src="/assets/generated/${assetsManifest.readerJs}"></script>` : ""}
   <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"f670dcb518704a2d893ab5685a09cdf8"}'></script>
 </body>
@@ -136,7 +153,7 @@ function articleHtml(entry, rendered, assets) {
 await fs.rm(output, { recursive: true, force: true });
 await fs.mkdir(output, { recursive: true });
 
-for (const file of ["index.html", "CNAME"]) await copyFile(file);
+await copyFile("CNAME");
 await copyTree("journals");
 await copyTree("dictionary", (nested, entry) => {
   const first = nested.split(path.sep)[0];
@@ -146,6 +163,7 @@ await copyTree("dictionary", (nested, entry) => {
 
 const generatedAssets = path.join(output, "assets", "generated");
 await fs.mkdir(generatedAssets, { recursive: true });
+const shellCssSource = await fs.readFile(path.join(root, "site", "site-shell.css"));
 const readerCssSource = await fs.readFile(path.join(root, "site", "writing-reader.css"));
 const readerJsSource = await fs.readFile(path.join(root, "site", "writing-reader.js"));
 const katexCssSource = await fs.readFile(path.join(root, "node_modules", "katex", "dist", "katex.min.css"));
@@ -158,18 +176,30 @@ const previewBundle = await esbuild({
   write: false,
 });
 const assetsManifest = {
+  shellCss: `site-shell.${hash(shellCssSource)}.css`,
   readerCss: `writing-reader.${hash(readerCssSource)}.css`,
   readerJs: `writing-reader.${hash(readerJsSource)}.js`,
   katexCss: `katex.${hash(katexCssSource)}.css`,
 };
 await Promise.all([
+  fs.writeFile(path.join(generatedAssets, assetsManifest.shellCss), shellCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.readerCss), readerCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.readerJs), readerJsSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.katexCss), katexCssSource),
+  fs.writeFile(path.join(generatedAssets, "site-shell.css"), shellCssSource),
   fs.writeFile(path.join(generatedAssets, "writing-reader.css"), readerCssSource),
   fs.writeFile(path.join(generatedAssets, "katex.css"), katexCssSource),
   fs.writeFile(path.join(generatedAssets, "writing-preview.js"), previewBundle.outputFiles[0].contents),
 ]);
+const indexPlaceholder = "__SITE_SHELL_CSS__";
+const indexSource = await fs.readFile(path.join(root, "index.html"), "utf8");
+if (indexSource.split(indexPlaceholder).length !== 2) {
+  throw new Error(`Homepage must contain exactly one ${indexPlaceholder} placeholder.`);
+}
+await fs.writeFile(
+  path.join(output, "index.html"),
+  indexSource.replace(indexPlaceholder, assetsManifest.shellCss),
+);
 const katexFontsSource = path.join(root, "node_modules", "katex", "dist", "fonts");
 const katexFontsDestination = path.join(generatedAssets, "fonts");
 await fs.cp(katexFontsSource, katexFontsDestination, { recursive: true });
