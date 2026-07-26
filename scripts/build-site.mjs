@@ -113,12 +113,13 @@ function articleHtml(entry, rendered, assets) {
     <div class="section-switch" role="group" aria-label="Choose a section">
       <a class="section-switch-button" href="/#writing/${metadata.id.slice(0, 4)}" aria-current="page">Writing</a>
       <a class="section-switch-button" href="/#journal/${metadata.id.slice(0, 4)}">Journal</a>
+      <a class="section-switch-button" data-auth-link href="/api/session">Log in</a>
     </div>
   </nav>
   <main id="article" class="article-container">
     <div class="writing-layout">
       <header class="writing-header">
-        <div class="writing-kicker"><a href="/#writing/${metadata.id.slice(0, 4)}">Writing</a>${status}</div>
+        <div class="writing-kicker"><a href="/#writing/${metadata.id.slice(0, 4)}">Writing</a>${status}<button class="writing-edit-button" type="button" data-edit-writing="${metadata.id}" hidden>Edit</button></div>
         <h1 class="writing-title">${escapeHtml(metadata.title)}</h1>
         <p class="writing-summary">${escapeHtml(metadata.summary)}</p>
         <div class="writing-meta">
@@ -144,6 +145,7 @@ function articleHtml(entry, rendered, assets) {
     </div>
   </footer>
   ${hasToc ? `<script type="module" src="/assets/generated/${assetsManifest.readerJs}"></script>` : ""}
+  <script type="module" src="/assets/generated/${assetsManifest.articleAuthoringJs}"></script>
   <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"f670dcb518704a2d893ab5685a09cdf8"}'></script>
 </body>
 </html>
@@ -160,7 +162,8 @@ const generatedAssets = path.join(output, "assets", "generated");
 await fs.mkdir(generatedAssets, { recursive: true });
 const shellCssSource = await fs.readFile(path.join(root, "site", "site-shell.css"));
 const readerCssSource = await fs.readFile(path.join(root, "site", "writing-reader.css"));
-const readerJsSource = await fs.readFile(path.join(root, "site", "writing-reader.js"));
+  const readerJsSource = await fs.readFile(path.join(root, "site", "writing-reader.js"));
+const articleAuthoringJsSource = await fs.readFile(path.join(root, "site", "writing-article-authoring.js"));
 const katexCssSource = await fs.readFile(path.join(root, "node_modules", "katex", "dist", "katex.min.css"));
 const previewBundle = await esbuild({
   entryPoints: [path.join(root, "scripts", "writing-markdown.mjs")],
@@ -174,12 +177,14 @@ const assetsManifest = {
   shellCss: `site-shell.${hash(shellCssSource)}.css`,
   readerCss: `writing-reader.${hash(readerCssSource)}.css`,
   readerJs: `writing-reader.${hash(readerJsSource)}.js`,
+  articleAuthoringJs: `writing-article-authoring.${hash(articleAuthoringJsSource)}.js`,
   katexCss: `katex.${hash(katexCssSource)}.css`,
 };
 await Promise.all([
   fs.writeFile(path.join(generatedAssets, assetsManifest.shellCss), shellCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.readerCss), readerCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.readerJs), readerJsSource),
+  fs.writeFile(path.join(generatedAssets, assetsManifest.articleAuthoringJs), articleAuthoringJsSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.katexCss), katexCssSource),
   fs.writeFile(path.join(generatedAssets, "site-shell.css"), shellCssSource),
   fs.writeFile(path.join(generatedAssets, "writing-reader.css"), readerCssSource),

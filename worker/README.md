@@ -1,6 +1,9 @@
-# Cloud Editor Worker
+# Authoring Worker
 
-This Worker serves the authenticated editor at `editor.xayah.me`, public immutable media at `media.xayah.me`, and the API used by the Journal, Writing, and Dictionary authoring UI.
+This Worker serves the authenticated same-origin authoring APIs used by
+`xayah.me` and `dictionary.xayah.me`, plus public immutable media at
+`media.xayah.me`. During migration, `editor.xayah.me` remains a compatibility
+route and proxies the public sites.
 
 ## Data ownership
 
@@ -16,8 +19,10 @@ No D1 database is used.
 
 - Worker: `xayah-site-editor`
 - R2 bucket: `xayah-site-editor-content`
-- Custom domains: `editor.xayah.me` and `media.xayah.me`
-- Cloudflare Access self-hosted application covering `editor.xayah.me`
+- Custom domains: `editor.xayah.me` (temporary compatibility) and `media.xayah.me`
+- Worker routes: `xayah.me/api/*` and `dictionary.xayah.me/api/*`
+- One Cloudflare Access self-hosted application covering `editor.xayah.me`,
+  `xayah.me/api/*`, and `dictionary.xayah.me/api/*`
 
 Set these Worker secrets with `wrangler secret put`:
 
@@ -32,10 +37,9 @@ Never commit `.dev.vars` or any real secret.
 
 ## Dictionary routing
 
-The public Dictionary is served from `https://dictionary.xayah.me/`. The
-authenticated route remains `https://editor.xayah.me/dictionary/`; the Worker
-proxies that path to the standalone site while keeping the Editor API same-origin.
-Dictionary reads and publishes use `DICTIONARY_ORIGIN`,
+The public Dictionary is served from `https://dictionary.xayah.me/`. Writing,
+Journal, and Dictionary editing is enabled in place only after `/api/session`
+confirms a valid Access session. Dictionary reads and publishes use `DICTIONARY_ORIGIN`,
 `DICTIONARY_GITHUB_REPO`, and `DICTIONARY_GITHUB_BRANCH`, independently of the
 main site repository variables.
 

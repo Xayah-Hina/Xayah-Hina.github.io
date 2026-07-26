@@ -33,6 +33,37 @@ html {
   text-transform: uppercase;
 }
 
+.writing-edit-button {
+  margin-left: auto;
+  padding: 0.2rem 0.55rem;
+  color: var(--link);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+body.article-editor-open {
+  overflow: hidden;
+}
+
+.article-editor-overlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  background: var(--page);
+}
+
+.article-editor-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 .writing-kicker a {
   color: inherit;
   text-decoration: none;

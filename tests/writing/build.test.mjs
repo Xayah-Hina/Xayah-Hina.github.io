@@ -46,6 +46,9 @@ test("allowlisted build produces four static articles and no source artifacts", 
     assert.match(html, new RegExp(`href="/assets/generated/${shellMatch[1].replaceAll(".", "\\.")}"`));
     assert.match(html, /<nav class="site-nav" aria-label="Site navigation">/);
     assert.match(html, /class="section-switch-button" href="\/#writing\/2026" aria-current="page"/);
+    assert.match(html, /data-auth-link href="\/api\/session">Log in<\/a>/);
+    assert.match(html, new RegExp(`data-edit-writing="${id}" hidden>Edit</button>`));
+    assert.match(html, /writing-article-authoring\.[a-f0-9]{12}\.js/);
     assert.match(html, /<footer class="site-footer">/);
     assert.match(html, /In solitude, where we are least alone\./);
     assert.doesNotMatch(html, /class="writing-(?:nav|footer)"/);

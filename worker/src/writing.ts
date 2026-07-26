@@ -357,17 +357,26 @@ async function deleteObjectsExcept(env: Env, prefix: string, keep: Set<string>):
   } while (cursor);
 }
 
-export async function editorWritingCatalog(env: Env): Promise<Response> {
+export async function editorWritingCatalogData(env: Env) {
   const values = await collection(env, writingIdNow().slice(0, 4));
-  return new Response(moduleSource({ years: values.years.map(Number) }), {
+  return { years: values.years.map(Number) };
+}
+
+export async function editorWritingCatalog(env: Env): Promise<Response> {
+  const values = await editorWritingCatalogData(env);
+  return new Response(moduleSource(values), {
     headers: { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" },
   });
 }
 
-export async function editorWritingYear(env: Env, year: string): Promise<Response> {
+export async function editorWritingYearData(env: Env, year: string) {
   if (!/^\d{4}$/.test(year)) throw new HttpError(404, "Writing year was not found.");
   const values = await collection(env, year);
-  return new Response(moduleSource(values.entries), {
+  return values.entries;
+}
+
+export async function editorWritingYear(env: Env, year: string): Promise<Response> {
+  return new Response(moduleSource(await editorWritingYearData(env, year)), {
     headers: { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" },
   });
 }

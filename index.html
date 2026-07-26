@@ -1093,6 +1093,7 @@
     <div id="section-switch" class="section-switch" role="group" aria-label="Choose a section">
       <button class="section-switch-button" type="button" data-section="writing" aria-pressed="true">Writing</button>
       <button class="section-switch-button" type="button" data-section="journal" aria-pressed="false">Journal</button>
+      <a id="auth-link" class="section-switch-button" href="/api/session">Log in</a>
     </div>
   </nav>
 
@@ -1367,7 +1368,7 @@
       const byId = (id) => document.getElementById(id);
       const sectionMap = new Map(Object.entries(config.sections));
       const moduleVersion = Date.now().toString();
-      const isEditorSite = location.protocol === "https:" && location.hostname === "editor.xayah.me";
+      let authoringSession = false;
       const writingEntriesByYear = new Map();
       const writingLoadPromises = new Map();
       const writingLoadErrors = new Map();
@@ -1608,9 +1609,16 @@
         if (writingLoadPromises.has(year)) return writingLoadPromises.get(year);
 
         writingLoadErrors.delete(year);
-        const promise = importDataModule(`writing/${year}.js`)
-          .then((module) => {
-            const entries = validateWritingEntries(module.default, year);
+        const source = authoringSession
+          ? fetch(`/api/writing/year/${year}`, { cache: "no-store" }).then(async (response) => {
+              const result = await response.json();
+              if (!response.ok) throw new Error(result.error || `Writing ${year} could not be loaded.`);
+              return result;
+            })
+          : importDataModule(`writing/${year}.js`).then((module) => module.default);
+        const promise = source
+          .then((value) => {
+            const entries = validateWritingEntries(value, year);
             writingEntriesByYear.set(year, entries);
             return entries;
           })
@@ -2170,7 +2178,47 @@
       }
 
       async function setupCloudAuthoring() {
-        if (!isEditorSite) return;
+        const authLink = byId("auth-link");
+        const returnPath = `${location.pathname}${location.search}${location.hash}`;
+        authLink.href = `/api/session?return=${encodeURIComponent(returnPath)}`;
+        authLink.addEventListener("click", () => {
+          if (authoringSession) return;
+          const current = `${location.pathname}${location.search}${location.hash}`;
+          authLink.href = `/api/session?return=${encodeURIComponent(current)}`;
+        });
+
+        try {
+          const sessionResponse = await fetch("/api/session", {
+            cache: "no-store",
+            credentials: "same-origin",
+            redirect: "manual"
+          });
+          if (!sessionResponse.ok || sessionResponse.type === "opaqueredirect") return;
+          const session = await sessionResponse.json();
+          if (!session.authenticated || !session.canEdit) return;
+        } catch {
+          return;
+        }
+
+        authoringSession = true;
+        authLink.textContent = "Log out";
+        authLink.href = "/cdn-cgi/access/logout";
+
+        try {
+          const response = await fetch("/api/writing/catalog", { cache: "no-store" });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Writing catalog could not be loaded.");
+          writingYears = normalizeYears(result.years);
+          yearsBySection.set("writing", writingYears);
+          writingEntriesByYear.clear();
+          writingLoadPromises.clear();
+          writingLoadErrors.clear();
+          writingCatalogError = null;
+          if (!writingYears.includes(state.years.writing)) state.years.writing = latestYear("writing");
+        } catch (error) {
+          writingCatalogError = error;
+        }
+
         const journalSlot = byId("journal-editor-slot");
         const writingSlot = byId("writing-editor-slot");
 
@@ -2712,6 +2760,9 @@
         writingAuthoring.baseline = null;
         writingAuthoring.savedAt = null;
         document.body.classList.remove("writing-editor-open");
+        if (window.parent !== window && new URLSearchParams(location.search).has("edit-writing")) {
+          window.parent.postMessage({ type: "xayah-writing-editor-close" }, location.origin);
+        }
       }
 
       function setWritingEditorView(view) {
@@ -3421,6 +3472,14 @@
       window.addEventListener("popstate", applyRoute);
 
       await setupCloudAuthoring();
+      const embeddedWritingId = new URLSearchParams(location.search).get("edit-writing");
+      if (authoringSession && /^\d{8}-\d{6}$/.test(embeddedWritingId || "")) {
+        const embeddedWritingYear = embeddedWritingId.slice(0, 4);
+        if (writingYears.includes(embeddedWritingYear)) {
+          await loadWritingYear(embeddedWritingYear);
+          await openWritingEditor(embeddedWritingYear, embeddedWritingId);
+        }
+      }
       if (location.hash !== initialRoute.hash) updateRoute(initialRoute.sectionId, initialRoute.year, true);
       renderSection();
     })().catch((error) => {

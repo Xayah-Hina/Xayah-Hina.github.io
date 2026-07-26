@@ -7,7 +7,9 @@ import {
   createWriting,
   deleteWriting,
   editorWritingCatalog,
+  editorWritingCatalogData,
   editorWritingYear,
+  editorWritingYearData,
   openWriting,
   pendingWriting,
   previewWritingAsset,
@@ -17,29 +19,35 @@ import {
   writingDeploymentStatus,
 } from "./writing";
 
-async function editorStatus(env: Env): Promise<Response> {
+type ApiScope = "main" | "dictionary" | "legacy";
+
+async function editorStatus(env: Env, scope: ApiScope): Promise<Response> {
   let journalError: string | null = null;
   let writingError: string | null = null;
   let dictionaryError: string | null = null;
   let writingPending = false;
   let dictionaryPending = false;
   let dictionaryPendingCount = 0;
-  try {
-    await journalYears(env);
-  } catch (error) {
-    journalError = error instanceof Error ? error.message : "Journal data could not be loaded.";
+  if (scope !== "dictionary") {
+    try {
+      await journalYears(env);
+    } catch (error) {
+      journalError = error instanceof Error ? error.message : "Journal data could not be loaded.";
+    }
+    try {
+      writingPending = await pendingWriting(env);
+    } catch (error) {
+      writingError = error instanceof Error ? error.message : "Writing data could not be loaded.";
+    }
   }
-  try {
-    writingPending = await pendingWriting(env);
-  } catch (error) {
-    writingError = error instanceof Error ? error.message : "Writing data could not be loaded.";
-  }
-  try {
-    const status = await dictionaryStatus(env);
-    dictionaryPending = status.pending;
-    dictionaryPendingCount = status.pendingCount;
-  } catch (error) {
-    dictionaryError = error instanceof Error ? error.message : "Dictionary data could not be loaded.";
+  if (scope !== "main") {
+    try {
+      const status = await dictionaryStatus(env);
+      dictionaryPending = status.pending;
+      dictionaryPendingCount = status.pendingCount;
+    } catch (error) {
+      dictionaryError = error instanceof Error ? error.message : "Dictionary data could not be loaded.";
+    }
   }
   return jsonResponse({
     journalError,
@@ -57,13 +65,41 @@ async function editorStatus(env: Env): Promise<Response> {
   });
 }
 
-async function editorApi(request: Request, env: Env, url: URL): Promise<Response> {
-  if (request.method === "GET" && url.pathname === "/api/editor/status") return editorStatus(env);
+export function endpointAllowed(scope: ApiScope, pathname: string): boolean {
+  if (pathname === "/api/session" || pathname === "/api/editor/status") return true;
+  if (scope === "legacy") return true;
+  if (scope === "main") return pathname.startsWith("/api/writing/") || pathname.startsWith("/api/journal/");
+  return pathname.startsWith("/api/dictionary/");
+}
+
+export function sessionResponse(url: URL): Response {
+  const returnPath = url.searchParams.get("return");
+  if (returnPath) {
+    const target = new URL(returnPath, url.origin);
+    if (!returnPath.startsWith("/") || target.origin !== url.origin) {
+      throw new HttpError(400, "The login return path is invalid.");
+    }
+    return Response.redirect(target.toString(), 302);
+  }
+  return jsonResponse({ authenticated: true, canEdit: true });
+}
+
+async function editorApi(request: Request, env: Env, url: URL, scope: ApiScope): Promise<Response> {
+  if (!endpointAllowed(scope, url.pathname)) throw new HttpError(404, "Unknown Editor endpoint.");
+  if (request.method === "GET" && url.pathname === "/api/session") return sessionResponse(url);
+  if (request.method === "GET" && url.pathname === "/api/editor/status") return editorStatus(env, scope);
+  if (request.method === "GET" && url.pathname === "/api/writing/catalog") {
+    return jsonResponse(await editorWritingCatalogData(env));
+  }
+  const writingYear = url.pathname.match(/^\/api\/writing\/year\/(\d{4})$/);
+  if (request.method === "GET" && writingYear) {
+    return jsonResponse(await editorWritingYearData(env, writingYear[1]));
+  }
   const preview = url.pathname.match(/^\/api\/writing\/assets\/preview\/(\d{8}-\d{6})\/([a-f0-9]{64}\.(?:jpg|jpeg|png|webp|gif|avif))$/);
   if (request.method === "GET" && preview) return previewWritingAsset(env, preview[1], preview[2]);
   if (request.method !== "POST") throw new HttpError(405, "This Editor endpoint requires POST.");
   const origin = request.headers.get("origin");
-  if (origin !== env.EDITOR_ORIGIN) throw new HttpError(403, "The Editor request origin was rejected.");
+  if (origin !== url.origin) throw new HttpError(403, "The Editor request origin was rejected.");
   if (url.pathname === "/api/writing/assets/upload") {
     return jsonResponse(await uploadWritingAsset(env, request));
   }
@@ -119,7 +155,7 @@ export function editorPublicTarget(env: Env, url: URL): { origin: string; pathna
 
 async function handleEditor(request: Request, env: Env, url: URL): Promise<Response> {
   await verifyAccess(request, env);
-  if (url.pathname.startsWith("/api/")) return editorApi(request, env, url);
+  if (url.pathname.startsWith("/api/")) return editorApi(request, env, url, "legacy");
   if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "The Editor only accepts read requests outside its API.");
   if (url.pathname === "/dictionary") {
     return Response.redirect(`${env.EDITOR_ORIGIN}/dictionary/${url.search}`, 308);
@@ -129,6 +165,11 @@ async function handleEditor(request: Request, env: Env, url: URL): Promise<Respo
   if (year) return editorWritingYear(env, year[1]);
   const target = editorPublicTarget(env, url);
   return proxyPublicSite(request, url, target.origin, target.pathname);
+}
+
+async function handlePublicApi(request: Request, env: Env, url: URL, scope: ApiScope): Promise<Response> {
+  await verifyAccess(request, env);
+  return editorApi(request, env, url, scope);
 }
 
 async function publicMedia(request: Request, env: Env, url: URL): Promise<Response> {
@@ -156,6 +197,12 @@ export default {
     try {
       if (url.hostname === new URL(env.EDITOR_ORIGIN).hostname) return await handleEditor(request, env, url);
       if (url.hostname === new URL(env.MEDIA_ORIGIN).hostname) return await publicMedia(request, env, url);
+      if (url.hostname === new URL(env.PUBLIC_SITE_ORIGIN).hostname && url.pathname.startsWith("/api/")) {
+        return await handlePublicApi(request, env, url, "main");
+      }
+      if (url.hostname === new URL(env.DICTIONARY_ORIGIN).hostname && url.pathname.startsWith("/api/")) {
+        return await handlePublicApi(request, env, url, "dictionary");
+      }
       throw new HttpError(404, "Unknown hostname.");
     } catch (error) {
       if (error instanceof HttpError) {

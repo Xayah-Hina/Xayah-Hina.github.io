@@ -14,6 +14,14 @@
     {
       "pattern": "media.xayah.me",
       "custom_domain": true
+    },
+    {
+      "pattern": "xayah.me/api/*",
+      "zone_name": "xayah.me"
+    },
+    {
+      "pattern": "dictionary.xayah.me/api/*",
+      "zone_name": "xayah.me"
     }
   ],
   "r2_buckets": [
