@@ -56,10 +56,6 @@ function personalPath(entry: DictionaryEntry): string {
   return `personal/${encodedPathPart(prefix)}/${encodedPathPart(entry.canonicalKey)}.json`;
 }
 
-function legacyPersonalPath(entry: DictionaryEntry): string {
-  return `dictionary/${personalPath(entry)}`;
-}
-
 function dictionaryGithubEnv(env: Env): Env {
   return {
     ...env,
@@ -205,7 +201,7 @@ async function readDraftObject(env: Env, key: string): Promise<DictionaryDraft |
   if (
     record.schemaVersion !== 1
     || entry.shard < 0
-    || (record.path !== personalPath(entry) && record.path !== legacyPersonalPath(entry))
+    || record.path !== personalPath(entry)
     || key !== draftKey(entry.entryId)
   ) {
     throw new HttpError(500, "A stored Dictionary draft has invalid metadata.");

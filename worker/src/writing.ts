@@ -12,7 +12,6 @@ import type { Env, FileChange, SyncStatus, WritingDraft, WritingEntry } from "./
 import {
   asRecord,
   HttpError,
-  moduleSource,
   normalizeYears,
   requiredString,
   singaporeTimestamp,
@@ -250,7 +249,7 @@ function sync(env: Env, pending: boolean, message?: string): SyncStatus {
   };
 }
 
-async function editorData(
+async function authoringData(
   env: Env,
   draft: WritingDraft | null,
   publishedArticle: PublishedWriting | null,
@@ -357,35 +356,22 @@ async function deleteObjectsExcept(env: Env, prefix: string, keep: Set<string>):
   } while (cursor);
 }
 
-export async function editorWritingCatalogData(env: Env) {
+export async function authoringWritingCatalogData(env: Env) {
   const values = await collection(env, writingIdNow().slice(0, 4));
   return { years: values.years.map(Number) };
 }
 
-export async function editorWritingCatalog(env: Env): Promise<Response> {
-  const values = await editorWritingCatalogData(env);
-  return new Response(moduleSource(values), {
-    headers: { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" },
-  });
-}
-
-export async function editorWritingYearData(env: Env, year: string) {
+export async function authoringWritingYearData(env: Env, year: string) {
   if (!/^\d{4}$/.test(year)) throw new HttpError(404, "Writing year was not found.");
   const values = await collection(env, year);
   return values.entries;
-}
-
-export async function editorWritingYear(env: Env, year: string): Promise<Response> {
-  return new Response(moduleSource(await editorWritingYearData(env, year)), {
-    headers: { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" },
-  });
 }
 
 export async function openWriting(env: Env, payload: Record<string, unknown>) {
   const year = requiredString(payload.year, "Writing year", 4);
   const id = validateId(payload.id, year);
   const found = await findWriting(env, id);
-  return editorData(env, found.draftVersion?.draft || null, found.publishedArticle, undefined, found.published);
+  return authoringData(env, found.draftVersion?.draft || null, found.publishedArticle, undefined, found.published);
 }
 
 export async function createWriting(env: Env, payload: Record<string, unknown>) {
@@ -407,7 +393,7 @@ export async function createWriting(env: Env, payload: Record<string, unknown>) 
   if (!(await putDraftConditional(env, draft, null))) {
     throw new HttpError(409, "A Writing entry already exists for this second. Try again in a moment.");
   }
-  return editorData(env, draft, null);
+  return authoringData(env, draft, null);
 }
 
 export async function saveWriting(env: Env, payload: Record<string, unknown>) {
@@ -448,7 +434,7 @@ export async function saveWriting(env: Env, payload: Record<string, unknown>) {
   if (!(await putDraftConditional(env, draft, current?.etag || null))) {
     throw new HttpError(409, "This Writing changed in another tab. Reload it before saving.");
   }
-  return editorData(env, draft, found.publishedArticle, undefined, found.published);
+  return authoringData(env, draft, found.publishedArticle, undefined, found.published);
 }
 
 export async function uploadWritingAsset(env: Env, request: Request) {
@@ -545,7 +531,7 @@ export async function publishWriting(env: Env, payload: Record<string, unknown>)
   const responseDraft = synchronized
     ? syncedDraft
     : validateDraft((await getDraftVersioned(env, id))?.draft || syncedDraft);
-  const response = await editorData(env, responseDraft, { entry: publishedEntry, body: draft.body, source });
+  const response = await authoringData(env, responseDraft, { entry: publishedEntry, body: draft.body, source });
   return {
     ...response,
     commitSha,

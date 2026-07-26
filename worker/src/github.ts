@@ -42,13 +42,13 @@ function encodedFilePath(path: string): string {
 }
 
 async function githubRequest<T>(env: Env, path: string, init: RequestInit = {}, accepted: number[] = [200]): Promise<T> {
-  if (!env.GITHUB_TOKEN) throw new HttpError(503, "The GitHub editor credential is not configured.");
+  if (!env.GITHUB_TOKEN) throw new HttpError(503, "The GitHub authoring credential is not configured.");
   const response = await fetch(`https://api.github.com${path}`, {
     ...init,
     headers: {
       "Accept": "application/vnd.github+json",
       "Authorization": `Bearer ${env.GITHUB_TOKEN}`,
-      "User-Agent": "xayah-site-editor-worker",
+      "User-Agent": "xayah-site-authoring-worker",
       "X-GitHub-Api-Version": API_VERSION,
       ...(init.headers || {}),
     },
@@ -142,7 +142,7 @@ export async function commitFiles(env: Env, message: string, changes: FileChange
     });
   } catch (error) {
     if (error instanceof HttpError && error.status === 409) {
-      throw new HttpError(409, "The site changed while this save was running. Reload the Editor and try again.");
+      throw new HttpError(409, "The site changed while this save was running. Reload the page and try again.");
     }
     throw error;
   }

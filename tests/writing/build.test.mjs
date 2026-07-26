@@ -27,6 +27,8 @@ test("allowlisted build produces four static articles and no source artifacts", 
   const shellMatch = homepage.match(/href="\/assets\/generated\/(site-shell\.[a-f0-9]{12}\.css)"/);
   assert.ok(shellMatch, "homepage should load the hashed shared site shell");
   assert.doesNotMatch(homepage, /__SITE_SHELL_CSS__/);
+  assert.match(homepage, /fetch\("\/api\/authoring\/status"/);
+  assert.doesNotMatch(homepage, /\/api\/editor\/status|editor\.xayah\.me/);
   assert.match(homepage, /<meta name="theme-color" media="\(prefers-color-scheme: dark\)" content="#090c10">/);
   const shellCss = fs.readFileSync(path.join(site, "assets", "generated", shellMatch[1]), "utf8");
   assert.match(shellCss, /--page: #090c10;/);
@@ -57,10 +59,12 @@ test("allowlisted build produces four static articles and no source artifacts", 
   const year = fs.readFileSync(path.join(site, "writing", "2026.js"), "utf8");
   assert.match(catalog, /"years": \[\s+2026/);
   assert.equal((year.match(/"article":/g) || []).length, 4);
-  const forbidden = filesBelow(site).filter((file) => /\.(?:md|tex|bib|pdf)$/i.test(file));
+  const outputFiles = filesBelow(site);
+  const forbidden = outputFiles.filter((file) => /\.(?:md|tex|bib|pdf)$/i.test(file));
   assert.deepEqual(forbidden, []);
-  assert.equal(filesBelow(site).some((file) => file.includes(`${path.sep}worker${path.sep}`)), false);
-  assert.equal(filesBelow(site).some((file) => file.includes(`${path.sep}dictionary${path.sep}`)), false);
+  assert.equal(outputFiles.some((file) => path.basename(file).startsWith(".")), false);
+  assert.equal(outputFiles.some((file) => file.includes(`${path.sep}worker${path.sep}`)), false);
+  assert.equal(outputFiles.some((file) => file.includes(`${path.sep}dictionary${path.sep}`)), false);
 });
 
 test("homepage inline scripts remain syntactically valid", () => {

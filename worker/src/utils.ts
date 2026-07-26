@@ -22,16 +22,16 @@ export async function readJsonObject(request: Request, maximum = 45 * 1024 * 102
   }
   const declared = Number(request.headers.get("content-length") || "0");
   if (Number.isFinite(declared) && declared > maximum) {
-    throw new HttpError(413, "The editor request is too large.");
+    throw new HttpError(413, "The authoring request is too large.");
   }
   let value: unknown;
   try {
     value = await request.json();
   } catch {
-    throw new HttpError(400, "The editor request is not valid JSON.");
+    throw new HttpError(400, "The authoring request is not valid JSON.");
   }
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new HttpError(400, "The editor request is invalid.");
+    throw new HttpError(400, "The authoring request is invalid.");
   }
   return value as Record<string, unknown>;
 }

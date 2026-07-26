@@ -6,10 +6,8 @@ import { HttpError, jsonResponse, readJsonObject } from "./utils";
 import {
   createWriting,
   deleteWriting,
-  editorWritingCatalog,
-  editorWritingCatalogData,
-  editorWritingYear,
-  editorWritingYearData,
+  authoringWritingCatalogData,
+  authoringWritingYearData,
   openWriting,
   pendingWriting,
   previewWritingAsset,
@@ -19,9 +17,9 @@ import {
   writingDeploymentStatus,
 } from "./writing";
 
-type ApiScope = "main" | "dictionary" | "legacy";
+type ApiScope = "main" | "dictionary";
 
-async function editorStatus(env: Env, scope: ApiScope): Promise<Response> {
+async function authoringStatus(env: Env, scope: ApiScope): Promise<Response> {
   let journalError: string | null = null;
   let writingError: string | null = null;
   let dictionaryError: string | null = null;
@@ -66,8 +64,7 @@ async function editorStatus(env: Env, scope: ApiScope): Promise<Response> {
 }
 
 export function endpointAllowed(scope: ApiScope, pathname: string): boolean {
-  if (pathname === "/api/session" || pathname === "/api/editor/status") return true;
-  if (scope === "legacy") return true;
+  if (pathname === "/api/session" || pathname === "/api/authoring/status") return true;
   if (scope === "main") return pathname.startsWith("/api/writing/") || pathname.startsWith("/api/journal/");
   return pathname.startsWith("/api/dictionary/");
 }
@@ -84,22 +81,22 @@ export function sessionResponse(url: URL): Response {
   return jsonResponse({ authenticated: true, canEdit: true });
 }
 
-async function editorApi(request: Request, env: Env, url: URL, scope: ApiScope): Promise<Response> {
-  if (!endpointAllowed(scope, url.pathname)) throw new HttpError(404, "Unknown Editor endpoint.");
+async function authoringApi(request: Request, env: Env, url: URL, scope: ApiScope): Promise<Response> {
+  if (!endpointAllowed(scope, url.pathname)) throw new HttpError(404, "Unknown authoring endpoint.");
   if (request.method === "GET" && url.pathname === "/api/session") return sessionResponse(url);
-  if (request.method === "GET" && url.pathname === "/api/editor/status") return editorStatus(env, scope);
+  if (request.method === "GET" && url.pathname === "/api/authoring/status") return authoringStatus(env, scope);
   if (request.method === "GET" && url.pathname === "/api/writing/catalog") {
-    return jsonResponse(await editorWritingCatalogData(env));
+    return jsonResponse(await authoringWritingCatalogData(env));
   }
   const writingYear = url.pathname.match(/^\/api\/writing\/year\/(\d{4})$/);
   if (request.method === "GET" && writingYear) {
-    return jsonResponse(await editorWritingYearData(env, writingYear[1]));
+    return jsonResponse(await authoringWritingYearData(env, writingYear[1]));
   }
   const preview = url.pathname.match(/^\/api\/writing\/assets\/preview\/(\d{8}-\d{6})\/([a-f0-9]{64}\.(?:jpg|jpeg|png|webp|gif|avif))$/);
   if (request.method === "GET" && preview) return previewWritingAsset(env, preview[1], preview[2]);
-  if (request.method !== "POST") throw new HttpError(405, "This Editor endpoint requires POST.");
+  if (request.method !== "POST") throw new HttpError(405, "This authoring endpoint requires POST.");
   const origin = request.headers.get("origin");
-  if (origin !== url.origin) throw new HttpError(403, "The Editor request origin was rejected.");
+  if (origin !== url.origin) throw new HttpError(403, "The authoring request origin was rejected.");
   if (url.pathname === "/api/writing/assets/upload") {
     return jsonResponse(await uploadWritingAsset(env, request));
   }
@@ -119,57 +116,13 @@ async function editorApi(request: Request, env: Env, url: URL, scope: ApiScope):
     "/api/dictionary/publish": publishDictionary,
   };
   const action = actions[url.pathname];
-  if (!action) throw new HttpError(404, "Unknown Editor endpoint.");
+  if (!action) throw new HttpError(404, "Unknown authoring endpoint.");
   return jsonResponse(await action(env, payload));
-}
-
-async function proxyPublicSite(request: Request, url: URL, origin: string, pathname = url.pathname): Promise<Response> {
-  const target = new URL(`${pathname}${url.search}`, origin);
-  const headers = new Headers();
-  const accept = request.headers.get("accept");
-  if (accept) headers.set("Accept", accept);
-  const response = await fetch(target, { method: request.method === "HEAD" ? "HEAD" : "GET", headers, redirect: "follow" });
-  const resultHeaders = new Headers(response.headers);
-  resultHeaders.set("X-Robots-Tag", "noindex, nofollow");
-  if (
-    url.pathname === "/"
-    || url.pathname.endsWith(".html")
-    || url.pathname.startsWith("/writing/")
-    || url.pathname.startsWith("/journals/")
-    || url.pathname.startsWith("/dictionary/")
-  ) {
-    resultHeaders.set("Cache-Control", "private, no-store");
-  }
-  return new Response(response.body, { status: response.status, statusText: response.statusText, headers: resultHeaders });
-}
-
-export function editorPublicTarget(env: Env, url: URL): { origin: string; pathname: string } {
-  if (url.pathname.startsWith("/dictionary/")) {
-    return {
-      origin: env.DICTIONARY_ORIGIN,
-      pathname: url.pathname.slice("/dictionary".length),
-    };
-  }
-  return { origin: env.PUBLIC_SITE_ORIGIN, pathname: url.pathname };
-}
-
-async function handleEditor(request: Request, env: Env, url: URL): Promise<Response> {
-  await verifyAccess(request, env);
-  if (url.pathname.startsWith("/api/")) return editorApi(request, env, url, "legacy");
-  if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "The Editor only accepts read requests outside its API.");
-  if (url.pathname === "/dictionary") {
-    return Response.redirect(`${env.EDITOR_ORIGIN}/dictionary/${url.search}`, 308);
-  }
-  if (url.pathname === "/writing/catalog.js") return editorWritingCatalog(env);
-  const year = url.pathname.match(/^\/writing\/(\d{4})\.js$/);
-  if (year) return editorWritingYear(env, year[1]);
-  const target = editorPublicTarget(env, url);
-  return proxyPublicSite(request, url, target.origin, target.pathname);
 }
 
 async function handlePublicApi(request: Request, env: Env, url: URL, scope: ApiScope): Promise<Response> {
   await verifyAccess(request, env);
-  return editorApi(request, env, url, scope);
+  return authoringApi(request, env, url, scope);
 }
 
 async function publicMedia(request: Request, env: Env, url: URL): Promise<Response> {
@@ -195,7 +148,6 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     try {
-      if (url.hostname === new URL(env.EDITOR_ORIGIN).hostname) return await handleEditor(request, env, url);
       if (url.hostname === new URL(env.MEDIA_ORIGIN).hostname) return await publicMedia(request, env, url);
       if (url.hostname === new URL(env.PUBLIC_SITE_ORIGIN).hostname && url.pathname.startsWith("/api/")) {
         return await handlePublicApi(request, env, url, "main");
@@ -212,7 +164,7 @@ export default {
       console.error(error);
       const message = error instanceof Error ? error.message : "Unexpected Worker error.";
       if (url.pathname.startsWith("/api/")) return jsonResponse({ error: message }, 500);
-      return new Response("The Editor backend encountered an unexpected error.", { status: 500 });
+      return new Response("The authoring backend encountered an unexpected error.", { status: 500 });
     }
   },
 } satisfies ExportedHandler<Env>;

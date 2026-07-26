@@ -8,10 +8,6 @@
   "preview_urls": false,
   "routes": [
     {
-      "pattern": "editor.xayah.me",
-      "custom_domain": true
-    },
-    {
       "pattern": "media.xayah.me",
       "custom_domain": true
     },
@@ -38,7 +34,6 @@
     "DICTIONARY_ORIGIN": "https://dictionary.xayah.me",
     "DICTIONARY_GITHUB_REPO": "dictionary",
     "DICTIONARY_GITHUB_BRANCH": "master",
-    "EDITOR_ORIGIN": "https://editor.xayah.me",
     "MEDIA_ORIGIN": "https://media.xayah.me"
   }
 }

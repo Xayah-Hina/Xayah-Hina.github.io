@@ -10,7 +10,6 @@ export interface Env {
   DICTIONARY_ORIGIN: string;
   DICTIONARY_GITHUB_REPO: string;
   DICTIONARY_GITHUB_BRANCH: string;
-  EDITOR_ORIGIN: string;
   MEDIA_ORIGIN: string;
 }
 

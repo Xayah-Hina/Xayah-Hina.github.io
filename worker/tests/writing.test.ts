@@ -75,7 +75,6 @@ function environment(putResult: unknown = { etag: "next" }) {
       DICTIONARY_ORIGIN: "https://dictionary.xayah.me",
       DICTIONARY_GITHUB_REPO: "dictionary",
       DICTIONARY_GITHUB_BRANCH: "master",
-      EDITOR_ORIGIN: "https://editor.xayah.me",
       MEDIA_ORIGIN: "https://media.xayah.me",
     } as never,
     puts,
@@ -127,7 +126,7 @@ test("image upload rejects a MIME and magic-number mismatch", async () => {
   const form = new FormData();
   form.set("id", id);
   form.set("file", new File([new Uint8Array([1, 2, 3, 4])], "fake.png", { type: "image/png" }));
-  const request = new Request("https://editor.xayah.me/api/writing/assets/upload", {
+  const request = new Request("https://xayah.me/api/writing/assets/upload", {
     method: "POST",
     body: form,
   });

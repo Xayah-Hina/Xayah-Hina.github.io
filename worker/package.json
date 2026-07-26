@@ -1,5 +1,5 @@
 {
-  "name": "xayah-site-editor-worker",
+  "name": "xayah-site-authoring-worker",
   "private": true,
   "type": "module",
   "scripts": {

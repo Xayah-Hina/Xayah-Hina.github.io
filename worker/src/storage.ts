@@ -11,7 +11,7 @@ async function readJson<T>(env: Env, key: string): Promise<T | null> {
   try {
     return await object.json<T>();
   } catch {
-    throw new HttpError(500, `Stored editor data is invalid: ${key}`);
+    throw new HttpError(500, `Stored authoring data is invalid: ${key}`);
   }
 }
 
@@ -21,7 +21,7 @@ export async function getDraftVersioned(env: Env, id: string): Promise<{ draft: 
   try {
     return { draft: await object.json<WritingDraft>(), etag: object.etag };
   } catch {
-    throw new HttpError(500, `Stored editor data is invalid: ${draftKey(id)}`);
+    throw new HttpError(500, `Stored authoring data is invalid: ${draftKey(id)}`);
   }
 }
 

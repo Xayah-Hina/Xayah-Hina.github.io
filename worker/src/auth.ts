@@ -6,7 +6,7 @@ const keySets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
 export async function verifyAccess(request: Request, env: Env): Promise<JWTPayload> {
   if (!env.ACCESS_TEAM_DOMAIN || !env.ACCESS_AUD) {
-    throw new HttpError(503, "Cloudflare Access is not configured for the Editor yet.");
+    throw new HttpError(503, "Cloudflare Access is not configured for authoring yet.");
   }
   const issuer = env.ACCESS_TEAM_DOMAIN.replace(/\/$/, "");
   const token = request.headers.get("cf-access-jwt-assertion");

@@ -2,8 +2,7 @@
 
 This Worker serves the authenticated same-origin authoring APIs used by
 `xayah.me` and `dictionary.xayah.me`, plus public immutable media at
-`media.xayah.me`. During migration, `editor.xayah.me` remains a compatibility
-route and proxies the public sites.
+`media.xayah.me`.
 
 ## Data ownership
 
@@ -19,10 +18,10 @@ No D1 database is used.
 
 - Worker: `xayah-site-editor`
 - R2 bucket: `xayah-site-editor-content`
-- Custom domains: `editor.xayah.me` (temporary compatibility) and `media.xayah.me`
+- Custom domain: `media.xayah.me`
 - Worker routes: `xayah.me/api/*` and `dictionary.xayah.me/api/*`
-- One Cloudflare Access self-hosted application covering `editor.xayah.me`,
-  `xayah.me/api/*`, and `dictionary.xayah.me/api/*`
+- One Cloudflare Access self-hosted application covering `xayah.me/api/*` and
+  `dictionary.xayah.me/api/*`
 
 Set these Worker secrets with `wrangler secret put`:
 
@@ -45,8 +44,8 @@ main site repository variables.
 
 ## Writing API lifecycle
 
-The editor saves metadata and Markdown body to `private/writing/drafts/<id>.json`. Each save includes the previous `savedAt`; conditional R2 writes return HTTP 409 instead of overwriting a newer tab.
+The in-page authoring UI saves metadata and Markdown body to `private/writing/drafts/<id>.json`. Each save includes the previous `savedAt`; conditional R2 writes return HTTP 409 instead of overwriting a newer tab.
 
-Images are uploaded to `private/writing/assets/<id>/<sha256>.<ext>`. Publish copies only referenced images to the immutable `published/writing/<id>/` prefix, deterministically serializes Front matter, and commits `writing/<id>/<id>.md`. The editor polls `/api/writing/deploy/status` until the public page exposes the matching `x-writing-revision`.
+Images are uploaded to `private/writing/assets/<id>/<sha256>.<ext>`. Publish copies only referenced images to the immutable `published/writing/<id>/` prefix, deterministically serializes Front matter, and commits `writing/<id>/<id>.md`. The authoring UI polls `/api/writing/deploy/status` until the public page exposes the matching `x-writing-revision`.
 
 Unreferenced public Writing images are removed only after the new page revision is live.

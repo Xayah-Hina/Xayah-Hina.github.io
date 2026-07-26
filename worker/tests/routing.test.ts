@@ -4,6 +4,8 @@ import { endpointAllowed, sessionResponse } from "../src/index.ts";
 
 test("public API scopes expose only their own authoring endpoints", () => {
   assert.equal(endpointAllowed("main", "/api/session"), true);
+  assert.equal(endpointAllowed("main", "/api/authoring/status"), true);
+  assert.equal(endpointAllowed("main", "/api/editor/status"), false);
   assert.equal(endpointAllowed("main", "/api/writing/open"), true);
   assert.equal(endpointAllowed("main", "/api/journal/save"), true);
   assert.equal(endpointAllowed("main", "/api/dictionary/open"), false);

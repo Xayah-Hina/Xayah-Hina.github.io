@@ -33,7 +33,7 @@ Writing images use content-addressed names:
 ![Alternative text](./<sha256>.png "Visible caption")
 ```
 
-The Cloud Editor accepts JPEG, PNG, WebP, GIF, and AVIF files up to 32 MiB, verifies their file signatures, and inserts the canonical syntax. The build rewrites the relative path to the article's public R2 URL.
+The in-page authoring UI accepts JPEG, PNG, WebP, GIF, and AVIF files up to 32 MiB, verifies their file signatures, and inserts the canonical syntax. The build rewrites the relative path to the article's public R2 URL.
 
 ## Local verification
 

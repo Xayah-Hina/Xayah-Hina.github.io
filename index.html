@@ -1160,7 +1160,7 @@
 
   <template id="journal-authoring-template">
     <div class="journal-authoring" aria-label="Cloud Journal editor">
-      <span class="journal-authoring-status" aria-live="polite">Starting Cloud editor...</span>
+      <span class="journal-authoring-status" aria-live="polite">Starting cloud authoring...</span>
       <div class="journal-authoring-actions">
         <button class="control-button control-button-primary" type="button" data-authoring-action="new" disabled>New Journal</button>
       </div>
@@ -1258,7 +1258,7 @@
 
   <template id="writing-authoring-template">
     <div class="journal-authoring" aria-label="Cloud Writing editor">
-      <span class="journal-authoring-status writing-authoring-status" aria-live="polite">Starting Cloud editor...</span>
+      <span class="journal-authoring-status writing-authoring-status" aria-live="polite">Starting cloud authoring...</span>
       <div class="journal-authoring-actions">
         <button class="control-button control-button-primary" type="button" data-writing-action="new" disabled>New Writing</button>
       </div>
@@ -2390,10 +2390,10 @@
         });
 
         try {
-          const response = await fetch("/api/editor/status", { cache: "no-store" });
+          const response = await fetch("/api/authoring/status", { cache: "no-store" });
           const result = await response.json();
           if (!response.ok) {
-            throw new Error(result.error || "The Cloud editor service is unavailable.");
+            throw new Error(result.error || "Cloud authoring is unavailable.");
           }
           authoring.connected = !result.journalError;
           writingAuthoring.connected = !result.writingError;
@@ -2403,13 +2403,13 @@
           const journalInitial = initialPublishingFeedback(result.publishing,
             journalCatalogError || result.journalError
               ? (result.journalError || "Journal catalog failed to load; Cloud editing is disabled.")
-              : "Cloud Journal editor is enabled.",
+              : "Cloud Journal authoring is enabled.",
           journalCatalogError || result.journalError ? "error" : "status");
           setAuthoringStatus(journalInitial.message, journalInitial.kind);
           const writingInitial = initialPublishingFeedback(result.publishing,
             writingCatalogError || result.writingError
               ? (result.writingError || "Writing catalog failed to load; Cloud editing is disabled.")
-              : "Cloud Markdown editor is enabled · drafts auto-save privately.",
+              : "Cloud Markdown authoring is enabled · drafts auto-save privately.",
           writingCatalogError || result.writingError ? "error" : "status", true);
           setWritingAuthoringStatus(writingInitial.message, writingInitial.kind);
           renderArchive();
@@ -2418,7 +2418,7 @@
           writingAuthoring.connected = false;
           authoring.newButton.disabled = true;
           writingAuthoring.newButton.disabled = true;
-          const message = "Cloud editor unavailable. Reload the page or sign in through Cloudflare Access again.";
+          const message = "Cloud authoring is unavailable. Reload the page or sign in through Cloudflare Access again.";
           setAuthoringStatus(message, "error");
           setWritingAuthoringStatus(message, "error");
         }
@@ -2492,9 +2492,9 @@
         try {
           result = await response.json();
         } catch (error) {
-          throw new Error("The Cloud editor returned an invalid response.");
+          throw new Error("Cloud authoring returned an invalid response.");
         }
-        if (!response.ok) throw new Error(result.error || "The Cloud editor request failed.");
+        if (!response.ok) throw new Error(result.error || "The cloud authoring request failed.");
         return result;
       }
 
