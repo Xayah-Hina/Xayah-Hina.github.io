@@ -44,7 +44,7 @@ export default [
   {
     "id": "20260724-092054-dc1b",
     "publishedAt": "2026-07-24T09:20:54+08:00",
-    "content": "至少目前有两个标的可以认为是接近最终形态了。一个是英语，一个是Leetcode。这两个标的的性质良好，而且可预期的范围内属于终身受益。\n\n英语：维护一个固定的字典集合（https://xayah.me/dictionary）终身维护这34,137个词，可以预见终有一天能做到字典序记忆。\n\nLeetcode：约3000题（想办法同样维护一个网站来管理数据库）。同样也是终身有用，而且解法固定后期可以大幅提高效率。",
+    "content": "至少目前有两个标的可以认为是接近最终形态了。一个是英语，一个是Leetcode。这两个标的的性质良好，而且可预期的范围内属于终身受益。\n\n英语：维护一个固定的字典集合（https://dictionary.xayah.me）终身维护这34,137个词，可以预见终有一天能做到字典序记忆。\n\nLeetcode：约3000题（想办法同样维护一个网站来管理数据库）。同样也是终身有用，而且解法固定后期可以大幅提高效率。",
     "images": [],
     "relatedWriting": null
   },
@@ -281,7 +281,7 @@ export default [
   {
     "id": "20260717-103417-0121",
     "publishedAt": "2026-07-17T10:34:17+08:00",
-    "content": "做完了，希望能好好用上这个私人词典。\n\nhttps://xayah.me/dictionary",
+    "content": "做完了，希望能好好用上这个私人词典。\n\nhttps://dictionary.xayah.me",
     "images": [],
     "relatedWriting": null
   },

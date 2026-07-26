@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "python dictionary/build.py build && node scripts/build-site.mjs",
+    "build": "node scripts/build-site.mjs",
     "test": "node --test tests/writing/*.test.mjs"
   },
   "dependencies": {

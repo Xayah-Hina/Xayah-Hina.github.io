@@ -87,8 +87,8 @@ async function editorApi(request: Request, env: Env, url: URL): Promise<Response
   return jsonResponse(await action(env, payload));
 }
 
-async function proxyPublicSite(request: Request, env: Env, url: URL): Promise<Response> {
-  const target = new URL(`${url.pathname}${url.search}`, env.PUBLIC_SITE_ORIGIN);
+async function proxyPublicSite(request: Request, url: URL, origin: string, pathname = url.pathname): Promise<Response> {
+  const target = new URL(`${pathname}${url.search}`, origin);
   const headers = new Headers();
   const accept = request.headers.get("accept");
   if (accept) headers.set("Accept", accept);
@@ -107,6 +107,16 @@ async function proxyPublicSite(request: Request, env: Env, url: URL): Promise<Re
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers: resultHeaders });
 }
 
+export function editorPublicTarget(env: Env, url: URL): { origin: string; pathname: string } {
+  if (url.pathname.startsWith("/dictionary/")) {
+    return {
+      origin: env.DICTIONARY_ORIGIN,
+      pathname: url.pathname.slice("/dictionary".length),
+    };
+  }
+  return { origin: env.PUBLIC_SITE_ORIGIN, pathname: url.pathname };
+}
+
 async function handleEditor(request: Request, env: Env, url: URL): Promise<Response> {
   await verifyAccess(request, env);
   if (url.pathname.startsWith("/api/")) return editorApi(request, env, url);
@@ -117,7 +127,8 @@ async function handleEditor(request: Request, env: Env, url: URL): Promise<Respo
   if (url.pathname === "/writing/catalog.js") return editorWritingCatalog(env);
   const year = url.pathname.match(/^\/writing\/(\d{4})\.js$/);
   if (year) return editorWritingYear(env, year[1]);
-  return proxyPublicSite(request, env, url);
+  const target = editorPublicTarget(env, url);
+  return proxyPublicSite(request, url, target.origin, target.pathname);
 }
 
 async function publicMedia(request: Request, env: Env, url: URL): Promise<Response> {

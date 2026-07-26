@@ -27,6 +27,9 @@
     "GITHUB_REPO": "Xayah-Hina.github.io",
     "GITHUB_BRANCH": "master",
     "PUBLIC_SITE_ORIGIN": "https://xayah.me",
+    "DICTIONARY_ORIGIN": "https://dictionary.xayah.me",
+    "DICTIONARY_GITHUB_REPO": "dictionary",
+    "DICTIONARY_GITHUB_BRANCH": "master",
     "EDITOR_ORIGIN": "https://editor.xayah.me",
     "MEDIA_ORIGIN": "https://media.xayah.me"
   }

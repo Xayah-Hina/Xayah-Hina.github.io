@@ -4,10 +4,11 @@ This Worker serves the authenticated editor at `editor.xayah.me`, public immutab
 
 ## Data ownership
 
-- GitHub `master`: published Journal, Monthly Note, Front matter Markdown Writing sources, and Dictionary Personal Knowledge.
+- `Xayah-Hina.github.io` on GitHub `master`: published Journal, Monthly Note, and Front matter Markdown Writing sources.
+- `dictionary` on GitHub `master`: the standalone Dictionary source and published Personal Knowledge.
 - Private R2 bucket: unpublished Writing and Dictionary drafts plus private Writing image uploads.
 - Public R2 objects: immutable, content-addressed Journal and Writing media.
-- GitHub Pages: builds `_site` from the repository allowlist and turns Writing Markdown into static HTML.
+- GitHub Pages: independently builds allowlisted main-site and Dictionary artifacts.
 
 No D1 database is used.
 
@@ -20,7 +21,7 @@ No D1 database is used.
 
 Set these Worker secrets with `wrangler secret put`:
 
-- `GITHUB_TOKEN`: repository-scoped fine-grained token with Contents read/write and Actions read access. It must be able to commit Writing Markdown and read the Pages workflow status.
+- `GITHUB_TOKEN`: fine-grained token with Contents read/write and Actions read access to both `Xayah-Hina.github.io` and `dictionary`. It must be able to commit Writing Markdown, publish Dictionary Personal Knowledge, and read Pages workflow status.
 
 Set these Worker variables in the Cloudflare dashboard:
 
@@ -28,6 +29,15 @@ Set these Worker variables in the Cloudflare dashboard:
 - `ACCESS_AUD`: the Access application's Audience tag.
 
 Never commit `.dev.vars` or any real secret.
+
+## Dictionary routing
+
+The public Dictionary is served from `https://dictionary.xayah.me/`. The
+authenticated route remains `https://editor.xayah.me/dictionary/`; the Worker
+proxies that path to the standalone site while keeping the Editor API same-origin.
+Dictionary reads and publishes use `DICTIONARY_ORIGIN`,
+`DICTIONARY_GITHUB_REPO`, and `DICTIONARY_GITHUB_BRANCH`, independently of the
+main site repository variables.
 
 ## Writing API lifecycle
 

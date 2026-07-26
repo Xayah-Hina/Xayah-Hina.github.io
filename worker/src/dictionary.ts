@@ -53,7 +53,19 @@ function encodedPathPart(value: string): string {
 
 function personalPath(entry: DictionaryEntry): string {
   const prefix = Array.from(entry.canonicalKey).slice(0, 2).join("") || "_";
-  return `dictionary/personal/${encodedPathPart(prefix)}/${encodedPathPart(entry.canonicalKey)}.json`;
+  return `personal/${encodedPathPart(prefix)}/${encodedPathPart(entry.canonicalKey)}.json`;
+}
+
+function legacyPersonalPath(entry: DictionaryEntry): string {
+  return `dictionary/${personalPath(entry)}`;
+}
+
+function dictionaryGithubEnv(env: Env): Env {
+  return {
+    ...env,
+    GITHUB_REPO: env.DICTIONARY_GITHUB_REPO,
+    GITHUB_BRANCH: env.DICTIONARY_GITHUB_BRANCH,
+  };
 }
 
 function integer(value: unknown, label: string, minimum: number, maximum: number): number {
@@ -67,7 +79,8 @@ async function resolveEntry(env: Env, payload: Record<string, unknown>): Promise
   const entryId = requiredString(payload.entryId, "Dictionary entryId", 500);
   const shard = integer(payload.shard, "Dictionary shard", 0, 9999);
   const filename = String(shard).padStart(4, "0");
-  const response = await fetch(`${env.PUBLIC_SITE_ORIGIN}/dictionary/generated/blocks/${filename}.json`, {
+  const origin = env.DICTIONARY_ORIGIN.replace(/\/$/, "");
+  const response = await fetch(`${origin}/generated/blocks/${filename}.json`, {
     headers: { "Accept": "application/json" },
   });
   if (!response.ok) throw new HttpError(502, "The Dictionary entry index could not be loaded.");
@@ -160,7 +173,8 @@ function emptyPersonal(entryId: string): PersonalEntry {
 }
 
 async function readPublishedPersonal(env: Env, entry: DictionaryEntry): Promise<PersonalEntry> {
-  const source = await readTextFile(env, personalPath(entry), env.GITHUB_BRANCH, false);
+  const githubEnv = dictionaryGithubEnv(env);
+  const source = await readTextFile(githubEnv, personalPath(entry), githubEnv.GITHUB_BRANCH, false);
   if (source === null) return emptyPersonal(entry.entryId);
   let value: unknown;
   try {
@@ -191,7 +205,7 @@ async function readDraftObject(env: Env, key: string): Promise<DictionaryDraft |
   if (
     record.schemaVersion !== 1
     || entry.shard < 0
-    || record.path !== personalPath(entry)
+    || (record.path !== personalPath(entry) && record.path !== legacyPersonalPath(entry))
     || key !== draftKey(entry.entryId)
   ) {
     throw new HttpError(500, "A stored Dictionary draft has invalid metadata.");
@@ -199,7 +213,7 @@ async function readDraftObject(env: Env, key: string): Promise<DictionaryDraft |
   return {
     schemaVersion: 1,
     entry,
-    path: record.path,
+    path: personalPath(entry),
     personal: validateStoredPersonal(record.personal, entry.entryId),
     savedAt: storedText(record.savedAt, "draft savedAt", false),
   };
@@ -317,7 +331,7 @@ function dictionarySync(env: Env, pendingCount: number, state: "ready" | "pendin
     enabled: true,
     state,
     message,
-    branch: env.GITHUB_BRANCH,
+    branch: env.DICTIONARY_GITHUB_BRANCH,
     dictionaryPending: pendingCount > 0,
     dictionaryPendingCount: pendingCount,
   };
@@ -412,20 +426,22 @@ export async function publishDictionary(env: Env, _payload: Record<string, unkno
   }
 
   const changes: FileChange[] = [];
+  const githubEnv = dictionaryGithubEnv(env);
   for (const { draft } of storedDrafts) {
-    const source = await readTextFile(env, draft.path, env.GITHUB_BRANCH, false);
+    const path = personalPath(draft.entry);
+    const source = await readTextFile(githubEnv, path, githubEnv.GITHUB_BRANCH, false);
     if (!hasPersonalContent(draft.personal)) {
-      if (source !== null) changes.push({ path: draft.path, content: null });
+      if (source !== null) changes.push({ path, content: null });
       continue;
     }
     const content = `${JSON.stringify(draft.personal, null, 2)}\n`;
-    if (source !== content) changes.push({ path: draft.path, content });
+    if (source !== content) changes.push({ path, content });
   }
 
   let commitSha: string | null = null;
   if (changes.length) {
     const label = storedDrafts.length === 1 ? storedDrafts[0].draft.entry.word : `${storedDrafts.length} entries`;
-    commitSha = await commitFiles(env, `Dictionary: publish ${label}`, changes);
+    commitSha = await commitFiles(githubEnv, `Dictionary: publish ${label}`, changes);
   }
   await env.CONTENT.delete(storedDrafts.map(({ key }) => key));
   return {

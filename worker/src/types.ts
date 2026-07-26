@@ -7,6 +7,9 @@ export interface Env {
   GITHUB_REPO: string;
   GITHUB_BRANCH: string;
   PUBLIC_SITE_ORIGIN: string;
+  DICTIONARY_ORIGIN: string;
+  DICTIONARY_GITHUB_REPO: string;
+  DICTIONARY_GITHUB_BRANCH: string;
   EDITOR_ORIGIN: string;
   MEDIA_ORIGIN: string;
 }
