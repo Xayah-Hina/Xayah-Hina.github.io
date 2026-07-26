@@ -165,19 +165,30 @@ const readerCssSource = await fs.readFile(path.join(root, "site", "writing-reade
   const readerJsSource = await fs.readFile(path.join(root, "site", "writing-reader.js"));
 const articleAuthoringJsSource = await fs.readFile(path.join(root, "site", "writing-article-authoring.js"));
 const katexCssSource = await fs.readFile(path.join(root, "node_modules", "katex", "dist", "katex.min.css"));
-const previewBundle = await esbuild({
-  entryPoints: [path.join(root, "scripts", "writing-markdown.mjs")],
+const authoringJsBundle = await esbuild({
+  entryPoints: [path.join(root, "site", "writing-authoring-editor.mjs")],
   bundle: true,
   format: "esm",
   platform: "browser",
   minify: true,
   write: false,
 });
+const authoringCssBundle = await esbuild({
+  entryPoints: [path.join(root, "site", "writing-authoring.css")],
+  bundle: true,
+  minify: true,
+  write: false,
+});
+const authoringJsSource = authoringJsBundle.outputFiles[0]?.contents;
+const authoringCssSource = authoringCssBundle.outputFiles[0]?.contents;
+if (!authoringJsSource || !authoringCssSource) throw new Error("Writing authoring assets could not be bundled.");
 const assetsManifest = {
   shellCss: `site-shell.${hash(shellCssSource)}.css`,
   readerCss: `writing-reader.${hash(readerCssSource)}.css`,
   readerJs: `writing-reader.${hash(readerJsSource)}.js`,
   articleAuthoringJs: `writing-article-authoring.${hash(articleAuthoringJsSource)}.js`,
+  authoringJs: `writing-authoring.${hash(authoringJsSource)}.js`,
+  authoringCss: `writing-authoring.${hash(authoringCssSource)}.css`,
   katexCss: `katex.${hash(katexCssSource)}.css`,
 };
 await Promise.all([
@@ -185,15 +196,24 @@ await Promise.all([
   fs.writeFile(path.join(generatedAssets, assetsManifest.readerCss), readerCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.readerJs), readerJsSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.articleAuthoringJs), articleAuthoringJsSource),
+  fs.writeFile(path.join(generatedAssets, assetsManifest.authoringJs), authoringJsSource),
+  fs.writeFile(path.join(generatedAssets, assetsManifest.authoringCss), authoringCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.katexCss), katexCssSource),
   fs.writeFile(path.join(generatedAssets, "site-shell.css"), shellCssSource),
   fs.writeFile(path.join(generatedAssets, "writing-reader.css"), readerCssSource),
   fs.writeFile(path.join(generatedAssets, "katex.css"), katexCssSource),
-  fs.writeFile(path.join(generatedAssets, "writing-preview.js"), previewBundle.outputFiles[0].contents),
 ]);
 const shellPlaceholder = "__SITE_SHELL_CSS__";
+const katexPlaceholder = "__KATEX_CSS__";
+const authoringCssPlaceholder = "__WRITING_AUTHORING_CSS__";
+const authoringJsPlaceholder = "__WRITING_AUTHORING_JS__";
 const htmlReplacements = new Map([
-  ["index.html", [[shellPlaceholder, assetsManifest.shellCss]]],
+  ["index.html", [
+    [shellPlaceholder, assetsManifest.shellCss],
+    [katexPlaceholder, assetsManifest.katexCss],
+    [authoringCssPlaceholder, assetsManifest.authoringCss],
+    [authoringJsPlaceholder, assetsManifest.authoringJs],
+  ]],
 ]);
 for (const [relative, replacements] of htmlReplacements) {
   const source = await fs.readFile(path.join(root, relative), "utf8");

@@ -1,0 +1,271 @@
+@import "@milkdown/crepe/theme/common/prosemirror.css";
+@import "@milkdown/crepe/theme/common/reset.css";
+@import "@milkdown/crepe/theme/common/block-edit.css";
+@import "@milkdown/crepe/theme/common/code-mirror.css";
+@import "@milkdown/crepe/theme/common/cursor.css";
+@import "@milkdown/crepe/theme/common/link-tooltip.css";
+@import "@milkdown/crepe/theme/common/list-item.css";
+@import "@milkdown/crepe/theme/common/placeholder.css";
+@import "@milkdown/crepe/theme/common/toolbar.css";
+@import "@milkdown/crepe/theme/common/table.css";
+
+.writing-composer-root {
+  min-height: 100%;
+  color: var(--text);
+  background: var(--page);
+}
+
+.writing-composer-root .milkdown {
+  --crepe-color-background: var(--page);
+  --crepe-color-on-background: var(--text);
+  --crepe-color-surface: var(--card);
+  --crepe-color-surface-low: var(--code);
+  --crepe-color-on-surface: var(--text-secondary);
+  --crepe-color-on-surface-variant: var(--muted);
+  --crepe-color-outline: var(--line);
+  --crepe-color-primary: var(--link);
+  --crepe-color-secondary: var(--link-soft);
+  --crepe-color-on-secondary: var(--text);
+  --crepe-color-inverse: var(--text);
+  --crepe-color-on-inverse: var(--page);
+  --crepe-color-inline-code: var(--link);
+  --crepe-color-error: #dc2626;
+  --crepe-color-hover: var(--card-hover);
+  --crepe-color-selected: color-mix(in srgb, var(--link), transparent 78%);
+  --crepe-color-inline-area: var(--line);
+  --crepe-font-title: ui-sans-serif, system-ui, "Noto Sans SC", sans-serif;
+  --crepe-font-default: ui-serif, Georgia, "Noto Serif SC", "Songti SC", SimSun, serif;
+  --crepe-font-code: ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  --crepe-shadow-1: var(--shadow);
+  --crepe-shadow-2: var(--shadow);
+  min-height: 100%;
+}
+
+.writing-composer-root .milkdown .ProseMirror {
+  width: min(100%, 48rem);
+  min-height: calc(100dvh - 13rem);
+  margin: 0 auto;
+  padding: clamp(2.5rem, 7vw, 5.5rem) clamp(1rem, 5vw, 3rem) 9rem;
+  color: var(--text);
+  caret-color: var(--link);
+  font-family: var(--crepe-font-default);
+  font-size: 1.05rem;
+  line-height: 1.86;
+  overflow-wrap: anywhere;
+}
+
+.writing-composer-root .milkdown .ProseMirror > :first-child {
+  margin-top: 0;
+}
+
+.writing-composer-root .milkdown .ProseMirror p {
+  margin: 1.15em 0;
+}
+
+.writing-composer-root .milkdown .ProseMirror h1,
+.writing-composer-root .milkdown .ProseMirror h2,
+.writing-composer-root .milkdown .ProseMirror h3,
+.writing-composer-root .milkdown .ProseMirror h4 {
+  margin: 2.4em 0 0.75em;
+  font-family: var(--crepe-font-title);
+  font-weight: 720;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.writing-composer-root .milkdown .ProseMirror h1 {
+  padding-left: 0.75rem;
+  color: #dc2626;
+  border-left: 3px solid currentColor;
+  font-size: 1.9rem;
+}
+
+.writing-composer-root .milkdown .ProseMirror h1::after {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 550;
+  content: "H1 is reserved for the article title. Use H2 instead.";
+}
+
+.writing-composer-root .milkdown .ProseMirror h2 {
+  font-size: clamp(1.45rem, 4vw, 1.9rem);
+}
+
+.writing-composer-root .milkdown .ProseMirror h3 {
+  font-size: clamp(1.15rem, 3vw, 1.35rem);
+}
+
+.writing-composer-root .milkdown .ProseMirror h4 {
+  font-size: 1.05rem;
+}
+
+.writing-composer-root .milkdown .ProseMirror a {
+  color: var(--link);
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.2em;
+}
+
+.writing-composer-root .milkdown .ProseMirror blockquote {
+  margin: 1.7rem 0;
+  padding: 0.15rem 0 0.15rem 1.2rem;
+  color: var(--muted);
+  border-left: 3px solid var(--link);
+}
+
+.writing-composer-root .milkdown .ProseMirror ul,
+.writing-composer-root .milkdown .ProseMirror ol {
+  padding-left: 1.6rem;
+}
+
+.writing-composer-root .milkdown .ProseMirror li + li {
+  margin-top: 0.35rem;
+}
+
+.writing-composer-root .milkdown .ProseMirror :not(pre) > code {
+  padding: 0.13em 0.35em;
+  background: var(--code);
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  font: 0.88em/1.4 var(--crepe-font-code);
+}
+
+.writing-composer-root .milkdown .ProseMirror pre,
+.writing-composer-root .milkdown .ProseMirror table,
+.writing-composer-root .milkdown .ProseMirror .katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.writing-composer-root .milkdown .ProseMirror table {
+  width: 100%;
+  margin: 1.6rem 0;
+  border-collapse: collapse;
+  font-family: ui-sans-serif, system-ui, "Noto Sans SC", sans-serif;
+  font-size: 0.92rem;
+}
+
+.writing-composer-root .milkdown .ProseMirror th,
+.writing-composer-root .milkdown .ProseMirror td {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+
+.writing-composer-root .milkdown .ProseMirror th {
+  background: var(--card);
+}
+
+.writing-composer-root .milkdown .ProseMirror hr {
+  margin: 2.5rem 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.writing-composer-root .milkdown span[data-type="math_inline"] {
+  display: inline-block;
+  padding: 0 0.2rem;
+  color: var(--link);
+  vertical-align: baseline;
+}
+
+.writing-composer-root .milkdown .milkdown-latex-inline-edit {
+  position: absolute;
+  padding: 0.35rem 0.45rem 0.35rem 0.75rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  box-shadow: var(--shadow);
+}
+
+.writing-composer-root .milkdown .milkdown-latex-inline-edit[data-show="false"] {
+  display: none;
+}
+
+.writing-composer-root .milkdown .milkdown-latex-inline-edit .container {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.writing-composer-root .milkdown .milkdown-latex-inline-edit .ProseMirror {
+  min-width: 11rem;
+  max-width: 19rem;
+  min-height: 0;
+  padding: 0;
+  font-family: var(--crepe-font-code);
+}
+
+.writing-composer-image {
+  display: inline-flex;
+  width: 100%;
+  max-width: 100%;
+  margin: 1.5rem 0;
+  align-items: center;
+  flex-direction: column;
+  gap: 0.65rem;
+  vertical-align: top;
+}
+
+.writing-composer-image img {
+  display: block;
+  max-width: 100%;
+  max-height: 70dvh;
+  border-radius: 0.65rem;
+  box-shadow: var(--shadow);
+  object-fit: contain;
+}
+
+.writing-composer-image-caption {
+  color: var(--muted);
+  font-family: ui-sans-serif, system-ui, "Noto Sans SC", sans-serif;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  text-align: center;
+}
+
+.writing-composer-image[data-selected="true"] img {
+  outline: 3px solid var(--focus);
+  outline-offset: 4px;
+}
+
+.writing-composer-root .milkdown .milkdown-toolbar,
+.writing-composer-root .milkdown .milkdown-link-preview,
+.writing-composer-root .milkdown .milkdown-link-edit,
+.writing-composer-root .milkdown .milkdown-block-handle,
+.writing-composer-root .milkdown .milkdown-slash-menu {
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.writing-composer-root .milkdown .milkdown-toolbar button,
+.writing-composer-root .milkdown .milkdown-link-preview button,
+.writing-composer-root .milkdown .milkdown-link-edit button {
+  color: var(--text);
+}
+
+.writing-composer-root .milkdown .milkdown-toolbar button:hover,
+.writing-composer-root .milkdown .milkdown-link-preview button:hover,
+.writing-composer-root .milkdown .milkdown-link-edit button:hover {
+  background: var(--card-hover);
+}
+
+@media (max-width: 42rem) {
+  .writing-composer-root .milkdown .ProseMirror {
+    min-height: calc(100dvh - 18rem);
+    padding-top: 2.25rem;
+    padding-bottom: 7rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .writing-composer-root *,
+  .writing-composer-root *::before,
+  .writing-composer-root *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

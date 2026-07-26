@@ -7,6 +7,8 @@
     "test": "node --test tests/writing/*.test.mjs"
   },
   "dependencies": {
+    "@milkdown/crepe": "7.21.3",
+    "@milkdown/kit": "7.21.3",
     "github-slugger": "^2.0.0",
     "highlight.js": "^11.11.1",
     "katex": "^0.16.22",

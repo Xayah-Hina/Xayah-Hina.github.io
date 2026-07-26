@@ -25,6 +25,21 @@ status: "incomplete"
 - The page title is generated from Front matter. Body headings start at `##`; an H1 fails the build.
 - Raw HTML is disabled. Use footnotes and a `## References` section instead of BibTeX/CSL.
 
+## In-page editor
+
+After signing in, Writing opens in a single-canvas visual editor. The title,
+summary, language, and status remain structured fields under **Article details**;
+the document canvas edits only the Markdown body. Use the **Markdown** switch
+when exact source control is needed, then return to **Visual** in the same
+canvas.
+
+The visual editor serializes its document model back to Markdown after the
+first visual change. This may normalize harmless formatting such as list
+markers or blank lines, while preserving the article's Markdown semantics.
+Opening an article without editing it never rewrites or autosaves its source.
+Autosave remains private; only **Publish** updates Front matter and commits the
+article to GitHub.
+
 ## Images
 
 Writing images use content-addressed names:

@@ -17,6 +17,8 @@
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary">
   <link rel="stylesheet" href="/assets/generated/__SITE_SHELL_CSS__">
+  <link rel="stylesheet" href="/assets/generated/__KATEX_CSS__">
+  <link rel="stylesheet" href="/assets/generated/__WRITING_AUTHORING_CSS__">
 
   <!-- Add formal writing and journal entries to their respective sections. -->
   <script>
@@ -796,7 +798,7 @@
       display: grid;
       color: var(--text);
       background: var(--page);
-      grid-template-rows: auto auto minmax(0, 1fr);
+      grid-template-rows: auto auto auto minmax(0, 1fr);
     }
 
     .writing-editor-shell[hidden] {
@@ -843,27 +845,31 @@
     }
 
     .writing-editor-actions,
-    .writing-view-switch {
+    .writing-view-switch,
+    .writing-editor-tools {
       display: flex;
       align-items: center;
       gap: 0.4rem;
     }
 
     .writing-editor-toolbar {
-      display: none;
+      display: flex;
+      align-items: center;
       min-width: 0;
       padding: 0.45rem 0.75rem;
+      gap: 0.75rem;
+      background: color-mix(in srgb, var(--page), var(--card) 32%);
       border-bottom: 1px solid var(--line);
-      justify-content: flex-end;
+      justify-content: space-between;
     }
 
     .writing-view-button {
       min-height: 1.9rem;
-      padding: 0.25rem 0.6rem;
+      padding: 0.25rem 0.7rem;
       color: var(--muted);
       background: transparent;
       border: 1px solid transparent;
-      border-radius: 0.4rem;
+      border-radius: 999px;
       font-size: 0.78rem;
       font-weight: 600;
       cursor: pointer;
@@ -876,12 +882,59 @@
       border-color: var(--line);
     }
 
+    .writing-editor-measure {
+      color: var(--subtle);
+      font-size: 0.72rem;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .writing-editor-metadata {
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .writing-editor-metadata > summary {
+      display: flex;
+      align-items: center;
+      min-height: 2.6rem;
+      padding: 0.45rem 0.8rem;
+      gap: 0.6rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 650;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .writing-editor-metadata > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .writing-editor-metadata > summary::before {
+      color: var(--subtle);
+      content: "›";
+      font-size: 1rem;
+      transform: rotate(0);
+      transition: transform 120ms ease;
+    }
+
+    .writing-editor-metadata[open] > summary::before {
+      transform: rotate(90deg);
+    }
+
+    .writing-editor-metadata-summary {
+      overflow: hidden;
+      color: var(--subtle);
+      font-weight: 450;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .writing-editor-details {
       display: grid;
       padding: 0.65rem 0.75rem;
       gap: 0.65rem;
-      background: var(--card);
-      border-bottom: 1px solid var(--line);
       grid-template-columns: minmax(10rem, 0.7fr) minmax(16rem, 1.3fr) minmax(7rem, 0.35fr) minmax(7rem, 0.35fr);
     }
 
@@ -896,63 +949,66 @@
     }
 
     .writing-workspace {
-      display: grid;
+      position: relative;
       min-height: 0;
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      overflow: auto;
+      overscroll-behavior: contain;
     }
 
+    .writing-visual-pane,
     .writing-source-pane,
-    .writing-preview-pane {
-      display: grid;
+    .writing-composer-root {
+      width: 100%;
+      min-height: 100%;
+    }
+
+    .writing-visual-pane,
+    .writing-source-pane {
       min-width: 0;
       min-height: 0;
-      grid-template-rows: minmax(0, 1fr) auto;
     }
 
-    .writing-source-pane {
-      border-right: 1px solid var(--line);
+    .writing-source-pane[hidden],
+    .writing-visual-pane[hidden] {
+      display: none;
     }
 
     .writing-source {
-      width: 100%;
-      height: 100%;
-      min-height: 0;
-      padding: 1rem;
+      display: block;
+      width: min(100%, 48rem);
+      min-height: calc(100dvh - 13rem);
+      margin: 0 auto;
+      padding: clamp(2.5rem, 7vw, 5.5rem) clamp(1rem, 5vw, 3rem) 9rem;
       color: var(--text);
       background: var(--page);
       border: 0;
       border-radius: 0;
-      font: 0.84rem/1.55 ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      font: 0.9rem/1.7 ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
       resize: none;
       tab-size: 2;
     }
 
     .writing-source:focus {
-      outline: 2px solid var(--focus);
-      outline-offset: -2px;
-    }
-
-    .writing-asset-toolbar {
-      display: flex;
-      align-items: center;
-      min-height: 2.8rem;
-      padding: 0.45rem 0.7rem;
-      gap: 0.65rem;
-      background: var(--card);
-      border-top: 1px solid var(--line);
+      outline: 0;
     }
 
     .writing-asset-label {
       display: inline-flex;
       align-items: center;
       min-height: 1.9rem;
-      padding: 0.25rem 0.6rem;
+      padding: 0.25rem 0.7rem;
       color: var(--muted);
-      background: var(--page);
+      background: transparent;
       border: 1px solid var(--line);
-      border-radius: 0.4rem;
+      border-radius: 999px;
       font-size: 0.75rem;
+      font-weight: 600;
       cursor: pointer;
+    }
+
+    .writing-asset-label:hover {
+      color: var(--text);
+      background: var(--card-hover);
     }
 
     .writing-asset-input {
@@ -963,37 +1019,8 @@
       clip: rect(0 0 0 0);
     }
 
-    .writing-asset-hint {
-      color: var(--subtle);
-      font-size: 0.72rem;
-    }
-
-    .writing-source-pane[data-drop-active="true"] {
-      box-shadow: inset 0 0 0 3px var(--focus);
-    }
-
-    .writing-preview-frame {
-      width: 100%;
-      height: 100%;
-      min-height: 0;
-      background: var(--card);
-      border: 0;
-    }
-
-    .writing-preview-empty {
-      display: grid;
-      height: 100%;
-      margin: 0;
-      padding: 1rem;
-      place-items: center;
-      color: var(--muted);
-      background: var(--card);
-      text-align: center;
-    }
-
     .writing-view-switch {
-      display: none;
-      margin-left: auto;
+      flex: 0 0 auto;
     }
 
     .empty-state {
@@ -1006,10 +1033,6 @@
     }
 
     @media (max-width: 42rem) {
-      .writing-editor-shell {
-        grid-template-rows: auto auto auto minmax(0, 1fr);
-      }
-
       .writing-editor-header {
         grid-template-columns: auto minmax(0, 1fr);
       }
@@ -1023,22 +1046,23 @@
         grid-template-columns: 1fr;
       }
 
-      .writing-editor-toolbar,
-      .writing-view-switch {
-        display: flex;
+      .writing-editor-toolbar {
+        align-items: flex-start;
+        flex-wrap: wrap;
       }
 
-      .writing-workspace {
-        grid-template-columns: minmax(0, 1fr);
+      .writing-editor-tools {
+        margin-left: auto;
       }
 
-      .writing-workspace[data-view="source"] .writing-preview-pane,
-      .writing-workspace[data-view="preview"] .writing-source-pane {
+      .writing-editor-measure {
         display: none;
       }
 
-      .writing-source-pane {
-        border-right: 0;
+      .writing-source {
+        min-height: calc(100dvh - 18rem);
+        padding-top: 2.25rem;
+        padding-bottom: 7rem;
       }
     }
 
@@ -1303,7 +1327,7 @@
       <header class="writing-editor-header">
         <button class="control-button writing-editor-back" type="button" data-writing-editor-action="close">Back</button>
         <div class="writing-editor-heading">
-          <h2 class="writing-editor-title">Writing Editor</h2>
+          <h2 class="writing-editor-title">Untitled</h2>
           <p class="writing-editor-status" aria-live="polite">Ready.</p>
         </div>
         <div class="writing-editor-actions">
@@ -1314,47 +1338,52 @@
 
       <div class="writing-editor-toolbar">
         <div class="writing-view-switch" role="group" aria-label="Editor view">
-          <button class="writing-view-button" type="button" data-writing-view="source" aria-pressed="true">Source</button>
-          <button class="writing-view-button" type="button" data-writing-view="preview" aria-pressed="false">Preview</button>
+          <button class="writing-view-button" type="button" data-writing-view="visual" aria-pressed="true">Visual</button>
+          <button class="writing-view-button" type="button" data-writing-view="source" aria-pressed="false">Markdown</button>
+        </div>
+        <div class="writing-editor-tools">
+          <span class="writing-editor-measure" aria-live="polite">0 words · 0 characters</span>
+          <label class="writing-asset-label">Insert image<input class="writing-asset-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" multiple></label>
         </div>
       </div>
 
-      <div class="writing-editor-details">
-        <label class="field-group">
-          <span class="field-label">Title</span>
-          <input class="field-input writing-title-input" type="text">
-        </label>
-        <label class="field-group">
-          <span class="field-label">Summary</span>
-          <textarea class="field-input writing-summary-input" rows="1"></textarea>
-        </label>
-        <label class="field-group">
-          <span class="field-label">Language</span>
-          <select class="field-input writing-lang-input">
-            <option value="zh-CN">简体中文</option>
-            <option value="en">English</option>
-          </select>
-        </label>
-        <label class="field-group">
-          <span class="field-label">Status</span>
-          <select class="field-input writing-status-input">
-            <option value="incomplete">未完成</option>
-            <option value="complete">Complete</option>
-          </select>
-        </label>
-      </div>
+      <details class="writing-editor-metadata">
+        <summary>
+          <span>Article details</span>
+          <span class="writing-editor-metadata-summary">Title, summary, language, and status</span>
+        </summary>
+        <div class="writing-editor-details">
+          <label class="field-group">
+            <span class="field-label">Title</span>
+            <input class="field-input writing-title-input" type="text">
+          </label>
+          <label class="field-group">
+            <span class="field-label">Summary</span>
+            <textarea class="field-input writing-summary-input" rows="1"></textarea>
+          </label>
+          <label class="field-group">
+            <span class="field-label">Language</span>
+            <select class="field-input writing-lang-input">
+              <option value="zh-CN">简体中文</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          <label class="field-group">
+            <span class="field-label">Status</span>
+            <select class="field-input writing-status-input">
+              <option value="incomplete">未完成</option>
+              <option value="complete">Complete</option>
+            </select>
+          </label>
+        </div>
+      </details>
 
-      <div class="writing-workspace" data-view="source">
-        <section class="writing-source-pane" aria-label="Markdown source">
-          <textarea class="writing-source" aria-label="Markdown body" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
-          <div class="writing-asset-toolbar">
-            <label class="writing-asset-label">Insert image<input class="writing-asset-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" multiple></label>
-            <span class="writing-asset-hint">Choose, paste, or drop an image. It is uploaded privately until Publish.</span>
-          </div>
+      <div class="writing-workspace" data-view="visual">
+        <section class="writing-visual-pane" aria-label="Visual Markdown editor">
+          <div class="writing-composer-root"></div>
         </section>
-        <section class="writing-preview-pane" aria-label="Markdown preview">
-          <iframe class="writing-preview-frame" title="Markdown preview" sandbox="allow-same-origin"></iframe>
-          <p class="writing-preview-empty" hidden>Start writing to create a preview.</p>
+        <section class="writing-source-pane" aria-label="Markdown source" hidden>
+          <textarea class="writing-source" aria-label="Markdown body" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>
         </section>
       </div>
     </section>
@@ -1448,15 +1477,17 @@
         lang: null,
         writingStatus: null,
         assetInput: null,
-        frame: null,
-        emptyPreview: null,
+        composerRoot: null,
+        composer: null,
+        composerModule: null,
+        composerToken: 0,
+        visualChanged: false,
+        view: "visual",
         current: null,
         baseline: null,
         savedAt: null,
-        renderTimer: null,
         saveTimer: null,
         savePromise: null,
-        renderer: null,
         publishEnabled: false,
         unpublished: false
       };
@@ -2323,8 +2354,7 @@
         writingAuthoring.lang = writingEditorFragment.querySelector(".writing-lang-input");
         writingAuthoring.writingStatus = writingEditorFragment.querySelector(".writing-status-input");
         writingAuthoring.assetInput = writingEditorFragment.querySelector(".writing-asset-input");
-        writingAuthoring.frame = writingEditorFragment.querySelector(".writing-preview-frame");
-        writingAuthoring.emptyPreview = writingEditorFragment.querySelector(".writing-preview-empty");
+        writingAuthoring.composerRoot = writingEditorFragment.querySelector(".writing-composer-root");
         document.body.append(writingEditorFragment);
 
         writingAuthoring.newButton.addEventListener("click", openWritingCreateDialog);
@@ -2343,7 +2373,7 @@
           if (action === "save") void saveWritingNow().catch(() => {});
           if (action === "publish") publishWritingDocument();
           const view = event.target.closest("[data-writing-view]")?.dataset.writingView;
-          if (view) setWritingEditorView(view);
+          if (view) void setWritingEditorView(view);
         });
         for (const input of [writingAuthoring.source, writingAuthoring.title, writingAuthoring.summary, writingAuthoring.lang, writingAuthoring.writingStatus]) {
           input.addEventListener("input", scheduleWritingChanges);
@@ -2553,6 +2583,7 @@
         }
         if (writingAuthoring.editor) {
           for (const control of writingAuthoring.editor.querySelectorAll("button, input, textarea, select")) control.disabled = busy;
+          writingAuthoring.composer?.setReadonly(busy);
           const publish = writingAuthoring.editor.querySelector('[data-writing-editor-action="publish"]');
           publish.disabled = busy || !writingAuthoring.publishEnabled || !writingAuthoring.unpublished || writingEditorIsDirty() || Boolean(writingAuthoring.savePromise);
         }
@@ -2597,7 +2628,7 @@
           const result = await writingRequest("create", payload);
           applyWritingServerData(result, true);
           writingAuthoring.createDialog.close();
-          showWritingEditorData(result);
+          await showWritingEditorData(result);
           const feedback = operationSyncFeedback(result, "Private Writing draft created.");
           setWritingEditorStatus(feedback.message, feedback.kind);
         } catch (error) {
@@ -2626,74 +2657,59 @@
         }
       }
 
-      function previewEscape(value) {
-        return String(value)
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;");
+      function updateWritingMeasure() {
+        const body = writingAuthoring.source?.value || "";
+        const words = body.match(/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]|[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu)?.length || 0;
+        const characters = [...body.replace(/\s/g, "")].length;
+        const measure = writingAuthoring.editor?.querySelector(".writing-editor-measure");
+        if (measure) measure.textContent = `${words.toLocaleString()} words · ${characters.toLocaleString()} characters`;
+        const heading = writingAuthoring.editor?.querySelector(".writing-editor-title");
+        if (heading) heading.textContent = writingAuthoring.title.value.trim() || "Untitled";
       }
 
-      async function renderWritingPreview() {
-        if (!writingAuthoring.current) return;
-        const body = writingAuthoring.source.value.trim();
-        if (!body) {
-          writingAuthoring.frame.hidden = true;
-          writingAuthoring.frame.removeAttribute("srcdoc");
-          writingAuthoring.emptyPreview.hidden = false;
-          writingAuthoring.emptyPreview.textContent = "Start writing to create a preview.";
+      async function destroyWritingComposer() {
+        writingAuthoring.composerToken += 1;
+        const composer = writingAuthoring.composer;
+        writingAuthoring.composer = null;
+        if (composer) await composer.destroy();
+        writingAuthoring.composerRoot?.replaceChildren();
+      }
+
+      async function mountWritingComposer(markdown) {
+        const token = ++writingAuthoring.composerToken;
+        const previous = writingAuthoring.composer;
+        writingAuthoring.composer = null;
+        if (previous) await previous.destroy();
+        writingAuthoring.composerRoot.replaceChildren();
+        writingAuthoring.composerModule ||= import("/assets/generated/__WRITING_AUTHORING_JS__");
+        const { createWritingComposer } = await writingAuthoring.composerModule;
+        if (token !== writingAuthoring.composerToken || !writingAuthoring.current) return;
+        const composer = await createWritingComposer({
+          root: writingAuthoring.composerRoot,
+          markdown,
+          assetBase: `/api/writing/assets/preview/${writingAuthoring.current.id}`,
+          onChange(value) {
+            if (token !== writingAuthoring.composerToken || !writingAuthoring.current) return;
+            writingAuthoring.source.value = value;
+            writingAuthoring.visualChanged = true;
+            scheduleWritingChanges();
+          },
+          onUpload: uploadWritingImage,
+          onUploadState(message) {
+            if (message) setWritingEditorStatus(message);
+          }
+        });
+        if (token !== writingAuthoring.composerToken || !writingAuthoring.current) {
+          await composer.destroy();
           return;
         }
-        try {
-          writingAuthoring.renderer ||= import(`/assets/generated/writing-preview.js?v=${moduleVersion}`);
-          const { renderMarkdown } = await writingAuthoring.renderer;
-          const rendered = renderMarkdown(body, {
-            assetBase: `/api/writing/assets/preview/${writingAuthoring.current.id}`
-          });
-          const badge = writingAuthoring.writingStatus.value === "incomplete"
-            ? '<span class="writing-status">未完成</span>'
-            : "";
-          writingAuthoring.frame.srcdoc = `<!doctype html>
-<html lang="${previewEscape(writingAuthoring.lang.value)}">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <base target="_blank">
-  <link rel="stylesheet" href="/assets/generated/site-shell.css?v=${moduleVersion}">
-  <link rel="stylesheet" href="/assets/generated/katex.css?v=${moduleVersion}">
-  <link rel="stylesheet" href="/assets/generated/writing-reader.css?v=${moduleVersion}">
-</head>
-<body>
-  <main class="article-container">
-    <div class="writing-layout">
-      <header class="writing-header">
-        <div class="writing-kicker"><span>Writing preview</span>${badge}</div>
-        <h1 class="writing-title">${previewEscape(writingAuthoring.title.value || "Untitled")}</h1>
-        <p class="writing-summary">${previewEscape(writingAuthoring.summary.value)}</p>
-      </header>
-      <article class="writing-body">${rendered.html}</article>
-    </div>
-  </main>
-</body>
-</html>`;
-          writingAuthoring.frame.hidden = false;
-          writingAuthoring.emptyPreview.hidden = true;
-          writingAuthoring.emptyPreview.textContent = "Start writing to create a preview.";
-        } catch (error) {
-          writingAuthoring.frame.hidden = true;
-          writingAuthoring.emptyPreview.hidden = false;
-          writingAuthoring.emptyPreview.textContent = error.message || "Markdown preview failed.";
-        }
-      }
-
-      function scheduleWritingPreview() {
-        window.clearTimeout(writingAuthoring.renderTimer);
-        writingAuthoring.renderTimer = window.setTimeout(renderWritingPreview, 200);
+        writingAuthoring.composer = composer;
+        composer.setReadonly(writingAuthoring.busy);
       }
 
       function scheduleWritingChanges() {
         if (!writingAuthoring.current) return;
-        scheduleWritingPreview();
+        updateWritingMeasure();
         updateWritingEditorStatus();
         window.clearTimeout(writingAuthoring.saveTimer);
         writingAuthoring.saveTimer = window.setTimeout(() => {
@@ -2701,7 +2717,7 @@
         }, 800);
       }
 
-      function showWritingEditorData(result) {
+      async function showWritingEditorData(result) {
         if (result.sync) {
           writingAuthoring.publishEnabled = Boolean(result.sync.enabled);
           writingAuthoring.unpublished = Boolean(result.sync.writingPending);
@@ -2716,16 +2732,30 @@
         writingAuthoring.lang.value = result.entry.lang || "zh-CN";
         writingAuthoring.writingStatus.value = result.entry.status || "incomplete";
         writingAuthoring.savedAt = result.savedAt || null;
-        writingAuthoring.editor.querySelector(".writing-editor-title").textContent = result.entry.title;
+        writingAuthoring.visualChanged = false;
+        writingAuthoring.view = "visual";
         writingAuthoring.baseline = writingEditorSnapshot();
         writingAuthoring.editor.hidden = false;
+        writingAuthoring.editor.querySelector(".writing-editor-metadata").open = false;
+        writingAuthoring.editor.querySelector(".writing-visual-pane").hidden = false;
+        writingAuthoring.editor.querySelector(".writing-source-pane").hidden = true;
+        writingAuthoring.editor.querySelector(".writing-workspace").dataset.view = "visual";
+        for (const button of writingAuthoring.editor.querySelectorAll("[data-writing-view]")) {
+          button.setAttribute("aria-pressed", String(button.dataset.writingView === "visual"));
+        }
         document.body.classList.add("writing-editor-open");
-        setWritingEditorView("source");
-        setWritingEditorStatus(writingAuthoring.unpublished
-          ? "Private draft saved · Ready to publish."
-          : "Saved and published.");
-        renderWritingPreview();
-        writingAuthoring.source.focus();
+        updateWritingMeasure();
+        setWritingEditorStatus("Preparing visual editor…");
+        try {
+          await mountWritingComposer(result.body);
+          setWritingEditorStatus(writingAuthoring.unpublished
+            ? "Private draft saved · Ready to publish."
+            : "Saved and published.");
+          writingAuthoring.composer?.focus();
+        } catch (error) {
+          await setWritingEditorView("source");
+          setWritingEditorStatus(`Visual editor unavailable · ${error.message || "Use Markdown mode."}`, "error");
+        }
       }
 
       async function openWritingEditor(year, id) {
@@ -2736,7 +2766,7 @@
         setWritingEditorBusy(true);
         try {
           const result = await writingRequest("open", { year, id });
-          showWritingEditorData(result);
+          await showWritingEditorData(result);
         } catch (error) {
           setWritingAuthoringStatus(error.message || "Writing could not be opened.", "error");
         } finally {
@@ -2755,22 +2785,48 @@
         }
         if (writingAuthoring.unpublished && !window.confirm("Leave these Writing changes saved as a private cloud draft but unpublished?")) return;
         writingAuthoring.editor.hidden = true;
-        writingAuthoring.frame.removeAttribute("srcdoc");
+        await destroyWritingComposer();
         writingAuthoring.current = null;
         writingAuthoring.baseline = null;
         writingAuthoring.savedAt = null;
+        writingAuthoring.visualChanged = false;
+        writingAuthoring.view = "visual";
         document.body.classList.remove("writing-editor-open");
         if (window.parent !== window && new URLSearchParams(location.search).has("edit-writing")) {
           window.parent.postMessage({ type: "xayah-writing-editor-close" }, location.origin);
         }
       }
 
-      function setWritingEditorView(view) {
-        if (!writingAuthoring.editor || !["source", "preview"].includes(view)) return;
+      async function setWritingEditorView(view) {
+        if (!writingAuthoring.editor || !writingAuthoring.current || !["visual", "source"].includes(view)) return;
+        const previous = writingAuthoring.view;
+        const visualPane = writingAuthoring.editor.querySelector(".writing-visual-pane");
+        const sourcePane = writingAuthoring.editor.querySelector(".writing-source-pane");
+        if (view === "source") {
+          if (writingAuthoring.composer && writingAuthoring.visualChanged) {
+            writingAuthoring.source.value = writingAuthoring.composer.getMarkdown();
+          }
+          visualPane.hidden = true;
+          sourcePane.hidden = false;
+          writingAuthoring.visualChanged = false;
+        } else {
+          if (!writingAuthoring.composer) {
+            await mountWritingComposer(writingAuthoring.source.value);
+          } else if (previous === "source") {
+            writingAuthoring.composer.replaceMarkdown(writingAuthoring.source.value);
+          }
+          sourcePane.hidden = true;
+          visualPane.hidden = false;
+          writingAuthoring.visualChanged = false;
+        }
+        writingAuthoring.view = view;
         writingAuthoring.editor.querySelector(".writing-workspace").dataset.view = view;
         for (const button of writingAuthoring.editor.querySelectorAll("[data-writing-view]")) {
           button.setAttribute("aria-pressed", String(button.dataset.writingView === view));
         }
+        updateWritingMeasure();
+        if (view === "source") writingAuthoring.source.focus();
+        else writingAuthoring.composer?.focus();
       }
 
       function writingSavePayload() {
@@ -2804,6 +2860,10 @@
           setWritingEditorStatus("Title, summary, and Markdown body are required.", "error");
           throw new Error("Writing fields are incomplete.");
         }
+        if (/^#\s+/m.test(payload.body)) {
+          setWritingEditorStatus("The article title is generated separately. Change H1 headings to H2.", "error");
+          throw new Error("Writing body contains an H1 heading.");
+        }
         setWritingEditorStatus("Saving private draft...");
         const request = writingRequest("save", payload);
         writingAuthoring.savePromise = request;
@@ -2828,14 +2888,37 @@
       }
 
       function insertWritingImage(name, alt) {
+        const markdown = `![${alt}](./${name} "${alt}")`;
+        if (writingAuthoring.view === "visual" && writingAuthoring.composer) {
+          writingAuthoring.composer.insertMarkdown(markdown);
+          writingAuthoring.composer.focus();
+          return;
+        }
         const source = writingAuthoring.source;
         const start = source.selectionStart;
         const end = source.selectionEnd;
         const prefix = start > 0 && source.value[start - 1] !== "\n" ? "\n\n" : "";
         const suffix = end < source.value.length && source.value[end] !== "\n" ? "\n\n" : "\n";
-        source.setRangeText(`${prefix}![${alt}](./${name} "${alt}")${suffix}`, start, end, "end");
+        source.setRangeText(`${prefix}${markdown}${suffix}`, start, end, "end");
         source.focus();
         scheduleWritingChanges();
+      }
+
+      async function uploadWritingImage(file) {
+        if (!writingAuthoring.current) throw new Error("Open a Writing before uploading an image.");
+        try {
+          const form = new FormData();
+          form.append("id", writingAuthoring.current.id);
+          form.append("file", file);
+          const response = await fetch("/api/writing/assets/upload", { method: "POST", body: form });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Image upload failed.");
+          setWritingEditorStatus("Image uploaded privately · Saving draft…");
+          return `./${result.name}`;
+        } catch (error) {
+          setWritingEditorStatus(error.message || "Image upload failed.", "error");
+          throw error;
+        }
       }
 
       async function uploadWritingImages(files) {
@@ -2849,14 +2932,9 @@
         setWritingEditorStatus(`Uploading ${images.length} image${images.length === 1 ? "" : "s"}...`);
         try {
           for (const file of images) {
-            const form = new FormData();
-            form.append("id", writingAuthoring.current.id);
-            form.append("file", file);
-            const response = await fetch("/api/writing/assets/upload", { method: "POST", body: form });
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || "Image upload failed.");
+            const source = await uploadWritingImage(file);
             const alt = file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim() || "Image";
-            insertWritingImage(result.name, alt);
+            insertWritingImage(source.slice(2), alt);
           }
           setWritingEditorStatus("Image uploaded privately · Saving draft...");
         } catch (error) {
