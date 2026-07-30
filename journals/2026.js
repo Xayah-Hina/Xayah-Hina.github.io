@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260730-162101-637b",
+    "publishedAt": "2026-07-30T16:21:01+08:00",
+    "content": "最近心里总有个很naive的念头... 就像硅谷之火里的那样...\n\n有点想要先积累reputation，然后在phd结束之后尝试开始做startup\n\n商业的本质就是瞄准人的需求，满足的需求越多越迫切，潜在市场就越大。之前我一直害怕招人发工资，但AI时代倒是给了小型startup一些新的选择了... \n\n感觉值得找时间深思熟虑一下。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260726-232757-2fe0",
     "publishedAt": "2026-07-26T23:27:57+08:00",
     "content": "把editor功能集成到本page了。",
