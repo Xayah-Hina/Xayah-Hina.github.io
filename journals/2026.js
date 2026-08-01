@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260801-090358-41dc",
+    "publishedAt": "2026-08-01T09:03:58+08:00",
+    "content": "从这个月开始每天都要写详细的日报，贯彻下去形成Routine。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260801-083938-c4a1",
     "publishedAt": "2026-08-01T08:39:38+08:00",
     "content": "“我相信十年后的八月，我们还能再次相见……”\n\n十年，弹指一挥间……\n\n唉……",
