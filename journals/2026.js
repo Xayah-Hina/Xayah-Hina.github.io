@@ -2,9 +2,10 @@ export default [
   {
     "id": "20260801-130607-4b7f",
     "publishedAt": "2026-08-01T13:06:07+08:00",
-    "content": "Codex又reset哈哈。接下来想想今天的日报计划把~",
+    "content": "Codex又reset哈哈。接下来想想今天的日报计划吧~",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "updatedAt": "2026-08-01T13:06:18+08:00"
   },
   {
     "id": "20260801-090358-41dc",
