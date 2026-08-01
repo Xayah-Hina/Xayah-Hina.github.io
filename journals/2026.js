@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260801-130607-4b7f",
+    "publishedAt": "2026-08-01T13:06:07+08:00",
+    "content": "Codex又reset哈哈。接下来想想今天的日报计划把~",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260801-090358-41dc",
     "publishedAt": "2026-08-01T09:03:58+08:00",
     "content": "从这个月开始每天都要写详细的日报，贯彻下去形成Routine。",
