@@ -20,9 +20,9 @@ import {
 
 const WRITING_ID = /^\d{8}-\d{6}$/;
 const SOURCE_HASH = /^[a-f0-9]{64}$/;
-const LANGUAGE = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/;
 const ASSET_NAME = /^([a-f0-9]{64})\.(jpg|jpeg|png|webp|gif|avif)$/;
-const FRONT_MATTER_KEYS = ["id", "title", "summary", "createdAt", "updatedAt", "lang", "status"] as const;
+const FRONT_MATTER_KEYS = ["id", "title", "summary", "createdAt", "updatedAt", "status"] as const;
+const LEGACY_FRONT_MATTER_KEYS = ["id", "title", "summary", "createdAt", "updatedAt", "lang", "status"] as const;
 const MAX_BODY = 2_000_000;
 const MAX_IMAGE = 32 * 1024 * 1024;
 
@@ -66,12 +66,6 @@ function validateTimestamp(value: unknown, label: string): string {
   return value;
 }
 
-function validateLanguage(value: unknown): string {
-  const lang = requiredString(value, "Writing language", 35);
-  if (!LANGUAGE.test(lang)) throw new HttpError(400, "Writing language is invalid.");
-  return lang;
-}
-
 function validateStatus(value: unknown): WritingStatus {
   if (value !== "complete" && value !== "incomplete") throw new HttpError(400, "Writing status is invalid.");
   return value;
@@ -88,9 +82,8 @@ function validateMetadata(value: unknown, expectedId = ""): Omit<WritingEntry, "
   if (Date.parse(updatedAt) < Date.parse(createdAt)) throw new HttpError(400, "Writing update time precedes its creation time.");
   const expectedCreatedPrefix = `${id.slice(0, 4)}-${id.slice(4, 6)}-${id.slice(6, 8)}T${id.slice(9, 11)}:${id.slice(11, 13)}:${id.slice(13, 15)}`;
   if (!createdAt.startsWith(expectedCreatedPrefix)) throw new HttpError(400, "Writing creation time does not match its id.");
-  const lang = validateLanguage(record.lang);
   const status = validateStatus(record.status);
-  return { id, title, summary, createdAt, updatedAt, lang, status };
+  return { id, title, summary, createdAt, updatedAt, status };
 }
 
 function normalizeBody(value: unknown): string {
@@ -115,10 +108,15 @@ function parseWritingSource(source: string, expectedId: string): { metadata: Omi
   const match = /^---\n([\s\S]*?)\n---\n(?:\n)?([\s\S]*)$/.exec(normalized);
   if (!match) throw new HttpError(502, `Writing ${expectedId} must start with strict front matter.`);
   const lines = match[1].split("\n");
-  if (lines.length !== FRONT_MATTER_KEYS.length) throw new HttpError(502, `Writing ${expectedId} has invalid front matter.`);
+  const keys = lines.length === FRONT_MATTER_KEYS.length
+    ? FRONT_MATTER_KEYS
+    : lines.length === LEGACY_FRONT_MATTER_KEYS.length
+      ? LEGACY_FRONT_MATTER_KEYS
+      : null;
+  if (!keys) throw new HttpError(502, `Writing ${expectedId} has invalid front matter.`);
   const raw: Record<string, unknown> = {};
-  for (let index = 0; index < FRONT_MATTER_KEYS.length; index += 1) {
-    const key = FRONT_MATTER_KEYS[index];
+  for (let index = 0; index < keys.length; index += 1) {
+    const key = keys[index];
     const prefix = `${key}: `;
     if (!lines[index].startsWith(prefix)) throw new HttpError(502, `Writing ${expectedId} front matter is missing ${key} or is out of order.`);
     try {
@@ -126,6 +124,13 @@ function parseWritingSource(source: string, expectedId: string): { metadata: Omi
     } catch {
       throw new HttpError(502, `Writing ${expectedId} front matter field ${key} is invalid.`);
     }
+  }
+  if (keys === LEGACY_FRONT_MATTER_KEYS && (
+    typeof raw.lang !== "string"
+    || raw.lang.length > 35
+    || !/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(raw.lang)
+  )) {
+    throw new HttpError(502, `Writing ${expectedId} has an invalid legacy language.`);
   }
   let metadata: Omit<WritingEntry, "article">;
   try {
@@ -196,7 +201,6 @@ function draftEntry(draft: WritingDraft, published?: WritingEntry): WritingEntry
     summary: draft.summary,
     createdAt: draft.createdAt,
     updatedAt: draft.updatedAt,
-    lang: draft.lang,
     status: draft.status,
     ...(published?.article ? { article: published.article } : {}),
   };
@@ -215,8 +219,8 @@ function mergedEntries(published: PublishedWriting[], drafts: WritingDraft[], ye
   return [...entries.values()].sort((left, right) => right.id.localeCompare(left.id));
 }
 
-function isDraftPending(draft: WritingDraft, published?: WritingEntry): boolean {
-  return draft.sourceHash !== published?.article?.sourceHash;
+function isDraftPending(draft: WritingDraft, published?: PublishedWriting): boolean {
+  return !published || serializeWriting(draft, draft.body) !== published.source;
 }
 
 async function collection(
@@ -227,7 +231,7 @@ async function collection(
 ): Promise<{ years: string[]; entries: WritingEntry[]; pending: boolean }> {
   const draftValues = drafts || await allDrafts(env);
   const publicValues = published || await publishedWriting(env);
-  const publishedById = new Map(publicValues.map((article) => [article.entry.id, article.entry]));
+  const publishedById = new Map(publicValues.map((article) => [article.entry.id, article]));
   const pending = draftValues.some((draft) => isDraftPending(draft, publishedById.get(draft.id)));
   return {
     years: normalizeYears([
@@ -261,7 +265,7 @@ async function authoringData(
     : publishedArticle?.entry;
   if (!entry) throw new HttpError(404, "The Writing entry is no longer available.");
   const body = draft?.body || publishedArticle!.body;
-  const pending = draft ? isDraftPending(draft, publishedArticle?.entry) : false;
+  const pending = draft ? isDraftPending(draft, publishedArticle || undefined) : false;
   const values = await collection(env, entry.id.slice(0, 4), allDraftValues, allPublishedValues);
   return {
     year: entry.id.slice(0, 4),
@@ -377,7 +381,6 @@ export async function openWriting(env: Env, payload: Record<string, unknown>) {
 export async function createWriting(env: Env, payload: Record<string, unknown>) {
   const title = requiredString(payload.title, "Writing title", 200);
   const summary = requiredString(payload.summary, "Writing summary", 5000);
-  const lang = validateLanguage(payload.lang);
   const status = validateStatus(payload.status);
   const now = new Date();
   const id = writingIdNow(now);
@@ -387,7 +390,7 @@ export async function createWriting(env: Env, payload: Record<string, unknown>) 
     throw error;
   });
   if (existing) throw new HttpError(409, "A Writing entry already exists for this second. Try again in a moment.");
-  const metadata = { id, title, summary, createdAt: timestamp, updatedAt: timestamp, lang, status };
+  const metadata = { id, title, summary, createdAt: timestamp, updatedAt: timestamp, status };
   const body = "## Notes\n\nStart writing here.\n";
   const sourceHash = await sha256(serializeWriting(metadata, body));
   const draft: WritingDraft = { ...metadata, body, savedAt: savedAtNow(), sourceHash };
@@ -411,7 +414,6 @@ export async function saveWriting(env: Env, payload: Record<string, unknown>) {
   }
   const title = requiredString(payload.title, "Writing title", 200);
   const summary = requiredString(payload.summary, "Writing summary", 5000);
-  const lang = validateLanguage(payload.lang);
   const status = validateStatus(payload.status);
   const body = normalizeBody(payload.body);
   const previous = current?.draft || found.publishedArticle?.entry;
@@ -422,7 +424,6 @@ export async function saveWriting(env: Env, payload: Record<string, unknown>) {
     summary,
     createdAt: previous.createdAt,
     updatedAt: previous.updatedAt,
-    lang,
     status,
   };
   const sourceHash = await sha256(serializeWriting(metadata, body));
@@ -492,7 +493,7 @@ export async function publishWriting(env: Env, payload: Record<string, unknown>)
   const found = await findWriting(env, id);
   if (!found.draftVersion) throw new HttpError(400, "There are no private Writing changes to publish.");
   const draft = found.draftVersion.draft;
-  if (!isDraftPending(draft, found.publishedArticle?.entry)) {
+  if (!isDraftPending(draft, found.publishedArticle || undefined)) {
     throw new HttpError(400, "The current Writing is already published.");
   }
   const metadata = {
@@ -501,7 +502,6 @@ export async function publishWriting(env: Env, payload: Record<string, unknown>)
     summary: draft.summary,
     createdAt: draft.createdAt,
     updatedAt: singaporeTimestamp(),
-    lang: draft.lang,
     status: draft.status,
   };
   const source = serializeWriting(metadata, draft.body);

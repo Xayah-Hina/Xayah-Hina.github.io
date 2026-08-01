@@ -45,8 +45,8 @@ async function copyTree(relative, filter = () => true) {
   await walk(source);
 }
 
-function formatDate(value, lang) {
-  return new Intl.DateTimeFormat(lang, {
+function formatDate(value) {
+  return new Intl.DateTimeFormat("en", {
     year: "numeric",
     month: "short",
     day: "2-digit",
@@ -77,12 +77,11 @@ function articleHtml(entry, rendered, assets) {
     author: { "@type": "Person", name: "Xayah Hina", url: siteOrigin },
     datePublished: metadata.createdAt,
     dateModified: metadata.updatedAt,
-    inLanguage: metadata.lang,
     mainEntityOfPage: url,
     ...(assets.length ? { image: assets.map((name) => `${mediaOrigin}/writing/${metadata.id}/${name}`) } : {}),
   }).replaceAll("<", "\\u003c");
   return `<!doctype html>
-<html lang="${escapeHtml(metadata.lang)}">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -124,8 +123,8 @@ function articleHtml(entry, rendered, assets) {
         <p class="writing-summary">${escapeHtml(metadata.summary)}</p>
         <div class="writing-meta">
           <span>Xayah Hina</span><span aria-hidden="true">·</span>
-          <time datetime="${metadata.createdAt}">${escapeHtml(formatDate(metadata.createdAt, metadata.lang))}</time>
-          ${metadata.updatedAt !== metadata.createdAt ? `<span aria-hidden="true">·</span><span>Updated <time datetime="${metadata.updatedAt}">${escapeHtml(formatDate(metadata.updatedAt, metadata.lang))}</time></span>` : ""}
+          <time datetime="${metadata.createdAt}">${escapeHtml(formatDate(metadata.createdAt))}</time>
+          ${metadata.updatedAt !== metadata.createdAt ? `<span aria-hidden="true">·</span><span>Updated <time datetime="${metadata.updatedAt}">${escapeHtml(formatDate(metadata.updatedAt))}</time></span>` : ""}
         </div>
       </header>
       ${hasToc ? `<noscript><style>.toc-fab{display:none!important}</style><nav class="toc-noscript" aria-label="Table of contents"><p class="toc-title">Contents</p>${toc}</nav></noscript>` : ""}

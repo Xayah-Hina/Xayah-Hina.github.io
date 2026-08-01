@@ -13,7 +13,6 @@ const metadata = {
   summary: "A summary",
   createdAt: "2026-07-15T09:09:45+08:00",
   updatedAt: "2026-07-17T00:00:00+08:00",
-  lang: "zh-CN",
   status: "incomplete",
 };
 
@@ -24,15 +23,27 @@ test("strict Front matter round-trips deterministically", () => {
   assert.equal(parsed.body, "## Section\n\nBody.\n");
   assert.equal(parsed.source, source);
   assert.match(writingSourceHash(source), /^[a-f0-9]{64}$/);
-  assert.deepEqual(source.split("\n").slice(1, 8).map((line) => line.split(":")[0]), [
+  assert.deepEqual(source.split("\n").slice(1, 7).map((line) => line.split(":")[0]), [
     "id",
     "title",
     "summary",
     "createdAt",
     "updatedAt",
-    "lang",
     "status",
   ]);
+});
+
+test("legacy language metadata is accepted and removed from canonical source", () => {
+  const source = serializeWritingSource(metadata, "## 中文章节\n\n中文与 English 可以混合书写。");
+  const legacy = source.replace(
+    `updatedAt: ${JSON.stringify(metadata.updatedAt)}\n`,
+    `updatedAt: ${JSON.stringify(metadata.updatedAt)}\nlang: "zh-CN"\n`,
+  );
+  const parsed = parseWritingSource(legacy, metadata.id);
+  assert.deepEqual(parsed.metadata, metadata);
+  assert.equal(parsed.source, source);
+  assert.match(parsed.body, /中文与 English/);
+  assert.throws(() => parseWritingSource(legacy.replace('"zh-CN"', '"not_a_lang"'), metadata.id), /language/i);
 });
 
 test("Front matter rejects missing, reordered, and invalid fields", () => {
@@ -43,7 +54,6 @@ test("Front matter rejects missing, reordered, and invalid fields", () => {
     /out of order/i,
   );
   assert.throws(() => parseWritingSource(valid, "20260717-034749"), /does not match/i);
-  assert.throws(() => parseWritingSource(valid.replace('"zh-CN"', '"not_a_lang"'), metadata.id), /language/i);
   assert.throws(() => parseWritingSource(valid.replace('"incomplete"', '"draft"'), metadata.id), /status/i);
   assert.throws(() => parseWritingSource(valid.replace(metadata.createdAt, "2026-07-15T09:09:44+08:00"), metadata.id), /createdAt/i);
 });

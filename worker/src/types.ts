@@ -27,7 +27,6 @@ export interface WritingEntry {
   summary: string;
   createdAt: string;
   updatedAt: string;
-  lang: string;
   status: "complete" | "incomplete";
   article?: WritingArticle;
 }

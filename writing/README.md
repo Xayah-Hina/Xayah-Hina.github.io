@@ -13,7 +13,6 @@ title: "Article title"
 summary: "A concise description used in archives and metadata."
 createdAt: "2026-07-15T09:09:45+08:00"
 updatedAt: "2026-07-17T00:00:00+08:00"
-lang: "zh-CN"
 status: "incomplete"
 ---
 ```
@@ -28,10 +27,14 @@ status: "incomplete"
 ## In-page editor
 
 After signing in, Writing opens in a single-canvas visual editor. The title,
-summary, language, and status remain structured fields under **Article details**;
+summary and status remain structured fields under **Article details**;
 the document canvas edits only the Markdown body. Use the **Markdown** switch
 when exact source control is needed, then return to **Visual** in the same
 canvas.
+
+Writing dates and interface metadata always use English formatting. Markdown
+bodies accept Chinese, English, and mixed-language content without a language
+field or content-language validation.
 
 The visual editor serializes its document model back to Markdown after the
 first visual change. This may normalize harmless formatting such as list

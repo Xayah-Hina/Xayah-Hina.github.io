@@ -86,9 +86,8 @@ const savePayload = {
   id,
   title: "Changed title",
   summary: "Summary",
-  lang: "zh-CN",
   status: "incomplete",
-  body: "## Section\n\nChanged.",
+  body: "## 中文章节\n\n中文与 English 可以混合书写。",
 };
 
 test("save rejects a stale savedAt before writing R2", async () => {
@@ -115,6 +114,21 @@ test("save reports 409 when the conditional R2 write loses a race", async () => 
     );
     assert.equal(puts.length, 1);
     assert.deepEqual((puts[0].options as { onlyIf: unknown }).onlyIf, { etagMatches: "draft-etag" });
+  } finally {
+    restore();
+  }
+});
+
+test("save accepts a legacy language field and removes it from the stored draft", async () => {
+  const restore = installEmptyRepositoryFetch();
+  const { env, puts } = environment();
+  try {
+    const result = await saveWriting(env, { ...savePayload, baseSavedAt: draft.savedAt });
+    assert.match(result.body, /中文与 English/);
+    assert.equal(puts.length, 1);
+    const stored = JSON.parse(String(puts[0].value));
+    assert.equal("lang" in stored, false);
+    assert.match(stored.body, /中文与 English/);
   } finally {
     restore();
   }
@@ -160,7 +174,6 @@ test("create keeps the id and creation time aligned when repository checks cross
     const result = await createWriting(env, {
       title: "New Writing",
       summary: "Summary",
-      lang: "zh-CN",
       status: "incomplete",
     });
     assert.equal(result.entry.id, "20260801-080000");
@@ -169,6 +182,7 @@ test("create keeps the id and creation time aligned when repository checks cross
     const stored = JSON.parse(String(puts[0].value));
     assert.equal(stored.id, result.entry.id);
     assert.equal(stored.createdAt, result.entry.createdAt);
+    assert.equal("lang" in stored, false);
   } finally {
     globalThis.Date = OriginalDate;
     restoreFetch();

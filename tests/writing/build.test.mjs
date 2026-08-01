@@ -7,12 +7,10 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const site = path.join(root, "_site");
-const ids = [
-  "20260715-090945",
-  "20260717-034749",
-  "20260717-061303",
-  "20260717-124940",
-];
+const ids = fs.readdirSync(path.join(root, "writing"), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory() && /^\d{8}-\d{6}$/.test(entry.name))
+  .map((entry) => entry.name)
+  .sort();
 
 function filesBelow(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -21,7 +19,7 @@ function filesBelow(directory) {
   });
 }
 
-test("allowlisted build produces four static articles and no source artifacts", () => {
+test("allowlisted build produces every static article and no source artifacts", () => {
   execFileSync(process.execPath, ["scripts/build-site.mjs"], { cwd: root, stdio: "pipe" });
   const homepage = fs.readFileSync(path.join(site, "index.html"), "utf8");
   const typographyMatch = homepage.match(/href="\/assets\/generated\/(typography\.[a-f0-9]{12}\.css)"/);
@@ -41,6 +39,7 @@ test("allowlisted build produces four static articles and no source artifacts", 
   assert.match(homepage, /class="writing-composer-root"/);
   assert.match(homepage, /data-writing-view="visual" aria-pressed="true">Visual/);
   assert.match(homepage, /data-writing-view="source" aria-pressed="false">Markdown/);
+  assert.doesNotMatch(homepage, /writing-lang-input|name="lang"/);
   assert.match(homepage, /<meta name="theme-color" media="\(prefers-color-scheme: dark\)" content="#090c10">/);
   const typographyCss = fs.readFileSync(path.join(site, "assets", "generated", typographyMatch[1]), "utf8");
   const shellCss = fs.readFileSync(path.join(site, "assets", "generated", shellMatch[1]), "utf8");
@@ -71,6 +70,9 @@ test("allowlisted build produces four static articles and no source artifacts", 
     assert.match(html, /<meta name="description" content="[^"]+">/);
     assert.match(html, /<meta name="x-writing-revision" content="[a-f0-9]{64}">/);
     assert.match(html, /<script type="application\/ld\+json">/);
+    assert.match(html, /<html lang="en">/);
+    assert.doesNotMatch(html, /"inLanguage"/);
+    assert.match(html, /<time datetime="[^"]+">[A-Z][a-z]{2} \d{2}, \d{4}<\/time>/);
     assert.match(html, /<h1 class="writing-title">/);
     assert.match(html, /<meta name="theme-color" media="\(prefers-color-scheme: dark\)" content="#090c10">/);
     assert.match(html, new RegExp(`href="/assets/generated/${shellMatch[1].replaceAll(".", "\\.")}"`));
@@ -92,7 +94,7 @@ test("allowlisted build produces four static articles and no source artifacts", 
   const catalog = fs.readFileSync(path.join(site, "writing", "catalog.js"), "utf8");
   const year = fs.readFileSync(path.join(site, "writing", "2026.js"), "utf8");
   assert.match(catalog, /"years": \[\s+2026/);
-  assert.equal((year.match(/"article":/g) || []).length, 4);
+  assert.equal((year.match(/"article":/g) || []).length, ids.filter((id) => id.startsWith("2026")).length);
   const outputFiles = filesBelow(site);
   const fontFiles = outputFiles.filter((file) => file.endsWith(".woff2"));
   assert.ok(fontFiles.length > 200, "the local unicode-range font assets should be allowlisted");

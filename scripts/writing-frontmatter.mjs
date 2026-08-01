@@ -8,6 +8,14 @@ const FRONT_MATTER_KEYS = [
   "summary",
   "createdAt",
   "updatedAt",
+  "status",
+];
+const LEGACY_FRONT_MATTER_KEYS = [
+  "id",
+  "title",
+  "summary",
+  "createdAt",
+  "updatedAt",
   "lang",
   "status",
 ];
@@ -28,7 +36,11 @@ function validateWritingMetadata(value, expectedId = "") {
     throw new Error("Writing front matter is invalid.");
   }
   const keys = Object.keys(value);
-  if (keys.length !== FRONT_MATTER_KEYS.length || keys.some((key, index) => key !== FRONT_MATTER_KEYS[index])) {
+  const current = keys.length === FRONT_MATTER_KEYS.length
+    && keys.every((key, index) => key === FRONT_MATTER_KEYS[index]);
+  const legacy = keys.length === LEGACY_FRONT_MATTER_KEYS.length
+    && keys.every((key, index) => key === LEGACY_FRONT_MATTER_KEYS[index]);
+  if (!current && !legacy) {
     throw new Error(`Writing front matter keys must be ordered as: ${FRONT_MATTER_KEYS.join(", ")}.`);
   }
   const id = requireString(value.id, "Writing id", 15);
@@ -49,14 +61,17 @@ function validateWritingMetadata(value, expectedId = "") {
   if (!createdAt.startsWith(expectedCreatedPrefix)) {
     throw new Error(`Writing ${id} createdAt does not match its id.`);
   }
-  const lang = requireString(value.lang, "Writing language", 35);
-  if (!/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(lang)) {
+  if (legacy && (
+    typeof value.lang !== "string"
+    || value.lang.length > 35
+    || !/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(value.lang)
+  )) {
     throw new Error(`Writing ${id} has an invalid language.`);
   }
   if (!["complete", "incomplete"].includes(value.status)) {
     throw new Error(`Writing ${id} has an invalid status.`);
   }
-  return { id, title, summary, createdAt, updatedAt, lang, status: value.status };
+  return { id, title, summary, createdAt, updatedAt, status: value.status };
 }
 
 export function parseWritingSource(source, expectedId = "") {
@@ -65,11 +80,16 @@ export function parseWritingSource(source, expectedId = "") {
   if (!match) throw new Error("Writing source must start with strict front matter.");
   const frontMatter = {};
   const lines = match[1].split("\n");
-  if (lines.length !== FRONT_MATTER_KEYS.length) {
+  const keys = lines.length === FRONT_MATTER_KEYS.length
+    ? FRONT_MATTER_KEYS
+    : lines.length === LEGACY_FRONT_MATTER_KEYS.length
+      ? LEGACY_FRONT_MATTER_KEYS
+      : null;
+  if (!keys) {
     throw new Error("Writing front matter contains an unexpected number of fields.");
   }
   for (let index = 0; index < lines.length; index += 1) {
-    const key = FRONT_MATTER_KEYS[index];
+    const key = keys[index];
     const prefix = `${key}: `;
     if (!lines[index].startsWith(prefix)) {
       throw new Error(`Writing front matter field ${key} is missing or out of order.`);
