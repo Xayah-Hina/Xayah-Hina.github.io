@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { saveWriting, uploadWritingAsset } from "../src/writing.ts";
+import { createWriting, saveWriting, uploadWritingAsset } from "../src/writing.ts";
 import { HttpError } from "../src/utils.ts";
 
 const id = "20260715-090945";
@@ -39,7 +39,7 @@ function installEmptyRepositoryFetch(): () => void {
 }
 
 function environment(putResult: unknown = { etag: "next" }) {
-  const puts: Array<{ key: string; options: unknown }> = [];
+  const puts: Array<{ key: string; value: unknown; options: unknown }> = [];
   const content = {
     async get(key: string) {
       if (key === `private/writing/drafts/${id}.json`) {
@@ -52,8 +52,8 @@ function environment(putResult: unknown = { etag: "next" }) {
       }
       return null;
     },
-    async put(key: string, _value: unknown, options: unknown) {
-      puts.push({ key, options });
+    async put(key: string, value: unknown, options: unknown) {
+      puts.push({ key, value, options });
       return putResult;
     },
     async head() {
@@ -138,5 +138,39 @@ test("image upload rejects a MIME and magic-number mismatch", async () => {
     assert.equal(puts.length, 0);
   } finally {
     restore();
+  }
+});
+
+test("create keeps the id and creation time aligned when repository checks cross a second", async () => {
+  const restoreFetch = installEmptyRepositoryFetch();
+  const OriginalDate = globalThis.Date;
+  const ticks = [
+    "2026-08-01T00:00:00.900Z",
+    "2026-08-01T00:00:01.100Z",
+  ];
+  let tick = 0;
+  class AdvancingDate extends OriginalDate {
+    constructor(value?: string | number) {
+      super(value ?? ticks[Math.min(tick++, ticks.length - 1)]);
+    }
+  }
+  globalThis.Date = AdvancingDate as DateConstructor;
+  const { env, puts } = environment();
+  try {
+    const result = await createWriting(env, {
+      title: "New Writing",
+      summary: "Summary",
+      lang: "zh-CN",
+      status: "incomplete",
+    });
+    assert.equal(result.entry.id, "20260801-080000");
+    assert.equal(result.entry.createdAt, "2026-08-01T08:00:00+08:00");
+    assert.equal(puts.length, 1);
+    const stored = JSON.parse(String(puts[0].value));
+    assert.equal(stored.id, result.entry.id);
+    assert.equal(stored.createdAt, result.entry.createdAt);
+  } finally {
+    globalThis.Date = OriginalDate;
+    restoreFetch();
   }
 });
