@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260801-083938-c4a1",
+    "publishedAt": "2026-08-01T08:39:38+08:00",
+    "content": "“我相信十年后的八月，我们还能再次相见……”\n\n十年，弹指一挥间……\n\n唉……",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260731-174736-73ae",
     "publishedAt": "2026-07-31T17:47:36+08:00",
     "content": "Codex到限额了QAQ。\n\n调整调整状态离开项目一会读点文章和写点代码吧。",
