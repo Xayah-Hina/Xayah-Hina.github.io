@@ -379,13 +379,14 @@ export async function createWriting(env: Env, payload: Record<string, unknown>) 
   const summary = requiredString(payload.summary, "Writing summary", 5000);
   const lang = validateLanguage(payload.lang);
   const status = validateStatus(payload.status);
-  const id = writingIdNow();
+  const now = new Date();
+  const id = writingIdNow(now);
   const existing = await findWriting(env, id).catch((error) => {
     if (error instanceof HttpError && error.status === 404) return null;
     throw error;
   });
   if (existing) throw new HttpError(409, "A Writing entry already exists for this second. Try again in a moment.");
-  const timestamp = singaporeTimestamp();
+  const timestamp = singaporeTimestamp(now);
   const metadata = { id, title, summary, createdAt: timestamp, updatedAt: timestamp, lang, status };
   const body = "## Notes\n\nStart writing here.\n";
   const sourceHash = await sha256(serializeWriting(metadata, body));
