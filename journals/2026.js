@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260802-010856-578e",
+    "publishedAt": "2026-08-02T01:08:56+08:00",
+    "content": "8月1日日报。\n\n今天主要做了spectra的动态场景模块支持，以及LoRA数据集的制作。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260801-130607-4b7f",
     "publishedAt": "2026-08-01T13:06:07+08:00",
     "content": "Codex又reset哈哈。接下来想想今天的日报计划吧~",
