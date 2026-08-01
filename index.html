@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="/assets/generated/__SITE_SHELL_CSS__">
   <link rel="stylesheet" href="/assets/generated/__KATEX_CSS__">
   <link rel="stylesheet" href="/assets/generated/__WRITING_AUTHORING_CSS__">
+  <link rel="stylesheet" href="/assets/generated/__MONTHLY_PLANS_CSS__">
 
   <!-- Add formal writing and journal entries to their respective sections. -->
   <script>
@@ -1382,6 +1383,8 @@
     (async () => {
       "use strict";
 
+      const { createMonthlyPlansController } = await import("/assets/generated/__MONTHLY_PLANS_JS__");
+
       const config = WRITING_CONFIG;
       const byId = (id) => document.getElementById(id);
       const sectionMap = new Map(Object.entries(config.sections));
@@ -1479,6 +1482,12 @@
         publishEnabled: false,
         unpublished: false
       };
+      const monthlyPlans = createMonthlyPlansController({
+        canAuthor: () => canAuthorJournal(),
+        request: (action, payload) => journalRequest(action, payload),
+        setStatus: (message, kind) => setAuthoringStatus(message, kind),
+        confirmAction: (title, message, label) => confirmDeletion(title, message, label)
+      });
 
       async function importDataModule(path, version = moduleVersion) {
         const url = new URL(path, location.href);
@@ -1932,6 +1941,7 @@
         const panel = document.createElement("aside");
         const header = document.createElement("header");
         const heading = document.createElement("div");
+        const actions = document.createElement("div");
         const title = document.createElement("h3");
         const footer = document.createElement("footer");
         const titleId = `monthly-note-${month}`;
@@ -1940,6 +1950,7 @@
         panel.setAttribute("aria-labelledby", titleId);
         header.className = "journal-month-panel-header";
         heading.className = "journal-month-panel-heading";
+        actions.className = "journal-month-panel-actions";
         title.className = "journal-month-panel-title";
         title.id = titleId;
         title.textContent = "Monthly Note";
@@ -1951,7 +1962,7 @@
           status.textContent = "In progress";
           heading.append(status);
         }
-        header.append(heading);
+        header.append(heading, actions);
 
         if (canAuthorJournal()) {
           const edit = document.createElement("button");
@@ -1960,7 +1971,7 @@
           edit.dataset.journalMonthlyAction = "edit";
           edit.dataset.journalMonth = month;
           edit.textContent = "Edit note";
-          header.append(edit);
+          actions.append(edit);
         }
         panel.append(header);
 
@@ -1970,6 +1981,11 @@
           content.textContent = note.note;
           panel.append(content);
         }
+
+        const plansRoot = document.createElement("div");
+        plansRoot.className = "monthly-plans-root";
+        panel.append(plansRoot);
+        monthlyPlans.mount(plansRoot, month, actions);
 
         if (note?.reportImage) {
           const button = document.createElement("button");
@@ -3310,10 +3326,11 @@
         element.dataset.kind = kind;
       }
 
-      function confirmDeletion(title, message) {
+      function confirmDeletion(title, message, confirmLabel = "Delete") {
         if (authoring.confirmResolver) return Promise.resolve(false);
         authoring.confirmDialog.querySelector(".confirm-title").textContent = title;
         authoring.confirmDialog.querySelector(".confirm-message").textContent = message;
+        authoring.confirmDialog.querySelector('[data-confirm-value="delete"]').textContent = confirmLabel;
         authoring.confirmDialog.returnValue = "cancel";
         authoring.confirmDialog.showModal();
         return new Promise((resolve) => {

@@ -193,9 +193,27 @@ const authoringCssBundle = await esbuild({
   minify: true,
   write: false,
 });
+const monthlyPlansJsBundle = await esbuild({
+  entryPoints: [path.join(root, "site", "monthly-plans.js")],
+  bundle: true,
+  format: "esm",
+  platform: "browser",
+  minify: true,
+  write: false,
+});
+const monthlyPlansCssBundle = await esbuild({
+  entryPoints: [path.join(root, "site", "monthly-plans.css")],
+  bundle: true,
+  minify: true,
+  write: false,
+});
 const authoringJsSource = authoringJsBundle.outputFiles[0]?.contents;
 const authoringCssSource = authoringCssBundle.outputFiles[0]?.contents;
-if (!authoringJsSource || !authoringCssSource) throw new Error("Writing authoring assets could not be bundled.");
+const monthlyPlansJsSource = monthlyPlansJsBundle.outputFiles[0]?.contents;
+const monthlyPlansCssSource = monthlyPlansCssBundle.outputFiles[0]?.contents;
+if (!authoringJsSource || !authoringCssSource || !monthlyPlansJsSource || !monthlyPlansCssSource) {
+  throw new Error("Site interactive assets could not be bundled.");
+}
 const assetsManifest = {
   typographyCss: `typography.${hash(typographyCssSource)}.css`,
   shellCss: `site-shell.${hash(shellCssSource)}.css`,
@@ -204,6 +222,8 @@ const assetsManifest = {
   articleAuthoringJs: `writing-article-authoring.${hash(articleAuthoringJsSource)}.js`,
   authoringJs: `writing-authoring.${hash(authoringJsSource)}.js`,
   authoringCss: `writing-authoring.${hash(authoringCssSource)}.css`,
+  monthlyPlansJs: `monthly-plans.${hash(monthlyPlansJsSource)}.js`,
+  monthlyPlansCss: `monthly-plans.${hash(monthlyPlansCssSource)}.css`,
   katexCss: `katex.${hash(katexCssSource)}.css`,
 };
 await Promise.all([
@@ -214,6 +234,8 @@ await Promise.all([
   fs.writeFile(path.join(generatedAssets, assetsManifest.articleAuthoringJs), articleAuthoringJsSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.authoringJs), authoringJsSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.authoringCss), authoringCssSource),
+  fs.writeFile(path.join(generatedAssets, assetsManifest.monthlyPlansJs), monthlyPlansJsSource),
+  fs.writeFile(path.join(generatedAssets, assetsManifest.monthlyPlansCss), monthlyPlansCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.katexCss), katexCssSource),
   fs.writeFile(path.join(generatedAssets, "site-shell.css"), shellCssSource),
   fs.writeFile(path.join(generatedAssets, "writing-reader.css"), readerCssSource),
@@ -224,6 +246,8 @@ const typographyPlaceholder = "__TYPOGRAPHY_CSS__";
 const katexPlaceholder = "__KATEX_CSS__";
 const authoringCssPlaceholder = "__WRITING_AUTHORING_CSS__";
 const authoringJsPlaceholder = "__WRITING_AUTHORING_JS__";
+const monthlyPlansJsPlaceholder = "__MONTHLY_PLANS_JS__";
+const monthlyPlansCssPlaceholder = "__MONTHLY_PLANS_CSS__";
 const htmlReplacements = new Map([
   ["index.html", [
     [typographyPlaceholder, assetsManifest.typographyCss],
@@ -231,6 +255,8 @@ const htmlReplacements = new Map([
     [katexPlaceholder, assetsManifest.katexCss],
     [authoringCssPlaceholder, assetsManifest.authoringCss],
     [authoringJsPlaceholder, assetsManifest.authoringJs],
+    [monthlyPlansJsPlaceholder, assetsManifest.monthlyPlansJs],
+    [monthlyPlansCssPlaceholder, assetsManifest.monthlyPlansCss],
   ]],
 ]);
 for (const [relative, replacements] of htmlReplacements) {

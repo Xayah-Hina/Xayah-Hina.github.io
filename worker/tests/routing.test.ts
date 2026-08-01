@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { endpointAllowed, sessionResponse } from "../src/index.ts";
+import { endpointAllowed, publicMonthlyPlanMonth, sessionResponse } from "../src/index.ts";
 
 test("public API scopes expose only their own authoring endpoints", () => {
   assert.equal(endpointAllowed("main", "/api/session"), true);
@@ -14,6 +14,8 @@ test("public API scopes expose only their own authoring endpoints", () => {
   assert.equal(endpointAllowed("dictionary", "/api/dictionary/open"), true);
   assert.equal(endpointAllowed("dictionary", "/api/writing/open"), false);
   assert.equal(endpointAllowed("dictionary", "/api/journal/save"), false);
+  assert.equal(publicMonthlyPlanMonth("/data/monthly-plans/2026-08"), "2026-08");
+  assert.equal(publicMonthlyPlanMonth("/data/monthly-plans/2026-13"), null);
 });
 
 test("session return redirects stay on the requesting origin", () => {

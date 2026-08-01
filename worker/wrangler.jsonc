@@ -16,6 +16,10 @@
       "zone_name": "xayah.me"
     },
     {
+      "pattern": "xayah.me/data/monthly-plans/*",
+      "zone_name": "xayah.me"
+    },
+    {
       "pattern": "dictionary.xayah.me/api/*",
       "zone_name": "xayah.me"
     }

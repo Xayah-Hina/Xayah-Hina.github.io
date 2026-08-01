@@ -62,6 +62,29 @@ export interface MonthlyNote {
   updatedAt?: string;
 }
 
+export type MonthlyPlanSchedule =
+  | { type: "daily" }
+  | { type: "weekdays"; weekdays: number[] };
+
+export interface MonthlyPlan {
+  id: string;
+  title: string;
+  startDate: string;
+  endDate: string;
+  schedule: MonthlyPlanSchedule;
+  completedDates: string[];
+  createdAt: string;
+  updatedAt: string;
+  archivedAt?: string;
+}
+
+export interface MonthlyPlanState {
+  schemaVersion: 1;
+  revision: string;
+  updatedAt: string;
+  plans: MonthlyPlan[];
+}
+
 export interface FileChange {
   path: string;
   content: string | Uint8Array | null;

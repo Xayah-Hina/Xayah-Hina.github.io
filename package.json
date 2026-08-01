@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build-site.mjs",
-    "test": "node --test tests/writing/*.test.mjs"
+    "test": "node --test tests/writing/*.test.mjs tests/journal/*.test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "5.3.0",

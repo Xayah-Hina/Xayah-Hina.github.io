@@ -26,11 +26,15 @@ test("allowlisted build produces every static article and no source artifacts", 
   const shellMatch = homepage.match(/href="\/assets\/generated\/(site-shell\.[a-f0-9]{12}\.css)"/);
   const authoringCssMatch = homepage.match(/href="\/assets\/generated\/(writing-authoring\.[a-f0-9]{12}\.css)"/);
   const authoringJsMatch = homepage.match(/import\("\/assets\/generated\/(writing-authoring\.[a-f0-9]{12}\.js)"\)/);
+  const monthlyPlansCssMatch = homepage.match(/href="\/assets\/generated\/(monthly-plans\.[a-f0-9]{12}\.css)"/);
+  const monthlyPlansJsMatch = homepage.match(/import\("\/assets\/generated\/(monthly-plans\.[a-f0-9]{12}\.js)"\)/);
   assert.ok(typographyMatch, "homepage should load the local variable font definitions");
   assert.ok(shellMatch, "homepage should load the hashed shared site shell");
   assert.ok(authoringCssMatch, "homepage should load the hashed visual editor theme");
   assert.ok(authoringJsMatch, "homepage should lazy-load the hashed visual editor");
-  assert.doesNotMatch(homepage, /__(?:TYPOGRAPHY_CSS|SITE_SHELL_CSS|KATEX_CSS|WRITING_AUTHORING_(?:CSS|JS))__/);
+  assert.ok(monthlyPlansCssMatch, "homepage should load the hashed Monthly Plans styles");
+  assert.ok(monthlyPlansJsMatch, "homepage should load the hashed Monthly Plans controller");
+  assert.doesNotMatch(homepage, /__(?:TYPOGRAPHY_CSS|SITE_SHELL_CSS|KATEX_CSS|WRITING_AUTHORING_(?:CSS|JS)|MONTHLY_PLANS_(?:CSS|JS))__/);
   assert.match(homepage, /fetch\("\/api\/authoring\/status"/);
   assert.doesNotMatch(homepage, /\/api\/editor\/status|editor\.xayah\.me/);
   assert.doesNotMatch(homepage, /class="section-switch-button"[^>]*href="\/api\/session"/);
@@ -45,6 +49,8 @@ test("allowlisted build produces every static article and no source artifacts", 
   const shellCss = fs.readFileSync(path.join(site, "assets", "generated", shellMatch[1]), "utf8");
   const authoringCss = fs.readFileSync(path.join(site, "assets", "generated", authoringCssMatch[1]), "utf8");
   const authoringJs = fs.readFileSync(path.join(site, "assets", "generated", authoringJsMatch[1]), "utf8");
+  const monthlyPlansCss = fs.readFileSync(path.join(site, "assets", "generated", monthlyPlansCssMatch[1]), "utf8");
+  const monthlyPlansJs = fs.readFileSync(path.join(site, "assets", "generated", monthlyPlansJsMatch[1]), "utf8");
   assert.match(shellCss, /--page: #090c10;/);
   assert.match(shellCss, /--card: #14191f;/);
   assert.match(shellCss, /--card-hover: #1a2027;/);
@@ -62,6 +68,10 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.match(authoringCss, /--crepe-font-code:\s*var\(--font-mono\)/);
   assert.match(authoringCss, /\.writing-composer-root/);
   assert.match(authoringJs, /Start writing/);
+  assert.match(monthlyPlansCss, /monthly-plan-strip/);
+  assert.match(monthlyPlansCss, /monthly-plan-week/);
+  assert.match(monthlyPlansJs, /Monthly Plan check-in saved/);
+  assert.match(monthlyPlansJs, /data\/monthly-plans/);
   assert.equal(fs.existsSync(path.join(site, "assets", "generated", "writing-preview.js")), false);
   assert.equal(fs.existsSync(path.join(site, "dictionary")), false);
   for (const id of ids) {

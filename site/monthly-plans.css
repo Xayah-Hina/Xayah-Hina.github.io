@@ -1,0 +1,349 @@
+.journal-month-panel-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.monthly-plans-root[hidden] {
+  display: none;
+}
+
+.monthly-plan-list {
+  display: grid;
+  border-top: 1px solid var(--line);
+}
+
+.monthly-plan-item {
+  border-bottom: 1px solid var(--line);
+}
+
+.monthly-plan-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.8fr) minmax(10rem, 1.5fr) auto auto;
+  align-items: center;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.45rem 0.2rem;
+  gap: 0.75rem;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+
+.monthly-plan-row:hover {
+  background: var(--card-hover);
+}
+
+.monthly-plan-name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.monthly-plan-count,
+.monthly-plan-week-score {
+  color: var(--subtle);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.monthly-plan-chevron {
+  color: var(--subtle);
+  transition: transform 160ms ease;
+}
+
+.monthly-plan-row[aria-expanded="true"] .monthly-plan-chevron {
+  transform: rotate(180deg);
+}
+
+.monthly-plan-strip {
+  display: grid;
+  grid-template-columns: repeat(31, minmax(0.2rem, 1fr));
+  gap: 0.12rem;
+}
+
+.monthly-plan-strip-mark {
+  position: relative;
+  height: 0.85rem;
+  background: var(--page);
+  border-radius: 0.12rem;
+}
+
+.monthly-plan-strip-mark[data-state="done"] {
+  background: #4b9b69;
+}
+
+.monthly-plan-strip-mark[data-state="missed"] {
+  background: #b76b5f;
+}
+
+.monthly-plan-strip-mark[data-state="today"] {
+  box-shadow: inset 0 0 0 2px var(--link);
+}
+
+.monthly-plan-strip-mark[data-state="off"] {
+  opacity: 0.26;
+}
+
+.monthly-plan-strip-mark::after {
+  position: absolute;
+  z-index: 4;
+  bottom: calc(100% + 0.4rem);
+  left: 50%;
+  width: max-content;
+  max-width: 10rem;
+  padding: 0.3rem 0.45rem;
+  color: var(--text);
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  box-shadow: var(--shadow);
+  content: attr(data-label);
+  font-size: 0.6875rem;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 0.2rem);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.monthly-plan-strip-mark:hover::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.monthly-plan-detail {
+  margin: 0.1rem 0 0.75rem;
+  padding: 0.8rem;
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+}
+
+.monthly-plan-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+  gap: 0.75rem;
+}
+
+.monthly-plan-detail-title {
+  font-weight: 600;
+}
+
+.monthly-plan-detail-summary,
+.monthly-plan-week-label,
+.monthly-plan-manager-meta,
+.monthly-plan-manager-empty {
+  color: var(--subtle);
+  font-size: 0.75rem;
+}
+
+.monthly-plan-week-list {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.monthly-plan-week {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) 2.25rem;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.monthly-plan-week-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(1.8rem, 1fr));
+  gap: 0.25rem;
+}
+
+.monthly-plan-week-score {
+  text-align: right;
+}
+
+.monthly-plan-day,
+.monthly-plan-day-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 2.25rem;
+  padding: 0.15rem 0;
+  color: var(--subtle);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  font: inherit;
+}
+
+button.monthly-plan-day {
+  cursor: pointer;
+}
+
+button.monthly-plan-day:hover {
+  background: var(--card-hover);
+}
+
+.monthly-plan-day[data-state="done"] {
+  color: #2f7950;
+  background: color-mix(in srgb, #4b9b69 16%, var(--page));
+  border-color: #4b9b69;
+}
+
+.monthly-plan-day[data-state="missed"] {
+  color: #a75b50;
+  background: color-mix(in srgb, #b76b5f 15%, var(--page));
+  border-color: #b76b5f;
+}
+
+.monthly-plan-day[data-state="today"] {
+  color: var(--text);
+  border: 2px solid var(--link);
+}
+
+.monthly-plan-day[data-state="future"] {
+  opacity: 0.58;
+}
+
+.monthly-plan-day[data-state="off"] {
+  background: transparent;
+  border-color: transparent;
+  opacity: 0.34;
+}
+
+.monthly-plan-day-number {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.monthly-plan-day-weekday {
+  font-size: 0.625rem;
+}
+
+.monthly-plan-manager-dialog {
+  width: min(42rem, calc(100% - 2rem));
+}
+
+.monthly-plan-manager-list {
+  display: grid;
+  gap: 0;
+}
+
+.monthly-plan-manager-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0;
+  gap: 0.8rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.monthly-plan-manager-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+}
+
+.monthly-plan-manager-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.monthly-plan-manager-actions,
+.monthly-plan-field-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.monthly-plan-fields {
+  display: grid;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  gap: 0.9rem;
+  border-top: 1px solid var(--line);
+}
+
+.monthly-plan-fields[hidden],
+.monthly-plan-weekday-fields[hidden] {
+  display: none;
+}
+
+.monthly-plan-date-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.monthly-plan-weekday-fields {
+  padding: 0;
+  border: 0;
+}
+
+.monthly-plan-weekday-options {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 0.45rem;
+  gap: 0.4rem 0.8rem;
+}
+
+.monthly-plan-weekday-options label {
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 38rem) {
+  .monthly-plan-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .monthly-plan-row .monthly-plan-strip {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+  }
+
+  .monthly-plan-strip-mark::after {
+    display: none;
+  }
+
+  .monthly-plan-week {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .monthly-plan-week-days {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .monthly-plan-manager-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .monthly-plan-manager-actions {
+    justify-content: flex-start;
+  }
+
+  .monthly-plan-date-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monthly-plan-chevron,
+  .monthly-plan-strip-mark::after {
+    transition: none;
+  }
+}
