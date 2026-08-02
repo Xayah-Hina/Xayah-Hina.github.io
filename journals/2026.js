@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260802-110847-d614",
+    "publishedAt": "2026-08-02T11:08:47+08:00",
+    "content": "不知道今天能不能release spectra 2.0……",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260802-010856-578e",
     "publishedAt": "2026-08-02T01:08:56+08:00",
     "content": "8月1日日报。\n\n今天主要做了spectra的动态场景模块支持，以及LoRA数据集的制作。",
