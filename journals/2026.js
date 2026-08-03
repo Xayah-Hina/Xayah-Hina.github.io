@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260803-114239-64a1",
+    "publishedAt": "2026-08-03T11:42:39+08:00",
+    "content": "8月2日日报。\n\n今天把spectra大架构整理完了，明天应该能release。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260802-110847-d614",
     "publishedAt": "2026-08-02T11:08:47+08:00",
     "content": "不知道今天能不能release spectra 2.0……",
