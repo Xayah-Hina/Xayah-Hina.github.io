@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260804-144128-9207",
+    "publishedAt": "2026-08-04T14:41:28+08:00",
+    "content": "8月3日日报\n\n今天做完了spectra 2.0的beta。还剩下示例项目和把项目接进来。\n\n现在在考虑是否要做一个大而全的大项目（考虑HinaPE 2.0？）还是保持每个项目的独立？",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260803-114239-64a1",
     "publishedAt": "2026-08-03T11:42:39+08:00",
     "content": "8月2日日报。\n\n今天把spectra大架构整理完了，明天应该能release。",
