@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260806-065805-1885",
+    "publishedAt": "2026-08-06T06:58:05+08:00",
+    "content": "8月5日日报\n\n今天大概梳理了一下spectra的整个逻辑块。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260805-100905-60d3",
     "publishedAt": "2026-08-05T10:09:05+08:00",
     "content": "8月4日日报\n\n今天做了一个场景，差不多验证了spectra功能是完全的。codex戒断反应有点严重QAQ不太会古法编程了。",
