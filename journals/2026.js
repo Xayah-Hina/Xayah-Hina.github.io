@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260807-171423-7239",
+    "publishedAt": "2026-08-07T17:14:23+08:00",
+    "content": "今天把spectra的场景部分也看明白了，就差个pathtracer部分详细学习了。\n\n当前还没法release正式版spectra 2.0。等明天codex额度恢复之后着手正式发布的工作。\n\n现在可以考虑一下之前没时间学的ingp和diff solver的部分。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260806-231136-019e",
     "publishedAt": "2026-08-06T23:11:36+08:00",
     "content": "8月6日日报\n\n仔细review了一遍spectra 2.0。目前的架构还是比较满意的，比较robust并且易读性和扩展性优秀。等codex额度恢复之后着力推进完善测试场景和把之前的项目接进来。下一阶段的重心应该逐渐回到项目这边来了。\n\n总算有一个比较优秀的可视化后端了。",
