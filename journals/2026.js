@@ -2,9 +2,10 @@ export default [
   {
     "id": "20260807-175755-a202",
     "publishedAt": "2026-08-07T17:57:55+08:00",
-    "content": "接下来要集中把Sato先生的paper过一遍，然后把重点paper彻底复现一遍。",
+    "content": "接下来要集中把Sato先生的paper过一遍，然后把重点paper彻底复现一遍。八月份的重点就放在这里吧，另外是可微solver的部分。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "updatedAt": "2026-08-07T17:58:35+08:00"
   },
   {
     "id": "20260807-171423-7239",
