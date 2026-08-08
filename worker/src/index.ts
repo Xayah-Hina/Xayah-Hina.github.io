@@ -1,6 +1,13 @@
 import { verifyAccess } from "./auth";
 import { dictionaryStatus, openDictionary, publishDictionary, saveDictionary } from "./dictionary";
-import { deleteJournal, journalYears, saveJournal, saveMonthlyNote } from "./journal";
+import {
+  authoringJournalCatalogData,
+  authoringJournalYearData,
+  deleteJournal,
+  journalYears,
+  saveJournal,
+  saveMonthlyNote,
+} from "./journal";
 import { monthlyPlansResponse, saveMonthlyPlan, saveMonthlyPlanCheckIns } from "./monthly-plans";
 import type { Env } from "./types";
 import { HttpError, jsonResponse, readJsonObject } from "./utils";
@@ -92,6 +99,13 @@ async function authoringApi(request: Request, env: Env, url: URL, scope: ApiScop
   if (request.method === "GET" && url.pathname === "/api/authoring/status") return authoringStatus(env, scope);
   if (request.method === "GET" && url.pathname === "/api/writing/catalog") {
     return jsonResponse(await authoringWritingCatalogData(env));
+  }
+  if (request.method === "GET" && url.pathname === "/api/journal/catalog") {
+    return jsonResponse(await authoringJournalCatalogData(env));
+  }
+  const journalYear = url.pathname.match(/^\/api\/journal\/year\/(\d{4})$/);
+  if (request.method === "GET" && journalYear) {
+    return jsonResponse(await authoringJournalYearData(env, journalYear[1]));
   }
   const writingYear = url.pathname.match(/^\/api\/writing\/year\/(\d{4})$/);
   if (request.method === "GET" && writingYear) {

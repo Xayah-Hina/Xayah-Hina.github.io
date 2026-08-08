@@ -116,6 +116,21 @@ async function monthlyNotes(env: Env, year: string, required = false): Promise<R
   return raw === null ? {} : validateMonthly(raw, year);
 }
 
+export async function authoringJournalCatalogData(env: Env) {
+  return { years: await journalYears(env) };
+}
+
+export async function authoringJournalYearData(env: Env, year: string) {
+  if (!/^\d{4}$/.test(year)) throw new HttpError(400, "Journal year is invalid.");
+  const years = await journalYears(env);
+  if (!years.includes(year)) throw new HttpError(404, "The Journal year is no longer available.");
+  const [entries, monthly] = await Promise.all([
+    journalEntries(env, year),
+    monthlyNotes(env, year),
+  ]);
+  return { entries, monthly };
+}
+
 async function validateRelated(env: Env, value: unknown): Promise<JournalEntry["relatedWriting"]> {
   if (value === null || value === undefined) return null;
   const record = asRecord(value, "Related Writing is invalid.");
@@ -184,6 +199,10 @@ async function cleanupMedia(env: Env, images: string[]): Promise<string[]> {
   return failures;
 }
 
+async function deleteUploadedObjects(env: Env, keys: string[]): Promise<void> {
+  if (keys.length) await env.CONTENT.delete(keys);
+}
+
 export async function saveJournal(env: Env, payload: Record<string, unknown>) {
   const mode = payload.mode;
   if (mode !== "create" && mode !== "edit") throw new HttpError(400, "Journal save mode is invalid.");
@@ -248,13 +267,13 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
       newKeys.push(objectKey);
     }
   } catch (error) {
-    await env.CONTENT.delete(newKeys);
+    await deleteUploadedObjects(env, newKeys);
     throw error;
   }
 
   const candidate: JournalEntry = { id, publishedAt, content, images, relatedWriting };
   if (original && JSON.stringify(withoutUpdatedAt(original)) === JSON.stringify(candidate)) {
-    await env.CONTENT.delete(newKeys);
+    await deleteUploadedObjects(env, newKeys);
     return {
       year, years, entries: previous, status: "unchanged", cleanupFailures: [],
       sync: sync(env, "unchanged", "No remote update was needed.", await pendingWriting(env)),
@@ -274,7 +293,7 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
   try {
     await commitFiles(env, `${original ? "Journal: update" : "Journal: publish"} ${id}`, changes);
   } catch (error) {
-    await env.CONTENT.delete(newKeys);
+    await deleteUploadedObjects(env, newKeys);
     throw error;
   }
   const cleanupFailures = await cleanupMedia(env, removed);

@@ -42,6 +42,8 @@ confirms a valid Access session. Dictionary reads and publishes use `DICTIONARY_
 `DICTIONARY_GITHUB_REPO`, and `DICTIONARY_GITHUB_BRANCH`, independently of the
 main site repository variables.
 
+Authenticated Journal catalog and year reads come directly from the current GitHub branch. This keeps the author view consistent immediately after a save, even while the public GitHub Pages deployment is still propagating.
+
 ## Writing API lifecycle
 
 The in-page authoring UI saves metadata and Markdown body to `private/writing/drafts/<id>.json`. Each save includes the previous `savedAt`; conditional R2 writes return HTTP 409 instead of overwriting a newer tab.

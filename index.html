@@ -1397,6 +1397,7 @@
       const journalMonthlyByYear = new Map();
       const journalLoadPromises = new Map();
       const journalLoadErrors = new Map();
+      let journalDataGeneration = 0;
       let writingCatalogError = null;
       let journalCatalogError = null;
       let writingYears = [];
@@ -1664,13 +1665,22 @@
         if (journalLoadPromises.has(year)) return journalLoadPromises.get(year);
 
         journalLoadErrors.delete(year);
-        const promise = Promise.all([
-          importDataModule(`journals/${year}.js`),
-          importDataModule(`journals/monthly/${year}.js`)
-        ])
-          .then(([module, monthlyModule]) => {
-            const entries = validateJournalEntries(module.default, year);
-            const notes = validateJournalMonthly(monthlyModule.default, year);
+        const generation = journalDataGeneration;
+        const source = authoringSession
+          ? fetch(`/api/journal/year/${year}`, { cache: "no-store" }).then(async (response) => {
+              const result = await response.json();
+              if (!response.ok) throw new Error(result.error || `Journal ${year} could not be loaded.`);
+              return [result.entries, result.monthly];
+            })
+          : Promise.all([
+              importDataModule(`journals/${year}.js`),
+              importDataModule(`journals/monthly/${year}.js`)
+            ]).then(([module, monthlyModule]) => [module.default, monthlyModule.default]);
+        const promise = source
+          .then(([entryData, monthlyData]) => {
+            if (generation !== journalDataGeneration) return loadJournalYear(year);
+            const entries = validateJournalEntries(entryData, year);
+            const notes = validateJournalMonthly(monthlyData, year);
             journalEntriesByYear.set(year, entries);
             journalMonthlyByYear.set(year, notes);
             return entries;
@@ -1679,7 +1689,9 @@
             journalLoadErrors.set(year, error);
             throw error;
           })
-          .finally(() => journalLoadPromises.delete(year));
+          .finally(() => {
+            if (journalLoadPromises.get(year) === promise) journalLoadPromises.delete(year);
+          });
 
         journalLoadPromises.set(year, promise);
         return promise;
@@ -2250,6 +2262,23 @@
           if (!writingYears.includes(state.years.writing)) state.years.writing = latestYear("writing");
         } catch (error) {
           writingCatalogError = error;
+        }
+
+        try {
+          const response = await fetch("/api/journal/catalog", { cache: "no-store" });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Journal catalog could not be loaded.");
+          journalYears = normalizeYears(result.years);
+          yearsBySection.set("journal", journalYears);
+          journalDataGeneration += 1;
+          journalEntriesByYear.clear();
+          journalMonthlyByYear.clear();
+          journalLoadPromises.clear();
+          journalLoadErrors.clear();
+          journalCatalogError = null;
+          if (!journalYears.includes(state.years.journal)) state.years.journal = latestYear("journal");
+        } catch (error) {
+          journalCatalogError = error;
         }
 
         const journalSlot = byId("journal-editor-slot");

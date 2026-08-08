@@ -36,6 +36,8 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.ok(monthlyPlansJsMatch, "homepage should load the hashed Monthly Plans controller");
   assert.doesNotMatch(homepage, /__(?:TYPOGRAPHY_CSS|SITE_SHELL_CSS|KATEX_CSS|WRITING_AUTHORING_(?:CSS|JS)|MONTHLY_PLANS_(?:CSS|JS))__/);
   assert.match(homepage, /fetch\("\/api\/authoring\/status"/);
+  assert.match(homepage, /fetch\(`\/api\/journal\/year\/\$\{year\}`/);
+  assert.match(homepage, /fetch\("\/api\/journal\/catalog"/);
   assert.doesNotMatch(homepage, /\/api\/editor\/status|editor\.xayah\.me/);
   assert.doesNotMatch(homepage, /class="section-switch-button"[^>]*href="\/api\/session"/);
   assert.match(homepage, /<footer class="site-footer">[\s\S]*id="auth-link" class="footer-auth-link" href="\/api\/session">Log in<\/a>/);
