@@ -10,9 +10,10 @@ export default [
   {
     "id": "20260807-171423-7239",
     "publishedAt": "2026-08-07T17:14:23+08:00",
-    "content": "今天把spectra的场景部分也看明白了，就差个pathtracer部分详细学习了。\n\n当前还没法release正式版spectra 2.0。等明天codex额度恢复之后着手正式发布的工作。\n\n现在可以考虑一下之前没时间学的ingp和diff solver的部分。",
+    "content": "8月7日日报\n\n今天把spectra的场景部分也看明白了，就差个pathtracer部分详细学习了。\n\n当前还没法release正式版spectra 2.0。等明天codex额度恢复之后着手正式发布的工作。\n\n现在可以考虑一下之前没时间学的ingp和diff solver的部分。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "updatedAt": "2026-08-08T13:51:39+08:00"
   },
   {
     "id": "20260806-231136-019e",
