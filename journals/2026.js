@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260809-080858-f3db",
+    "publishedAt": "2026-08-09T08:08:58+08:00",
+    "content": "有空深入读一下sig26新的course\n\nhttps://davicori.github.io/SIGGRAPH-Course-Physics",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260808-211431-6534",
     "publishedAt": "2026-08-08T21:14:31+08:00",
     "content": "刚发现蔡奇写过的一本书《玻璃房》。有时间可以拿来深入读一下。",
