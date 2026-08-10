@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260810-103718-e173",
+    "publishedAt": "2026-08-10T10:37:18+08:00",
+    "content": "8月9日日报（+8月8日日报）\n\n这两天完善了许多spectra 2.0的动态场景的功能，已经接近可以完整release的状态了。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260809-080858-f3db",
     "publishedAt": "2026-08-09T08:08:58+08:00",
     "content": "有空深入读一下sig26新的course\n\nhttps://davicori.github.io/SIGGRAPH-Course-Physics",
