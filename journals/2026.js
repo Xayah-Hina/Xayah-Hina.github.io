@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260812-012921-f2fb",
+    "publishedAt": "2026-08-12T01:29:21+08:00",
+    "content": "8月11日日报\n\nSpectra 2.0 Release，并且设计了新icon和banner。\nhttps://github.com/Xayah-Graphics/spectra/releases/tag/v2.0.0",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260811-201851-bc3e",
     "publishedAt": "2026-08-11T20:18:51+08:00",
     "content": "8月10日日报\n\nspectra最后一轮review。接下来应该只需要处理dynamic scene的具体事务处理了。",
