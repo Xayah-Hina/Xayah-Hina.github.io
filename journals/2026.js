@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260812-091242-b7cd",
+    "publishedAt": "2026-08-12T09:12:42+08:00",
+    "content": "仔细研究一下sig26的Differentiable Physics for Graphics and AI\n\nhttps://dl.acm.org/doi/10.1145/3799828.3811422",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260812-012921-f2fb",
     "publishedAt": "2026-08-12T01:29:21+08:00",
     "content": "8月11日日报\n\nSpectra 2.0 Release，并且设计了新icon和banner。\nhttps://github.com/Xayah-Graphics/spectra/releases/tag/v2.0.0",
