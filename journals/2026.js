@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260812-101122-35b3",
+    "publishedAt": "2026-08-12T10:11:22+08:00",
+    "content": "抽空看完了央视做的江泽民第一集，做的真好😭。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260812-091242-b7cd",
     "publishedAt": "2026-08-12T09:12:42+08:00",
     "content": "仔细研究一下sig26的Differentiable Physics for Graphics and AI\n\nhttps://dl.acm.org/doi/10.1145/3799828.3811422",
