@@ -151,9 +151,18 @@ function validateStoredPlan(value: unknown): MonthlyPlan {
   }
   const createdAt = parseTimestamp(record.createdAt, "Monthly Plan creation time");
   const updatedAt = parseTimestamp(record.updatedAt, "Monthly Plan update time");
+  if (Date.parse(updatedAt) < Date.parse(createdAt)) {
+    throw new HttpError(500, `Stored Monthly Plan ${id} was updated before it was created.`);
+  }
   const archivedAt = record.archivedAt === undefined
     ? undefined
     : parseTimestamp(record.archivedAt, "Monthly Plan archive time");
+  if (archivedAt && Date.parse(archivedAt) < Date.parse(createdAt)) {
+    throw new HttpError(500, `Stored Monthly Plan ${id} was archived before it was created.`);
+  }
+  if (archivedAt && completedDates.some((date) => date > archivedAt.slice(0, 10))) {
+    throw new HttpError(500, `Stored Monthly Plan ${id} contains a check-in after it was archived.`);
+  }
   return {
     id,
     title,
@@ -338,9 +347,11 @@ export async function saveMonthlyPlan(env: Env, payload: Record<string, unknown>
     if (index < 0) throw new HttpError(404, "The Monthly Plan is no longer available.");
     const original = plans[index];
     if (mode === "archive") {
+      if (original.archivedAt) throw new HttpError(409, "The Monthly Plan is already archived.");
       plans[index] = { ...original, archivedAt: timestamp, updatedAt: timestamp };
       status = "archived";
     } else if (mode === "restore") {
+      if (!original.archivedAt) throw new HttpError(409, "The Monthly Plan is not archived.");
       const restored = { ...original, updatedAt: timestamp };
       delete restored.archivedAt;
       plans[index] = restored;
@@ -419,13 +430,19 @@ export async function monthlyPlansResponse(env: Env, request: Request, monthValu
   }
   const current = await loadState(env);
   const data = projectState(current.state, month);
-  const etag = `"${data.revision}"`;
+  // The public projection includes `today`, which changes at Singapore
+  // midnight even when no plan is edited. Include it in the validator so a
+  // browser cannot reuse yesterday's JSON via a stale 304 response.
+  const etag = `"${data.revision}-${data.today}"`;
   const headers = new Headers({
     "Cache-Control": "public, max-age=0, must-revalidate",
     "Content-Type": "application/json; charset=utf-8",
     "ETag": etag,
     "X-Content-Type-Options": "nosniff",
   });
-  if (request.headers.get("if-none-match") === etag) return new Response(null, { status: 304, headers });
+  const validators = (request.headers.get("if-none-match") || "")
+    .split(",")
+    .map((value) => value.trim().replace(/^W\//, ""));
+  if (validators.includes("*") || validators.includes(etag)) return new Response(null, { status: 304, headers });
   return new Response(request.method === "HEAD" ? null : JSON.stringify(data), { headers });
 }

@@ -489,7 +489,7 @@ export default [
     "images": [],
     "relatedWriting": {
       "id": "20260717-034749",
-      "title": "关于我：世界，爱情与意识形态"
+      "title": "关于我：世界、爱情与意识形态"
     },
     "updatedAt": "2026-07-17T06:02:33+08:00"
   },
@@ -589,7 +589,7 @@ export default [
     "images": [],
     "relatedWriting": {
       "id": "20260715-090945",
-      "title": "理性是否真正理性：再读More is Different"
+      "title": "理性是否真正理性：再读 More is Different"
     },
     "updatedAt": "2026-07-15T15:05:57+08:00"
   },

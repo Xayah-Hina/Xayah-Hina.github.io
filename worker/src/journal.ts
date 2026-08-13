@@ -1,4 +1,4 @@
-import { commitFiles, readDataModule } from "./github";
+import { branchHead, commitFiles, readDataModule } from "./github";
 import { pendingWriting, publishedWritingById } from "./writing";
 import type { Env, FileChange, JournalEntry, JournalImage, MonthlyNote, SyncStatus } from "./types";
 import {
@@ -12,7 +12,8 @@ import {
   singaporeTimestamp,
 } from "./utils";
 
-const JOURNAL_ID = /^[a-z0-9](?:[a-z0-9-]{0,126}[a-z0-9])?$/;
+const JOURNAL_ID = /^(\d{8}-\d{6})-[a-f0-9]{4}$/;
+const SINGAPORE_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\+08:00$/;
 const MONTH = /^\d{4}-(?:0[1-9]|1[0-2])$/;
 const ALLOWED_TYPES: Record<string, string[]> = {
   "image/jpeg": ["jpg", "jpeg"],
@@ -40,7 +41,22 @@ function validateId(value: unknown): string {
 }
 
 function validatePublishedAt(value: unknown, year?: string): string {
-  if (typeof value !== "string" || Number.isNaN(Date.parse(value)) || (year && value.slice(0, 4) !== year)) {
+  if (typeof value !== "string" || (year && value.slice(0, 4) !== year)) {
+    throw new HttpError(400, "Journal publication time is invalid.");
+  }
+  const match = SINGAPORE_TIMESTAMP.exec(value);
+  if (!match) throw new HttpError(400, "Journal publication time is invalid.");
+  const parts = match.slice(1).map(Number);
+  const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]));
+  const normalized = [
+    date.getUTCFullYear(),
+    date.getUTCMonth() + 1,
+    date.getUTCDate(),
+    date.getUTCHours(),
+    date.getUTCMinutes(),
+    date.getUTCSeconds(),
+  ];
+  if (parts.some((part, index) => part !== normalized[index])) {
     throw new HttpError(400, "Journal publication time is invalid.");
   }
   return value;
@@ -53,10 +69,16 @@ function validateImage(value: unknown): JournalImage {
   return { src, alt };
 }
 
+function journalIdentityMatches(id: string, publishedAt: string): boolean {
+  const publishedTimestamp = publishedAt.slice(0, 19).replace(/[-:]/g, "").replace("T", "-");
+  return id.slice(0, 15) === publishedTimestamp;
+}
+
 function validateJournalEntry(value: unknown, year: string): JournalEntry {
   const record = asRecord(value, `Journal ${year} contains an invalid entry.`);
   const id = validateId(record.id);
   const publishedAt = validatePublishedAt(record.publishedAt, year);
+  if (!journalIdentityMatches(id, publishedAt)) throw new HttpError(502, `Journal ${id} id does not match its publication time.`);
   const content = requiredString(record.content ?? "", "Journal content", 100_000, true);
   if (!Array.isArray(record.images)) throw new HttpError(502, `Journal ${id} contains invalid images.`);
   const images = record.images.map(validateImage);
@@ -168,35 +190,10 @@ function parseUploads(value: unknown): Map<string, Upload> {
   return uploads;
 }
 
-function mediaKey(env: Env, src: string): string | null {
-  let url: URL;
-  try {
-    url = new URL(src);
-  } catch {
-    return null;
-  }
-  if (url.origin !== env.MEDIA_ORIGIN || !/^\/(?:journals|monthly)\/\d{4}\/[A-Za-z0-9._-]+$/.test(url.pathname)) return null;
-  return `published${url.pathname}`;
-}
-
 function withoutUpdatedAt<T extends { updatedAt?: string }>(value: T): Omit<T, "updatedAt"> {
   const clone = structuredClone(value) as T;
   delete clone.updatedAt;
   return clone;
-}
-
-async function cleanupMedia(env: Env, images: string[]): Promise<string[]> {
-  const failures: string[] = [];
-  for (const src of images) {
-    const key = mediaKey(env, src);
-    if (!key) continue;
-    try {
-      await env.CONTENT.delete(key);
-    } catch {
-      failures.push(src);
-    }
-  }
-  return failures;
 }
 
 async function deleteUploadedObjects(env: Env, keys: string[]): Promise<void> {
@@ -209,11 +206,16 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
   const rawEntry = asRecord(payload.entry, "Journal entry is invalid.");
   const id = validateId(rawEntry.id);
   const publishedAt = validatePublishedAt(rawEntry.publishedAt);
+  if (!journalIdentityMatches(id, publishedAt)) {
+    throw new HttpError(400, "Journal id does not match its publication time.");
+  }
   const year = publishedAt.slice(0, 4);
   const content = requiredString(rawEntry.content ?? "", "Journal content", 100_000, true);
-  const relatedWriting = await validateRelated(env, rawEntry.relatedWriting);
-  const years = await journalYears(env);
-  const previous = await journalEntries(env, year, years.includes(year));
+  const expectedHead = await branchHead(env);
+  const snapshotEnv = { ...env, GITHUB_BRANCH: expectedHead };
+  const relatedWriting = await validateRelated(snapshotEnv, rawEntry.relatedWriting);
+  const years = await journalYears(snapshotEnv);
+  const previous = await journalEntries(snapshotEnv, year, years.includes(year));
   const original = previous.find((entry) => entry.id === id) || null;
   if (mode === "create" && original) throw new HttpError(409, "Journal id already exists.");
   if (mode === "edit" && !original) throw new HttpError(404, "The Journal entry is no longer available.");
@@ -223,12 +225,6 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
   const uploads = parseUploads(payload.uploads);
   const originals = new Map((original?.images || []).map((image) => [image.src, image]));
   const usedUploads = new Set<string>();
-  const usedIndices = new Set<number>();
-  for (const src of originals.keys()) {
-    const match = src.match(/-(\d+)\.[A-Za-z0-9]+$/);
-    if (match) usedIndices.add(Number(match[1]));
-  }
-  let nextIndex = 1;
   const images: JournalImage[] = [];
   const newKeys: string[] = [];
   const pendingUploads: Array<{ objectKey: string; upload: Upload }> = [];
@@ -247,10 +243,10 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
     const upload = uploads.get(key);
     if (!upload || usedUploads.has(key)) throw new HttpError(400, "An uploaded image does not match its descriptor.");
     usedUploads.add(key);
-    while (usedIndices.has(nextIndex)) nextIndex += 1;
-    const name = `${id}-${String(nextIndex).padStart(2, "0")}.${upload.extension}`;
-    usedIndices.add(nextIndex);
-    nextIndex += 1;
+    // Public media is cached as immutable for a year, so a URL must never be
+    // reused for different bytes. A per-upload random suffix also isolates
+    // cleanup when concurrent edits race to commit the same Journal entry.
+    const name = `${id}-${randomHex(12)}.${upload.extension}`;
     const objectKey = `published/journals/${year}/${name}`;
     pendingUploads.push({ objectKey, upload });
     images.push({ src: `${env.MEDIA_ORIGIN}/journals/${year}/${name}`, alt });
@@ -263,7 +259,11 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
   }
   try {
     for (const { objectKey, upload } of pendingUploads) {
-      await env.CONTENT.put(objectKey, upload.bytes, { httpMetadata: { contentType: upload.type } });
+      const created = await env.CONTENT.put(objectKey, upload.bytes, {
+        httpMetadata: { contentType: upload.type },
+        onlyIf: { etagDoesNotMatch: "*" },
+      });
+      if (!created) throw new HttpError(409, "A Journal image key collision occurred. Try saving again.");
       newKeys.push(objectKey);
     }
   } catch (error) {
@@ -273,9 +273,12 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
 
   const candidate: JournalEntry = { id, publishedAt, content, images, relatedWriting };
   if (original && JSON.stringify(withoutUpdatedAt(original)) === JSON.stringify(candidate)) {
+    if (await branchHead(env) !== expectedHead) {
+      throw new HttpError(409, "The Journal changed while this edit was open. Reload and try again.");
+    }
     await deleteUploadedObjects(env, newKeys);
     return {
-      year, years, entries: previous, status: "unchanged", cleanupFailures: [],
+      year, years, entries: previous, status: "unchanged",
       sync: sync(env, "unchanged", "No remote update was needed.", await pendingWriting(env)),
     };
   }
@@ -283,26 +286,22 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
   const entries = [...previous.filter((entry) => entry.id !== id), candidate]
     .sort((left, right) => right.publishedAt.localeCompare(left.publishedAt));
   const nextYears = normalizeYears([...years, year]);
-  const retained = new Set(images.map((image) => image.src));
-  const removed = (original?.images || []).filter((image) => !retained.has(image.src)).map((image) => image.src);
   const changes: FileChange[] = [
     { path: `journals/${year}.js`, content: moduleSource(entries) },
     { path: "journals/catalog.js", content: moduleSource({ years: nextYears.map(Number) }) },
   ];
   if (!years.includes(year)) changes.push({ path: `journals/monthly/${year}.js`, content: moduleSource({}) });
   try {
-    await commitFiles(env, `${original ? "Journal: update" : "Journal: publish"} ${id}`, changes);
+    await commitFiles(env, `${original ? "Journal: update" : "Journal: publish"} ${id}`, changes, env.GITHUB_BRANCH, expectedHead);
   } catch (error) {
     await deleteUploadedObjects(env, newKeys);
     throw error;
   }
-  const cleanupFailures = await cleanupMedia(env, removed);
   return {
     year,
     years: nextYears,
     entries,
     status: original ? "updated" : "created",
-    cleanupFailures,
     sync: sync(env, "synced", "Published to GitHub; Pages deployment has started.", await pendingWriting(env)),
   };
 }
@@ -310,9 +309,11 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
 export async function deleteJournal(env: Env, payload: Record<string, unknown>) {
   const year = requiredString(payload.year, "Journal year", 4);
   const id = validateId(payload.id);
-  const years = await journalYears(env);
+  const expectedHead = await branchHead(env);
+  const snapshotEnv = { ...env, GITHUB_BRANCH: expectedHead };
+  const years = await journalYears(snapshotEnv);
   if (!years.includes(year)) throw new HttpError(404, "The Journal year is no longer available.");
-  const previous = await journalEntries(env, year);
+  const previous = await journalEntries(snapshotEnv, year);
   const original = previous.find((entry) => entry.id === id);
   if (!original) throw new HttpError(404, "The Journal entry is no longer available.");
   const entries = previous.filter((entry) => entry.id !== id);
@@ -321,10 +322,10 @@ export async function deleteJournal(env: Env, payload: Record<string, unknown>) 
     { path: `journals/${year}.js`, content: entries.length ? moduleSource(entries) : null },
     { path: "journals/catalog.js", content: moduleSource({ years: nextYears.map(Number) }) },
   ];
-  await commitFiles(env, `Journal: delete ${id}`, changes);
-  const cleanupFailures = await cleanupMedia(env, original.images.map((image) => image.src));
+  if (!entries.length) changes.push({ path: `journals/monthly/${year}.js`, content: null });
+  await commitFiles(env, `Journal: delete ${id}`, changes, env.GITHUB_BRANCH, expectedHead);
   return {
-    year, years: nextYears, entries, status: "deleted", cleanupFailures,
+    year, years: nextYears, entries, status: "deleted",
     sync: sync(env, "synced", "Deleted from GitHub; Pages deployment has started.", await pendingWriting(env)),
   };
 }
@@ -333,13 +334,15 @@ export async function saveMonthlyNote(env: Env, payload: Record<string, unknown>
   const year = requiredString(payload.year, "Monthly note year", 4);
   const month = requiredString(payload.month, "Monthly note month", 7);
   if (!/^\d{4}$/.test(year) || !MONTH.test(month) || month.slice(0, 4) !== year) throw new HttpError(400, "Monthly note date is invalid.");
-  const years = await journalYears(env);
+  const expectedHead = await branchHead(env);
+  const snapshotEnv = { ...env, GITHUB_BRANCH: expectedHead };
+  const years = await journalYears(snapshotEnv);
   if (!years.includes(year)) throw new HttpError(404, "The Journal year is no longer available.");
-  const entries = await journalEntries(env, year);
+  const entries = await journalEntries(snapshotEnv, year);
   if (!entries.some((entry) => entry.publishedAt.slice(0, 7) === month)) throw new HttpError(404, "The Journal month is no longer available.");
   const noteRecord = asRecord(payload.note, "Monthly note is invalid.");
   const note = requiredString(noteRecord.content ?? "", "Monthly note content", 100_000, true);
-  const previous = await monthlyNotes(env, year);
+  const previous = await monthlyNotes(snapshotEnv, year);
   const original = previous[month] || null;
   const uploads = parseUploads(payload.uploads);
   const spec = payload.reportImage;
@@ -356,9 +359,13 @@ export async function saveMonthlyNote(env: Env, payload: Record<string, unknown>
       const key = requiredString(image.key, "Monthly image upload key", 200);
       const upload = uploads.get(key);
       if (!upload || uploads.size !== 1) throw new HttpError(400, "A monthly image upload does not match its descriptor.");
-      const name = `${month}-report-${randomHex(4)}.${upload.extension}`;
+      const name = `${month}-report-${randomHex(12)}.${upload.extension}`;
       newKey = `published/monthly/${year}/${name}`;
-      await env.CONTENT.put(newKey, upload.bytes, { httpMetadata: { contentType: upload.type } });
+      const created = await env.CONTENT.put(newKey, upload.bytes, {
+        httpMetadata: { contentType: upload.type },
+        onlyIf: { etagDoesNotMatch: "*" },
+      });
+      if (!created) throw new HttpError(409, "A monthly report image key collision occurred. Try saving again.");
       reportImage = { src: `${env.MEDIA_ORIGIN}/monthly/${year}/${name}`, alt };
     } else {
       throw new HttpError(400, "Monthly report image is invalid.");
@@ -370,9 +377,12 @@ export async function saveMonthlyNote(env: Env, payload: Record<string, unknown>
   const candidate: MonthlyNote = { note, reportImage };
   const hasContent = Boolean(note || reportImage);
   if ((original && hasContent && JSON.stringify(withoutUpdatedAt(original)) === JSON.stringify(candidate)) || (!original && !hasContent)) {
+    if (await branchHead(env) !== expectedHead) {
+      throw new HttpError(409, "The Journal changed while this edit was open. Reload and try again.");
+    }
     if (newKey) await env.CONTENT.delete(newKey);
     return {
-      year, month, notes: previous, status: "unchanged", cleanupFailures: [],
+      year, month, notes: previous, status: "unchanged",
       sync: sync(env, "unchanged", "No remote update was needed.", await pendingWriting(env)),
     };
   }
@@ -387,16 +397,14 @@ export async function saveMonthlyNote(env: Env, payload: Record<string, unknown>
     status = "cleared";
   }
   const changes: FileChange[] = [{ path: `journals/monthly/${year}.js`, content: moduleSource(notes) }];
-  const oldSrc = original?.reportImage?.src;
   try {
-    await commitFiles(env, `Journal: update monthly note ${month}`, changes);
+    await commitFiles(env, `Journal: update monthly note ${month}`, changes, env.GITHUB_BRANCH, expectedHead);
   } catch (error) {
     if (newKey) await env.CONTENT.delete(newKey);
     throw error;
   }
-  const cleanupFailures = oldSrc && oldSrc !== reportImage?.src ? await cleanupMedia(env, [oldSrc]) : [];
   return {
-    year, month, notes, status, cleanupFailures,
+    year, month, notes, status,
     sync: sync(env, "synced", "Published to GitHub; Pages deployment has started.", await pendingWriting(env)),
   };
 }

@@ -27,6 +27,19 @@ import {
 
 type ApiScope = "main" | "dictionary";
 
+function secureResponse(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set("Strict-Transport-Security", "max-age=31536000");
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Referrer-Policy", "same-origin");
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 async function authoringStatus(env: Env, scope: ApiScope): Promise<Response> {
   let journalError: string | null = null;
   let writingError: string | null = null;
@@ -168,29 +181,32 @@ async function publicMedia(request: Request, env: Env, url: URL): Promise<Respon
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    if (url.protocol === "http:") {
+      url.protocol = "https:";
+      return Response.redirect(url.toString(), 308);
+    }
     try {
-      if (url.hostname === new URL(env.MEDIA_ORIGIN).hostname) return await publicMedia(request, env, url);
+      if (url.hostname === new URL(env.MEDIA_ORIGIN).hostname) return secureResponse(await publicMedia(request, env, url));
       const monthlyPlanMonth = publicMonthlyPlanMonth(url.pathname);
       if (url.hostname === new URL(env.PUBLIC_SITE_ORIGIN).hostname && monthlyPlanMonth) {
-        return await monthlyPlansResponse(env, request, monthlyPlanMonth);
+        return secureResponse(await monthlyPlansResponse(env, request, monthlyPlanMonth));
       }
       if (url.hostname === new URL(env.PUBLIC_SITE_ORIGIN).hostname && url.pathname.startsWith("/api/")) {
-        return await handlePublicApi(request, env, url, "main");
+        return secureResponse(await handlePublicApi(request, env, url, "main"));
       }
       if (url.hostname === new URL(env.DICTIONARY_ORIGIN).hostname && url.pathname.startsWith("/api/")) {
-        return await handlePublicApi(request, env, url, "dictionary");
+        return secureResponse(await handlePublicApi(request, env, url, "dictionary"));
       }
       throw new HttpError(404, "Unknown hostname.");
     } catch (error) {
       const jsonPath = url.pathname.startsWith("/api/") || url.pathname.startsWith("/data/monthly-plans/");
       if (error instanceof HttpError) {
-        if (jsonPath) return jsonResponse({ error: error.message }, error.status);
-        return new Response(error.message, { status: error.status, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+        if (jsonPath) return secureResponse(jsonResponse({ error: error.message }, error.status));
+        return secureResponse(new Response(error.message, { status: error.status, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } }));
       }
       console.error(error);
-      const message = error instanceof Error ? error.message : "Unexpected Worker error.";
-      if (jsonPath) return jsonResponse({ error: message }, 500);
-      return new Response("The authoring backend encountered an unexpected error.", { status: 500 });
+      if (jsonPath) return secureResponse(jsonResponse({ error: "The authoring backend encountered an unexpected error." }, 500));
+      return secureResponse(new Response("The authoring backend encountered an unexpected error.", { status: 500 }));
     }
   },
 } satisfies ExportedHandler<Env>;

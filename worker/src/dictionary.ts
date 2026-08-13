@@ -1,4 +1,4 @@
-import { commitFiles, readTextFile } from "./github";
+import { branchHead, commitFiles, readTextFile } from "./github";
 import type { Env, FileChange } from "./types";
 import { asRecord, HttpError, randomHex, requiredString, singaporeTimestamp } from "./utils";
 
@@ -36,6 +36,13 @@ interface DictionaryDraft {
   path: string;
   personal: PersonalEntry;
   savedAt: string;
+  syncedAt?: string;
+}
+
+interface DictionaryDraftVersion {
+  key: string;
+  draft: DictionaryDraft;
+  etag: string;
 }
 
 const DRAFT_PREFIX = "private/dictionary/drafts/";
@@ -168,9 +175,13 @@ function emptyPersonal(entryId: string): PersonalEntry {
   };
 }
 
-async function readPublishedPersonal(env: Env, entry: DictionaryEntry): Promise<PersonalEntry> {
+async function readPublishedPersonal(
+  env: Env,
+  entry: DictionaryEntry,
+  ref = env.DICTIONARY_GITHUB_BRANCH,
+): Promise<PersonalEntry> {
   const githubEnv = dictionaryGithubEnv(env);
-  const source = await readTextFile(githubEnv, personalPath(entry), githubEnv.GITHUB_BRANCH, false);
+  const source = await readTextFile(githubEnv, personalPath(entry), ref, false);
   if (source === null) return emptyPersonal(entry.entryId);
   let value: unknown;
   try {
@@ -181,7 +192,7 @@ async function readPublishedPersonal(env: Env, entry: DictionaryEntry): Promise<
   return validateStoredPersonal(value, entry.entryId);
 }
 
-async function readDraftObject(env: Env, key: string): Promise<DictionaryDraft | null> {
+async function readDraftObject(env: Env, key: string): Promise<DictionaryDraftVersion | null> {
   const object = await env.CONTENT.get(key);
   if (!object) return null;
   let value: unknown;
@@ -207,17 +218,25 @@ async function readDraftObject(env: Env, key: string): Promise<DictionaryDraft |
     throw new HttpError(500, "A stored Dictionary draft has invalid metadata.");
   }
   return {
-    schemaVersion: 1,
-    entry,
-    path: personalPath(entry),
-    personal: validateStoredPersonal(record.personal, entry.entryId),
-    savedAt: storedText(record.savedAt, "draft savedAt", false),
+    key,
+    etag: object.etag,
+    draft: {
+      schemaVersion: 1,
+      entry,
+      path: personalPath(entry),
+      personal: validateStoredPersonal(record.personal, entry.entryId),
+      savedAt: storedText(record.savedAt, "draft savedAt", false),
+      syncedAt: record.syncedAt === undefined
+        ? undefined
+        : storedText(record.syncedAt, "draft syncedAt", false),
+    },
   };
 }
 
-async function readDraft(env: Env, entry: DictionaryEntry): Promise<DictionaryDraft | null> {
-  const draft = await readDraftObject(env, draftKey(entry.entryId));
-  if (!draft) return null;
+async function readDraft(env: Env, entry: DictionaryEntry): Promise<DictionaryDraftVersion | null> {
+  const version = await readDraftObject(env, draftKey(entry.entryId));
+  if (!version) return null;
+  const { draft } = version;
   if (
     draft.entry.canonicalKey !== entry.canonicalKey
     || draft.entry.word !== entry.word
@@ -225,7 +244,7 @@ async function readDraft(env: Env, entry: DictionaryEntry): Promise<DictionaryDr
   ) {
     throw new HttpError(500, "The stored Dictionary draft no longer matches the frozen lexicon.");
   }
-  return draft;
+  return version;
 }
 
 async function listDraftKeys(env: Env): Promise<string[]> {
@@ -234,20 +253,42 @@ async function listDraftKeys(env: Env): Promise<string[]> {
   do {
     const page = await env.CONTENT.list({ prefix: DRAFT_PREFIX, cursor, limit: 1000 });
     keys.push(...page.objects.map((object) => object.key));
-    if (keys.length > MAX_DRAFTS) throw new HttpError(409, "Too many Dictionary drafts are pending publication.");
     cursor = page.truncated ? page.cursor : undefined;
   } while (cursor);
   return keys;
 }
 
-async function listDrafts(env: Env): Promise<Array<{ key: string; draft: DictionaryDraft }>> {
+function isPendingDraft(draft: DictionaryDraft): boolean {
+  return draft.syncedAt === undefined;
+}
+
+async function listDrafts(env: Env): Promise<DictionaryDraftVersion[]> {
   const keys = await listDraftKeys(env);
-  const drafts = await Promise.all(keys.map(async (key) => {
-    const draft = await readDraftObject(env, key);
-    if (!draft) throw new HttpError(500, "A Dictionary draft disappeared while it was being read.");
-    return { key, draft };
-  }));
-  return drafts;
+  const versions = await Promise.all(keys.map((key) => readDraftObject(env, key)));
+  return versions.filter((version): version is DictionaryDraftVersion => (
+    version !== null && isPendingDraft(version.draft)
+  ));
+}
+
+async function putDraftConditional(
+  env: Env,
+  draft: DictionaryDraft,
+  etag: string | null,
+): Promise<boolean> {
+  const result = await env.CONTENT.put(draftKey(draft.entry.entryId), JSON.stringify(draft), {
+    httpMetadata: { contentType: "application/json; charset=utf-8" },
+    onlyIf: etag ? { etagMatches: etag } : { etagDoesNotMatch: "*" },
+  });
+  return result !== null;
+}
+
+function syncedDraft(draft: DictionaryDraft): DictionaryDraft {
+  return { ...draft, syncedAt: singaporeTimestamp() };
+}
+
+function pendingDraft(draft: DictionaryDraft): DictionaryDraft {
+  const { syncedAt: _syncedAt, ...pending } = draft;
+  return pending;
 }
 
 function inputText(value: unknown, label: string, maximum: number): string {
@@ -334,17 +375,18 @@ function dictionarySync(env: Env, pendingCount: number, state: "ready" | "pendin
 }
 
 export async function dictionaryStatus(env: Env): Promise<{ pending: boolean; pendingCount: number }> {
-  const pendingCount = (await listDraftKeys(env)).length;
+  const pendingCount = (await listDrafts(env)).length;
   return { pending: pendingCount > 0, pendingCount };
 }
 
 export async function openDictionary(env: Env, payload: Record<string, unknown>) {
   const entry = await resolveEntry(env, payload);
-  const [published, draft, status] = await Promise.all([
+  const [published, storedDraft, status] = await Promise.all([
     readPublishedPersonal(env, entry),
     readDraft(env, entry),
     dictionaryStatus(env),
   ]);
+  const draft = storedDraft && isPendingDraft(storedDraft.draft) ? storedDraft.draft : null;
   const personal = draft?.personal || published;
   return {
     entryId: entry.entryId,
@@ -364,10 +406,11 @@ export async function openDictionary(env: Env, payload: Record<string, unknown>)
 
 export async function saveDictionary(env: Env, payload: Record<string, unknown>) {
   const entry = await resolveEntry(env, payload);
-  const [published, existingDraft] = await Promise.all([
+  const [published, storedDraft] = await Promise.all([
     readPublishedPersonal(env, entry),
     readDraft(env, entry),
   ]);
+  const existingDraft = storedDraft && isPendingDraft(storedDraft.draft) ? storedDraft.draft : null;
   const original = existingDraft?.personal || published;
   const normalized = normalizePersonal(entry, payload.personal, original);
   let personal = normalized;
@@ -379,11 +422,23 @@ export async function saveDictionary(env: Env, payload: Record<string, unknown>)
     status = "unchanged";
     unpublished = Boolean(existingDraft);
   } else if (samePersonalContent(normalized, published)) {
-    await env.CONTENT.delete(draftKey(entry.entryId));
+    if (!storedDraft || !(await putDraftConditional(env, syncedDraft({
+      ...storedDraft.draft,
+      personal: published,
+      savedAt: singaporeTimestamp(),
+    }), storedDraft.etag))) {
+      throw new HttpError(409, "This Dictionary entry changed in another tab. Reload it before saving.");
+    }
     personal = published;
     status = "reverted";
     unpublished = false;
   } else {
+    if (!existingDraft) {
+      const pending = await dictionaryStatus(env);
+      if (pending.pendingCount >= MAX_DRAFTS) {
+        throw new HttpError(409, `Dictionary has reached its ${MAX_DRAFTS}-draft publication limit.`);
+      }
+    }
     const draft: DictionaryDraft = {
       schemaVersion: 1,
       entry,
@@ -391,9 +446,9 @@ export async function saveDictionary(env: Env, payload: Record<string, unknown>)
       personal: normalized,
       savedAt: singaporeTimestamp(),
     };
-    await env.CONTENT.put(draftKey(entry.entryId), JSON.stringify(draft), {
-      httpMetadata: { contentType: "application/json; charset=utf-8" },
-    });
+    if (!(await putDraftConditional(env, draft, storedDraft?.etag || null))) {
+      throw new HttpError(409, "This Dictionary entry changed in another tab. Reload it before saving.");
+    }
   }
 
   const pending = await dictionaryStatus(env);
@@ -411,6 +466,22 @@ export async function saveDictionary(env: Env, payload: Record<string, unknown>)
   };
 }
 
+async function finalizePublishedDraft(env: Env, version: DictionaryDraftVersion): Promise<void> {
+  if (await putDraftConditional(env, syncedDraft(version.draft), version.etag)) return;
+
+  // A save won the race after publication started. Reclassify only the exact
+  // version read here; its content is never replaced, and every retry uses CAS.
+  while (true) {
+    const current = await readDraftObject(env, version.key);
+    if (!current) return;
+    const published = await readPublishedPersonal(env, current.draft.entry);
+    const matchesPublished = samePersonalContent(current.draft.personal, published);
+    if (matchesPublished !== isPendingDraft(current.draft)) return;
+    const reconciled = matchesPublished ? syncedDraft(current.draft) : pendingDraft(current.draft);
+    if (await putDraftConditional(env, reconciled, current.etag)) return;
+  }
+}
+
 export async function publishDictionary(env: Env, _payload: Record<string, unknown>) {
   const storedDrafts = await listDrafts(env);
   if (!storedDrafts.length) {
@@ -423,9 +494,10 @@ export async function publishDictionary(env: Env, _payload: Record<string, unkno
 
   const changes: FileChange[] = [];
   const githubEnv = dictionaryGithubEnv(env);
+  const expectedHead = await branchHead(githubEnv, githubEnv.GITHUB_BRANCH);
   for (const { draft } of storedDrafts) {
     const path = personalPath(draft.entry);
-    const source = await readTextFile(githubEnv, path, githubEnv.GITHUB_BRANCH, false);
+    const source = await readTextFile(githubEnv, path, expectedHead, false);
     if (!hasPersonalContent(draft.personal)) {
       if (source !== null) changes.push({ path, content: null });
       continue;
@@ -437,18 +509,33 @@ export async function publishDictionary(env: Env, _payload: Record<string, unkno
   let commitSha: string | null = null;
   if (changes.length) {
     const label = storedDrafts.length === 1 ? storedDrafts[0].draft.entry.word : `${storedDrafts.length} entries`;
-    commitSha = await commitFiles(githubEnv, `Dictionary: publish ${label}`, changes);
+    commitSha = await commitFiles(
+      githubEnv,
+      `Dictionary: publish ${label}`,
+      changes,
+      githubEnv.GITHUB_BRANCH,
+      expectedHead,
+    );
+  } else if (await branchHead(githubEnv, githubEnv.GITHUB_BRANCH) !== expectedHead) {
+    throw new HttpError(409, "The Dictionary repository changed while publication was running. Try again.");
   }
-  await env.CONTENT.delete(storedDrafts.map(({ key }) => key));
+  await Promise.all(storedDrafts.map((version) => finalizePublishedDraft(env, version)));
+  const pending = await dictionaryStatus(env);
+  const publicationMessage = changes.length
+    ? "Dictionary Personal Knowledge was published to GitHub."
+    : "Dictionary drafts already matched GitHub.";
+  const message = pending.pending
+    ? `${publicationMessage} Newer Dictionary changes remain pending.`
+    : publicationMessage;
   return {
     status: changes.length ? "published" : "unchanged",
     publishedEntryIds: storedDrafts.map(({ draft }) => draft.entry.entryId),
     commitSha,
     sync: dictionarySync(
       env,
-      0,
-      changes.length ? "synced" : "unchanged",
-      changes.length ? "Dictionary Personal Knowledge was published to GitHub." : "Dictionary drafts already matched GitHub.",
+      pending.pendingCount,
+      pending.pending ? "pending" : (changes.length ? "synced" : "unchanged"),
+      message,
     ),
   };
 }

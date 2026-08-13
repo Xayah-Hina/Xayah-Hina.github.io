@@ -1,12 +1,15 @@
-import { commitFiles, listPaths, readTextFile, workflowRunState } from "./github";
+import { branchHead, commitFiles, listPaths, readTextFile, workflowRunState } from "./github";
 import {
   deleteWritingObjects,
+  expiredWritingDeletionIds,
   getDraftVersioned,
   hasDrafts,
   listDrafts,
+  lockWritingDeletion,
   privateWritingAssetKey,
   publishedWritingAssetKey,
   putDraftConditional,
+  releaseWritingDeletionLock,
 } from "./storage";
 import type { Env, FileChange, SyncStatus, WritingDraft, WritingEntry } from "./types";
 import {
@@ -328,36 +331,21 @@ function imageFormat(bytes: Uint8Array, declaredMime: string): ImageFormat {
   return detected;
 }
 
-async function copyReferencedAssets(env: Env, id: string, names: string[]): Promise<string[]> {
-  const copied: string[] = [];
-  try {
-    for (const name of names) {
-      const publicKey = publishedWritingAssetKey(id, name);
-      if (await env.CONTENT.head(publicKey)) continue;
-      const privateObject = await env.CONTENT.get(privateWritingAssetKey(id, name));
-      if (!privateObject) throw new HttpError(409, `Referenced image ${name} has not been uploaded.`);
-      const created = await env.CONTENT.put(publicKey, privateObject.body, {
-        httpMetadata: privateObject.httpMetadata,
-        customMetadata: { ...(privateObject.customMetadata || {}), source: "writing-publish" },
-        onlyIf: { etagDoesNotMatch: "*" },
-      });
-      if (created) copied.push(publicKey);
-    }
-    return copied;
-  } catch (error) {
-    if (copied.length) await env.CONTENT.delete(copied);
-    throw error;
+async function copyReferencedAssets(env: Env, id: string, names: string[]): Promise<void> {
+  for (const name of names) {
+    const publicKey = publishedWritingAssetKey(id, name);
+    if (await env.CONTENT.head(publicKey)) continue;
+    const privateObject = await env.CONTENT.get(privateWritingAssetKey(id, name));
+    if (!privateObject) throw new HttpError(409, `Referenced image ${name} has not been uploaded.`);
+    await env.CONTENT.put(publicKey, privateObject.body, {
+      httpMetadata: privateObject.httpMetadata,
+      customMetadata: { ...(privateObject.customMetadata || {}), source: "writing-publish" },
+      onlyIf: { etagDoesNotMatch: "*" },
+    });
   }
-}
-
-async function deleteObjectsExcept(env: Env, prefix: string, keep: Set<string>): Promise<void> {
-  let cursor: string | undefined;
-  do {
-    const page = await env.CONTENT.list({ prefix, cursor, limit: 1000 });
-    const stale = page.objects.filter((object) => !keep.has(object.key.slice(prefix.length))).map((object) => object.key);
-    if (stale.length) await env.CONTENT.delete(stale);
-    cursor = page.truncated ? page.cursor : undefined;
-  } while (cursor);
+  // Public Writing media is content-addressed and advertised as immutable. If
+  // a later asset or GitHub operation fails, keep successful copies: another
+  // concurrent or cached document may already reference them.
 }
 
 export async function authoringWritingCatalogData(env: Env) {
@@ -442,8 +430,14 @@ export async function saveWriting(env: Env, payload: Record<string, unknown>) {
 export async function uploadWritingAsset(env: Env, request: Request) {
   const contentType = request.headers.get("content-type") || "";
   if (!contentType.toLowerCase().startsWith("multipart/form-data")) throw new HttpError(415, "Expected a multipart image upload.");
-  const declared = Number(request.headers.get("content-length") || "0");
-  if (Number.isFinite(declared) && declared > MAX_IMAGE + 1024 * 1024) throw new HttpError(413, "The uploaded image is too large.");
+  const declaredHeader = request.headers.get("content-length");
+  if (!declaredHeader || !/^\d+$/.test(declaredHeader)) {
+    throw new HttpError(411, "A valid Content-Length header is required for image uploads.");
+  }
+  const declared = Number(declaredHeader);
+  if (!Number.isSafeInteger(declared) || declared < 1 || declared > MAX_IMAGE + 1024 * 1024) {
+    throw new HttpError(413, "The uploaded image is too large.");
+  }
   const form = await request.formData();
   const id = validateId(form.get("id"));
   await findWriting(env, id);
@@ -459,12 +453,22 @@ export async function uploadWritingAsset(env: Env, request: Request) {
   const name = `${await sha256(bytes)}.${format.extension}`;
   const privateKey = privateWritingAssetKey(id, name);
   const publicKey = publishedWritingAssetKey(id, name);
+  let createdPrivate = false;
   if (!(await env.CONTENT.head(privateKey) || await env.CONTENT.head(publicKey))) {
-    await env.CONTENT.put(privateKey, bytes, {
+    createdPrivate = Boolean(await env.CONTENT.put(privateKey, bytes, {
       httpMetadata: { contentType: format.mime },
       customMetadata: { sha256: name.slice(0, 64), originalName: file.name.slice(0, 500) },
       onlyIf: { etagDoesNotMatch: "*" },
-    });
+    }));
+  }
+  try {
+    // A delete can start after the initial existence check and before this
+    // upload completes. Revalidate while its deletion lock is still visible so
+    // an in-flight upload cannot resurrect a private orphan.
+    await findWriting(env, id);
+  } catch (error) {
+    if (createdPrivate) await env.CONTENT.delete(privateKey);
+    throw error;
   }
   return {
     id,
@@ -490,7 +494,9 @@ export async function previewWritingAsset(env: Env, idValue: string, nameValue: 
 export async function publishWriting(env: Env, payload: Record<string, unknown>) {
   const year = requiredString(payload.year, "Writing year", 4);
   const id = validateId(payload.id, year);
-  const found = await findWriting(env, id);
+  const expectedHead = await branchHead(env);
+  const snapshotEnv = { ...env, GITHUB_BRANCH: expectedHead };
+  const found = await findWriting(snapshotEnv, id);
   if (!found.draftVersion) throw new HttpError(400, "There are no private Writing changes to publish.");
   const draft = found.draftVersion.draft;
   if (!isDraftPending(draft, found.publishedArticle || undefined)) {
@@ -507,14 +513,13 @@ export async function publishWriting(env: Env, payload: Record<string, unknown>)
   const source = serializeWriting(metadata, draft.body);
   const revision = await sha256(source);
   const assets = referencedAssets(draft.body);
-  const copied = await copyReferencedAssets(env, id, assets);
+  await copyReferencedAssets(env, id, assets);
   let commitSha: string;
   try {
     commitSha = await commitFiles(env, `Writing: publish ${id}`, [
       { path: `writing/${id}/${id}.md`, content: source },
-    ]);
+    ], env.GITHUB_BRANCH, expectedHead);
   } catch (error) {
-    if (copied.length) await env.CONTENT.delete(copied);
     throw error;
   }
 
@@ -556,27 +561,6 @@ export async function writingDeploymentStatus(env: Env, payload: Record<string, 
       const html = await response.text();
       const liveRevision = /<meta\s+name=["']x-writing-revision["']\s+content=["']([a-f0-9]{64})["']/i.exec(html)?.[1];
       if (liveRevision === revision) {
-        try {
-          const published = await publishedWriting(env);
-          const article = published.find((candidate) => candidate.entry.id === id);
-          if (article?.entry.article?.sourceHash === revision) {
-            const liveAssets = new Set(referencedAssets(article.body));
-            const currentDraft = await getDraftVersioned(env, id);
-            const privateKeep = new Set<string>();
-            if (currentDraft) {
-              const draft = validateDraft(currentDraft.draft);
-              if (draft.sourceHash !== revision) {
-                for (const name of referencedAssets(draft.body)) privateKeep.add(name);
-              }
-            }
-            await Promise.all([
-              deleteObjectsExcept(env, `private/writing/assets/${id}/`, privateKeep),
-              deleteObjectsExcept(env, `published/writing/${id}/`, liveAssets),
-            ]);
-          }
-        } catch (error) {
-          console.warn("The Writing page is live, but stale media cleanup was deferred", error);
-        }
         return { state: "live", revision, message: "The public article is live." };
       }
     }
@@ -592,28 +576,44 @@ export async function writingDeploymentStatus(env: Env, payload: Record<string, 
   };
 }
 
-export async function deleteWriting(env: Env, payload: Record<string, unknown>) {
+export async function deleteWriting(env: Env, payload: Record<string, unknown>, background = false) {
   const year = requiredString(payload.year, "Writing year", 4);
   const id = validateId(payload.id, year);
-  const [draftVersion, paths] = await Promise.all([
-    getDraftVersioned(env, id),
-    listPaths(env, `writing/${id}/`),
-  ]);
+  const lock = await lockWritingDeletion(env, id);
+  let paths: string[];
+  let expectedHead: string;
+  try {
+    expectedHead = await branchHead(env);
+    paths = await listPaths({ ...env, GITHUB_BRANCH: expectedHead }, `writing/${id}/`);
+  } catch (error) {
+    await releaseWritingDeletionLock(env, id, lock.etag, lock.draft);
+    throw error;
+  }
   const tracked = paths.filter((path) => path.startsWith(`writing/${id}/`));
-  if (!draftVersion && !tracked.length) throw new HttpError(404, "The Writing entry is no longer available.");
+  if (!lock.draft && !tracked.length && !lock.resumed) {
+    await releaseWritingDeletionLock(env, id, lock.etag, null);
+    throw new HttpError(404, "The Writing entry is no longer available.");
+  }
   let commitSha: string | null = null;
   if (tracked.length) {
     const changes: FileChange[] = tracked.map((path) => ({ path, content: null }));
-    commitSha = await commitFiles(env, `Writing: delete ${id}`, changes);
+    try {
+      commitSha = await commitFiles(env, `Writing: delete ${id}`, changes, env.GITHUB_BRANCH, expectedHead);
+    } catch (error) {
+      await releaseWritingDeletionLock(env, id, lock.etag, lock.draft);
+      throw error;
+    }
   }
-  await deleteWritingObjects(env, id);
+  const cleanupDeferred = await deleteWritingObjects(env, id, lock.etag);
+  if (background) return { id, cleanupDeferred };
   const values = await collection(env, year);
   return {
     year,
     entries: values.entries,
     years: values.years,
     commitSha,
-    sync: sync(env, values.pending, "Writing deleted from GitHub and R2."),
+    cleanupDeferred,
+    sync: sync(env, values.pending, "Writing deleted from GitHub and private cloud storage."),
   };
 }
 
@@ -623,6 +623,14 @@ export async function publishedWritingById(env: Env, idValue: string): Promise<W
 }
 
 export async function pendingWriting(env: Env): Promise<boolean> {
+  const [expired] = await expiredWritingDeletionIds(env);
+  if (expired) {
+    try {
+      await deleteWriting(env, { year: expired.slice(0, 4), id: expired }, true);
+    } catch (error) {
+      console.warn(`Could not resume abandoned Writing deletion ${expired}.`, error);
+    }
+  }
   if (!(await hasDrafts(env))) return false;
   const values = await collection(env, writingIdNow().slice(0, 4));
   return values.pending;

@@ -7,7 +7,12 @@ import { parseWritingSource, referencedAssets, writingSourceHash } from "./writi
 import { renderMarkdown } from "./writing-markdown.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const output = path.join(root, "_site");
+const output = process.env.XAYAH_BUILD_OUTPUT
+  ? path.resolve(process.env.XAYAH_BUILD_OUTPUT)
+  : path.join(root, "_site");
+const journalSourceRoot = process.env.XAYAH_JOURNALS_ROOT
+  ? path.resolve(process.env.XAYAH_JOURNALS_ROOT)
+  : path.join(root, "journals");
 const mediaOrigin = "https://media.xayah.me";
 const siteOrigin = "https://xayah.me";
 
@@ -27,22 +32,160 @@ async function copyFile(relative) {
   await fs.copyFile(source, destination);
 }
 
-async function copyTree(relative, filter = () => true) {
-  const source = path.join(root, relative);
-  const walk = async (directory, nested = "") => {
-    for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
-      const child = path.join(directory, entry.name);
-      const next = path.join(nested, entry.name);
-      if (!filter(next, entry)) continue;
-      if (entry.isDirectory()) await walk(child, next);
-      else if (entry.isFile()) {
-        const destination = path.join(output, relative, next);
-        await fs.mkdir(path.dirname(destination), { recursive: true });
-        await fs.copyFile(child, destination);
-      }
+function exactKeys(value, required, optional = []) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const keys = Object.keys(value);
+  return required.every((key) => keys.includes(key))
+    && keys.every((key) => required.includes(key) || optional.includes(key));
+}
+
+function parseJsonModule(source, relative) {
+  const normalized = source.replaceAll("\r\n", "\n");
+  const prefix = "export default ";
+  const suffix = ";\n";
+  if (!normalized.startsWith(prefix) || !normalized.endsWith(suffix)) {
+    throw new Error(`${relative} must be a canonical JSON default-export module.`);
+  }
+  let value;
+  try {
+    value = JSON.parse(normalized.slice(prefix.length, -suffix.length));
+  } catch {
+    throw new Error(`${relative} must contain valid JSON.`);
+  }
+  if (moduleSource(value) !== normalized) {
+    throw new Error(`${relative} must be a canonical JSON default-export module.`);
+  }
+  return value;
+}
+
+function timestamp(value, label) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\+08:00$/.exec(value || "");
+  if (!match) throw new Error(`${label} must be a Singapore timestamp.`);
+  const parts = match.slice(1).map(Number);
+  const utc = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]));
+  const normalized = [utc.getUTCFullYear(), utc.getUTCMonth() + 1, utc.getUTCDate(), utc.getUTCHours(), utc.getUTCMinutes(), utc.getUTCSeconds()];
+  if (parts.some((part, index) => part !== normalized[index])) throw new Error(`${label} is not a valid date.`);
+  return `${match[1]}${match[2]}${match[3]}-${match[4]}${match[5]}${match[6]}`;
+}
+
+function validWritingId(value) {
+  const match = /^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})$/.exec(value || "");
+  if (!match) return false;
+  const parts = match.slice(1).map(Number);
+  const utc = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]));
+  return parts.every((part, index) => part === [
+    utc.getUTCFullYear(), utc.getUTCMonth() + 1, utc.getUTCDate(),
+    utc.getUTCHours(), utc.getUTCMinutes(), utc.getUTCSeconds(),
+  ][index]);
+}
+
+function validateImage(value, { year, owner, monthly = false }) {
+  if (!exactKeys(value, ["src", "alt"]) || typeof value.src !== "string" || value.src.length > 2000
+    || typeof value.alt !== "string" || value.alt.length > 5000) {
+    throw new Error(`${owner} contains an invalid image.`);
+  }
+  let url;
+  try {
+    url = new URL(value.src);
+  } catch {
+    throw new Error(`${owner} contains an unsafe image URL.`);
+  }
+  const extension = "(?:jpe?g|png|webp|gif|avif)";
+  const pathPattern = monthly
+    ? new RegExp(`^/monthly/${year}/${owner}-report-(?:[a-f0-9]{8}|[a-f0-9]{24})\\.${extension}$`)
+    : new RegExp(`^/journals/${year}/${owner}-(?:\\d{2}|[a-f0-9]{24})\\.${extension}$`);
+  if (url.origin !== mediaOrigin || url.protocol !== "https:" || url.username || url.password
+    || url.search || url.hash || value.src !== url.href || !pathPattern.test(url.pathname)) {
+    throw new Error(`${owner} contains an unsafe image URL.`);
+  }
+  return value.src;
+}
+
+function validateJournalCatalog(value) {
+  if (!exactKeys(value, ["years"]) || !Array.isArray(value.years)) {
+    throw new Error("journals/catalog.js must contain only a years array.");
+  }
+  const years = value.years;
+  if (years.some((year) => !Number.isInteger(year) || !/^\d{4}$/.test(String(year)))
+    || new Set(years).size !== years.length
+    || years.some((year, index) => index > 0 && year >= years[index - 1])) {
+    throw new Error("journals/catalog.js years must be unique four-digit integers in descending order.");
+  }
+  return years.map(String);
+}
+
+function validateJournalEntries(value, year, ids, imageSources) {
+  if (!Array.isArray(value)) throw new Error(`journals/${year}.js must export an array.`);
+  let previous = null;
+  for (const entry of value) {
+    if (!exactKeys(entry, ["id", "publishedAt", "content", "images", "relatedWriting"], ["updatedAt"])
+      || typeof entry.content !== "string" || entry.content.length > 100_000 || !Array.isArray(entry.images)) {
+      throw new Error(`journals/${year}.js contains an invalid entry.`);
     }
-  };
-  await walk(source);
+    const idMatch = /^(\d{8}-\d{6})-[a-f0-9]{4}$/.exec(entry.id || "");
+    const publishedId = timestamp(entry.publishedAt, `Journal ${entry.id} publishedAt`);
+    if (!idMatch || idMatch[1] !== publishedId || entry.id.slice(0, 4) !== year) {
+      throw new Error(`Journal ${entry.id || "entry"} has an invalid id or publication date.`);
+    }
+    if (ids.has(entry.id)) throw new Error(`Journal data contains duplicate id ${entry.id}.`);
+    ids.add(entry.id);
+    if (previous && entry.publishedAt > previous) throw new Error(`journals/${year}.js must be sorted newest first.`);
+    previous = entry.publishedAt;
+    if (!entry.content.trim() && entry.images.length === 0) throw new Error(`Journal ${entry.id} must contain text or an image.`);
+    if (entry.updatedAt !== undefined) {
+      timestamp(entry.updatedAt, `Journal ${entry.id} updatedAt`);
+      if (Date.parse(entry.updatedAt) < Date.parse(entry.publishedAt)) throw new Error(`Journal ${entry.id} updatedAt precedes publishedAt.`);
+    }
+    if (entry.relatedWriting !== null && (!exactKeys(entry.relatedWriting, ["id", "title"])
+      || !validWritingId(entry.relatedWriting.id)
+      || typeof entry.relatedWriting.title !== "string" || !entry.relatedWriting.title.trim()
+      || entry.relatedWriting.title.length > 200)) {
+      throw new Error(`Journal ${entry.id} has invalid related Writing data.`);
+    }
+    for (const image of entry.images) {
+      const src = validateImage(image, { year, owner: entry.id });
+      if (imageSources.has(src)) throw new Error(`Journal data contains duplicate image URL ${src}.`);
+      imageSources.add(src);
+    }
+  }
+}
+
+function validateMonthlyNotes(value, year, imageSources) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`journals/monthly/${year}.js must export an object.`);
+  }
+  for (const [month, note] of Object.entries(value)) {
+    if (!/^\d{4}-(?:0[1-9]|1[0-2])$/.test(month) || !month.startsWith(year)
+      || !exactKeys(note, ["note", "reportImage"], ["updatedAt"])
+      || typeof note.note !== "string" || note.note.length > 100_000) {
+      throw new Error(`Monthly note ${month} is invalid.`);
+    }
+    if (!note.note.trim() && note.reportImage === null) throw new Error(`Monthly note ${month} is empty.`);
+    if (note.updatedAt !== undefined) timestamp(note.updatedAt, `Monthly note ${month} updatedAt`);
+    if (note.reportImage !== null) {
+      const src = validateImage(note.reportImage, { year, owner: month, monthly: true });
+      if (imageSources.has(src)) throw new Error(`Journal data contains duplicate image URL ${src}.`);
+      imageSources.add(src);
+    }
+  }
+}
+
+async function readJournalModules() {
+  const catalog = parseJsonModule(await fs.readFile(path.join(journalSourceRoot, "catalog.js"), "utf8"), "journals/catalog.js");
+  const years = validateJournalCatalog(catalog);
+  const ids = new Set();
+  const imageSources = new Set();
+  const modules = [{ relative: "journals/catalog.js", value: catalog }];
+  for (const year of years) {
+    const entryRelative = `journals/${year}.js`;
+    const monthlyRelative = `journals/monthly/${year}.js`;
+    const entries = parseJsonModule(await fs.readFile(path.join(journalSourceRoot, `${year}.js`), "utf8"), entryRelative);
+    const monthly = parseJsonModule(await fs.readFile(path.join(journalSourceRoot, "monthly", `${year}.js`), "utf8"), monthlyRelative);
+    validateJournalEntries(entries, year, ids, imageSources);
+    validateMonthlyNotes(monthly, year, imageSources);
+    modules.push({ relative: entryRelative, value: entries }, { relative: monthlyRelative, value: monthly });
+  }
+  return modules;
 }
 
 function formatDate(value) {
@@ -154,11 +297,17 @@ function articleHtml(entry, rendered, assets) {
 `;
 }
 
+const journalModules = await readJournalModules();
+
 await fs.rm(output, { recursive: true, force: true });
 await fs.mkdir(output, { recursive: true });
 
 await copyFile("CNAME");
-await copyTree("journals");
+for (const { relative, value } of journalModules) {
+  const destination = path.join(output, relative);
+  await fs.mkdir(path.dirname(destination), { recursive: true });
+  await fs.writeFile(destination, moduleSource(value));
+}
 
 const generatedAssets = path.join(output, "assets", "generated");
 await fs.mkdir(generatedAssets, { recursive: true });
@@ -237,9 +386,6 @@ await Promise.all([
   fs.writeFile(path.join(generatedAssets, assetsManifest.monthlyPlansJs), monthlyPlansJsSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.monthlyPlansCss), monthlyPlansCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.katexCss), katexCssSource),
-  fs.writeFile(path.join(generatedAssets, "site-shell.css"), shellCssSource),
-  fs.writeFile(path.join(generatedAssets, "writing-reader.css"), readerCssSource),
-  fs.writeFile(path.join(generatedAssets, "katex.css"), katexCssSource),
 ]);
 const shellPlaceholder = "__SITE_SHELL_CSS__";
 const typographyPlaceholder = "__TYPOGRAPHY_CSS__";

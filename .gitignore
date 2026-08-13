@@ -3,6 +3,5 @@ __pycache__/
 *.pyc
 node_modules/
 _site/
-worker/node_modules/
 worker/.wrangler/
 worker/.dev.vars

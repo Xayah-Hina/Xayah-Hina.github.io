@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createWriting, saveWriting, uploadWritingAsset } from "../src/writing.ts";
+import { createWriting, publishWriting, saveWriting, uploadWritingAsset } from "../src/writing.ts";
 import { HttpError } from "../src/utils.ts";
 
 const id = "20260715-090945";
@@ -143,6 +143,7 @@ test("image upload rejects a MIME and magic-number mismatch", async () => {
   const request = new Request("https://xayah.me/api/writing/assets/upload", {
     method: "POST",
     body: form,
+    headers: { "Content-Length": "1024" },
   });
   try {
     await assert.rejects(
@@ -186,5 +187,82 @@ test("create keeps the id and creation time aligned when repository checks cross
   } finally {
     globalThis.Date = OriginalDate;
     restoreFetch();
+  }
+});
+
+test("image uploads require a bounded request length before multipart buffering", async () => {
+  const { env, puts } = environment();
+  const form = new FormData();
+  form.set("id", id);
+  form.set("file", new File([new Uint8Array([1, 2, 3, 4])], "fake.png", { type: "image/png" }));
+  const request = new Request("https://xayah.me/api/writing/assets/upload", { method: "POST", body: form });
+  await assert.rejects(
+    uploadWritingAsset(env, request),
+    (error: unknown) => error instanceof HttpError && error.status === 411,
+  );
+  assert.equal(puts.length, 0);
+});
+
+test("a failed concurrent publish never rolls back content-addressed public media", async () => {
+  const original = globalThis.fetch;
+  const name = `${"b".repeat(64)}.png`;
+  const publishingDraft = { ...draft, body: `## Section\n\n![Image](./${name})\n` };
+  const publicKey = `published/writing/${id}/${name}`;
+  const privateKey = `private/writing/assets/${id}/${name}`;
+  const puts: string[] = [];
+  const deletes: Array<string | string[]> = [];
+  globalThis.fetch = async (input, init = {}) => {
+    const url = new URL(String(input));
+    const method = init.method || "GET";
+    if (url.pathname.endsWith("/git/ref/heads/master")) return githubResponse({ object: { sha: "c".repeat(40) } });
+    if (url.pathname.endsWith(`/git/commits/${"c".repeat(40)}`)) {
+      return githubResponse({ sha: "c".repeat(40), tree: { sha: "t".repeat(40) } });
+    }
+    if (method === "GET" && url.pathname.endsWith(`/git/trees/${"t".repeat(40)}`)) {
+      return githubResponse({ tree: [], truncated: false });
+    }
+    if (method === "POST" && url.pathname.endsWith("/git/blobs")) return githubResponse({ sha: "b".repeat(40) }, 201);
+    if (method === "POST" && url.pathname.endsWith("/git/trees")) return githubResponse({ sha: "d".repeat(40) }, 201);
+    if (method === "POST" && url.pathname.endsWith("/git/commits")) return githubResponse({ sha: "e".repeat(40) }, 201);
+    if (method === "PATCH" && url.pathname.endsWith("/git/refs/heads/master")) {
+      return githubResponse({ message: "Reference update failed" }, 409);
+    }
+    throw new Error(`Unexpected GitHub request: ${method} ${url}`);
+  };
+  const env = {
+    CONTENT: {
+      async get(key: string) {
+        if (key === `private/writing/drafts/${id}.json`) {
+          return { etag: "draft-etag", async json() { return structuredClone(publishingDraft); } };
+        }
+        if (key === privateKey) {
+          return { body: new Uint8Array([1]), httpMetadata: { contentType: "image/png" }, customMetadata: {} };
+        }
+        return null;
+      },
+      async head() { return null; },
+      async put(key: string) { puts.push(key); return { etag: "new" }; },
+      async delete(keys: string | string[]) { deletes.push(keys); },
+      async list() { return { objects: [], truncated: false }; },
+    },
+    GITHUB_TOKEN: "test",
+    GITHUB_OWNER: "owner",
+    GITHUB_REPO: "repo",
+    GITHUB_BRANCH: "master",
+    PUBLIC_SITE_ORIGIN: "https://xayah.me",
+    DICTIONARY_ORIGIN: "https://dictionary.xayah.me",
+    DICTIONARY_GITHUB_REPO: "dictionary",
+    DICTIONARY_GITHUB_BRANCH: "master",
+    MEDIA_ORIGIN: "https://media.xayah.me",
+  } as never;
+  try {
+    await assert.rejects(
+      publishWriting(env, { year: "2026", id }),
+      (error: unknown) => error instanceof HttpError && error.status === 409,
+    );
+    assert.ok(puts.includes(publicKey));
+    assert.deepEqual(deletes, []);
+  } finally {
+    globalThis.fetch = original;
   }
 });

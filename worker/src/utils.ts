@@ -26,8 +26,29 @@ export async function readJsonObject(request: Request, maximum = 45 * 1024 * 102
   }
   let value: unknown;
   try {
-    value = await request.json();
-  } catch {
+    if (!request.body) throw new Error("missing body");
+    const reader = request.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let length = 0;
+    while (true) {
+      const { done, value: chunk } = await reader.read();
+      if (done) break;
+      length += chunk.byteLength;
+      if (length > maximum) {
+        await reader.cancel();
+        throw new HttpError(413, "The authoring request is too large.");
+      }
+      chunks.push(chunk);
+    }
+    const bytes = new Uint8Array(length);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
     throw new HttpError(400, "The authoring request is not valid JSON.");
   }
   if (!value || typeof value !== "object" || Array.isArray(value)) {

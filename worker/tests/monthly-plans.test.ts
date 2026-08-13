@@ -100,6 +100,7 @@ test("Monthly Plans create, check in, and expose a public monthly projection", a
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("cache-control"), "public, max-age=0, must-revalidate");
   const publicData = await response.json() as typeof checked;
+  assert.equal(response.headers.get("etag"), `"${publicData.revision}-${publicData.today}"`);
   assert.equal(publicData.plans[0].title, "每日练琴");
   assert.deepEqual(publicData.plans[0].completedDates, [today]);
 
@@ -111,6 +112,15 @@ test("Monthly Plans create, check in, and expose a public monthly projection", a
     month,
   );
   assert.equal(unchanged.status, 304);
+
+  const weakUnchanged = await monthlyPlansResponse(
+    env,
+    new Request(`https://xayah.me/data/monthly-plans/${month}`, {
+      headers: { "If-None-Match": `W/${response.headers.get("etag")!}` },
+    }),
+    month,
+  );
+  assert.equal(weakUnchanged.status, 304);
 });
 
 test("Monthly Plans reject stale revisions, future check-ins, and schedule exclusions", async () => {
@@ -236,4 +246,40 @@ test("an archived plan remains manageable when it has no completed schedule date
     plan: { id: archived.plans[0].id },
   });
   assert.ok(restored.plans[0].total > 0);
+});
+
+test("Monthly Plans reject duplicate archive and restore transitions", async () => {
+  const { env } = environment();
+  const today = singaporeTimestamp().slice(0, 10);
+  const month = today.slice(0, 7);
+  const created = await saveMonthlyPlan(env, {
+    mode: "create",
+    month,
+    baseRevision: "0",
+    plan: { title: "Practice", startDate: today, endDate: dateAfter(today, 7), schedule: { type: "daily" } },
+  });
+  await assert.rejects(
+    saveMonthlyPlan(env, {
+      mode: "restore",
+      month,
+      baseRevision: created.revision,
+      plan: { id: created.plans[0].id },
+    }),
+    (error: unknown) => error instanceof HttpError && error.status === 409 && /not archived/i.test(error.message),
+  );
+  const archived = await saveMonthlyPlan(env, {
+    mode: "archive",
+    month,
+    baseRevision: created.revision,
+    plan: { id: created.plans[0].id },
+  });
+  await assert.rejects(
+    saveMonthlyPlan(env, {
+      mode: "archive",
+      month,
+      baseRevision: archived.revision,
+      plan: { id: archived.plans[0].id },
+    }),
+    (error: unknown) => error instanceof HttpError && error.status === 409 && /already archived/i.test(error.message),
+  );
 });

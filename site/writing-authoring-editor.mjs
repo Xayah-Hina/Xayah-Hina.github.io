@@ -71,6 +71,9 @@ export async function createWritingComposer({
   onUploadState,
 }) {
   let silent = true;
+  let destroyed = false;
+  let changeTimer = null;
+  let destroyPromise = null;
   const crepe = new Crepe({
     root,
     defaultValue: markdown,
@@ -124,14 +127,21 @@ export async function createWritingComposer({
 
   crepe.on((listener) => {
     listener.markdownUpdated((_ctx, value) => {
-      if (!silent) onChange(value);
+      if (!destroyed && !silent) onChange(value);
     });
   });
 
+  const enableChanges = () => {
+    window.clearTimeout(changeTimer);
+    if (destroyed) return;
+    changeTimer = window.setTimeout(() => {
+      changeTimer = null;
+      if (!destroyed) silent = false;
+    }, 0);
+  };
+
   await crepe.create();
-  window.setTimeout(() => {
-    silent = false;
-  }, 0);
+  enableChanges();
 
   return {
     getMarkdown() {
@@ -141,11 +151,10 @@ export async function createWritingComposer({
       crepe.editor.action(insert(value));
     },
     replaceMarkdown(value) {
+      if (destroyed) return;
       silent = true;
       crepe.editor.action(replaceAll(value, true));
-      window.setTimeout(() => {
-        silent = false;
-      }, 0);
+      enableChanges();
     },
     focus() {
       crepe.editor.action((ctx) => ctx.get(editorViewCtx).focus());
@@ -153,9 +162,20 @@ export async function createWritingComposer({
     setReadonly(value) {
       crepe.setReadonly(value);
     },
-    destroy() {
-      crepe.destroy();
-      root.replaceChildren();
+    async destroy() {
+      if (!destroyPromise) {
+        destroyed = true;
+        window.clearTimeout(changeTimer);
+        changeTimer = null;
+        destroyPromise = (async () => {
+          try {
+            await crepe.destroy();
+          } finally {
+            root.replaceChildren();
+          }
+        })();
+      }
+      await destroyPromise;
     },
   };
 }

@@ -1389,10 +1389,12 @@
       const byId = (id) => document.getElementById(id);
       const sectionMap = new Map(Object.entries(config.sections));
       const moduleVersion = Date.now().toString();
+      const authoringRequestTimeout = 8000;
       let authoringSession = false;
       const writingEntriesByYear = new Map();
       const writingLoadPromises = new Map();
       const writingLoadErrors = new Map();
+      let writingDataGeneration = 0;
       const journalEntriesByYear = new Map();
       const journalMonthlyByYear = new Map();
       const journalLoadPromises = new Map();
@@ -1494,6 +1496,21 @@
         const url = new URL(path, location.href);
         url.searchParams.set("v", version);
         return import(url.href);
+      }
+
+      async function fetchAuthoringJson(path, options = {}) {
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), authoringRequestTimeout);
+        try {
+          const response = await fetch(path, { ...options, signal: controller.signal });
+          const result = response.type === "opaqueredirect" ? null : await response.json();
+          return { response, result };
+        } catch (error) {
+          if (error?.name === "AbortError") throw new Error("Cloud authoring request timed out.");
+          throw error;
+        } finally {
+          window.clearTimeout(timeout);
+        }
       }
 
       function normalizeYears(value) {
@@ -1636,6 +1653,7 @@
         if (writingLoadPromises.has(year)) return writingLoadPromises.get(year);
 
         writingLoadErrors.delete(year);
+        const generation = writingDataGeneration;
         const source = authoringSession
           ? fetch(`/api/writing/year/${year}`, { cache: "no-store" }).then(async (response) => {
               const result = await response.json();
@@ -1645,15 +1663,19 @@
           : importDataModule(`writing/${year}.js`).then((module) => module.default);
         const promise = source
           .then((value) => {
+            if (generation !== writingDataGeneration) return loadWritingYear(year);
             const entries = validateWritingEntries(value, year);
             writingEntriesByYear.set(year, entries);
             return entries;
           })
           .catch((error) => {
+            if (generation !== writingDataGeneration) return loadWritingYear(year);
             writingLoadErrors.set(year, error);
             throw error;
           })
-          .finally(() => writingLoadPromises.delete(year));
+          .finally(() => {
+            if (writingLoadPromises.get(year) === promise) writingLoadPromises.delete(year);
+          });
 
         writingLoadPromises.set(year, promise);
         return promise;
@@ -1686,6 +1708,7 @@
             return entries;
           })
           .catch((error) => {
+            if (generation !== journalDataGeneration) return loadJournalYear(year);
             journalLoadErrors.set(year, error);
             throw error;
           })
@@ -2233,13 +2256,12 @@
         });
 
         try {
-          const sessionResponse = await fetch("/api/session", {
+          const { response: sessionResponse, result: session } = await fetchAuthoringJson("/api/session", {
             cache: "no-store",
             credentials: "same-origin",
             redirect: "manual"
           });
           if (!sessionResponse.ok || sessionResponse.type === "opaqueredirect") return;
-          const session = await sessionResponse.json();
           if (!session.authenticated || !session.canEdit) return;
         } catch {
           return;
@@ -2250,11 +2272,11 @@
         authLink.href = "/cdn-cgi/access/logout";
 
         try {
-          const response = await fetch("/api/writing/catalog", { cache: "no-store" });
-          const result = await response.json();
+          const { response, result } = await fetchAuthoringJson("/api/writing/catalog", { cache: "no-store" });
           if (!response.ok) throw new Error(result.error || "Writing catalog could not be loaded.");
           writingYears = normalizeYears(result.years);
           yearsBySection.set("writing", writingYears);
+          writingDataGeneration += 1;
           writingEntriesByYear.clear();
           writingLoadPromises.clear();
           writingLoadErrors.clear();
@@ -2265,8 +2287,7 @@
         }
 
         try {
-          const response = await fetch("/api/journal/catalog", { cache: "no-store" });
-          const result = await response.json();
+          const { response, result } = await fetchAuthoringJson("/api/journal/catalog", { cache: "no-store" });
           if (!response.ok) throw new Error(result.error || "Journal catalog could not be loaded.");
           journalYears = normalizeYears(result.years);
           yearsBySection.set("journal", journalYears);
@@ -2450,8 +2471,7 @@
         });
 
         try {
-          const response = await fetch("/api/authoring/status", { cache: "no-store" });
-          const result = await response.json();
+          const { response, result } = await fetchAuthoringJson("/api/authoring/status", { cache: "no-store" });
           if (!response.ok) {
             throw new Error(result.error || "Cloud authoring is unavailable.");
           }
@@ -2472,7 +2492,6 @@
               : "Cloud Markdown authoring is enabled · drafts auto-save privately.",
           writingCatalogError || result.writingError ? "error" : "status", true);
           setWritingAuthoringStatus(writingInitial.message, writingInitial.kind);
-          renderArchive();
         } catch (error) {
           authoring.connected = false;
           writingAuthoring.connected = false;
@@ -2481,6 +2500,8 @@
           const message = "Cloud authoring is unavailable. Reload the page or sign in through Cloudflare Access again.";
           setAuthoringStatus(message, "error");
           setWritingAuthoringStatus(message, "error");
+        } finally {
+          renderSection();
         }
       }
 
@@ -3028,7 +3049,7 @@
         const entry = (writingEntriesByYear.get(year) || []).find((candidate) => candidate.id === id);
         if (!entry || !(await confirmDeletion(
           "Delete Writing?",
-          "This permanently removes the Markdown article, its media, and its private cloud draft."
+          "This permanently removes the Markdown article and its private cloud draft. Previously published immutable media may remain available to cached pages."
         ))) return;
 
         setWritingEditorBusy(true);
@@ -3331,13 +3352,9 @@
           journalMonthlyByYear.set(resultYear, validateJournalMonthly(result.notes, resultYear));
           if (state.section === "journal" && state.years.journal === resultYear) renderArchive();
 
-          const cleanupFailures = Array.isArray(result.cleanupFailures) ? result.cleanupFailures : [];
-          const feedback = operationSyncFeedback(result, cleanupFailures.length > 0
-            ? `Monthly note saved, but ${cleanupFailures.length} old report image could not be removed.`
-            : (result.status === "unchanged"
-              ? "No monthly note changes to save."
-              : (result.status === "cleared" ? "Monthly note cleared." : "Monthly note saved.")),
-          cleanupFailures.length > 0 ? "error" : "status");
+          const feedback = operationSyncFeedback(result, result.status === "unchanged"
+            ? "No monthly note changes to save."
+            : (result.status === "cleared" ? "Monthly note cleared." : "Monthly note saved."));
           setAuthoringStatus(feedback.message, feedback.kind);
           completed = true;
         } catch (error) {
@@ -3482,15 +3499,10 @@
           const resultYear = String(result.year || "");
           const nextYears = normalizeYears(result.years);
           const nextEntries = validateJournalEntries(result.entries, resultYear);
-          const cleanupFailures = Array.isArray(result.cleanupFailures) ? result.cleanupFailures : [];
-
           applyJournalData(resultYear, nextEntries, nextYears, result.status === "created" ? "push" : "replace");
-          const feedback = operationSyncFeedback(result, cleanupFailures.length > 0
-            ? `Journal saved, but ${cleanupFailures.length} old image file could not be removed.`
-            : (result.status === "unchanged"
-              ? "No Journal changes to save."
-              : (result.status === "updated" ? "Journal updated." : "Journal published.")),
-          cleanupFailures.length > 0 ? "error" : "status");
+          const feedback = operationSyncFeedback(result, result.status === "unchanged"
+            ? "No Journal changes to save."
+            : (result.status === "updated" ? "Journal updated." : "Journal published."));
           setAuthoringStatus(feedback.message, feedback.kind);
           completed = true;
         } catch (error) {
@@ -3507,7 +3519,7 @@
         const entry = previousEntries.find((candidate) => candidate.id === id);
         if (!entry || !(await confirmDeletion(
           "Delete Journal?",
-          "This permanently removes the Journal entry and its images from the published site."
+          "This permanently removes the Journal entry. Previously published immutable images may remain available to cached pages."
         ))) return;
 
         setAuthoringBusy(true);
@@ -3519,12 +3531,8 @@
           const nextEntries = result.entries.length > 0
             ? validateJournalEntries(result.entries, year)
             : [];
-          const cleanupFailures = Array.isArray(result.cleanupFailures) ? result.cleanupFailures : [];
           applyJournalData(year, nextEntries, nextYears, "replace");
-          const feedback = operationSyncFeedback(result, cleanupFailures.length > 0
-            ? `Journal deleted, but ${cleanupFailures.length} image file could not be removed.`
-            : "Journal deleted.",
-          cleanupFailures.length > 0 ? "error" : "status");
+          const feedback = operationSyncFeedback(result, "Journal deleted.");
           setAuthoringStatus(feedback.message, feedback.kind);
         } catch (error) {
           setAuthoringStatus(error.message || "The Journal could not be deleted.", "error");
@@ -3576,17 +3584,20 @@
 
       window.addEventListener("popstate", applyRoute);
 
-      await setupCloudAuthoring();
-      const embeddedWritingId = new URLSearchParams(location.search).get("edit-writing");
-      if (authoringSession && /^\d{8}-\d{6}$/.test(embeddedWritingId || "")) {
-        const embeddedWritingYear = embeddedWritingId.slice(0, 4);
-        if (writingYears.includes(embeddedWritingYear)) {
-          await loadWritingYear(embeddedWritingYear);
-          await openWritingEditor(embeddedWritingYear, embeddedWritingId);
-        }
-      }
       if (location.hash !== initialRoute.hash) updateRoute(initialRoute.sectionId, initialRoute.year, true);
       renderSection();
+
+      void (async () => {
+        await setupCloudAuthoring();
+        const embeddedWritingId = new URLSearchParams(location.search).get("edit-writing");
+        if (authoringSession && /^\d{8}-\d{6}$/.test(embeddedWritingId || "")) {
+          const embeddedWritingYear = embeddedWritingId.slice(0, 4);
+          if (writingYears.includes(embeddedWritingYear)) {
+            await loadWritingYear(embeddedWritingYear);
+            await openWritingEditor(embeddedWritingYear, embeddedWritingId);
+          }
+        }
+      })().catch((error) => console.error("Cloud authoring initialization failed.", error));
     })().catch((error) => {
       console.error("Writing site initialization failed.", error);
       const archiveList = document.getElementById("archive-list");

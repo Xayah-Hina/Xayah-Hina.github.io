@@ -18,6 +18,12 @@ interface GitHubContent {
   path: string;
 }
 
+interface GitHubBlob {
+  content: string;
+  encoding: string;
+  sha: string;
+}
+
 interface GitHubTree {
   tree: Array<{ path: string; type: string; sha: string }>;
   truncated: boolean;
@@ -77,10 +83,24 @@ export async function readTextFile(env: Env, path: string, branch = env.GITHUB_B
     if (!required && error instanceof HttpError && /Not Found/i.test(error.message)) return null;
     throw error;
   }
-  if (response.type !== "file" || response.encoding !== "base64" || typeof response.content !== "string") {
+  if (response.type !== "file") {
     throw new HttpError(502, `GitHub did not return file content for ${path}.`);
   }
-  return decodeUtf8Base64(response.content);
+  if (response.encoding === "base64" && typeof response.content === "string") {
+    return decodeUtf8Base64(response.content);
+  }
+
+  // The Contents API intentionally omits inline content for files larger than
+  // 1 MiB. The Git Blobs API still returns those files (up to GitHub's blob
+  // limit), so use the immutable SHA from the Contents response as a fallback.
+  if (response.sha && (!response.encoding || response.encoding === "none")) {
+    const blob = await githubRequest<GitHubBlob>(env, `${repoPath(env)}/git/blobs/${encodeURIComponent(response.sha)}`);
+    if (blob.sha !== response.sha || blob.encoding !== "base64" || typeof blob.content !== "string") {
+      throw new HttpError(502, `GitHub did not return blob content for ${path}.`);
+    }
+    return decodeUtf8Base64(blob.content);
+  }
+  throw new HttpError(502, `GitHub did not return file content for ${path}.`);
 }
 
 export async function readDataModule<T>(env: Env, path: string, branch = env.GITHUB_BRANCH, required = true): Promise<T | null> {
@@ -89,8 +109,16 @@ export async function readDataModule<T>(env: Env, path: string, branch = env.GIT
 }
 
 async function currentCommit(env: Env, branch: string): Promise<GitHubCommit> {
+  if (/^[a-f0-9]{40}$/i.test(branch)) {
+    return githubRequest<GitHubCommit>(env, `${repoPath(env)}/git/commits/${branch}`);
+  }
   const ref = await githubRequest<GitHubRef>(env, `${repoPath(env)}/git/ref/heads/${encodeURIComponent(branch)}`);
   return githubRequest<GitHubCommit>(env, `${repoPath(env)}/git/commits/${ref.object.sha}`);
+}
+
+export async function branchHead(env: Env, branch = env.GITHUB_BRANCH): Promise<string> {
+  const ref = await githubRequest<GitHubRef>(env, `${repoPath(env)}/git/ref/heads/${encodeURIComponent(branch)}`);
+  return ref.object.sha;
 }
 
 export async function listPaths(env: Env, prefix: string, branch = env.GITHUB_BRANCH): Promise<string[]> {
@@ -102,7 +130,13 @@ export async function listPaths(env: Env, prefix: string, branch = env.GITHUB_BR
     .map((entry) => entry.path);
 }
 
-export async function commitFiles(env: Env, message: string, changes: FileChange[], branch = env.GITHUB_BRANCH): Promise<string> {
+export async function commitFiles(
+  env: Env,
+  message: string,
+  changes: FileChange[],
+  branch = env.GITHUB_BRANCH,
+  expectedHead = "",
+): Promise<string> {
   if (changes.length === 0) throw new HttpError(400, "No GitHub changes were requested.");
   const paths = new Set<string>();
   for (const change of changes) {
@@ -112,7 +146,11 @@ export async function commitFiles(env: Env, message: string, changes: FileChange
     paths.add(change.path);
   }
 
-  const parent = await currentCommit(env, branch);
+  const head = await branchHead(env, branch);
+  if (expectedHead && head !== expectedHead) {
+    throw new HttpError(409, "The repository changed while this edit was open. Reload and try again.");
+  }
+  const parent = await githubRequest<GitHubCommit>(env, `${repoPath(env)}/git/commits/${head}`);
   const treeEntries = await Promise.all(changes.map(async (change) => {
     if (change.content === null) return { path: change.path, mode: "100644", type: "blob", sha: null };
     const bytes = typeof change.content === "string" ? new TextEncoder().encode(change.content) : change.content;

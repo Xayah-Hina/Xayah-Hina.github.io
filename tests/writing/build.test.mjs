@@ -35,9 +35,11 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.ok(monthlyPlansCssMatch, "homepage should load the hashed Monthly Plans styles");
   assert.ok(monthlyPlansJsMatch, "homepage should load the hashed Monthly Plans controller");
   assert.doesNotMatch(homepage, /__(?:TYPOGRAPHY_CSS|SITE_SHELL_CSS|KATEX_CSS|WRITING_AUTHORING_(?:CSS|JS)|MONTHLY_PLANS_(?:CSS|JS))__/);
-  assert.match(homepage, /fetch\("\/api\/authoring\/status"/);
+  assert.match(homepage, /fetchAuthoringJson\("\/api\/authoring\/status"/);
+  assert.match(homepage, /fetchAuthoringJson\("\/api\/session"/);
+  assert.match(homepage, /fetchAuthoringJson\("\/api\/writing\/catalog"/);
+  assert.match(homepage, /fetchAuthoringJson\("\/api\/journal\/catalog"/);
   assert.match(homepage, /fetch\(`\/api\/journal\/year\/\$\{year\}`/);
-  assert.match(homepage, /fetch\("\/api\/journal\/catalog"/);
   assert.doesNotMatch(homepage, /\/api\/editor\/status|editor\.xayah\.me/);
   assert.doesNotMatch(homepage, /class="section-switch-button"[^>]*href="\/api\/session"/);
   assert.match(homepage, /<footer class="site-footer">[\s\S]*id="auth-link" class="footer-auth-link" href="\/api\/session">Log in<\/a>/);
@@ -75,6 +77,9 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.match(monthlyPlansJs, /Monthly Plan check-in saved/);
   assert.match(monthlyPlansJs, /data\/monthly-plans/);
   assert.equal(fs.existsSync(path.join(site, "assets", "generated", "writing-preview.js")), false);
+  assert.equal(fs.existsSync(path.join(site, "assets", "generated", "site-shell.css")), false);
+  assert.equal(fs.existsSync(path.join(site, "assets", "generated", "writing-reader.css")), false);
+  assert.equal(fs.existsSync(path.join(site, "assets", "generated", "katex.css")), false);
   assert.equal(fs.existsSync(path.join(site, "dictionary")), false);
   for (const id of ids) {
     const html = fs.readFileSync(path.join(site, "writing", id, "index.html"), "utf8");
@@ -126,4 +131,20 @@ test("homepage inline scripts remain syntactically valid", () => {
     .filter((source) => source.trim());
   assert.ok(scripts.length >= 2);
   for (const source of scripts) assert.doesNotThrow(() => new Function(source));
+});
+
+test("homepage renders static content before bounded cloud authoring initialization", () => {
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  assert.match(html, /const authoringRequestTimeout = 8000;/);
+  assert.match(html, /const controller = new AbortController\(\);[\s\S]*signal: controller\.signal[\s\S]*window\.clearTimeout\(timeout\);/);
+  assert.match(html, /window\.addEventListener\("popstate", applyRoute\);[\s\S]*renderSection\(\);\s*\n\s*void \(async \(\) => \{\s*\n\s*await setupCloudAuthoring\(\);/);
+  assert.match(html, /if \(generation !== writingDataGeneration\) return loadWritingYear\(year\);[\s\S]*if \(writingLoadPromises\.get\(year\) === promise\) writingLoadPromises\.delete\(year\);/);
+  assert.match(html, /if \(generation !== journalDataGeneration\) return loadJournalYear\(year\);[\s\S]*if \(journalLoadPromises\.get\(year\) === promise\) journalLoadPromises\.delete\(year\);/);
+});
+
+test("Writing composer destruction awaits Crepe and cancels pending change timers", () => {
+  const source = fs.readFileSync(path.join(root, "site", "writing-authoring-editor.mjs"), "utf8");
+  assert.match(source, /async destroy\(\) \{[\s\S]*await crepe\.destroy\(\);[\s\S]*await destroyPromise;/);
+  assert.match(source, /destroyed = true;\s*\n\s*window\.clearTimeout\(changeTimer\);/);
+  assert.match(source, /if \(!destroyed\) silent = false;/);
 });
