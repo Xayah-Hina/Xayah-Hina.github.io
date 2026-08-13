@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260813-182415-a1b8",
+    "publishedAt": "2026-08-13T18:24:15+08:00",
+    "content": "8月12日日报\n\n做了点spectra 2.0的小修小补",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260813-152139-b9dc",
     "publishedAt": "2026-08-13T15:21:39+08:00",
     "content": "心血来潮，想构思一首新曲子，暂定名为《千帆》吧。",
