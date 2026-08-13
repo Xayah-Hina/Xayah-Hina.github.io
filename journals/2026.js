@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260813-152139-b9dc",
+    "publishedAt": "2026-08-13T15:21:39+08:00",
+    "content": "心血来潮，想构思一首新曲子，暂定名为《千帆》吧。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260813-104159-55fa",
     "publishedAt": "2026-08-13T10:41:59+08:00",
     "content": "两个小时生死时速用完了100%额度…… 真惊险QAQ",
