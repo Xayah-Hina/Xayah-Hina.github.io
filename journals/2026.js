@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260814-100837-2d2f",
+    "publishedAt": "2026-08-14T10:08:37+08:00",
+    "content": "发现了一个音频转midi的整合包，看起来还不错。\n\nhttps://github.com/mason369/music-to-midi",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260813-182415-a1b8",
     "publishedAt": "2026-08-13T18:24:15+08:00",
     "content": "8月12日日报\n\n做了点spectra 2.0的小修小补",
