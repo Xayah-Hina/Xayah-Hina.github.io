@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260814-171654-7eee",
+    "publishedAt": "2026-08-14T17:16:54+08:00",
+    "content": "8月13日日报\n\n整理了diff-solver的历史，和重构了可视化接口。考虑要不要给diff-solver也给改个名，改成类似于diff-physics或者类似于spectra这样完全全新的产品名字（HinaPE之类的）。有点纠结。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260814-100837-2d2f",
     "publishedAt": "2026-08-14T10:08:37+08:00",
     "content": "发现了一个音频转midi的整合包，看起来还不错。\n\nhttps://github.com/mason369/music-to-midi",
