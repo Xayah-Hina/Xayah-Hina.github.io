@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260815-202943-920c",
+    "publishedAt": "2026-08-15T20:29:43+08:00",
+    "content": "8月14日日报\n\nspectra volume",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260815-125509-b4dc",
     "publishedAt": "2026-08-15T12:55:09+08:00",
     "content": "考虑一下用Vulkan + Slang写神经网络",
