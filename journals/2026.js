@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260816-020819-7462",
+    "publishedAt": "2026-08-16T02:08:19+08:00",
+    "content": "明天要好好计划一下工作。Token还剩34%，20号中午才会刷新，剩下四天半要好好整理一下了不要大动干戈加feature了。剩下token额度全给review吧。对了，Spectra   2.0 Documentation也可以开始动笔了。\n\n另外，下半月开始每天要给论文阅读定kpi了，还是要精读要有成果。静下心来一点一点做事。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260816-020319-6928",
     "publishedAt": "2026-08-16T02:03:19+08:00",
     "content": "8月15日日报\n\nspectra接上了 neural field 和 particle fluid 和 hybrid fluid 的可视化。仔细想想应该只剩下最后一个可微任务的可视化还没做吧？等把可微这块做完应该就只剩下把Editor打磨得更好用的细节了。\n\n接下来对于Token的需求会骤降了，需要把重心移动到读paper/练琴打谱上面来了。但是以防Tibo又猝不及防地reset，还是得好好想想该怎么充分利用剩下的token了。（是否应该深入学一下Stable Diffusion的native CUDA写法呢？感觉这技术很虚无飘渺但是又感觉是未来趋势不得不学，哎要不还是先搁置吧做主线要紧…… 想想还是把token放到复现论文这条路线上来吧）\n\nps：工欲善其事必先利其器，可视化平台从毕业那会开始就一直想做，直到Agent时代才慢慢最终找到答案…… 唉，只能说生不逢时。",
