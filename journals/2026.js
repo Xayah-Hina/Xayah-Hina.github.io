@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260815-231702-1620",
+    "publishedAt": "2026-08-15T23:17:02+08:00",
+    "content": "有点纠结，究竟是要做大而全的physics库还是做单独算法的呢？\n\n感觉还是比较倾向于做单独算法的那种……",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260815-202943-920c",
     "publishedAt": "2026-08-15T20:29:43+08:00",
     "content": "8月14日日报\n\nspectra volume",
