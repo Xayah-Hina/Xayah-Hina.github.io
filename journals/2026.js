@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260817-211433-38be",
+    "publishedAt": "2026-08-17T21:14:33+08:00",
+    "content": "8月16日日报\n\n没什么干劲儿…… 休息一天",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260816-020819-7462",
     "publishedAt": "2026-08-16T02:08:19+08:00",
     "content": "明天要好好计划一下工作。Token还剩34%，20号中午才会刷新，剩下四天半要好好整理一下了不要大动干戈加feature了。剩下token额度全给review吧。对了，Spectra   2.0 Documentation也可以开始动笔了。\n\n另外，下半月开始每天要给论文阅读定kpi了，还是要精读要有成果。静下心来一点一点做事。",
