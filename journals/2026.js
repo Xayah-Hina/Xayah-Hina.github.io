@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260819-123945-9592",
+    "publishedAt": "2026-08-19T12:39:45+08:00",
+    "content": "原来20岁的时候就想到的事情，今天才能意识到真实的意义。\n\n不选择，也是一种选择。不选择，也要承担后果。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260819-121106-122c",
     "publishedAt": "2026-08-19T12:11:06+08:00",
     "content": "8月18日日报\n\n还是决定ALL in ONE的模式了，适合统一管理升级架构。开启physica新篇章~\n\nhttps://github.com/Xayah-Graphics/physica",
