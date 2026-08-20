@@ -2,9 +2,10 @@ export default [
   {
     "id": "20260821-030448-8893",
     "publishedAt": "2026-08-21T03:04:48+08:00",
-    "content": "8月20日日报\n\n基本快完成基础的整套physica了（物理部分比想象中的快好多……）。",
+    "content": "8月20日日报\n\n基本快完成基础的整套physica了（物理部分比想象中的快好多……）。\n\n得好好计划一下下一阶段的核心目标是什么了。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "updatedAt": "2026-08-21T03:22:21+08:00"
   },
   {
     "id": "20260820-203605-8fe4",
