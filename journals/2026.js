@@ -7,13 +7,10 @@ export default [
       {
         "src": "https://media.xayah.me/journals/2026/20260822-233826-4b06-f50392f8a9bb111986216075.png",
         "alt": "https://github.com/Xayah-Graphics/physica"
-      },
-      {
-        "src": "https://media.xayah.me/journals/2026/20260822-233826-4b06-0983ebf56c668141c46df284.png",
-        "alt": "https://github.com/Xayah-Graphics/spectra"
       }
     ],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "updatedAt": "2026-08-22T23:39:12+08:00"
   },
   {
     "id": "20260822-233524-ba5a",
