@@ -1,5 +1,21 @@
 export default [
   {
+    "id": "20260822-233826-4b06",
+    "publishedAt": "2026-08-22T23:38:26+08:00",
+    "content": "给physica设计好了icon和banner。还是比较满意的…… 工作间隙就爱上GitHub看一眼嘿嘿。",
+    "images": [
+      {
+        "src": "https://media.xayah.me/journals/2026/20260822-233826-4b06-f50392f8a9bb111986216075.png",
+        "alt": "https://github.com/Xayah-Graphics/physica"
+      },
+      {
+        "src": "https://media.xayah.me/journals/2026/20260822-233826-4b06-0983ebf56c668141c46df284.png",
+        "alt": "https://github.com/Xayah-Graphics/spectra"
+      }
+    ],
+    "relatedWriting": null
+  },
+  {
     "id": "20260822-233524-ba5a",
     "publishedAt": "2026-08-22T23:35:24+08:00",
     "content": "8月21日日报\n\n迷惘。不太清楚下一步该不该做keyframe smoke复现，也不太清楚怎么做。",
