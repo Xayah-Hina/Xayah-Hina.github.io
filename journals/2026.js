@@ -163,8 +163,14 @@ export default [
     "id": "20260812-012921-f2fb",
     "publishedAt": "2026-08-12T01:29:21+08:00",
     "content": "8月11日日报\n\nSpectra 2.0 Release，并且设计了新icon和banner。\nhttps://github.com/Xayah-Graphics/spectra/releases/tag/v2.0.0",
-    "images": [],
-    "relatedWriting": null
+    "images": [
+      {
+        "src": "https://media.xayah.me/journals/2026/20260812-012921-f2fb-735e13516a1ab7dfe2f7ce42.png",
+        "alt": "https://github.com/Xayah-Graphics/spectra"
+      }
+    ],
+    "relatedWriting": null,
+    "updatedAt": "2026-08-22T23:39:55+08:00"
   },
   {
     "id": "20260811-201851-bc3e",
