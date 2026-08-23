@@ -9,7 +9,7 @@ export default [
   {
     "id": "20260822-233826-4b06",
     "publishedAt": "2026-08-22T23:38:26+08:00",
-    "content": "给physica设计好了icon和banner。还是比较满意的…… 工作间隙就爱上GitHub看一眼嘿嘿。",
+    "content": "8月22日日报\n\n给physica设计好了icon和banner。还是比较满意的…… 工作间隙就爱上GitHub看一眼嘿嘿。",
     "images": [
       {
         "src": "https://media.xayah.me/journals/2026/20260822-233826-4b06-f50392f8a9bb111986216075.png",
@@ -17,7 +17,7 @@ export default [
       }
     ],
     "relatedWriting": null,
-    "updatedAt": "2026-08-22T23:39:12+08:00"
+    "updatedAt": "2026-08-24T01:17:52+08:00"
   },
   {
     "id": "20260822-233524-ba5a",
