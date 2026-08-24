@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260824-175153-4940",
+    "publishedAt": "2026-08-24T17:51:53+08:00",
+    "content": "8月23日日报\n\n给physica做完了keyframe + adjoint两篇paper的实现以及PINFS的实现（不得不感叹Agent的进化真的太快了，真得好好重新想想新的研究范式了，现在这套coding壁垒快全没了……）。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260823-155400-f89c",
     "publishedAt": "2026-08-23T15:54:00+08:00",
     "content": "2 PM PST又要reset了……还剩70%得快点用了QAQ\n\n但是实在想不出来有什么好做了QAQ，本来想着这个周期重点看一下paper的。。。",
