@@ -95,6 +95,7 @@ test("allowlisted build produces every static article and no source artifacts", 
     assert.doesNotMatch(html, /"inLanguage"/);
     assert.match(html, /<time datetime="[^"]+">[A-Z][a-z]{2} \d{2}, \d{4}<\/time>/);
     assert.match(html, /<h1 class="writing-title">/);
+    assert.equal((html.match(/<h1\b/g) || []).length, 1, `${id} should render exactly one H1`);
     assert.match(html, /<meta name="theme-color" media="\(prefers-color-scheme: dark\)" content="#090c10">/);
     assert.match(html, new RegExp(`href="/assets/generated/${shellMatch[1].replaceAll(".", "\\.")}"`));
     assert.match(html, new RegExp(`href="/assets/generated/${typographyMatch[1].replaceAll(".", "\\.")}"`));

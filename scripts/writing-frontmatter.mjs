@@ -24,6 +24,38 @@ function normalizeText(value) {
   return String(value).replace(/\r\n?/g, "\n");
 }
 
+function comparableHeadingText(value) {
+  return String(value)
+    .replace(/[ \t]+#+[ \t]*$/, "")
+    .normalize("NFKC")
+    .replace(/[ \t]+/g, " ")
+    .trim();
+}
+
+function firstBodyHeadingMatchesTitle(body, title) {
+  const heading = /^#{1,2}[ \t]+(.+)$/m.exec(normalizeText(body));
+  return Boolean(heading && comparableHeadingText(heading[1]) === comparableHeadingText(title));
+}
+
+function normalizeWritingBody(value, title, id) {
+  const body = normalizeText(value).trim();
+  if (!body || body.length > 2_000_000) throw new Error(`Writing ${id} body is invalid.`);
+  if (firstBodyHeadingMatchesTitle(body, title)) {
+    throw new Error(`Writing ${id} body must not repeat its title as the first heading.`);
+  }
+  if (/^#[ \t]+/m.test(body)) {
+    throw new Error(`Writing ${id} body must not contain an H1 heading; the title is generated from front matter.`);
+  }
+  return `${body}\n`;
+}
+
+function serializeNormalizedWritingSource(metadata, body) {
+  const frontMatter = FRONT_MATTER_KEYS
+    .map((key) => `${key}: ${JSON.stringify(metadata[key])}`)
+    .join("\n");
+  return `---\n${frontMatter}\n---\n\n${body}`;
+}
+
 function requireString(value, label, maximum) {
   if (typeof value !== "string" || !value.trim() || value.length > maximum) {
     throw new Error(`${label} is invalid.`);
@@ -101,23 +133,14 @@ export function parseWritingSource(source, expectedId = "") {
     }
   }
   const metadata = validateWritingMetadata(frontMatter, expectedId);
-  const body = match[2].trim();
-  if (!body || body.length > 2_000_000) throw new Error(`Writing ${metadata.id} body is invalid.`);
-  if (/^#\s+/m.test(body)) throw new Error(`Writing ${metadata.id} body must not contain an H1 heading.`);
-  return { metadata, body: `${body}\n`, source: serializeWritingSource(metadata, body) };
+  const body = normalizeWritingBody(match[2], metadata.title, metadata.id);
+  return { metadata, body, source: serializeNormalizedWritingSource(metadata, body) };
 }
 
 export function serializeWritingSource(metadata, body) {
   const value = validateWritingMetadata(metadata, metadata.id);
-  const normalizedBody = normalizeText(body).trim();
-  if (!normalizedBody) {
-    throw new Error(`Writing ${value.id} body is invalid.`);
-  }
-  if (/^#\s+/m.test(normalizedBody)) throw new Error(`Writing ${value.id} body must not contain an H1 heading.`);
-  const frontMatter = FRONT_MATTER_KEYS
-    .map((key) => `${key}: ${JSON.stringify(value[key])}`)
-    .join("\n");
-  return `---\n${frontMatter}\n---\n\n${normalizedBody}\n`;
+  const normalizedBody = normalizeWritingBody(body, value.title, value.id);
+  return serializeNormalizedWritingSource(value, normalizedBody);
 }
 
 export function writingSourceHash(source) {

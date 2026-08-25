@@ -85,7 +85,7 @@
   margin-top: 0.35rem;
   font-size: 0.72rem;
   font-weight: 550;
-  content: "H1 is reserved for the article title. Use H2 instead.";
+  content: "The article title is generated from the Title field. Remove this H1; use H2 only for body sections.";
 }
 
 .writing-composer-root .milkdown .ProseMirror h2 {

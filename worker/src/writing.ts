@@ -46,6 +46,19 @@ function normalizeText(value: string): string {
   return value.replace(/\r\n?/g, "\n");
 }
 
+function comparableHeadingText(value: string): string {
+  return value
+    .replace(/[ \t]+#+[ \t]*$/, "")
+    .normalize("NFKC")
+    .replace(/[ \t]+/g, " ")
+    .trim();
+}
+
+function firstBodyHeadingMatchesTitle(body: string, title: string): boolean {
+  const heading = /^#{1,2}[ \t]+(.+)$/m.exec(normalizeText(body));
+  return Boolean(heading && comparableHeadingText(heading[1]) === comparableHeadingText(title));
+}
+
 function savedAtNow(): string {
   return new Date().toISOString();
 }
@@ -89,21 +102,30 @@ function validateMetadata(value: unknown, expectedId = ""): Omit<WritingEntry, "
   return { id, title, summary, createdAt, updatedAt, status };
 }
 
-function normalizeBody(value: unknown): string {
+function normalizeBody(value: unknown, title: string, id: string): string {
   if (typeof value !== "string") throw new HttpError(400, "Writing Markdown body is invalid.");
   const body = normalizeText(value).trim();
   if (!body || body.length > MAX_BODY) throw new HttpError(400, "Writing Markdown body is invalid or too long.");
-  if (/^#\s+/m.test(body)) throw new HttpError(400, "Writing Markdown body must not contain an H1 heading.");
+  if (firstBodyHeadingMatchesTitle(body, title)) {
+    throw new HttpError(400, `Writing ${id} body must not repeat its title as the first heading.`);
+  }
+  if (/^#[ \t]+/m.test(body)) {
+    throw new HttpError(400, "Writing Markdown body must not contain H1 headings; the title is generated separately.");
+  }
   return `${body}\n`;
+}
+
+function serializeNormalizedWriting(metadata: Omit<WritingEntry, "article">, body: string): string {
+  const frontMatter = FRONT_MATTER_KEYS
+    .map((key) => `${key}: ${JSON.stringify(metadata[key])}`)
+    .join("\n");
+  return `---\n${frontMatter}\n---\n\n${body}`;
 }
 
 function serializeWriting(entry: Omit<WritingEntry, "article">, body: string): string {
   const metadata = validateMetadata(entry, entry.id);
-  const normalizedBody = normalizeBody(body);
-  const frontMatter = FRONT_MATTER_KEYS
-    .map((key) => `${key}: ${JSON.stringify(metadata[key])}`)
-    .join("\n");
-  return `---\n${frontMatter}\n---\n\n${normalizedBody}`;
+  const normalizedBody = normalizeBody(body, metadata.title, metadata.id);
+  return serializeNormalizedWriting(metadata, normalizedBody);
 }
 
 function parseWritingSource(source: string, expectedId: string): { metadata: Omit<WritingEntry, "article">; body: string; source: string } {
@@ -144,12 +166,12 @@ function parseWritingSource(source: string, expectedId: string): { metadata: Omi
   }
   let body: string;
   try {
-    body = normalizeBody(match[2]);
+    body = normalizeBody(match[2], metadata.title, metadata.id);
   } catch (error) {
     if (error instanceof HttpError) throw new HttpError(502, error.message);
     throw error;
   }
-  return { metadata, body, source: serializeWriting(metadata, body) };
+  return { metadata, body, source: serializeNormalizedWriting(metadata, body) };
 }
 
 async function sha256(value: string | Uint8Array): Promise<string> {
@@ -164,7 +186,7 @@ function articleUrl(env: Env, id: string): string {
 
 function validateDraft(value: WritingDraft): WritingDraft {
   const metadata = validateMetadata(value, String(value.id || ""));
-  const body = normalizeBody(value.body);
+  const body = normalizeBody(value.body, metadata.title, metadata.id);
   const sourceHash = validateHash(value.sourceHash, "Stored Writing source hash");
   if (typeof value.savedAt !== "string" || Number.isNaN(Date.parse(value.savedAt))) {
     throw new HttpError(500, `Stored Writing draft ${metadata.id} has an invalid timestamp.`);
@@ -403,7 +425,6 @@ export async function saveWriting(env: Env, payload: Record<string, unknown>) {
   const title = requiredString(payload.title, "Writing title", 200);
   const summary = requiredString(payload.summary, "Writing summary", 5000);
   const status = validateStatus(payload.status);
-  const body = normalizeBody(payload.body);
   const previous = current?.draft || found.publishedArticle?.entry;
   if (!previous) throw new HttpError(404, "The Writing entry is no longer available.");
   const metadata = {
@@ -414,7 +435,8 @@ export async function saveWriting(env: Env, payload: Record<string, unknown>) {
     updatedAt: previous.updatedAt,
     status,
   };
-  const sourceHash = await sha256(serializeWriting(metadata, body));
+  const body = normalizeBody(payload.body, metadata.title, metadata.id);
+  const sourceHash = await sha256(serializeNormalizedWriting(metadata, body));
   const draft: WritingDraft = {
     ...metadata,
     body,

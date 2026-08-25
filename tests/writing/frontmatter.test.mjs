@@ -58,8 +58,24 @@ test("Front matter rejects missing, reordered, and invalid fields", () => {
   assert.throws(() => parseWritingSource(valid.replace(metadata.createdAt, "2026-07-15T09:09:44+08:00"), metadata.id), /createdAt/i);
 });
 
-test("Writing body rejects H1 and canonicalizes content-addressed image references", () => {
+test("Writing body rejects title duplication and H1 headings", () => {
+  assert.throws(
+    () => serializeWritingSource(metadata, "## A title\n\nBody."),
+    /repeat its title/i,
+  );
+  assert.throws(
+    () => serializeWritingSource(metadata, "# A title\n\nBody."),
+    /repeat its title/i,
+  );
   assert.throws(() => serializeWritingSource(metadata, "# Forbidden"), /H1/i);
+  assert.throws(
+    () => serializeWritingSource(metadata, "Introduction.\n\n## A title\n\nBody."),
+    /repeat its title/i,
+  );
+  assert.doesNotThrow(() => serializeWritingSource(metadata, "## Section\n\n## A title\n\nA legitimate later section."));
+});
+
+test("Writing assets use canonical content-addressed references", () => {
   const hash = "a".repeat(64);
   assert.deepEqual(
     referencedAssets(`![Alt](./${hash}.PNG "Caption")\n\n![Again](./${hash}.png)`),

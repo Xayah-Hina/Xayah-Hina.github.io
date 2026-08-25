@@ -2587,6 +2587,19 @@
         return editorRequest(`/api/writing/${action}`, payload);
       }
 
+      function comparableHeadingText(value) {
+        return String(value)
+          .replace(/[ \t]+#+[ \t]*$/, "")
+          .normalize("NFKC")
+          .replace(/[ \t]+/g, " ")
+          .trim();
+      }
+
+      function firstBodyHeadingMatchesTitle(body, title) {
+        const heading = /^#{1,2}[ \t]+(.+)$/m.exec(String(body).replace(/\r\n?/g, "\n"));
+        return Boolean(heading && comparableHeadingText(heading[1]) === comparableHeadingText(title));
+      }
+
       function writingEditorSnapshot() {
         if (!writingAuthoring.current) return "";
         return JSON.stringify({
@@ -2907,8 +2920,12 @@
           setWritingEditorStatus("Title, summary, and Markdown body are required.", "error");
           throw new Error("Writing fields are incomplete.");
         }
-        if (/^#\s+/m.test(payload.body)) {
-          setWritingEditorStatus("The article title is generated separately. Change H1 headings to H2.", "error");
+        if (firstBodyHeadingMatchesTitle(payload.body, payload.title)) {
+          setWritingEditorStatus("The first body heading duplicates the article title. Remove it and begin with the introduction or first section.", "error");
+          throw new Error("Writing body repeats the article title.");
+        }
+        if (/^#[ \t]+/m.test(payload.body)) {
+          setWritingEditorStatus("The article title is generated from the Title field. Remove the H1; use H2 only for body sections.", "error");
           throw new Error("Writing body contains an H1 heading.");
         }
         setWritingEditorStatus("Saving private draft...");

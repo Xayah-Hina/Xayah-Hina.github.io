@@ -21,7 +21,7 @@ status: "incomplete"
 - `id` must match the directory and filename.
 - `createdAt` must match the timestamp encoded by `id` and never changes.
 - `updatedAt` changes only on explicit Publish.
-- The page title is generated from Front matter. Body headings start at `##`; an H1 fails the build.
+- The page title is generated from Front matter and must not be repeated as the first body heading. Body headings start at `##`; an H1 fails the build.
 - Raw HTML is disabled. Use footnotes and a `## References` section instead of BibTeX/CSL.
 
 ## In-page editor

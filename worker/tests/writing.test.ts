@@ -119,6 +119,26 @@ test("save reports 409 when the conditional R2 write loses a race", async () => 
   }
 });
 
+test("save rejects a leading body heading that duplicates the Writing title", async () => {
+  const restore = installEmptyRepositoryFetch();
+  const { env, puts } = environment();
+  try {
+    await assert.rejects(
+      saveWriting(env, {
+        ...savePayload,
+        body: "## Changed title\n\nBody.",
+        baseSavedAt: draft.savedAt,
+      }),
+      (error: unknown) => error instanceof HttpError
+        && error.status === 400
+        && /repeat its title/i.test(error.message),
+    );
+    assert.equal(puts.length, 0);
+  } finally {
+    restore();
+  }
+});
+
 test("save accepts a legacy language field and removes it from the stored draft", async () => {
   const restore = installEmptyRepositoryFetch();
   const { env, puts } = environment();
