@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const site = path.join(root, "_site");
+const hanText = /\p{Script=Han}/u;
 const ids = fs.readdirSync(path.join(root, "writing"), { withFileTypes: true })
   .filter((entry) => entry.isDirectory() && /^\d{8}-\d{6}$/.test(entry.name))
   .map((entry) => entry.name)
@@ -47,6 +48,8 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.match(homepage, /class="writing-composer-root"/);
   assert.match(homepage, /data-writing-view="visual" aria-pressed="true">Visual/);
   assert.match(homepage, /data-writing-view="source" aria-pressed="false">Markdown/);
+  assert.match(homepage, /<option value="incomplete">Incomplete<\/option>/);
+  assert.match(homepage, /badge\.textContent = "Incomplete";/);
   assert.doesNotMatch(homepage, /writing-lang-input|name="lang"/);
   assert.match(homepage, /<meta name="theme-color" media="\(prefers-color-scheme: dark\)" content="#090c10">/);
   const typographyCss = fs.readFileSync(path.join(site, "assets", "generated", typographyMatch[1]), "utf8");
@@ -83,6 +86,7 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.equal(fs.existsSync(path.join(site, "dictionary")), false);
   for (const id of ids) {
     const html = fs.readFileSync(path.join(site, "writing", id, "index.html"), "utf8");
+    const source = fs.readFileSync(path.join(root, "writing", id, `${id}.md`), "utf8");
     assert.match(html, new RegExp(`<link rel="canonical" href="https://xayah\\.me/writing/${id}/">`));
     assert.match(html, /<meta name="description" content="[^"]+">/);
     assert.match(html, /<meta name="x-writing-revision" content="[a-f0-9]{64}">/);
@@ -107,6 +111,11 @@ test("allowlisted build produces every static article and no source artifacts", 
     assert.match(html, /<footer class="site-footer">[\s\S]*class="footer-auth-link" data-auth-link href="\/api\/session">Log in<\/a>/);
     assert.match(html, /In solitude, where we are least alone\./);
     assert.doesNotMatch(html, /class="writing-(?:nav|footer)"/);
+    if (/^status: "incomplete"$/m.test(source)) {
+      assert.match(html, /<span class="writing-status">Incomplete<\/span>/);
+    } else {
+      assert.doesNotMatch(html, /<span class="writing-status">/);
+    }
   }
   const catalog = fs.readFileSync(path.join(site, "writing", "catalog.js"), "utf8");
   const year = fs.readFileSync(path.join(site, "writing", "2026.js"), "utf8");
@@ -122,6 +131,19 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.equal(outputFiles.some((file) => path.basename(file).startsWith(".")), false);
   assert.equal(outputFiles.some((file) => file.includes(`${path.sep}worker${path.sep}`)), false);
   assert.equal(outputFiles.some((file) => file.includes(`${path.sep}dictionary${path.sep}`)), false);
+});
+
+test("interface source code contains no Han-script text", () => {
+  const interfaceFiles = [
+    path.join(root, "index.html"),
+    ...filesBelow(path.join(root, "site")),
+    ...filesBelow(path.join(root, "scripts")),
+    ...filesBelow(path.join(root, "worker", "src")),
+  ];
+  const violations = interfaceFiles
+    .filter((file) => hanText.test(fs.readFileSync(file, "utf8")))
+    .map((file) => path.relative(root, file));
+  assert.deepEqual(violations, []);
 });
 
 test("homepage inline scripts remain syntactically valid", () => {

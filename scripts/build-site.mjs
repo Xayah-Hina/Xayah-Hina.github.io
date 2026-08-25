@@ -209,7 +209,7 @@ function articleHtml(entry, rendered, assets) {
   const hasToc = rendered.headings.filter((heading) => heading.level === 2).length >= 3;
   const toc = hasToc ? tocMarkup(rendered.headings) : "";
   const status = metadata.status === "incomplete"
-    ? '<span class="writing-status">未完成</span>'
+    ? '<span class="writing-status">Incomplete</span>'
     : "";
   const title = `${metadata.title} - Xayah Hina`;
   const jsonLd = JSON.stringify({

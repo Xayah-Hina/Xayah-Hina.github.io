@@ -1361,7 +1361,7 @@
           <label class="field-group">
             <span class="field-label">Status</span>
             <select class="field-input writing-status-input">
-              <option value="incomplete">未完成</option>
+              <option value="incomplete">Incomplete</option>
               <option value="complete">Complete</option>
             </select>
           </label>
@@ -1887,7 +1887,7 @@
         if (entry.status === "incomplete") {
           const badge = document.createElement("span");
           badge.className = "entry-status";
-          badge.textContent = "未完成";
+          badge.textContent = "Incomplete";
           title.append(badge);
         }
 
