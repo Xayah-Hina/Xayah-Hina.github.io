@@ -578,7 +578,8 @@
     }
 
     .journal-lightbox {
-      position: relative;
+      position: fixed;
+      inset: 50% auto auto 50%;
       width: min(calc(100% - 1rem), 90rem);
       max-width: none;
       max-height: none;
@@ -588,6 +589,7 @@
       background: transparent;
       border: 0;
       box-shadow: none;
+      transform: translate(-50%, -50%);
     }
 
     .journal-lightbox::backdrop {
