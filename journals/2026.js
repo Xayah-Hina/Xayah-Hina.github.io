@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260827-175516-7deb",
+    "publishedAt": "2026-08-27T17:55:16+08:00",
+    "content": "仔细想了想还是应该克制writing的数量，writing数量一旦膨胀起来只会降低每篇writing的含金量。因此计划一下合并系列writing。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260827-171948-efc2",
     "publishedAt": "2026-08-27T17:19:48+08:00",
     "content": "\"现在改革到了攻坚阶段，没有政治体制改革的成功，经济体制改革不可能进行到底，已经取得的成果还有可能得而复失。\"",
