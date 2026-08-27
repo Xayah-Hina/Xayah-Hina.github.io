@@ -1455,7 +1455,8 @@
         dialog: null,
         image: null,
         caption: null,
-        trigger: null
+        trigger: null,
+        returnScroll: null
       };
 
       const writingAuthoring = {
@@ -2175,12 +2176,17 @@
         if (!lightbox.dialog || lightbox.dialog.open) return;
         const alt = trigger.dataset.imageAlt || "";
         lightbox.trigger = trigger;
+        lightbox.returnScroll = {
+          left: window.scrollX,
+          top: window.scrollY
+        };
         lightbox.image.src = trigger.dataset.imageSrc || "";
         lightbox.image.alt = alt;
         lightbox.caption.textContent = alt;
         lightbox.caption.hidden = !alt;
         lightbox.dialog.showModal();
-        lightbox.dialog.querySelector("[data-lightbox-action=\"close\"]").focus();
+        lightbox.dialog.querySelector("[data-lightbox-action=\"close\"]").focus({ preventScroll: true });
+        window.scrollTo(lightbox.returnScroll.left, lightbox.returnScroll.top);
       }
 
       function renderSection() {
@@ -3573,10 +3579,13 @@
       lightbox.image.addEventListener("click", () => lightbox.dialog.close());
       lightbox.dialog.addEventListener("close", () => {
         const trigger = lightbox.trigger;
+        const returnScroll = lightbox.returnScroll;
         lightbox.trigger = null;
+        lightbox.returnScroll = null;
         lightbox.image.removeAttribute("src");
         requestAnimationFrame(() => {
-          if (trigger?.isConnected) trigger.focus();
+          if (trigger?.isConnected) trigger.focus({ preventScroll: true });
+          if (returnScroll) window.scrollTo(returnScroll.left, returnScroll.top);
         });
       });
 
