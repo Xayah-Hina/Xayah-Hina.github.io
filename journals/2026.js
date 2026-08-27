@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260828-005614-3ce6",
+    "publishedAt": "2026-08-28T00:56:14+08:00",
+    "content": "血亏…… Tibo又reset了……\n\n是不是不应该在现在补充理论啊，我感觉必须时刻保持coding的状态才能不浪费token啊……\n\n想想该怎么做",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260827-222343-d548",
     "publishedAt": "2026-08-27T22:23:43+08:00",
     "content": "看完了MIT 6.S184的第一节课，讲了ODE/SDE，感觉都是已知知识QAQ。难道Diffusion Model和Physics其实很相似？Physics处理PDE而Diffusion Model用SDE，都用Euler Simulation。\n\n重点还是接下来看一下怎么准备数据集，怎么构建NNs，怎么训练吧，感觉理论上难度应该不会很大(*^_^*)。",
