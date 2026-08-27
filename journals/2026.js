@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260827-180124-bb12",
+    "publishedAt": "2026-08-27T18:01:24+08:00",
+    "content": "AI Agent井喷时期必然是发Paper的蓝海窗口期，接下来这段时间一定要好好把握住历史的机遇。\n\n“人呐就都不知道，自己就不可以预料。一个人的命运啊，当然要靠自我奋斗，但是也要考虑到历史的行程。”",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260827-175516-7deb",
     "publishedAt": "2026-08-27T17:55:16+08:00",
     "content": "仔细想了想还是应该克制writing的数量，writing数量一旦膨胀起来只会降低每篇writing的含金量。因此计划一下合并系列writing。",
