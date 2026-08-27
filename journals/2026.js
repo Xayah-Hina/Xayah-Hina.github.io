@@ -1,5 +1,15 @@
 export default [
   {
+    "id": "20260827-222343-d548",
+    "publishedAt": "2026-08-27T22:23:43+08:00",
+    "content": "看完了MIT 6.S184的第一节课，讲了ODE/SDE，感觉都是已知知识QAQ。难道Diffusion Model和Physics其实很相似？Physics处理PDE而Diffusion Model用SDE，都用Euler Simulation。\n\n重点还是接下来看一下怎么准备数据集，怎么构建NNs，怎么训练吧，感觉理论上难度应该不会很大(*^_^*)。",
+    "images": [],
+    "relatedWriting": {
+      "id": "20260827-145105",
+      "title": "MIT 6.S184 Course Note"
+    }
+  },
+  {
     "id": "20260827-180124-bb12",
     "publishedAt": "2026-08-27T18:01:24+08:00",
     "content": "AI Agent井喷时期必然是发Paper的蓝海窗口期，接下来这段时间一定要好好把握住历史的机遇。\n\n“人呐就都不知道，自己就不可以预料。一个人的命运啊，当然要靠自我奋斗，但是也要考虑到历史的行程。”",
