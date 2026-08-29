@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260830-050319-b3c4",
+    "publishedAt": "2026-08-30T05:03:19+08:00",
+    "content": "原来Quant系统代码量这么小…… 又是一个重理解的领域…… 完了这下真的用不完了……\n\n我感觉真的用Token最快的方式还是复现论文和移植项目这种确定性高的苦力活……",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260830-033249-949f",
     "publishedAt": "2026-08-30T03:32:49+08:00",
     "content": "要不真的搞一下Quant System好了。接下来\n\nPhysics + DiT + Quant这三个并行应该就能烧干Token了。",
