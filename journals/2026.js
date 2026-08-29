@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260830-033249-949f",
+    "publishedAt": "2026-08-30T03:32:49+08:00",
+    "content": "要不真的搞一下Quant System好了。接下来\n\nPhysics + DiT + Quant这三个并行应该就能烧干Token了。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260830-032416-4864",
     "publishedAt": "2026-08-30T03:24:16+08:00",
     "content": "最近的状态提醒我，Agent革命带来的低垂的果实快要摘完了，接下来还是得深耕一个领域进行精细化作业。\n\n可是剩下的Token真的不知道该怎么花了，还剩43%……\n\n一定是哪里不对，思维被局限住了。得想想还有哪些我没想到的地方要用token……",
