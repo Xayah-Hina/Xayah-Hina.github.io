@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260829-135445-6247",
+    "publishedAt": "2026-08-29T13:54:45+08:00",
+    "content": "8月28日日报\n\n休息一天",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260828-163725-9896",
     "publishedAt": "2026-08-28T16:37:25+08:00",
     "content": "8月27日日报\n\nMIT 6.S184 DAY 1。颇有感想……",
