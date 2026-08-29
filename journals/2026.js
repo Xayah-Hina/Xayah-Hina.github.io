@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260830-000226-5b2b",
+    "publishedAt": "2026-08-30T00:02:26+08:00",
+    "content": "8月29日日报\n\n整理了一下physica，做了MIT 6.S184的Lab。\n\n还是不知道coding部分要做什么啊…… 马上又要reset了…… 主要写太多没审查过的代码很容易未来要推倒重做，短时间内又不知道该怎么消耗掉剩下60%的Token……",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260829-135445-6247",
     "publishedAt": "2026-08-29T13:54:45+08:00",
     "content": "8月28日日报\n\n休息一天",
