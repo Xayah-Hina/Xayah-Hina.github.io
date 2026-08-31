@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260901-060602-afb1",
+    "publishedAt": "2026-09-01T06:06:02+08:00",
+    "content": "新的一个月，新目标！\n\n这个月正式开始推行政治体制改革！加油！同时，全面升级日报需要报告的内容。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260831-222922-f0f5",
     "publishedAt": "2026-08-31T22:29:22+08:00",
     "content": "考虑不要.spectra格式了，统一用上USD格式。",
