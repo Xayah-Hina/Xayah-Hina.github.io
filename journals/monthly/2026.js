@@ -5,8 +5,8 @@ export default {
     "updatedAt": "2026-08-01T08:38:16+08:00"
   },
   "2026-08": {
-    "note": "本月小结：\n\n1. spectra开发完成，进入稳定阶段。\n2. physica支持布料/烟雾/3D、4D重建/生成式模型。\n3. 学完了MIT 6.S184，实现了FlowDiT。\n4. quantia支持了基础的order table。",
+    "note": "本月小结：\n\n1. spectra开发完成，进入稳定阶段。\n2. physica支持布料/烟雾/3D、4D重建/生成式模型。\n3. 学完了MIT 6.S184，实现了FlowDiT。\n4. quantia支持了基础的order table。\n\n下个月目标：\n\n1. 【主线】正式推行政治体制改革。\n2. 【重要】深入理解FlowDiT，基于FlowDiT实现常规图像生成任务。\n3. 升级Spectra，全面推行USD场景表达格式。",
     "reportImage": null,
-    "updatedAt": "2026-08-31T23:30:59+08:00"
+    "updatedAt": "2026-08-31T23:34:23+08:00"
   }
 };
