@@ -1,5 +1,12 @@
 export default [
   {
+    "id": "20260831-222922-f0f5",
+    "publishedAt": "2026-08-31T22:29:22+08:00",
+    "content": "考虑不要.spectra格式了，统一用上USD格式。",
+    "images": [],
+    "relatedWriting": null
+  },
+  {
     "id": "20260831-221045-2907",
     "publishedAt": "2026-08-31T22:10:45+08:00",
     "content": "8月30日日报\n\n今天跑通了cifar10数据集的训练部分。token自由太痛苦了QAQ。",
