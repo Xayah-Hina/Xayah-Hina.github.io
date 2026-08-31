@@ -5,8 +5,8 @@ export default {
     "updatedAt": "2026-08-01T08:38:16+08:00"
   },
   "2026-08": {
-    "note": "本月小结：\n\n1. spectra开发完成，进入稳定阶段。\n2. physica支持布料/烟雾/3D、4D重建/生成式模型。\n3. 入门了Flow Matching。\n4. quantia支持了基础的order table。",
+    "note": "本月小结：\n\n1. spectra开发完成，进入稳定阶段。\n2. physica支持布料/烟雾/3D、4D重建/生成式模型。\n3. 学完了MIT 6.S184，实现了FlowDiT。\n4. quantia支持了基础的order table。",
     "reportImage": null,
-    "updatedAt": "2026-08-31T23:29:50+08:00"
+    "updatedAt": "2026-08-31T23:30:59+08:00"
   }
 };
