@@ -1,12 +1,5 @@
 export default [
   {
-    "id": "20260901-063636-450b",
-    "publishedAt": "2026-09-01T06:36:36+08:00",
-    "content": "T090101 - spectra全面支持usd场景。",
-    "images": [],
-    "relatedWriting": null
-  },
-  {
     "id": "20260901-063556-68ad",
     "publishedAt": "2026-09-01T06:35:56+08:00",
     "content": "T090101 - spectra全面支持usd场景。",
