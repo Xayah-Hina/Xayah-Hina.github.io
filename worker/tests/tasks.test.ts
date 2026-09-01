@@ -226,17 +226,48 @@ test("Previous plans can be reviewed and continued without moving history", asyn
     }),
   });
 
+  const paused = await saveTasks(env, {
+    mode: "updateProject",
+    baseRevision: "0",
+    project: {
+      id: projectId,
+      title: "FlowDiT",
+      description: "",
+      color: "#6d2e84",
+      status: "paused",
+    },
+  });
+  const review = {
+    id: dayId,
+    plan: "Finish lecture 1.",
+    outcome: "The derivation is complete; examples remain.",
+    state: "partial",
+    continueToday: true,
+    nextPlan: "Add the lecture examples.",
+  };
+  await assert.rejects(
+    saveTasks(env, {
+      mode: "updateTaskDay",
+      baseRevision: paused.revision,
+      taskDay: review,
+    }),
+    (error: unknown) => error instanceof HttpError && error.status === 400,
+  );
+  const active = await saveTasks(env, {
+    mode: "updateProject",
+    baseRevision: paused.revision,
+    project: {
+      id: projectId,
+      title: "FlowDiT",
+      description: "",
+      color: "#6d2e84",
+      status: "active",
+    },
+  });
   const continued = await saveTasks(env, {
     mode: "updateTaskDay",
-    baseRevision: "0",
-    taskDay: {
-      id: dayId,
-      plan: "Finish lecture 1.",
-      outcome: "The derivation is complete; examples remain.",
-      state: "partial",
-      continueToday: true,
-      nextPlan: "Add the lecture examples.",
-    },
+    baseRevision: active.revision,
+    taskDay: review,
   });
   assert.equal(continued.taskDays.length, 2);
   assert.equal(continued.taskDays.find((day) => day.date === previousDate)!.state, "partial");
@@ -320,4 +351,99 @@ test("Task codes increment per Project and remain stable when moved", async () =
   });
   assert.equal(moved.tasks[0]!.projectId, notes.projects[1]!.id);
   assert.equal(moved.tasks[0]!.code, `SITE-${year}-0001`);
+});
+
+test("Only active Projects accept Task changes and Projects with open Tasks cannot complete", async () => {
+  const { env } = environment();
+  const { projectResult, taskResult } = await createProjectAndTask(env);
+  const project = projectResult.projects[0]!;
+  const task = taskResult.tasks[0]!;
+
+  await assert.rejects(
+    saveTasks(env, {
+      mode: "updateProject",
+      baseRevision: taskResult.revision,
+      project: {
+        id: project.id,
+        title: project.title,
+        description: project.description,
+        color: project.color,
+        status: "completed",
+      },
+    }),
+    (error: unknown) => error instanceof HttpError && error.status === 400
+      && error.message === "Complete every open Task before completing this Project.",
+  );
+
+  const paused = await saveTasks(env, {
+    mode: "updateProject",
+    baseRevision: taskResult.revision,
+    project: {
+      id: project.id,
+      title: project.title,
+      description: project.description,
+      color: project.color,
+      status: "paused",
+    },
+  });
+  await assert.rejects(
+    saveTasks(env, {
+      mode: "createTask",
+      baseRevision: paused.revision,
+      task: { projectId: project.id, title: "Unavailable", objective: "" },
+    }),
+    (error: unknown) => error instanceof HttpError && error.status === 400,
+  );
+  await assert.rejects(
+    saveTasks(env, {
+      mode: "updateTask",
+      baseRevision: paused.revision,
+      task: { id: task.id, projectId: project.id, title: "Unavailable", objective: task.objective },
+    }),
+    (error: unknown) => error instanceof HttpError && error.status === 400,
+  );
+  await assert.rejects(
+    saveTasks(env, {
+      mode: "completeTask",
+      baseRevision: paused.revision,
+      task: { id: task.id },
+    }),
+    (error: unknown) => error instanceof HttpError && error.status === 400,
+  );
+
+  const active = await saveTasks(env, {
+    mode: "updateProject",
+    baseRevision: paused.revision,
+    project: {
+      id: project.id,
+      title: project.title,
+      description: project.description,
+      color: project.color,
+      status: "active",
+    },
+  });
+  const completedTask = await saveTasks(env, {
+    mode: "completeTask",
+    baseRevision: active.revision,
+    task: { id: task.id },
+  });
+  const completedProject = await saveTasks(env, {
+    mode: "updateProject",
+    baseRevision: completedTask.revision,
+    project: {
+      id: project.id,
+      title: project.title,
+      description: project.description,
+      color: project.color,
+      status: "completed",
+    },
+  });
+  await assert.rejects(
+    saveTasks(env, {
+      mode: "reopenTask",
+      baseRevision: completedProject.revision,
+      task: { id: task.id },
+    }),
+    (error: unknown) => error instanceof HttpError && error.status === 400,
+  );
 });

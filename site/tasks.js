@@ -371,14 +371,30 @@ function taskMeta(task, data) {
   return "Not started";
 }
 
+const PROJECT_STATUS_ORDER = { active: 0, paused: 1, completed: 2 };
+
+function orderedProjects(projects) {
+  return [...projects].sort((left, right) => PROJECT_STATUS_ORDER[left.status] - PROJECT_STATUS_ORDER[right.status]
+    || String(right.updatedAt).localeCompare(String(left.updatedAt)));
+}
+
+function availableTasks(data) {
+  const todayIds = new Set(data.taskDays.filter((taskDay) => taskDay.date === data.today).map((taskDay) => taskDay.taskId));
+  const projects = orderedProjects(data.projects.filter((project) => !project.archivedAt && project.status === "active"));
+  const projectOrder = new Map(projects.map((project, index) => [project.id, index]));
+  return data.tasks.filter((task) => !task.archivedAt && !task.completedAt && !todayIds.has(task.id)
+    && projectOrder.has(task.projectId))
+    .sort((left, right) => projectOrder.get(left.projectId) - projectOrder.get(right.projectId)
+      || left.position - right.position || left.createdAt.localeCompare(right.createdAt));
+}
+
 function todayTaskDayRow(taskDay, task, project, data, editable, index, total) {
   const item = node("li", "task-today-row");
   item.dataset.taskDayId = taskDay.id;
   item.dataset.taskId = task.id;
-  const marker = editable ? button("", "quick-complete", "task-day-marker") : node("span", "task-day-marker");
+  const marker = editable ? button("", "review-day", "task-day-marker") : node("span", "task-day-marker");
   marker.dataset.state = taskDay.state;
-  marker.setAttribute("aria-label", taskDay.state === "completed" ? `${task.title} completed today` : `Mark ${task.title} done today`);
-  if (taskDay.state !== "planned") marker.dataset.taskAction = editable ? "review-day" : "";
+  marker.setAttribute("aria-label", editable ? `Review ${task.title} for today` : `${task.title}: ${stateLabel(taskDay.state)}`);
   const copy = node("div", "task-today-copy");
   const heading = node("div", "task-row-heading");
   const title = button(task.title, "open-task", "task-row-title");
@@ -391,11 +407,8 @@ function todayTaskDayRow(taskDay, task, project, data, editable, index, total) {
   meta.append(dot, document.createTextNode(`${project.title} · ${stateLabel(taskDay.state)}`));
   copy.append(heading, plan, meta);
   item.append(marker, copy);
-  if (editable) {
+  if (editable && total > 1) {
     const actions = node("div", "task-row-actions");
-    const review = button("Review", "review-day", "task-text-button");
-    review.setAttribute("aria-label", `Review ${task.title} for today`);
-    actions.append(review);
     if (index > 0) actions.append(button("↑", "move-day-up", "task-icon-button"));
     if (index < total - 1) actions.append(button("↓", "move-day-down", "task-icon-button"));
     item.append(actions);
@@ -442,16 +455,26 @@ function todayPanel(data, editable) {
     .sort((left, right) => left.position - right.position || left.createdAt.localeCompare(right.createdAt));
   const completed = days.filter((taskDay) => taskDay.state === "completed").length;
   const partial = days.filter((taskDay) => taskDay.state === "partial").length;
+  const availableCount = editable ? availableTasks(data).length : 0;
   const tools = node("div", "task-panel-tools");
-  tools.append(node("span", "task-panel-meta", `${days.length} planned · ${completed} done${partial ? ` · ${partial} partial` : ""}`));
-  if (editable) tools.append(button("Add from Tasks", "add-from-tasks", "control-button task-section-action"));
+  tools.append(node("span", "task-panel-meta", `${days.length} ${days.length === 1 ? "task" : "tasks"} · ${completed} done${partial ? ` · ${partial} partial` : ""}`));
+  if (editable) {
+    const add = button("Add Task", "add-from-tasks", "control-button task-section-action");
+    if (!availableCount) {
+      add.disabled = true;
+      add.title = "No open Tasks are available from active Projects.";
+    }
+    tools.append(add);
+  }
   header.append(copy, tools);
   section.append(header);
   const review = reviewPanel(data, editable);
   if (review) section.append(review);
   if (!days.length) {
     const empty = node("div", "task-empty-compact");
-    empty.append(node("strong", "", "Choose what deserves your attention today."));
+    empty.append(node("strong", "", editable && !availableCount
+      ? "Create a Task in an active Project first."
+      : "Choose what deserves your attention today."));
     if (!editable) empty.append(node("span", "", "Nothing has been planned yet."));
     section.append(empty);
     return section;
@@ -468,7 +491,7 @@ function todayPanel(data, editable) {
   return section;
 }
 
-function projectTaskRow(task, project, data, editable, focused = false) {
+function projectTaskRow(task, data, focused = false) {
   const item = node("li", "task-row");
   item.dataset.taskId = task.id;
   item.dataset.taskCode = task.code;
@@ -485,12 +508,6 @@ function projectTaskRow(task, project, data, editable, focused = false) {
   heading.append(node("span", "task-row-code", task.code), title);
   copy.append(heading, node("span", "task-row-meta", taskMeta(task, data)));
   item.append(copy);
-  if (editable && !task.completedAt && project.status === "active") {
-    const todayEntry = data.taskDays.find((taskDay) => taskDay.taskId === task.id && taskDay.date === data.today);
-    const add = button(todayEntry ? "Today ✓" : "+ Today", todayEntry ? "review-day-for-task" : "add-task-today", "task-today-button");
-    add.disabled = Boolean(todayEntry);
-    item.append(add);
-  }
   return item;
 }
 
@@ -502,7 +519,10 @@ function projectCard(project, data, editable, focusedCode = "") {
   const dot = node("span", "task-project-dot");
   dot.style.setProperty("--project-color", project.color || "#2f855a");
   identity.append(dot, node("span", "task-project-key", project.key), node("h4", "task-project-title", project.title));
-  head.append(identity, node("span", "task-project-status", project.status));
+  head.append(identity);
+  if (project.archivedAt || project.status !== "active") {
+    head.append(node("span", "task-project-status", project.archivedAt ? "Archived" : project.status));
+  }
   card.append(head);
   if (project.description) card.append(node("p", "task-project-description", project.description));
   const open = data.tasks.filter((task) => task.projectId === project.id && !task.archivedAt && !task.completedAt)
@@ -511,7 +531,7 @@ function projectCard(project, data, editable, focusedCode = "") {
     .sort((left, right) => right.completedAt.localeCompare(left.completedAt));
   if (open.length) {
     const list = node("ul", "task-project-task-list");
-    for (const task of open) list.append(projectTaskRow(task, project, data, editable, task.code === focusedCode));
+    for (const task of open) list.append(projectTaskRow(task, data, task.code === focusedCode));
     card.append(list);
   } else {
     card.append(node("p", "task-project-empty", "No open Tasks."));
@@ -520,13 +540,14 @@ function projectCard(project, data, editable, focusedCode = "") {
     const details = node("details", "task-completed-group");
     const summary = node("summary", "task-completed-summary", `${completed.length} completed`);
     const list = node("ul", "task-project-task-list task-completed-list");
-    for (const task of completed) list.append(projectTaskRow(task, project, data, editable, task.code === focusedCode));
+    for (const task of completed) list.append(projectTaskRow(task, data, task.code === focusedCode));
     details.append(summary, list);
     card.append(details);
   }
-  if (editable) {
+  if (editable && !project.archivedAt) {
     const actions = node("div", "task-project-actions");
-    actions.append(button("New Task", "new-project-task"), button("Edit Project", "edit-project"));
+    if (project.status === "active") actions.append(button("New Task", "new-project-task"));
+    actions.append(button("Edit Project", "edit-project"));
     card.append(actions);
   }
   return card;
@@ -539,21 +560,19 @@ function projectsPanel(data, editable, focusedCode = "") {
   copy.append(node("h3", "task-panel-title", "Projects"));
   const focusedTask = data.tasks.find((task) => task.code === focusedCode);
   const projects = data.projects.filter((project) => !project.archivedAt || project.id === focusedTask?.projectId);
-  const active = projects.filter((project) => project.status === "active");
-  const tools = node("div", "task-panel-tools");
-  tools.append(node("span", "task-panel-meta", `${active.length} active`));
-  if (editable) tools.append(button("New Project", "new-project", "control-button task-section-action"));
-  header.append(copy, tools);
+  header.append(copy);
+  if (editable) {
+    const tools = node("div", "task-panel-tools");
+    tools.append(button("New Project", "new-project", "control-button task-section-action"));
+    header.append(tools);
+  }
   section.append(header);
   if (!projects.length) {
     section.append(node("p", "task-empty-compact", "Create a Project to build a durable Task pool."));
     return section;
   }
   const grid = node("div", "task-project-grid");
-  const order = { active: 0, paused: 1, completed: 2 };
-  projects.sort((left, right) => order[left.status] - order[right.status]
-    || String(right.updatedAt).localeCompare(String(left.updatedAt)));
-  for (const project of projects) grid.append(projectCard(project, data, editable, focusedCode));
+  for (const project of orderedProjects(projects)) grid.append(projectCard(project, data, editable, focusedCode));
   section.append(grid);
   return section;
 }
@@ -593,7 +612,7 @@ function projectDialog() {
       <label class="field-group"><span class="field-label">Description</span><textarea class="field-input field-textarea task-small-textarea" name="description" maxlength="600"></textarea></label>
       <div class="task-dialog-grid">
         <label class="field-group"><span class="field-label">Color</span><input class="field-input task-color-input" name="color" type="color" value="#2f855a"></label>
-        <label class="field-group"><span class="field-label">Status</span><select class="field-input" name="status"><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed</option></select></label>
+        <label class="field-group"><span class="field-label">Status</span><select class="field-input" name="status"><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed</option></select><span class="field-hint" data-project-status-hint></span></label>
       </div>
       <p class="editor-message" role="status"></p>
     </div>
@@ -617,12 +636,10 @@ function taskDialog() {
 
 function pickerDialog() {
   return staticDialog("task-picker-dialog", `<form class="journal-editor-form" method="dialog">
-    <header class="dialog-header"><div><h2 class="dialog-title">Add to Today</h2><p class="task-dialog-subtitle">Choose a durable Task, then define today's concrete move.</p></div><button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button></header>
+    <header class="dialog-header"><div><h2 class="dialog-title">Add to Today</h2><p class="task-dialog-subtitle">Choose a Task, then define today's concrete move.</p></div><button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button></header>
     <div class="dialog-body">
-      <label class="field-group"><span class="field-label">Find a Task</span><input class="field-input" name="search" type="search" placeholder="Search code, Task, or Project" autocomplete="off"></label>
-      <div class="task-picker-options" role="listbox"></div>
+      <div class="task-picker-options" aria-label="Available Tasks"></div>
       <div class="task-picker-plan" hidden>
-        <div class="task-picker-selected"></div>
         <label class="field-group"><span class="field-label">Today's plan</span><textarea class="field-input field-textarea task-plan-input" name="plan" maxlength="600" placeholder="What will move this Task forward today?" required></textarea></label>
       </div>
       <p class="editor-message" role="status"></p>
@@ -771,7 +788,6 @@ export function createTasksController({ canAuthor = () => false, request, confir
       editor.projectForm.elements.key.value = editor.projectForm.elements.key.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
     });
     editor.projectDialog.querySelector("[data-project-archive]").addEventListener("click", archiveProject);
-    editor.pickerForm.elements.search.addEventListener("input", renderPickerOptions);
     editor.pickerDialog.querySelector(".task-picker-options").addEventListener("click", (event) => {
       const option = event.target.closest("[data-picker-task-id]");
       if (option) selectPickerTask(option.dataset.pickerTaskId);
@@ -820,6 +836,14 @@ export function createTasksController({ canAuthor = () => false, request, confir
     editor.projectForm.elements.description.value = project?.description || "";
     editor.projectForm.elements.color.value = project?.color || "#2f855a";
     editor.projectForm.elements.status.value = project?.status || "active";
+    const openTasks = project
+      ? data.tasks.filter((task) => task.projectId === project.id && !task.archivedAt && !task.completedAt).length
+      : 0;
+    const completedOption = editor.projectForm.elements.status.querySelector('option[value="completed"]');
+    completedOption.disabled = openTasks > 0;
+    editor.projectDialog.querySelector("[data-project-status-hint]").textContent = openTasks > 0
+      ? "Complete every open Task before completing this Project."
+      : "";
     editor.projectDialog.querySelector(".dialog-title").textContent = project ? "Edit Project" : "New Project";
     editor.projectDialog.querySelector("[data-project-archive]").hidden = !project;
     dialogMessage(editor.projectForm, "", "status");
@@ -835,7 +859,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
     editor.taskForm.reset();
     const select = editor.taskForm.elements.projectId;
     select.replaceChildren();
-    for (const project of data.projects.filter((candidate) => !candidate.archivedAt)) {
+    for (const project of orderedProjects(data.projects.filter((candidate) => !candidate.archivedAt && candidate.status === "active"))) {
       const option = node("option", "", `${project.key} · ${project.title}`);
       option.value = project.id;
       select.append(option);
@@ -852,22 +876,10 @@ export function createTasksController({ canAuthor = () => false, request, confir
     editor.taskForm.elements.title.focus();
   }
 
-  function availablePickerTasks() {
-    const todayIds = new Set(data.taskDays.filter((taskDay) => taskDay.date === data.today).map((taskDay) => taskDay.taskId));
-    const projects = new Map(data.projects.map((project) => [project.id, project]));
-    return data.tasks.filter((task) => {
-      const project = projects.get(task.projectId);
-      return !task.archivedAt && !task.completedAt && !todayIds.has(task.id) && project?.status === "active" && !project.archivedAt;
-    }).sort((left, right) => {
-      const leftStats = taskStats(left, data);
-      const rightStats = taskStats(right, data);
-      return String(rightStats.lastWorked || "").localeCompare(String(leftStats.lastWorked || ""))
-        || left.position - right.position;
-    });
-  }
-
   function openPicker(taskId = "") {
     if (!canAuthor()) return;
+    const tasks = availableTasks(data);
+    if (!tasks.length) return;
     ensureEditors();
     editor.pickerTaskId = "";
     editor.pickerForm.reset();
@@ -876,50 +888,50 @@ export function createTasksController({ canAuthor = () => false, request, confir
     dialogMessage(editor.pickerForm, "", "status");
     renderPickerOptions();
     editor.pickerDialog.showModal();
-    if (taskId) selectPickerTask(taskId);
-    else editor.pickerForm.elements.search.focus();
+    const selectedId = tasks.some((task) => task.id === taskId) ? taskId : (tasks.length === 1 ? tasks[0].id : "");
+    if (selectedId) selectPickerTask(selectedId);
+    else editor.pickerDialog.querySelector("[data-picker-task-id]")?.focus();
   }
 
   function renderPickerOptions() {
     if (!editor.pickerDialog) return;
-    const query = editor.pickerForm.elements.search.value.trim().toLocaleLowerCase();
-    const projects = new Map(data.projects.map((project) => [project.id, project]));
-    const matches = availablePickerTasks().filter((task) => {
-      const project = projects.get(task.projectId);
-      return !query || [task.code, task.title, task.objective, project?.key, project?.title]
-        .filter(Boolean).join(" ").toLocaleLowerCase().includes(query);
-    }).slice(0, 10);
+    const tasks = availableTasks(data);
+    const projects = orderedProjects(data.projects.filter((project) => !project.archivedAt && project.status === "active"));
     const list = editor.pickerDialog.querySelector(".task-picker-options");
     list.replaceChildren();
-    if (!matches.length) {
-      list.append(node("p", "task-picker-empty", query ? "No matching open Tasks." : "Every open Task is already in Today."));
-      return;
-    }
-    for (const task of matches) {
-      const project = projects.get(task.projectId);
-      const option = node("button", "task-picker-option");
-      option.type = "button";
-      option.dataset.pickerTaskId = task.id;
-      option.setAttribute("role", "option");
-      const heading = node("span", "task-picker-option-heading");
+    for (const project of projects) {
+      const projectTasks = tasks.filter((task) => task.projectId === project.id);
+      if (!projectTasks.length) continue;
+      const group = node("section", "task-picker-group");
+      const groupHeading = node("div", "task-picker-group-heading");
       const dot = node("span", "task-project-dot");
       dot.style.setProperty("--project-color", project.color);
-      heading.append(dot, node("span", "task-row-code", task.code), node("strong", "", task.title));
-      option.append(heading, node("span", "task-picker-option-meta", `${project.title} · ${taskMeta(task, data)}`));
-      list.append(option);
+      groupHeading.append(dot, node("span", "task-project-key", project.key), node("strong", "", project.title));
+      group.append(groupHeading);
+      for (const task of projectTasks) {
+        const option = node("button", "task-picker-option");
+        option.type = "button";
+        option.dataset.pickerTaskId = task.id;
+        option.setAttribute("aria-pressed", "false");
+        const heading = node("span", "task-picker-option-heading");
+        heading.append(node("span", "task-row-code", task.code), node("strong", "", task.title));
+        const check = node("span", "task-picker-check", "✓");
+        check.setAttribute("aria-hidden", "true");
+        option.append(heading, node("span", "task-picker-option-meta", taskMeta(task, data)), check);
+        group.append(option);
+      }
+      list.append(group);
     }
   }
 
   function selectPickerTask(id) {
-    const task = availablePickerTasks().find((candidate) => candidate.id === id);
+    const task = availableTasks(data).find((candidate) => candidate.id === id);
     if (!task) return;
-    const project = data.projects.find((candidate) => candidate.id === task.projectId);
+    if (editor.pickerTaskId === id) return;
     editor.pickerTaskId = id;
-    const selected = editor.pickerDialog.querySelector(".task-picker-selected");
-    selected.replaceChildren();
-    const dot = node("span", "task-project-dot");
-    dot.style.setProperty("--project-color", project.color);
-    selected.append(dot, node("span", "task-row-code", task.code), node("strong", "", task.title));
+    for (const option of editor.pickerDialog.querySelectorAll("[data-picker-task-id]")) {
+      option.setAttribute("aria-pressed", String(option.dataset.pickerTaskId === id));
+    }
     editor.pickerDialog.querySelector(".task-picker-plan").hidden = false;
     editor.pickerForm.querySelector('[type="submit"]').disabled = false;
     editor.pickerForm.elements.plan.value = "";
@@ -939,6 +951,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
     editor.reviewForm.elements.outcome.value = taskDay.outcome;
     editor.reviewDialog.querySelector("[data-day-context]").textContent = `${dayLabel(taskDay.date, data.today)} · ${task.code} · ${task.title}`;
     const canContinue = taskDay.date < data.today && !task.completedAt && !task.archivedAt
+      && !project.archivedAt && project.status === "active"
       && !data.taskDays.some((candidate) => candidate.taskId === task.id && candidate.date === data.today);
     editor.reviewDialog.querySelector(".task-continue-control").hidden = !canContinue;
     editor.reviewDialog.querySelector("[data-day-remove]").hidden = !(taskDay.date === data.today && taskDay.state === "planned" && !taskDay.outcome);
@@ -1087,14 +1100,6 @@ export function createTasksController({ canAuthor = () => false, request, confir
     if (result) editor.reviewDialog.close();
   }
 
-  async function quickComplete(day) {
-    await send({
-      mode: "updateTaskDay",
-      baseRevision: data.revision,
-      taskDay: { id: day.id, plan: day.plan, outcome: day.outcome, state: "completed" }
-    });
-  }
-
   async function moveDay(day, direction) {
     const ordered = data.taskDays.filter((candidate) => candidate.date === data.today)
       .sort((left, right) => left.position - right.position || left.createdAt.localeCompare(right.createdAt));
@@ -1144,9 +1149,10 @@ export function createTasksController({ canAuthor = () => false, request, confir
     body.replaceChildren();
     if (task.objective) body.append(node("p", "task-detail-objective", task.objective));
     const actions = node("div", "task-detail-actions");
-    if (authoring.enabled) {
+    const editable = authoring.enabled && !task.archivedAt && !project.archivedAt && project.status === "active";
+    if (editable) {
       const todayEntry = data.taskDays.find((taskDay) => taskDay.taskId === task.id && taskDay.date === data.today);
-      if (!task.completedAt && !task.archivedAt && project.status === "active" && !todayEntry) {
+      if (!task.completedAt && !todayEntry) {
         const add = button("Add to Today", "detail-add-today", "control-button control-button-primary");
         add.dataset.taskId = task.id;
         actions.append(add);
@@ -1158,10 +1164,9 @@ export function createTasksController({ canAuthor = () => false, request, confir
     if (actions.childElementCount) body.append(actions);
     const statsGrid = node("div", "task-detail-stats");
     statsGrid.append(
-      detailStat("Days planned", String(stats.days.length)),
-      detailStat("Days worked", String(stats.worked.length)),
-      detailStat("Goals completed", String(stats.completed.length)),
-      detailStat("Partial days", String(stats.partial.length))
+      detailStat("Plans", String(stats.days.length)),
+      detailStat("Done", String(stats.completed.length)),
+      detailStat("Partial", String(stats.partial.length))
     );
     body.append(statsGrid);
     const activity = node("section", "task-detail-history");
@@ -1177,7 +1182,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
         top.append(node("time", "", dayLabel(taskDay.date, data.today)), node("span", `task-day-state task-day-state-${taskDay.state}`, stateLabel(taskDay.state, taskDay.date < data.today)));
         item.append(top, node("p", "task-history-plan", taskDay.plan));
         if (taskDay.outcome) item.append(node("p", "task-history-outcome", taskDay.outcome));
-        if (authoring.enabled) item.append(button("Review", "detail-review-day", "task-text-button"));
+        if (editable && !task.completedAt) item.append(button("Review", "detail-review-day", "task-text-button"));
         list.append(item);
       }
       activity.append(list);
@@ -1234,9 +1239,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
     if (action === "new-project-task") openTask(null, projectId);
     if (action === "edit-project" && project) openProject(project);
     if (action === "add-from-tasks") openPicker();
-    if (action === "add-task-today" && task) openPicker(task.id);
     if (action === "review-day" && taskDay) openDay(taskDay);
-    if (action === "quick-complete" && taskDay) void quickComplete(taskDay);
     if (action === "move-day-up" && taskDay) void moveDay(taskDay, -1);
     if (action === "move-day-down" && taskDay) void moveDay(taskDay, 1);
   }

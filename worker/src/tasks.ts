@@ -449,6 +449,10 @@ export async function saveTasks(
     const index = projects.findIndex((project) => project.id === id && !project.archivedAt);
     if (index < 0) throw new HttpError(404, "Project was not found.");
     const input = projectInput(value);
+    if (input.status === "completed"
+      && tasks.some((task) => task.projectId === id && !task.archivedAt && !task.completedAt)) {
+      throw new HttpError(400, "Complete every open Task before completing this Project.");
+    }
     if (sameProject(projects[index]!, input)) {
       return { ...publicData(current.state), status: "unchanged" };
     }
@@ -474,7 +478,8 @@ export async function saveTasks(
   } else if (mode === "createTask") {
     if (tasks.length >= MAX_TASKS) throw new HttpError(400, "The 2,000-task limit has been reached.");
     const input = taskInput(value);
-    const project = projects.find((candidate) => candidate.id === input.projectId && !candidate.archivedAt);
+    const project = projects.find((candidate) => candidate.id === input.projectId
+      && !candidate.archivedAt && candidate.status === "active");
     if (!project) throw new HttpError(400, "Task project is unavailable.");
     const task: TaskItem = {
       id: `task-${randomHex(12)}`,
@@ -492,8 +497,11 @@ export async function saveTasks(
     if (index < 0) throw new HttpError(404, "Task was not found.");
     const original = tasks[index]!;
     const input = taskInput(value);
-    const project = projects.find((candidate) => candidate.id === input.projectId && !candidate.archivedAt);
-    if (!project) throw new HttpError(400, "Task project is unavailable.");
+    const originalProject = projects.find((candidate) => candidate.id === original.projectId
+      && !candidate.archivedAt && candidate.status === "active");
+    const project = projects.find((candidate) => candidate.id === input.projectId
+      && !candidate.archivedAt && candidate.status === "active");
+    if (!originalProject || !project) throw new HttpError(400, "Task project is unavailable.");
     if (sameTask(original, input)) {
       return { ...publicData(current.state), status: "unchanged" };
     }
@@ -507,7 +515,9 @@ export async function saveTasks(
     const task = tasks.find((candidate) => candidate.id === String(value.id || "") && !candidate.archivedAt);
     if (!task) throw new HttpError(404, "Task was not found.");
     if (task.completedAt) return { ...publicData(current.state), status: "unchanged" };
-    const project = projects.find((candidate) => candidate.id === task.projectId)!;
+    const project = projects.find((candidate) => candidate.id === task.projectId
+      && !candidate.archivedAt && candidate.status === "active");
+    if (!project) throw new HttpError(400, "Task is unavailable while its Project is not active.");
     task.completedAt = timestamp;
     task.updatedAt = timestamp;
     const todayEntry = taskDays.find((taskDay) => taskDay.taskId === task.id && taskDay.date === today);
@@ -524,12 +534,18 @@ export async function saveTasks(
     const task = tasks.find((candidate) => candidate.id === String(value.id || "") && !candidate.archivedAt);
     if (!task) throw new HttpError(404, "Task was not found.");
     if (!task.completedAt) return { ...publicData(current.state), status: "unchanged" };
+    const project = projects.find((candidate) => candidate.id === task.projectId
+      && !candidate.archivedAt && candidate.status === "active");
+    if (!project) throw new HttpError(400, "Task is unavailable while its Project is not active.");
     task.completedAt = undefined;
     task.updatedAt = timestamp;
     status = "reopened";
   } else if (mode === "archiveTask") {
     const task = tasks.find((candidate) => candidate.id === String(value.id || ""));
     if (!task || task.archivedAt) throw new HttpError(404, "Task was not found.");
+    const project = projects.find((candidate) => candidate.id === task.projectId
+      && !candidate.archivedAt && candidate.status === "active");
+    if (!project) throw new HttpError(400, "Task is unavailable while its Project is not active.");
     task.archivedAt = timestamp;
     task.updatedAt = timestamp;
     status = "archived";
@@ -576,7 +592,9 @@ export async function saveTasks(
         throw new HttpError(400, "Only a reviewed previous Task Day can continue today.");
       }
       const task = tasks.find((candidate) => candidate.id === taskDay.taskId && !candidate.archivedAt && !candidate.completedAt);
-      if (!task) throw new HttpError(400, "Task is unavailable for Today.");
+      const project = task && projects.find((candidate) => candidate.id === task.projectId
+        && !candidate.archivedAt && candidate.status === "active");
+      if (!task || !project) throw new HttpError(400, "Task is unavailable for Today.");
       if (!taskDays.some((candidate) => candidate.taskId === task.id && candidate.date === today)) {
         taskDays.push({
           id: `taskday-${randomHex(12)}`,

@@ -86,12 +86,15 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.doesNotMatch(tasksJs, /Daily activity|Keep the big picture visible|Every update counts|Direction above/);
   assert.match(tasksJs, /data\/tasks/);
   assert.match(tasksJs, /schemaVersion:4/);
-  assert.match(tasksJs, /Add from Tasks/);
+  assert.match(tasksJs, /Add Task/);
+  assert.match(tasksJs, /Available Tasks/);
   assert.match(tasksJs, /Done today/);
   assert.match(tasksJs, /Objective/);
   assert.match(tasksJs, /Completed \$\{/);
   assert.match(tasksJs, /Planned today/);
   assert.match(tasksJs, /plans need.*review/);
+  assert.doesNotMatch(tasksJs, /Add from Tasks|Find a Task|Search code, Task, or Project|Today ✓|Days worked|Goals completed|quick-complete/);
+  assert.doesNotMatch(tasksCss, /task-picker-selected|task-today-button/);
   assert.doesNotMatch(tasksJs, />Schedule<|>Priority<|>In progress|clientSchema|scheduledDate|in_progress|application\/vnd\.xayah\.tasks/);
   assert.doesNotMatch(homepage, /statusRank|in_progress|scheduledDate|clientSchema/);
   assert.match(tasksJs, /Fixed after creation/);
