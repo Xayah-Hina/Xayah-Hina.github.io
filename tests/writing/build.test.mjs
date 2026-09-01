@@ -77,8 +77,11 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.match(authoringJs, /Start writing/);
   assert.match(tasksCss, /task-heatmap-weeks/);
   assert.match(tasksCss, /task-project-card/);
+  assert.match(tasksCss, /task-row-code/);
   assert.match(tasksJs, /Daily activity/);
   assert.match(tasksJs, /data\/tasks/);
+  assert.match(tasksJs, /Next code/);
+  assert.match(tasksJs, /Fixed after creation/);
   assert.equal(fs.existsSync(path.join(site, "assets", "generated", "writing-preview.js")), false);
   assert.equal(fs.existsSync(path.join(site, "assets", "generated", "site-shell.css")), false);
   assert.equal(fs.existsSync(path.join(site, "assets", "generated", "writing-reader.css")), false);

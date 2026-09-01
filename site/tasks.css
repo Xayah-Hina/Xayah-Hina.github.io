@@ -296,7 +296,22 @@ button.task-check:hover { border-color: var(--link); }
   gap: 0.12rem;
 }
 
+.task-row-heading {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.task-row-code {
+  flex: 0 0 auto;
+  color: var(--subtle);
+  font: 0.625rem/1.4 var(--font-mono);
+  letter-spacing: 0.01em;
+}
+
 .task-row-title {
+  min-width: 0;
   overflow: hidden;
   font-size: 0.8125rem;
   font-weight: 600;
@@ -372,6 +387,17 @@ button.task-row-title:hover {
   font-size: 0.8125rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.task-project-key {
+  flex: 0 0 auto;
+  padding: 0.08rem 0.3rem;
+  color: var(--subtle);
+  background: var(--code);
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  font: 0.625rem/1.35 var(--font-mono);
+  letter-spacing: 0.03em;
 }
 
 .task-project-status {
@@ -457,6 +483,34 @@ button.task-row-title:hover {
 
 .task-description-field {
   min-height: 6.5rem;
+}
+
+.task-key-field {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.task-key-field[readonly] {
+  color: var(--subtle);
+  background: var(--card);
+}
+
+.task-field-help,
+.task-code-preview {
+  color: var(--subtle);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+}
+
+.task-field-help {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.task-code-preview {
+  margin: -0.3rem 0 0;
+  font-family: var(--font-mono);
 }
 
 .task-color-field {

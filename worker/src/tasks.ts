@@ -5,6 +5,8 @@ import { asRecord, HttpError, randomHex, requiredString, singaporeTimestamp } fr
 const DATE = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
 const PROJECT_ID = /^project-[a-f0-9]{24}$/;
 const TASK_ID = /^task-[a-f0-9]{24}$/;
+const PROJECT_KEY = /^[A-Z][A-Z0-9]{1,7}$/;
+const TASK_CODE = /^([A-Z][A-Z0-9]{1,7})-(\d{4})-(\d{4})$/;
 const REVISION = /^(?:0|[a-f0-9]{32})$/;
 const COLOR = /^#[0-9a-f]{6}$/i;
 const MAX_PROJECTS = 100;
@@ -31,7 +33,7 @@ export interface PublicTaskData extends TaskState {
 
 function emptyState(): TaskState {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     revision: "0",
     updatedAt: "1970-01-01T00:00:00.000Z",
     projects: [],
@@ -61,15 +63,79 @@ function parseTimestamp(value: unknown, label: string): string {
   return value;
 }
 
-function storedProject(value: unknown): TaskProject {
+function singaporeYear(value: string): string {
+  return new Intl.DateTimeFormat("en", { year: "numeric", timeZone: "Asia/Singapore" })
+    .format(new Date(value));
+}
+
+function projectKeyBase(title: string): string | null {
+  const words = title.normalize("NFKD").match(/[A-Za-z0-9]+/g) || [];
+  if (!words.length) return null;
+  let base = words.length > 1
+    ? words.map((word) => word[0]).join("")
+    : words[0]!.slice(0, 4);
+  base = base.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!/^[A-Z]/.test(base)) base = `P${base}`;
+  if (base.length < 2) base = `${base}P`;
+  return base.slice(0, 8);
+}
+
+function uniqueProjectKey(title: string, used: Set<string>): string {
+  const base = projectKeyBase(title);
+  if (!base) {
+    for (let sequence = 1; sequence <= 9999; sequence += 1) {
+      const candidate = `P${String(sequence).padStart(2, "0")}`;
+      if (!used.has(candidate)) return candidate;
+    }
+    throw new HttpError(400, "No automatic Project key is available.");
+  }
+  if (!used.has(base)) return base;
+  for (let suffix = 2; suffix <= 9999; suffix += 1) {
+    const digits = String(suffix);
+    const candidate = `${base.slice(0, 8 - digits.length)}${digits}`;
+    if (!used.has(candidate)) return candidate;
+  }
+  throw new HttpError(400, "No automatic Project key is available.");
+}
+
+function nextTaskCode(projectKey: string, createdAt: string, tasks: TaskItem[]): string {
+  const year = singaporeYear(createdAt);
+  const prefix = `${projectKey}-${year}-`;
+  const sequence = tasks.reduce((maximum, task) => {
+    if (!task.code.startsWith(prefix)) return maximum;
+    return Math.max(maximum, Number(task.code.slice(prefix.length)) || 0);
+  }, 0) + 1;
+  if (sequence > 9999) throw new HttpError(400, `Project ${projectKey} has no Task numbers left for ${year}.`);
+  return `${prefix}${String(sequence).padStart(4, "0")}`;
+}
+
+function migrateIdentifiers(projects: TaskProject[], tasks: TaskItem[]): void {
+  const usedKeys = new Set<string>();
+  for (const project of [...projects].sort((left, right) => left.createdAt.localeCompare(right.createdAt)
+    || left.id.localeCompare(right.id))) {
+    project.key = uniqueProjectKey(project.title, usedKeys);
+    usedKeys.add(project.key);
+  }
+  const projectKeys = new Map(projects.map((project) => [project.id, project.key]));
+  const assigned: TaskItem[] = [];
+  for (const task of [...tasks].sort((left, right) => left.createdAt.localeCompare(right.createdAt)
+    || left.id.localeCompare(right.id))) {
+    task.code = nextTaskCode(projectKeys.get(task.projectId)!, task.createdAt, assigned);
+    assigned.push(task);
+  }
+}
+
+function storedProject(value: unknown, schemaVersion: 1 | 2): TaskProject {
   const record = asRecord(value, "Stored Task data contains an invalid project.");
   if (!PROJECT_ID.test(String(record.id || ""))
     || !["active", "paused", "completed"].includes(String(record.status || ""))
-    || !COLOR.test(String(record.color || ""))) {
+    || !COLOR.test(String(record.color || ""))
+    || (schemaVersion === 2 && !PROJECT_KEY.test(String(record.key || "")))) {
     throw new HttpError(500, "Stored Task data contains an invalid project.");
   }
   const project: TaskProject = {
     id: String(record.id),
+    key: schemaVersion === 2 ? String(record.key) : "",
     title: requiredString(record.title, "Stored project title", 120),
     description: requiredString(record.description, "Stored project description", 600, true),
     color: String(record.color).toLowerCase(),
@@ -82,15 +148,17 @@ function storedProject(value: unknown): TaskProject {
   return project;
 }
 
-function storedTask(value: unknown): TaskItem {
+function storedTask(value: unknown, schemaVersion: 1 | 2): TaskItem {
   const record = asRecord(value, "Stored Task data contains an invalid task.");
   if (!TASK_ID.test(String(record.id || "")) || !PROJECT_ID.test(String(record.projectId || ""))
     || !["todo", "in_progress", "done"].includes(String(record.status || ""))
-    || !["normal", "high"].includes(String(record.priority || ""))) {
+    || !["normal", "high"].includes(String(record.priority || ""))
+    || (schemaVersion === 2 && !TASK_CODE.test(String(record.code || "")))) {
     throw new HttpError(500, "Stored Task data contains an invalid task.");
   }
   const task: TaskItem = {
     id: String(record.id),
+    code: schemaVersion === 2 ? String(record.code) : "",
     projectId: String(record.projectId),
     title: requiredString(record.title, "Stored task title", 180),
     status: record.status as TaskItem["status"],
@@ -116,26 +184,37 @@ function storedActivity(value: unknown): TaskActivityDay {
 
 function validateState(value: unknown): TaskState {
   const record = asRecord(value, "Stored Task data is invalid.");
-  if (record.schemaVersion !== 1 || !REVISION.test(String(record.revision || ""))
+  if (![1, 2].includes(Number(record.schemaVersion)) || !REVISION.test(String(record.revision || ""))
     || !Array.isArray(record.projects) || record.projects.length > MAX_PROJECTS
     || !Array.isArray(record.tasks) || record.tasks.length > MAX_TASKS
     || !Array.isArray(record.activity) || record.activity.length > MAX_ACTIVITY_DAYS) {
     throw new HttpError(500, "Stored Task data is invalid.");
   }
-  const projects = record.projects.map(storedProject);
-  const tasks = record.tasks.map(storedTask);
+  const schemaVersion = Number(record.schemaVersion) as 1 | 2;
+  const projects = record.projects.map((project) => storedProject(project, schemaVersion));
+  const tasks = record.tasks.map((task) => storedTask(task, schemaVersion));
   const activity = record.activity.map(storedActivity).sort((left, right) => left.date.localeCompare(right.date));
+  if (schemaVersion === 1) migrateIdentifiers(projects, tasks);
   if (new Set(projects.map((project) => project.id)).size !== projects.length
     || new Set(tasks.map((task) => task.id)).size !== tasks.length
+    || new Set(projects.map((project) => project.key)).size !== projects.length
+    || new Set(tasks.map((task) => task.code)).size !== tasks.length
     || new Set(activity.map((day) => day.date)).size !== activity.length) {
     throw new HttpError(500, "Stored Task data contains duplicate records.");
   }
   const projectIds = new Set(projects.map((project) => project.id));
+  const projectKeys = new Set(projects.map((project) => project.key));
   if (tasks.some((task) => !projectIds.has(task.projectId))) {
     throw new HttpError(500, "Stored Task data contains an orphaned task.");
   }
+  for (const task of tasks) {
+    const match = TASK_CODE.exec(task.code);
+    if (!match || !projectKeys.has(match[1]) || match[2] !== singaporeYear(task.createdAt) || match[3] === "0000") {
+      throw new HttpError(500, "Stored Task data contains an invalid Task code.");
+    }
+  }
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     revision: String(record.revision),
     updatedAt: parseTimestamp(record.updatedAt, "Stored Task updatedAt"),
     projects,
@@ -238,8 +317,14 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
   if (mode === "createProject") {
     if (projects.length >= MAX_PROJECTS) throw new HttpError(400, "The 100-project limit has been reached.");
     const input = projectInput(value);
+    const usedKeys = new Set(projects.map((project) => project.key));
+    const requestedKey = String(value.key || "").trim().toUpperCase();
+    const key = requestedKey || uniqueProjectKey(input.title, usedKeys);
+    if (!PROJECT_KEY.test(key)) throw new HttpError(400, "Project key must contain 2–8 uppercase letters or numbers and begin with a letter.");
+    if (usedKeys.has(key)) throw new HttpError(400, `Project key ${key} is already in use.`);
     const project: TaskProject = {
       id: `project-${randomHex(12)}`,
+      key,
       ...input,
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -280,6 +365,7 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
     }
     const task: TaskItem = {
       id: `task-${randomHex(12)}`,
+      code: nextTaskCode(projects.find((project) => project.id === input.projectId)!.key, timestamp, tasks),
       ...input,
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -318,7 +404,7 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
 
   activity = addActivity(activity, completions);
   const next: TaskState = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     revision: randomHex(16),
     updatedAt: timestamp,
     projects,
@@ -337,7 +423,7 @@ export async function tasksResponse(env: Env, request: Request): Promise<Respons
   }
   const current = await versionedState(env);
   const data = publicData(current.state);
-  const etag = `"${data.revision}-${data.today}"`;
+  const etag = `"v${data.schemaVersion}-${data.revision}-${data.today}"`;
   const requestEtags = (request.headers.get("if-none-match") || "")
     .split(",").map((value) => value.trim().replace(/^W\//, ""));
   const headers = {

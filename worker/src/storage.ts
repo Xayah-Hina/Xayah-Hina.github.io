@@ -198,11 +198,11 @@ export async function expiredWritingDeletionIds(env: Env): Promise<string[]> {
 
 export async function getTaskStateVersioned(
   env: Env,
-): Promise<{ state: TaskState; etag: string } | null> {
+): Promise<{ state: unknown; etag: string } | null> {
   const object = await env.CONTENT.get(taskStateKey);
   if (!object) return null;
   try {
-    return { state: await object.json<TaskState>(), etag: object.etag };
+    return { state: await object.json<unknown>(), etag: object.etag };
   } catch {
     throw new HttpError(500, "Stored Task data is invalid.");
   }

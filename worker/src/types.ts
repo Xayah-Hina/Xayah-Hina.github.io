@@ -64,6 +64,7 @@ export interface MonthlyNote {
 
 export interface TaskProject {
   id: string;
+  key: string;
   title: string;
   description: string;
   color: string;
@@ -76,6 +77,7 @@ export interface TaskProject {
 
 export interface TaskItem {
   id: string;
+  code: string;
   projectId: string;
   title: string;
   status: "todo" | "in_progress" | "done";
@@ -94,7 +96,7 @@ export interface TaskActivityDay {
 }
 
 export interface TaskState {
-  schemaVersion: 1;
+  schemaVersion: 2;
   revision: string;
   updatedAt: string;
   projects: TaskProject[];

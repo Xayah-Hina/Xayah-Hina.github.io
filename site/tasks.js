@@ -1,4 +1,6 @@
 const DATE = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
+const PROJECT_KEY = /^[A-Z][A-Z0-9]{1,7}$/;
+const TASK_CODE = /^([A-Z][A-Z0-9]{1,7})-(\d{4})-(\d{4})$/;
 const PROJECT_STATUSES = new Set(["active", "paused", "completed"]);
 const TASK_STATUSES = new Set(["todo", "in_progress", "done"]);
 
@@ -21,7 +23,7 @@ function singaporeDate() {
 
 function emptyData() {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     revision: "0",
     today: singaporeDate(),
     updatedAt: null,
@@ -31,30 +33,101 @@ function emptyData() {
   };
 }
 
+function timestampYear(value) {
+  return new Intl.DateTimeFormat("en", { year: "numeric", timeZone: "Asia/Singapore" })
+    .format(new Date(value));
+}
+
+function projectKeyBase(title) {
+  const words = String(title || "").normalize("NFKD").match(/[A-Za-z0-9]+/g) || [];
+  if (!words.length) return null;
+  let base = words.length > 1
+    ? words.map((word) => word[0]).join("")
+    : words[0].slice(0, 4);
+  base = base.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!/^[A-Z]/.test(base)) base = `P${base}`;
+  if (base.length < 2) base = `${base}P`;
+  return base.slice(0, 8);
+}
+
+function suggestProjectKey(title, projects) {
+  const used = new Set(projects.map((project) => project.key).filter(Boolean));
+  const base = projectKeyBase(title);
+  if (!base) {
+    for (let sequence = 1; sequence <= 9999; sequence += 1) {
+      const candidate = `P${String(sequence).padStart(2, "0")}`;
+      if (!used.has(candidate)) return candidate;
+    }
+    return "";
+  }
+  if (!used.has(base)) return base;
+  for (let suffix = 2; suffix <= 9999; suffix += 1) {
+    const digits = String(suffix);
+    const candidate = `${base.slice(0, 8 - digits.length)}${digits}`;
+    if (!used.has(candidate)) return candidate;
+  }
+  return "";
+}
+
+function nextTaskCode(project, createdAt, tasks) {
+  if (!project) return "";
+  const prefix = `${project.key}-${timestampYear(createdAt)}-`;
+  const sequence = tasks.reduce((maximum, task) => task.code?.startsWith(prefix)
+    ? Math.max(maximum, Number(task.code.slice(prefix.length)) || 0)
+    : maximum, 0) + 1;
+  return `${prefix}${String(sequence).padStart(4, "0")}`;
+}
+
+function migrateIdentifiers(projects, tasks) {
+  const assignedProjects = [];
+  for (const project of [...projects].sort((left, right) => String(left.createdAt).localeCompare(String(right.createdAt))
+    || left.id.localeCompare(right.id))) {
+    project.key = suggestProjectKey(project.title, assignedProjects);
+    assignedProjects.push(project);
+  }
+  const projectsById = new Map(projects.map((project) => [project.id, project]));
+  const assignedTasks = [];
+  for (const task of [...tasks].sort((left, right) => String(left.createdAt).localeCompare(String(right.createdAt))
+    || left.id.localeCompare(right.id))) {
+    task.code = nextTaskCode(projectsById.get(task.projectId), task.createdAt, assignedTasks);
+    assignedTasks.push(task);
+  }
+}
+
 function validateData(value) {
+  const schemaVersion = Number(value?.schemaVersion);
   if (!value || typeof value !== "object" || Array.isArray(value)
-    || value.schemaVersion !== 1 || typeof value.revision !== "string"
+    || ![1, 2].includes(schemaVersion) || typeof value.revision !== "string"
     || !DATE.test(value.today || "") || !Array.isArray(value.projects)
     || !Array.isArray(value.tasks) || !Array.isArray(value.activity)) {
     throw new TypeError("Task data is invalid.");
   }
   const projectIds = new Set();
-  for (const project of value.projects) {
+  const projects = value.projects.map((project) => ({ ...project }));
+  for (const project of projects) {
     if (!project || typeof project.id !== "string" || projectIds.has(project.id)
-      || typeof project.title !== "string" || !PROJECT_STATUSES.has(project.status)) {
+      || typeof project.title !== "string" || !PROJECT_STATUSES.has(project.status)
+      || (schemaVersion === 2 && !PROJECT_KEY.test(project.key || ""))) {
       throw new TypeError("Task data contains an invalid project.");
     }
     projectIds.add(project.id);
   }
   const taskIds = new Set();
-  for (const task of value.tasks) {
+  const tasks = value.tasks.map((task) => ({ ...task }));
+  for (const task of tasks) {
     if (!task || typeof task.id !== "string" || taskIds.has(task.id)
       || !projectIds.has(task.projectId) || typeof task.title !== "string"
       || !TASK_STATUSES.has(task.status)
+      || (schemaVersion === 2 && !TASK_CODE.test(task.code || ""))
       || (task.scheduledDate !== null && !DATE.test(task.scheduledDate || ""))) {
       throw new TypeError("Task data contains an invalid task.");
     }
     taskIds.add(task.id);
+  }
+  if (schemaVersion === 1) migrateIdentifiers(projects, tasks);
+  if (new Set(projects.map((project) => project.key)).size !== projects.length
+    || new Set(tasks.map((task) => task.code)).size !== tasks.length) {
+    throw new TypeError("Task data contains duplicate identifiers.");
   }
   for (const day of value.activity) {
     if (!day || !DATE.test(day.date || "") || !Number.isInteger(day.updates)
@@ -63,12 +136,12 @@ function validateData(value) {
     }
   }
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     revision: value.revision,
     today: value.today,
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : null,
-    projects: value.projects.map((project) => ({ ...project })),
-    tasks: value.tasks.map((task) => ({ ...task })),
+    projects,
+    tasks,
     activity: value.activity.map((day) => ({ ...day }))
   };
 }
@@ -212,7 +285,9 @@ function taskRow(task, project, data, editable) {
     title.type = "button";
     title.dataset.taskAction = "edit-task";
   }
-  copy.append(title);
+  const heading = node("div", "task-row-heading");
+  heading.append(node("span", "task-row-code", task.code), title);
+  copy.append(heading);
   const meta = [
     project?.title,
     task.priority === "high" ? "High priority" : null,
@@ -264,7 +339,7 @@ function projectCard(project, data, editable) {
   const identity = node("div", "task-project-identity");
   const dot = node("span", "task-project-dot");
   dot.style.setProperty("--project-color", project.color || "#2f855a");
-  identity.append(dot, node("h4", "task-project-title", project.title));
+  identity.append(dot, node("span", "task-project-key", project.key), node("h4", "task-project-title", project.title));
   const status = node("span", "task-project-status", project.status);
   head.append(identity, status);
   card.append(head);
@@ -395,6 +470,7 @@ function dialogShell(kind) {
       <div class="dialog-body">
         ${project ? `
           <label class="field-group"><span class="field-label">Title</span><input class="field-input" name="title" maxlength="120" required></label>
+          <label class="field-group"><span class="field-label">Project key</span><input class="field-input task-key-field" name="key" maxlength="8" pattern="[A-Z][A-Z0-9]{1,7}" autocomplete="off" required><span class="task-field-help">2–8 uppercase letters or numbers. Fixed after creation.</span></label>
           <label class="field-group"><span class="field-label">Description</span><textarea class="field-textarea task-description-field" name="description" maxlength="600" placeholder="What does success look like?"></textarea></label>
           <div class="task-dialog-grid">
             <label class="field-group"><span class="field-label">Color</span><input class="field-input task-color-field" name="color" type="color" value="#2f855a"></label>
@@ -402,6 +478,7 @@ function dialogShell(kind) {
           </div>
         ` : `
           <label class="field-group"><span class="field-label">Project</span><select class="field-input" name="projectId" required></select></label>
+          <p class="task-code-preview" data-task-code-preview></p>
           <label class="field-group"><span class="field-label">Task</span><input class="field-input" name="title" maxlength="180" required></label>
           <div class="task-dialog-grid">
             <label class="field-group"><span class="field-label">Schedule</span><input class="field-input" name="scheduledDate" type="date"></label>
@@ -431,6 +508,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
     projectDialog: null,
     projectForm: null,
     projectId: "",
+    projectKeyManual: false,
     taskDialog: null,
     taskForm: null,
     taskId: ""
@@ -476,6 +554,18 @@ export function createTasksController({ canAuthor = () => false, request, confir
     if (dialog?.open && !authoring.busy) dialog.close();
   }
 
+  function updateTaskCodePreview(task = null) {
+    const target = editor.taskForm?.querySelector("[data-task-code-preview]");
+    if (!target) return;
+    if (task) {
+      target.textContent = `Code ${task.code} · Fixed after creation`;
+      return;
+    }
+    const project = data.projects.find((candidate) => candidate.id === editor.taskForm.elements.projectId.value);
+    const code = nextTaskCode(project, `${data.today}T00:00:00+08:00`, data.tasks);
+    target.textContent = code ? `Next code ${code}` : "A code will be assigned when the Task is created.";
+  }
+
   function ensureEditors() {
     if (editor.projectDialog) return;
     editor.projectDialog = dialogShell("project");
@@ -495,6 +585,18 @@ export function createTasksController({ canAuthor = () => false, request, confir
     }
     editor.projectForm.addEventListener("submit", saveProject);
     editor.taskForm.addEventListener("submit", saveTask);
+    editor.projectForm.elements.title.addEventListener("input", () => {
+      if (editor.projectId || editor.projectKeyManual) return;
+      editor.projectForm.elements.key.value = suggestProjectKey(editor.projectForm.elements.title.value, data.projects);
+    });
+    editor.projectForm.elements.key.addEventListener("input", () => {
+      editor.projectKeyManual = true;
+      const input = editor.projectForm.elements.key;
+      input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+    });
+    editor.taskForm.elements.projectId.addEventListener("change", () => {
+      updateTaskCodePreview(data.tasks.find((task) => task.id === editor.taskId) || null);
+    });
     editor.projectForm.querySelector("[data-task-dialog-archive]").addEventListener("click", archiveProject);
     editor.taskForm.querySelector("[data-task-dialog-archive]").addEventListener("click", archiveTask);
   }
@@ -503,8 +605,11 @@ export function createTasksController({ canAuthor = () => false, request, confir
     if (!canAuthor()) return;
     ensureEditors();
     editor.projectId = project?.id || "";
+    editor.projectKeyManual = false;
     editor.projectForm.reset();
     editor.projectForm.elements.title.value = project?.title || "";
+    editor.projectForm.elements.key.value = project?.key || suggestProjectKey("", data.projects);
+    editor.projectForm.elements.key.readOnly = Boolean(project);
     editor.projectForm.elements.description.value = project?.description || "";
     editor.projectForm.elements.color.value = project?.color || "#2f855a";
     editor.projectForm.elements.status.value = project?.status || "active";
@@ -523,7 +628,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
     const select = editor.taskForm.elements.projectId;
     select.replaceChildren();
     for (const project of data.projects.filter((candidate) => !candidate.archivedAt)) {
-      const option = node("option", "", project.title);
+      const option = node("option", "", `${project.key} · ${project.title}`);
       option.value = project.id;
       select.append(option);
     }
@@ -532,6 +637,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
     editor.taskForm.elements.scheduledDate.value = task?.scheduledDate || data.today;
     editor.taskForm.elements.priority.value = task?.priority || "normal";
     editor.taskForm.elements.status.value = task?.status || "todo";
+    updateTaskCodePreview(task);
     editor.taskDialog.querySelector(".dialog-title").textContent = task ? "Edit task" : "New task";
     editor.taskForm.querySelector("[data-task-dialog-archive]").hidden = !task;
     dialogMessage(editor.taskForm, "", "status");
@@ -584,6 +690,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
     if (!form.reportValidity()) return;
     const project = {
       ...(editor.projectId ? { id: editor.projectId } : {}),
+      ...(!editor.projectId ? { key: form.elements.key.value } : {}),
       title: form.elements.title.value,
       description: form.elements.description.value,
       color: form.elements.color.value,

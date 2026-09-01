@@ -47,6 +47,7 @@ test("Tasks create a project and child task, then record a completion", async ()
   });
   assert.equal(projectResult.status, "created");
   assert.equal(projectResult.projects.length, 1);
+  assert.equal(projectResult.projects[0].key, "DS");
   assert.equal(projectResult.activity[0].updates, 1);
 
   const taskResult = await saveTasks(env, {
@@ -61,6 +62,7 @@ test("Tasks create a project and child task, then record a completion", async ()
     },
   });
   assert.equal(taskResult.tasks.length, 1);
+  assert.equal(taskResult.tasks[0].code, `DS-${today.slice(0, 4)}-0001`);
 
   const completed = await saveTasks(env, {
     mode: "updateTask",
@@ -142,4 +144,99 @@ test("archiving a project also archives its open tasks", async () => {
   });
   assert.ok(archived.projects[0].archivedAt);
   assert.ok(archived.tasks[0].archivedAt);
+});
+
+test("Task codes increment per Project and year, remain stable when moved, and reject duplicate keys", async () => {
+  const { env } = environment();
+  const year = singaporeTimestamp().slice(0, 4);
+  const site = await saveTasks(env, {
+    mode: "createProject",
+    baseRevision: "0",
+    project: { key: "SITE", title: "Personal Website", description: "", color: "#2563eb", status: "active" },
+  });
+  const notes = await saveTasks(env, {
+    mode: "createProject",
+    baseRevision: site.revision,
+    project: { key: "NOTES", title: "Notes", description: "", color: "#a855f7", status: "active" },
+  });
+  const first = await saveTasks(env, {
+    mode: "createTask",
+    baseRevision: notes.revision,
+    task: { projectId: site.projects[0].id, title: "First", status: "todo", priority: "normal", scheduledDate: null },
+  });
+  const second = await saveTasks(env, {
+    mode: "createTask",
+    baseRevision: first.revision,
+    task: { projectId: site.projects[0].id, title: "Second", status: "todo", priority: "normal", scheduledDate: null },
+  });
+  assert.equal(first.tasks[0].code, `SITE-${year}-0001`);
+  assert.equal(second.tasks[1].code, `SITE-${year}-0002`);
+
+  const moved = await saveTasks(env, {
+    mode: "updateTask",
+    baseRevision: second.revision,
+    task: { ...second.tasks[0], projectId: notes.projects[1].id },
+  });
+  assert.equal(moved.tasks[0].projectId, notes.projects[1].id);
+  assert.equal(moved.tasks[0].code, `SITE-${year}-0001`);
+
+  await assert.rejects(
+    saveTasks(env, {
+      mode: "createProject",
+      baseRevision: moved.revision,
+      project: { key: "SITE", title: "Duplicate", description: "", color: "#2f855a", status: "active" },
+    }),
+    (error: unknown) => error instanceof HttpError && error.status === 400,
+  );
+});
+
+test("schema version 1 Task state receives deterministic Project keys and Task codes", async () => {
+  const { env, objects } = environment();
+  const projectId = `project-${"a".repeat(24)}`;
+  const taskId = `task-${"b".repeat(24)}`;
+  objects.set("published/tasks/state.json", {
+    etag: "etag-legacy",
+    value: JSON.stringify({
+      schemaVersion: 1,
+      revision: "0",
+      updatedAt: "2026-09-01T09:00:00+08:00",
+      projects: [{
+        id: projectId,
+        title: "Differentiable Solver",
+        description: "Research",
+        color: "#2f855a",
+        status: "active",
+        createdAt: "2026-09-01T09:00:00+08:00",
+        updatedAt: "2026-09-01T09:00:00+08:00",
+      }],
+      tasks: [{
+        id: taskId,
+        projectId,
+        title: "T090101",
+        status: "todo",
+        priority: "normal",
+        scheduledDate: null,
+        createdAt: "2026-09-01T09:01:00+08:00",
+        updatedAt: "2026-09-01T09:01:00+08:00",
+      }],
+      activity: [],
+    }),
+  });
+
+  const response = await tasksResponse(env, new Request("https://xayah.me/data/tasks"));
+  const migrated = await response.json() as Record<string, any>;
+  assert.equal(migrated.schemaVersion, 2);
+  assert.equal(migrated.projects[0].key, "DS");
+  assert.equal(migrated.tasks[0].code, "DS-2026-0001");
+  assert.equal(migrated.tasks[0].title, "T090101");
+
+  await saveTasks(env, {
+    mode: "updateTask",
+    baseRevision: migrated.revision,
+    task: { ...migrated.tasks[0], title: "Implement the solver" },
+  });
+  const stored = JSON.parse(objects.get("published/tasks/state.json")!.value);
+  assert.equal(stored.schemaVersion, 2);
+  assert.equal(stored.projects[0].key, "DS");
+  assert.equal(stored.tasks[0].code, "DS-2026-0001");
 });
