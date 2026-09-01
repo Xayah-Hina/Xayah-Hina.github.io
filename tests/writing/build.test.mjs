@@ -85,7 +85,11 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.match(tasksJs, /task-contribution-popover/);
   assert.doesNotMatch(tasksJs, /Daily activity|Keep the big picture visible|Every update counts|Direction above/);
   assert.match(tasksJs, /data\/tasks/);
-  assert.match(tasksJs, /Next code/);
+  assert.match(tasksJs, /schemaVersion:4/);
+  assert.match(tasksJs, /Add from Tasks/);
+  assert.match(tasksJs, /Done today/);
+  assert.match(tasksJs, /Objective/);
+  assert.doesNotMatch(tasksJs, />Schedule<|>Priority<|>In progress</);
   assert.match(tasksJs, /Fixed after creation/);
   assert.equal(fs.existsSync(path.join(site, "assets", "generated", "writing-preview.js")), false);
   assert.equal(fs.existsSync(path.join(site, "assets", "generated", "site-shell.css")), false);

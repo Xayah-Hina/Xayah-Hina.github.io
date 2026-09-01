@@ -87,13 +87,25 @@ export interface TaskItem {
   code: string;
   projectId: string;
   title: string;
-  status: "todo" | "in_progress" | "done";
-  priority: "normal" | "high";
-  scheduledDate: string | null;
+  objective: string;
+  position: number;
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
   archivedAt?: string;
+}
+
+export interface TaskDay {
+  id: string;
+  taskId: string;
+  date: string;
+  plan: string;
+  outcome: string;
+  state: "planned" | "completed" | "partial" | "no_progress";
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+  reviewedAt?: string;
 }
 
 export interface TaskContribution {
@@ -108,11 +120,12 @@ export interface TaskContribution {
 }
 
 export interface TaskState {
-  schemaVersion: 3;
+  schemaVersion: 4;
   revision: string;
   updatedAt: string;
   projects: TaskProject[];
   tasks: TaskItem[];
+  taskDays: TaskDay[];
   contributions: TaskContribution[];
 }
 
