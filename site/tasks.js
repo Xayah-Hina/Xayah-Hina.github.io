@@ -339,21 +339,9 @@ function page(data, authoring) {
   const top = node("header", "task-page-header");
   const copy = node("div", "task-page-copy");
   copy.append(
-    node("p", "task-eyebrow", "Projects → tasks → progress"),
     node("h2", "task-page-title", "Tasks"),
     node("p", "task-page-lede", "Keep the big picture visible, then move it forward one concrete task at a time.")
   );
-  top.append(copy);
-
-  const side = node("div", "task-page-side");
-  if (authoring.enabled) {
-    const actions = node("div", "task-page-actions");
-    const newTask = button("New task", "new-task", "control-button");
-    newTask.disabled = !data.projects.some((project) => !project.archivedAt);
-    const newProject = button("New project", "new-project", "control-button control-button-primary");
-    actions.append(newTask, newProject);
-    side.append(actions);
-  }
   const today = todayTasks(data);
   const todayDone = today.filter((task) => taskCompletedToday(task, data.today)).length;
   const activeProjects = data.projects.filter((project) => project.status === "active" && !project.archivedAt).length;
@@ -367,8 +355,19 @@ function page(data, authoring) {
     stat.append(node("strong", "task-stat-value", value), node("span", "task-stat-label", label));
     stats.append(stat);
   }
-  side.append(stats);
-  top.append(side);
+  copy.append(stats);
+  top.append(copy);
+
+  if (authoring.enabled) {
+    const side = node("div", "task-page-side");
+    const actions = node("div", "task-page-actions");
+    const newTask = button("New task", "new-task", "control-button");
+    newTask.disabled = !data.projects.some((project) => !project.archivedAt);
+    const newProject = button("New project", "new-project", "control-button control-button-primary");
+    actions.append(newTask, newProject);
+    side.append(actions);
+    top.append(side);
+  }
 
   if (authoring.message) {
     const feedback = node("p", "task-feedback", authoring.message);
