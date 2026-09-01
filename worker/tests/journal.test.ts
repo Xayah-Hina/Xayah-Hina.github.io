@@ -23,7 +23,7 @@ const entry = {
 
 function storedTaskState(taskTitle = "Canonical Task title") {
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     revision: "0",
     updatedAt: "2026-08-08T10:00:00+08:00",
     projects: [{
@@ -41,12 +41,12 @@ function storedTaskState(taskTitle = "Canonical Task title") {
       code: "SPEC-2026-0001",
       projectId: taskProjectId,
       title: taskTitle,
-      status: "todo",
-      priority: "normal",
-      scheduledDate: null,
+      objective: "",
+      position: 0,
       createdAt: "2026-08-01T10:00:00+08:00",
       updatedAt: "2026-08-01T10:00:00+08:00",
     }],
+    taskDays: [],
     contributions: [],
   };
 }

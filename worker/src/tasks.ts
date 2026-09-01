@@ -22,8 +22,6 @@ const TASK_DAY_STATES = new Set<TaskDay["state"]>(["planned", "completed", "part
 const MAX_PROJECTS = 100;
 const MAX_TASKS = 2000;
 const MAX_TASK_DAYS = 20_000;
-const MAX_LEGACY_ACTIVITY_DAYS = 730;
-const V4_ACCEPT = "application/vnd.xayah.tasks.v4+json";
 
 type TaskMode =
   | "createProject"
@@ -39,35 +37,12 @@ type TaskMode =
   | "removeTaskDay"
   | "reorderTaskDays";
 
-type StoredSchemaVersion = 1 | 2 | 3 | 4;
-
 interface VersionedTaskState {
   state: TaskState;
   etag: string | null;
-  migrated: boolean;
-}
-
-interface StoredTaskResult {
-  task: TaskItem;
-  legacyStatus: "todo" | "in_progress" | "done" | null;
-  legacyScheduledDate: string | null;
 }
 
 export interface PublicTaskData extends TaskState {
-  today: string;
-}
-
-interface LegacyPublicTaskData {
-  schemaVersion: 3;
-  revision: string;
-  updatedAt: string;
-  projects: TaskProject[];
-  tasks: Array<Omit<TaskItem, "objective" | "position"> & {
-    status: "todo" | "in_progress" | "done";
-    priority: "normal";
-    scheduledDate: string | null;
-  }>;
-  contributions: TaskContribution[];
   today: string;
 }
 
@@ -87,8 +62,7 @@ function todayInSingapore(): string {
   return singaporeTimestamp().slice(0, 10);
 }
 
-function parseDate(value: unknown, label: string, optional = false): string | null {
-  if (optional && (value === null || value === undefined || value === "")) return null;
+function parseDate(value: unknown, label: string): string {
   if (typeof value !== "string" || !DATE.test(value)) throw new HttpError(400, `${label} is invalid.`);
   const date = new Date(`${value}T00:00:00Z`);
   if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
@@ -157,33 +131,20 @@ function nextTaskCode(projectKey: string, createdAt: string, tasks: TaskItem[]):
   return `${prefix}${String(sequence).padStart(4, "0")}`;
 }
 
-function migrateIdentifiers(projects: TaskProject[], tasks: TaskItem[]): void {
-  const usedKeys = new Set<string>();
-  for (const project of [...projects].sort((left, right) => left.createdAt.localeCompare(right.createdAt)
-    || left.id.localeCompare(right.id))) {
-    project.key = uniqueProjectKey(project.title, usedKeys);
-    usedKeys.add(project.key);
-  }
-  const projectKeys = new Map(projects.map((project) => [project.id, project.key]));
-  const assigned: TaskItem[] = [];
-  for (const task of [...tasks].sort((left, right) => left.createdAt.localeCompare(right.createdAt)
-    || left.id.localeCompare(right.id))) {
-    task.code = nextTaskCode(projectKeys.get(task.projectId)!, task.createdAt, assigned);
-    assigned.push(task);
-  }
-}
-
-function storedProject(value: unknown, schemaVersion: StoredSchemaVersion): TaskProject {
+function storedProject(value: unknown): TaskProject {
   const record = asRecord(value, "Stored Task data contains an invalid project.");
+  assertOnlyKeys(record, [
+    "id", "key", "title", "description", "color", "status", "createdAt", "updatedAt", "completedAt", "archivedAt",
+  ], "Stored Project", 500);
   if (!PROJECT_ID.test(String(record.id || ""))
     || !["active", "paused", "completed"].includes(String(record.status || ""))
     || !COLOR.test(String(record.color || ""))
-    || (schemaVersion >= 2 && !PROJECT_KEY.test(String(record.key || "")))) {
+    || !PROJECT_KEY.test(String(record.key || ""))) {
     throw new HttpError(500, "Stored Task data contains an invalid project.");
   }
   const project: TaskProject = {
     id: String(record.id),
-    key: schemaVersion >= 2 ? String(record.key) : "",
+    key: String(record.key),
     title: requiredString(record.title, "Stored project title", 120),
     description: requiredString(record.description, "Stored project description", 600, true),
     color: String(record.color).toLowerCase(),
@@ -196,42 +157,35 @@ function storedProject(value: unknown, schemaVersion: StoredSchemaVersion): Task
   return project;
 }
 
-function storedTask(value: unknown, schemaVersion: StoredSchemaVersion, position: number): StoredTaskResult {
+function storedTask(value: unknown): TaskItem {
   const record = asRecord(value, "Stored Task data contains an invalid task.");
-  const legacyStatus = schemaVersion < 4 ? String(record.status || "") : null;
+  assertOnlyKeys(record, [
+    "id", "code", "projectId", "title", "objective", "position", "createdAt", "updatedAt", "completedAt", "archivedAt",
+  ], "Stored Task", 500);
   if (!TASK_ID.test(String(record.id || "")) || !PROJECT_ID.test(String(record.projectId || ""))
-    || (schemaVersion >= 2 && !TASK_CODE.test(String(record.code || "")))
-    || (schemaVersion < 4 && !["todo", "in_progress", "done"].includes(legacyStatus!))
-    || (schemaVersion < 4 && !["normal", "high"].includes(String(record.priority || "")))) {
+    || !TASK_CODE.test(String(record.code || ""))) {
     throw new HttpError(500, "Stored Task data contains an invalid task.");
   }
   const task: TaskItem = {
     id: String(record.id),
-    code: schemaVersion >= 2 ? String(record.code) : "",
+    code: String(record.code),
     projectId: String(record.projectId),
     title: requiredString(record.title, "Stored task title", 180),
-    objective: schemaVersion >= 4
-      ? requiredString(record.objective ?? "", "Stored task objective", 2000, true)
-      : "",
-    position: schemaVersion >= 4
-      ? parsePosition(record.position, "Stored task position", MAX_TASKS)
-      : position,
+    objective: requiredString(record.objective ?? "", "Stored task objective", 2000, true),
+    position: parsePosition(record.position, "Stored task position", MAX_TASKS),
     createdAt: parseTimestamp(record.createdAt, "Stored task createdAt"),
     updatedAt: parseTimestamp(record.updatedAt, "Stored task updatedAt"),
   };
   if (record.completedAt !== undefined) task.completedAt = parseTimestamp(record.completedAt, "Stored task completedAt");
   if (record.archivedAt !== undefined) task.archivedAt = parseTimestamp(record.archivedAt, "Stored task archivedAt");
-  return {
-    task,
-    legacyStatus: legacyStatus as StoredTaskResult["legacyStatus"],
-    legacyScheduledDate: schemaVersion < 4
-      ? parseDate(record.scheduledDate, "Stored task scheduledDate", true)
-      : null,
-  };
+  return task;
 }
 
 function storedTaskDay(value: unknown): TaskDay {
   const record = asRecord(value, "Stored Task data contains an invalid Task Day.");
+  assertOnlyKeys(record, [
+    "id", "taskId", "date", "plan", "outcome", "state", "position", "createdAt", "updatedAt", "reviewedAt",
+  ], "Stored Task Day", 500);
   if (!TASK_DAY_ID.test(String(record.id || "")) || !TASK_ID.test(String(record.taskId || ""))
     || !TASK_DAY_STATES.has(String(record.state || "") as TaskDay["state"])) {
     throw new HttpError(500, "Stored Task data contains an invalid Task Day.");
@@ -239,7 +193,7 @@ function storedTaskDay(value: unknown): TaskDay {
   const taskDay: TaskDay = {
     id: String(record.id),
     taskId: String(record.taskId),
-    date: parseDate(record.date, "Stored Task Day date")!,
+    date: parseDate(record.date, "Stored Task Day date"),
     plan: requiredString(record.plan, "Stored Task Day plan", 600),
     outcome: requiredString(record.outcome ?? "", "Stored Task Day outcome", 2000, true),
     state: record.state as TaskDay["state"],
@@ -249,16 +203,6 @@ function storedTaskDay(value: unknown): TaskDay {
   };
   if (record.reviewedAt !== undefined) taskDay.reviewedAt = parseTimestamp(record.reviewedAt, "Stored Task Day reviewedAt");
   return taskDay;
-}
-
-function validateLegacyActivity(value: unknown): { date: string } {
-  const record = asRecord(value, "Stored Task data contains an invalid activity day.");
-  const date = parseDate(record.date, "Stored activity date");
-  if (!Number.isInteger(record.updates) || Number(record.updates) < 0
-    || !Number.isInteger(record.completions) || Number(record.completions) < 0) {
-    throw new HttpError(500, "Stored Task data contains an invalid activity day.");
-  }
-  return { date: date! };
 }
 
 function contributionSnapshot(task: TaskItem, project: TaskProject, completedAt: string): TaskContribution {
@@ -274,20 +218,11 @@ function contributionSnapshot(task: TaskItem, project: TaskProject, completedAt:
   };
 }
 
-function migrateContributions(projects: TaskProject[], tasks: TaskItem[]): TaskContribution[] {
-  const projectById = new Map(projects.map((project) => [project.id, project]));
-  return tasks
-    .filter((task) => task.completedAt)
-    .sort((left, right) => left.completedAt!.localeCompare(right.completedAt!) || left.id.localeCompare(right.id))
-    .map((task) => {
-      const project = projectById.get(task.projectId);
-      if (!project) throw new HttpError(500, "Stored Task data contains an orphaned task.");
-      return contributionSnapshot(task, project, task.completedAt!);
-    });
-}
-
 function storedContribution(value: unknown): TaskContribution {
   const record = asRecord(value, "Stored Task data contains an invalid contribution.");
+  assertOnlyKeys(record, [
+    "taskId", "taskCode", "taskTitle", "projectId", "projectKey", "projectTitle", "projectColor", "completedAt",
+  ], "Stored contribution", 500);
   if (!TASK_ID.test(String(record.taskId || ""))
     || !TASK_CODE.test(String(record.taskCode || ""))
     || !PROJECT_ID.test(String(record.projectId || ""))
@@ -307,60 +242,22 @@ function storedContribution(value: unknown): TaskContribution {
   };
 }
 
-function migrateTaskDays(
-  record: Record<string, unknown>,
-  schemaVersion: StoredSchemaVersion,
-  storedTasks: StoredTaskResult[],
-): TaskDay[] {
-  if (schemaVersion === 4) return (record.taskDays as unknown[]).map(storedTaskDay);
-  const today = todayInSingapore();
-  let position = 0;
-  return storedTasks.flatMap(({ task, legacyStatus, legacyScheduledDate }) => {
-    if (legacyStatus === "done" || task.archivedAt || !legacyScheduledDate || legacyScheduledDate > today) return [];
-    const timestamp = parseTimestamp(record.updatedAt, "Stored Task updatedAt");
-    return [{
-      id: `taskday-${task.id.slice(5)}`,
-      taskId: task.id,
-      date: today,
-      plan: task.title,
-      outcome: "",
-      state: "planned" as const,
-      position: position++,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    }];
-  });
-}
-
 function validateState(value: unknown): TaskState {
   const record = asRecord(value, "Stored Task data is invalid.");
-  const schemaVersion = Number(record.schemaVersion) as StoredSchemaVersion;
-  if (![1, 2, 3, 4].includes(schemaVersion) || !REVISION.test(String(record.revision || ""))
+  assertOnlyKeys(record, [
+    "schemaVersion", "revision", "updatedAt", "projects", "tasks", "taskDays", "contributions",
+  ], "Stored Task data", 500);
+  if (record.schemaVersion !== 4 || !REVISION.test(String(record.revision || ""))
     || !Array.isArray(record.projects) || record.projects.length > MAX_PROJECTS
     || !Array.isArray(record.tasks) || record.tasks.length > MAX_TASKS
-    || (schemaVersion < 3 && (!Array.isArray(record.activity) || record.activity.length > MAX_LEGACY_ACTIVITY_DAYS))
-    || (schemaVersion >= 3 && (!Array.isArray(record.contributions) || record.contributions.length > MAX_TASKS))
-    || (schemaVersion === 4 && (!Array.isArray(record.taskDays) || record.taskDays.length > MAX_TASK_DAYS))) {
+    || !Array.isArray(record.contributions) || record.contributions.length > MAX_TASKS
+    || !Array.isArray(record.taskDays) || record.taskDays.length > MAX_TASK_DAYS) {
     throw new HttpError(500, "Stored Task data is invalid.");
   }
-  const projects = record.projects.map((project) => storedProject(project, schemaVersion));
-  const positions = new Map<string, number>();
-  const storedTasks = record.tasks.map((value) => {
-    const raw = asRecord(value, "Stored Task data contains an invalid task.");
-    const projectId = String(raw.projectId || "");
-    const position = positions.get(projectId) || 0;
-    positions.set(projectId, position + 1);
-    return storedTask(value, schemaVersion, position);
-  });
-  const tasks = storedTasks.map(({ task }) => task);
-  if (schemaVersion === 1) migrateIdentifiers(projects, tasks);
-  const legacyActivity = schemaVersion < 3
-    ? (record.activity as unknown[]).map(validateLegacyActivity)
-    : [];
-  const taskDays = migrateTaskDays(record, schemaVersion, storedTasks);
-  const contributions = (schemaVersion >= 3
-    ? (record.contributions as unknown[]).map(storedContribution)
-    : migrateContributions(projects, tasks))
+  const projects = record.projects.map(storedProject);
+  const tasks = record.tasks.map(storedTask);
+  const taskDays = record.taskDays.map(storedTaskDay);
+  const contributions = record.contributions.map(storedContribution)
     .sort((left, right) => left.completedAt.localeCompare(right.completedAt) || left.taskId.localeCompare(right.taskId));
   if (new Set(projects.map((project) => project.id)).size !== projects.length
     || new Set(tasks.map((task) => task.id)).size !== tasks.length
@@ -368,7 +265,6 @@ function validateState(value: unknown): TaskState {
     || new Set(projects.map((project) => project.key)).size !== projects.length
     || new Set(tasks.map((task) => task.code)).size !== tasks.length
     || new Set(taskDays.map((taskDay) => `${taskDay.taskId}:${taskDay.date}`)).size !== taskDays.length
-    || new Set(legacyActivity.map((day) => day.date)).size !== legacyActivity.length
     || new Set(contributions.map((contribution) => contribution.taskId)).size !== contributions.length) {
     throw new HttpError(500, "Stored Task data contains duplicate records.");
   }
@@ -406,61 +302,12 @@ function validateState(value: unknown): TaskState {
 
 async function versionedState(env: Env): Promise<VersionedTaskState> {
   const current = await getTaskStateVersioned(env);
-  if (!current) return { state: emptyState(), etag: null, migrated: false };
-  const record = asRecord(current.state, "Stored Task data is invalid.");
-  return {
-    state: validateState(record),
-    etag: current.etag,
-    migrated: Number(record.schemaVersion) !== 4,
-  };
-}
-
-async function publicVersionedState(env: Env): Promise<VersionedTaskState> {
-  const current = await versionedState(env);
-  if (!current.migrated) return current;
-  const migrated: TaskState = {
-    ...current.state,
-    revision: randomHex(16),
-    updatedAt: singaporeTimestamp(),
-  };
-  if (await putTaskStateConditional(env, migrated, current.etag)) {
-    return { state: migrated, etag: null, migrated: false };
-  }
-  return versionedState(env);
+  if (!current) return { state: emptyState(), etag: null };
+  return { state: validateState(current.state), etag: current.etag };
 }
 
 function publicData(state: TaskState): PublicTaskData {
   return { ...state, today: todayInSingapore() };
-}
-
-function legacyPublicData(state: TaskState): LegacyPublicTaskData {
-  const today = todayInSingapore();
-  const daysByTask = new Map<string, TaskDay[]>();
-  for (const taskDay of state.taskDays) {
-    const days = daysByTask.get(taskDay.taskId) || [];
-    days.push(taskDay);
-    daysByTask.set(taskDay.taskId, days);
-  }
-  return {
-    schemaVersion: 3,
-    revision: state.revision,
-    updatedAt: state.updatedAt,
-    projects: state.projects,
-    tasks: state.tasks.map((task) => {
-      const taskDays = daysByTask.get(task.id) || [];
-      const { objective: _objective, position: _position, ...legacyTask } = task;
-      return {
-        ...legacyTask,
-        status: task.completedAt
-          ? "done"
-          : (taskDays.some((day) => day.state === "completed" || day.state === "partial") ? "in_progress" : "todo"),
-        priority: "normal",
-        scheduledDate: !task.completedAt && taskDays.some((day) => day.date === today) ? today : null,
-      };
-    }),
-    contributions: state.contributions,
-    today,
-  };
 }
 
 export async function relatedTaskSnapshot(env: Env, id: string): Promise<JournalRelatedTask | null> {
@@ -482,7 +329,6 @@ function mutationPayload(payload: Record<string, unknown>): {
   mode: TaskMode;
   baseRevision: string;
   value: Record<string, unknown>;
-  clientSchema: 3 | 4;
 } {
   const mode = String(payload.mode || "") as TaskMode;
   const modes: TaskMode[] = [
@@ -492,15 +338,38 @@ function mutationPayload(payload: Record<string, unknown>): {
   if (!modes.includes(mode)) throw new HttpError(400, "Task operation is invalid.");
   const baseRevision = String(payload.baseRevision ?? "");
   if (!REVISION.test(baseRevision)) throw new HttpError(400, "Task revision is invalid.");
-  const source = mode.endsWith("Project")
-    ? payload.project
-    : (mode.includes("TaskDay") || mode === "reorderTaskDays" ? payload.taskDay : payload.task);
+  const container = mode.endsWith("Project")
+    ? "project"
+    : (mode.includes("TaskDay") || mode === "reorderTaskDays" ? "taskDay" : "task");
+  assertOnlyKeys(payload, ["mode", "baseRevision", container], "Task operation");
+  const value = asRecord(payload[container], "Task operation data is invalid.");
+  const fields: Record<TaskMode, string[]> = {
+    createProject: ["key", "title", "description", "color", "status"],
+    updateProject: ["id", "title", "description", "color", "status"],
+    archiveProject: ["id"],
+    createTask: ["projectId", "title", "objective"],
+    updateTask: ["id", "projectId", "title", "objective"],
+    completeTask: ["id"],
+    reopenTask: ["id"],
+    archiveTask: ["id"],
+    createTaskDay: ["taskId", "plan"],
+    updateTaskDay: ["id", "plan", "outcome", "state", "continueToday", "nextPlan"],
+    removeTaskDay: ["id"],
+    reorderTaskDays: ["ids"],
+  };
+  assertOnlyKeys(value, fields[mode], "Task operation data");
   return {
     mode,
     baseRevision,
-    value: asRecord(source, "Task operation data is invalid."),
-    clientSchema: payload.clientSchema === 4 ? 4 : 3,
+    value,
   };
+}
+
+function assertOnlyKeys(record: Record<string, unknown>, allowed: string[], label: string, status = 400): void {
+  const allowedKeys = new Set(allowed);
+  if (Object.keys(record).some((key) => !allowedKeys.has(key))) {
+    throw new HttpError(status, `${label} contains an unsupported field.`);
+  }
 }
 
 function projectInput(value: Record<string, unknown>): Pick<TaskProject, "title" | "description" | "color" | "status"> {
@@ -518,16 +387,13 @@ function projectInput(value: Record<string, unknown>): Pick<TaskProject, "title"
 
 function taskInput(
   value: Record<string, unknown>,
-  original: TaskItem | null = null,
 ): Pick<TaskItem, "projectId" | "title" | "objective"> {
-  const projectId = String(value.projectId || original?.projectId || "");
+  const projectId = String(value.projectId || "");
   if (!PROJECT_ID.test(projectId)) throw new HttpError(400, "Task project is invalid.");
   return {
     projectId,
     title: requiredString(value.title, "Task title", 180),
-    objective: value.objective === undefined && original
-      ? original.objective
-      : requiredString(value.objective ?? "", "Task objective", 2000, true),
+    objective: requiredString(value.objective ?? "", "Task objective", 2000, true),
   };
 }
 
@@ -544,15 +410,11 @@ function nextPosition(values: Array<{ position: number }>): number {
   return values.reduce((maximum, value) => Math.max(maximum, value.position), -1) + 1;
 }
 
-function responseData(state: TaskState, clientSchema: 3 | 4): PublicTaskData | LegacyPublicTaskData {
-  return clientSchema === 4 ? publicData(state) : legacyPublicData(state);
-}
-
 export async function saveTasks(
   env: Env,
   payload: Record<string, unknown>,
-): Promise<(PublicTaskData | LegacyPublicTaskData) & { status: string }> {
-  const { mode, baseRevision, value, clientSchema } = mutationPayload(payload);
+): Promise<PublicTaskData & { status: string }> {
+  const { mode, baseRevision, value } = mutationPayload(payload);
   const current = await versionedState(env);
   if (current.state.revision !== baseRevision) {
     throw new HttpError(409, "Tasks changed in another session. Reload and try again.");
@@ -588,7 +450,7 @@ export async function saveTasks(
     if (index < 0) throw new HttpError(404, "Project was not found.");
     const input = projectInput(value);
     if (sameProject(projects[index]!, input)) {
-      return { ...responseData(current.state, clientSchema), status: "unchanged" };
+      return { ...publicData(current.state), status: "unchanged" };
     }
     const original = projects[index]!;
     projects[index] = {
@@ -621,40 +483,30 @@ export async function saveTasks(
       position: nextPosition(tasks.filter((candidate) => candidate.projectId === input.projectId)),
       createdAt: timestamp,
       updatedAt: timestamp,
-      ...(value.status === "done" ? { completedAt: timestamp } : {}),
     };
     tasks.push(task);
-    if (task.completedAt) contributions.push(contributionSnapshot(task, project, timestamp));
     status = "created";
   } else if (mode === "updateTask") {
     const id = String(value.id || "");
     const index = tasks.findIndex((task) => task.id === id && !task.archivedAt);
     if (index < 0) throw new HttpError(404, "Task was not found.");
     const original = tasks[index]!;
-    const input = taskInput(value, original);
+    const input = taskInput(value);
     const project = projects.find((candidate) => candidate.id === input.projectId && !candidate.archivedAt);
     if (!project) throw new HttpError(400, "Task project is unavailable.");
-    const legacyStatus = typeof value.status === "string" ? value.status : null;
-    const completing = legacyStatus === "done" && !original.completedAt;
-    const reopening = legacyStatus !== null && legacyStatus !== "done" && Boolean(original.completedAt);
-    if (sameTask(original, input) && !completing && !reopening) {
-      return { ...responseData(current.state, clientSchema), status: "unchanged" };
+    if (sameTask(original, input)) {
+      return { ...publicData(current.state), status: "unchanged" };
     }
     const updated: TaskItem = {
       ...original,
       ...input,
       updatedAt: timestamp,
-      ...(completing ? { completedAt: timestamp } : {}),
-      ...(reopening ? { completedAt: undefined } : {}),
     };
     tasks[index] = updated;
-    if (completing && !contributions.some((contribution) => contribution.taskId === updated.id)) {
-      contributions.push(contributionSnapshot(updated, project, timestamp));
-    }
   } else if (mode === "completeTask") {
     const task = tasks.find((candidate) => candidate.id === String(value.id || "") && !candidate.archivedAt);
     if (!task) throw new HttpError(404, "Task was not found.");
-    if (task.completedAt) return { ...responseData(current.state, clientSchema), status: "unchanged" };
+    if (task.completedAt) return { ...publicData(current.state), status: "unchanged" };
     const project = projects.find((candidate) => candidate.id === task.projectId)!;
     task.completedAt = timestamp;
     task.updatedAt = timestamp;
@@ -671,7 +523,7 @@ export async function saveTasks(
   } else if (mode === "reopenTask") {
     const task = tasks.find((candidate) => candidate.id === String(value.id || "") && !candidate.archivedAt);
     if (!task) throw new HttpError(404, "Task was not found.");
-    if (!task.completedAt) return { ...responseData(current.state, clientSchema), status: "unchanged" };
+    if (!task.completedAt) return { ...publicData(current.state), status: "unchanged" };
     task.completedAt = undefined;
     task.updatedAt = timestamp;
     status = "reopened";
@@ -712,7 +564,7 @@ export async function saveTasks(
     if (state === "partial" && !outcome) throw new HttpError(400, "Partial work needs a short outcome.");
     const continueToday = value.continueToday === true;
     if (taskDay.plan === plan && taskDay.outcome === outcome && taskDay.state === state && !continueToday) {
-      return { ...responseData(current.state, clientSchema), status: "unchanged" };
+      return { ...publicData(current.state), status: "unchanged" };
     }
     taskDay.plan = plan;
     taskDay.outcome = outcome;
@@ -759,7 +611,7 @@ export async function saveTasks(
       throw new HttpError(400, "Today order is invalid.");
     }
     if (ids.every((id, index) => todayDays[index]?.id === id)) {
-      return { ...responseData(current.state, clientSchema), status: "unchanged" };
+      return { ...publicData(current.state), status: "unchanged" };
     }
     const order = new Map(ids.map((id, index) => [id, index]));
     taskDays = taskDays.map((taskDay) => taskDay.date === today
@@ -781,24 +633,22 @@ export async function saveTasks(
   if (!await putTaskStateConditional(env, next, current.etag)) {
     throw new HttpError(409, "Tasks changed while saving. Reload and try again.");
   }
-  return { ...responseData(next, clientSchema), status };
+  return { ...publicData(next), status };
 }
 
 export async function tasksResponse(env: Env, request: Request): Promise<Response> {
   if (request.method !== "GET" && request.method !== "HEAD") {
     throw new HttpError(405, "Published Tasks are read-only.");
   }
-  const current = await publicVersionedState(env);
-  const clientSchema = request.headers.get("accept")?.includes(V4_ACCEPT) ? 4 : 3;
-  const data = responseData(current.state, clientSchema);
-  const etag = `"v${data.schemaVersion}-${data.revision}-${data.today}"`;
+  const current = await versionedState(env);
+  const data = publicData(current.state);
+  const etag = `"v4-${data.revision}-${data.today}"`;
   const requestEtags = (request.headers.get("if-none-match") || "")
     .split(",").map((value) => value.trim().replace(/^W\//, ""));
   const headers = {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "public, max-age=0, must-revalidate",
     ETag: etag,
-    Vary: "Accept",
   };
   if (requestEtags.includes(etag)) return new Response(null, { status: 304, headers });
   return new Response(request.method === "HEAD" ? null : JSON.stringify(data), { headers });

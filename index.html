@@ -3156,9 +3156,7 @@
             title.className = "related-task-option-title";
             title.textContent = task.title;
             meta.className = "related-task-option-meta";
-            const stateLabel = task.archived
-              ? "Archived"
-              : ({ todo: "To do", in_progress: "In progress", done: "Completed" }[task.status] || task.status);
+            const stateLabel = task.archived ? "Archived" : (task.completed ? "Completed" : "Open");
             meta.textContent = `${task.project.key} · ${task.project.title} · ${stateLabel}`;
             heading.append(dot, code, title);
             option.append(heading, meta);
@@ -3211,13 +3209,9 @@
 
       async function populateRelatedTaskChoices(selected = null) {
         const choices = await tasks.relatedChoices();
-        if (selected && !choices.some((task) => task.id === selected.id)) {
-          choices.push({ ...structuredClone(selected), status: "done", scheduledDate: null, archived: true });
-        }
-        const statusRank = { in_progress: 0, todo: 1, done: 2 };
         authoring.relatedTaskChoices = choices.sort((left, right) =>
           Number(left.archived) - Number(right.archived)
-          || (statusRank[left.status] ?? 3) - (statusRank[right.status] ?? 3)
+          || Number(left.completed) - Number(right.completed)
           || left.code.localeCompare(right.code));
         selectRelatedTask(selected?.id || "");
       }

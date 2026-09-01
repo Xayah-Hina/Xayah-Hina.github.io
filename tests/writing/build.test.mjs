@@ -89,7 +89,8 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.match(tasksJs, /Add from Tasks/);
   assert.match(tasksJs, /Done today/);
   assert.match(tasksJs, /Objective/);
-  assert.doesNotMatch(tasksJs, />Schedule<|>Priority<|>In progress</);
+  assert.doesNotMatch(tasksJs, />Schedule<|>Priority<|>In progress|clientSchema|scheduledDate|in_progress|application\/vnd\.xayah\.tasks/);
+  assert.doesNotMatch(homepage, /statusRank|in_progress|scheduledDate|clientSchema/);
   assert.match(tasksJs, /Fixed after creation/);
   assert.equal(fs.existsSync(path.join(site, "assets", "generated", "writing-preview.js")), false);
   assert.equal(fs.existsSync(path.join(site, "assets", "generated", "site-shell.css")), false);

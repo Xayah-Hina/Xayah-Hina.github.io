@@ -3,7 +3,6 @@ const PROJECT_KEY = /^[A-Z][A-Z0-9]{1,7}$/;
 const TASK_CODE = /^([A-Z][A-Z0-9]{1,7})-(\d{4})-(\d{4})$/;
 const PROJECT_STATUSES = new Set(["active", "paused", "completed"]);
 const TASK_DAY_STATES = new Set(["planned", "completed", "partial", "no_progress"]);
-const TASKS_V4_ACCEPT = "application/vnd.xayah.tasks.v4+json";
 
 function dateShift(value, amount) {
   const date = new Date(`${value}T00:00:00Z`);
@@ -39,35 +38,7 @@ function validTimestamp(value) {
   return typeof value === "string" && value.length <= 40 && Number.isFinite(Date.parse(value));
 }
 
-function migrateLegacyData(value) {
-  if (Number(value?.schemaVersion) !== 3) return value;
-  const positions = new Map();
-  const tasks = value.tasks.map((task) => {
-    const position = positions.get(task.projectId) || 0;
-    positions.set(task.projectId, position + 1);
-    const { status, priority, scheduledDate, ...source } = task;
-    return { ...source, objective: "", position };
-  });
-  const taskDays = value.tasks.flatMap((task, index) => (
-    !task.completedAt && !task.archivedAt && task.scheduledDate && task.scheduledDate <= value.today
-      ? [{
-          id: `taskday-${task.id.slice(5)}`,
-          taskId: task.id,
-          date: value.today,
-          plan: task.title,
-          outcome: "",
-          state: "planned",
-          position: index,
-          createdAt: value.updatedAt,
-          updatedAt: value.updatedAt
-        }]
-      : []
-  ));
-  return { ...value, schemaVersion: 4, tasks, taskDays };
-}
-
-function validateData(source) {
-  const value = migrateLegacyData(source);
+function validateData(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)
     || value.schemaVersion !== 4 || typeof value.revision !== "string"
     || !DATE.test(value.today || "") || !Array.isArray(value.projects)
@@ -717,10 +688,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
   async function load(force = false) {
     if (loaded && !force) return data;
     if (loading) return loading;
-    loading = fetch("/data/tasks", {
-      cache: "no-store",
-      headers: { Accept: TASKS_V4_ACCEPT }
-    })
+    loading = fetch("/data/tasks", { cache: "no-store" })
       .then(async (response) => {
         if (response.status === 404) return emptyData();
         const result = await response.json().catch(() => null);
@@ -988,12 +956,12 @@ export function createTasksController({ canAuthor = () => false, request, confir
     if (form) setDialogBusy(form, true);
     try {
       const result = request
-        ? await request({ ...payload, clientSchema: 4 })
+        ? await request(payload)
         : await fetch("/api/tasks/save", {
             method: "POST",
             credentials: "same-origin",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...payload, clientSchema: 4 })
+            body: JSON.stringify(payload)
           }).then(async (response) => {
             const value = await response.json().catch(() => null);
             if (!response.ok) throw new Error(value?.error || "Task changes could not be saved.");
@@ -1286,13 +1254,11 @@ export function createTasksController({ canAuthor = () => false, request, confir
     return data.tasks.flatMap((task) => {
       const project = projects.get(task.projectId);
       if (!project) return [];
-      const stats = taskStats(task, data);
       return [{
         id: task.id,
         code: task.code,
         title: task.title,
-        status: task.completedAt ? "done" : (stats.worked.length ? "in_progress" : "todo"),
-        scheduledDate: null,
+        completed: Boolean(task.completedAt),
         archived: Boolean(task.archivedAt || project.archivedAt),
         project: { id: project.id, key: project.key, title: project.title, color: project.color }
       }];
