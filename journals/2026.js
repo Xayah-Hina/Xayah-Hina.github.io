@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260902-013209-493f",
+    "publishedAt": "2026-09-02T01:32:09+08:00",
+    "content": "一天时间用到了还剩28%的token…… 也不知道接下来应该继续尽力用还是该节约一点呢？想了想接下来的目标应该就是FlowDiT的训练可视化以及代码精读了，token没了的感觉确实很难受，但是又怕下一个reset又要来了，有点纠结……",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260901-230151-d9f1",
     "publishedAt": "2026-09-01T23:01:51+08:00",
     "content": "9月1日日报\n\n1. 做完了task系统。\n2. spectra全面支持了usd场景。",
