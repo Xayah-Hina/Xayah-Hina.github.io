@@ -89,6 +89,9 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.match(tasksJs, /Add from Tasks/);
   assert.match(tasksJs, /Done today/);
   assert.match(tasksJs, /Objective/);
+  assert.match(tasksJs, /Completed \$\{/);
+  assert.match(tasksJs, /Planned today/);
+  assert.match(tasksJs, /plans need.*review/);
   assert.doesNotMatch(tasksJs, />Schedule<|>Priority<|>In progress|clientSchema|scheduledDate|in_progress|application\/vnd\.xayah\.tasks/);
   assert.doesNotMatch(homepage, /statusRank|in_progress|scheduledDate|clientSchema/);
   assert.match(tasksJs, /Fixed after creation/);

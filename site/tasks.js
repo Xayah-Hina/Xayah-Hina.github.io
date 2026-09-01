@@ -358,8 +358,17 @@ function taskStats(task, data) {
 
 function taskMeta(task, data) {
   const stats = taskStats(task, data);
-  if (!stats.worked.length) return "Not started";
-  return `${stats.worked.length} work ${stats.worked.length === 1 ? "day" : "days"} · Last worked ${dayLabel(stats.lastWorked, data.today).toLocaleLowerCase()}`;
+  if (task.completedAt) return `Completed ${formatDay(task.completedAt.slice(0, 10))}`;
+  const today = stats.days.find((taskDay) => taskDay.date === data.today);
+  if (today?.state === "planned") return "Planned today";
+  if (today?.state === "no_progress") return "No progress today";
+  if (stats.worked.length) {
+    return `${stats.worked.length} work ${stats.worked.length === 1 ? "day" : "days"} · Last worked ${dayLabel(stats.lastWorked, data.today).toLocaleLowerCase()}`;
+  }
+  const pendingReviews = stats.days.filter((taskDay) => taskDay.date < data.today && taskDay.state === "planned").length;
+  if (pendingReviews) return `${pendingReviews} ${pendingReviews === 1 ? "plan needs" : "plans need"} review`;
+  if (stats.days.length) return "No progress recorded";
+  return "Not started";
 }
 
 function todayTaskDayRow(taskDay, task, project, data, editable, index, total) {
