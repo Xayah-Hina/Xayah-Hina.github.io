@@ -8,5 +8,10 @@ export default {
     "note": "本月小结：\n\n1. spectra开发完成，进入稳定阶段。\n2. physica支持布料/烟雾/3D、4D重建/生成式模型。\n3. 学完了MIT 6.S184，实现了FlowDiT。\n4. quantia支持了基础的order table。\n\n下个月目标：\n\n1. 【主线】正式推行政治体制改革。\n2. 【重要】深入理解FlowDiT，基于FlowDiT实现常规图像生成任务。\n3. 升级Spectra，全面推行USD场景表达格式。",
     "reportImage": null,
     "updatedAt": "2026-08-31T23:34:23+08:00"
+  },
+  "2026-09": {
+    "note": "“现在改革到了攻坚阶段。”\n\n“没有政治体制改革的成功，经济体制改革不可能进行到底。”\n\n“已经取得的成果还有可能得而复失。”\n\n“社会上新产生的问题，也不能从根本上得到解决。”",
+    "reportImage": null,
+    "updatedAt": "2026-09-01T20:48:13+08:00"
   }
 };
