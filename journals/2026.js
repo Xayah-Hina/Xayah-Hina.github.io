@@ -4,21 +4,24 @@ export default [
     "publishedAt": "2026-09-01T06:06:02+08:00",
     "content": "新的一个月，新目标！\n\n这个月正式开始推行政治体制改革！加油！同时，全面升级日报需要报告的内容。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260831-222922-f0f5",
     "publishedAt": "2026-08-31T22:29:22+08:00",
     "content": "考虑不要.spectra格式了，统一用上USD格式。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260831-221045-2907",
     "publishedAt": "2026-08-31T22:10:45+08:00",
     "content": "8月30日日报\n\n今天跑通了cifar10数据集的训练部分。token自由太痛苦了QAQ。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260831-020558-828c",
@@ -31,6 +34,7 @@ export default [
       }
     ],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-08-31T02:13:07+08:00"
   },
   {
@@ -38,56 +42,64 @@ export default [
     "publishedAt": "2026-08-30T15:12:16+08:00",
     "content": "明天又要reset？这100%怎么可能用得完😱",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260830-050319-b3c4",
     "publishedAt": "2026-08-30T05:03:19+08:00",
     "content": "原来Quant系统代码量这么小…… 又是一个重理解的领域…… 完了这下真的用不完了……\n\n我感觉真的用Token最快的方式还是复现论文和移植项目这种确定性高的苦力活……",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260830-033249-949f",
     "publishedAt": "2026-08-30T03:32:49+08:00",
     "content": "要不真的搞一下Quant System好了。接下来\n\nPhysics + DiT + Quant这三个并行应该就能烧干Token了。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260830-032416-4864",
     "publishedAt": "2026-08-30T03:24:16+08:00",
     "content": "最近的状态提醒我，Agent革命带来的低垂的果实快要摘完了，接下来还是得深耕一个领域进行精细化作业。\n\n可是剩下的Token真的不知道该怎么花了，还剩43%……\n\n一定是哪里不对，思维被局限住了。得想想还有哪些我没想到的地方要用token……",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260830-000920-1c69",
     "publishedAt": "2026-08-30T00:09:20+08:00",
     "content": "又一次剪完指甲了…… 不知道为什么，总是对指甲长长特别敏感…… 每次都很失落……",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260830-000226-5b2b",
     "publishedAt": "2026-08-30T00:02:26+08:00",
     "content": "8月29日日报\n\n整理了一下physica，做了MIT 6.S184的Lab。\n\n还是不知道coding部分要做什么啊…… 马上又要reset了…… 主要写太多没审查过的代码很容易未来要推倒重做，短时间内又不知道该怎么消耗掉剩下60%的Token……",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260829-135445-6247",
     "publishedAt": "2026-08-29T13:54:45+08:00",
     "content": "8月28日日报\n\n休息一天",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260828-163725-9896",
     "publishedAt": "2026-08-28T16:37:25+08:00",
     "content": "8月27日日报\n\nMIT 6.S184 DAY 1。颇有感想……",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260828-053637-ab59",
@@ -95,6 +107,7 @@ export default [
     "content": "囫囵吞枣式地理解完了整套MIT 6.S184课程。感觉有点颠覆了……\n\n难怪胡渊鸣说data就是一切…… 这理论越学越害怕，越来越感觉怎么numeric solver整个都要被取代了啊？\n\n不过毕竟训练数据还是需要的没法无中生有，我隐隐感觉未来的大趋势就是DCC中整套物理solver全都会消失（被蒸馏掉），而变成一个本地智能模型solver。（甚至我觉得会和渲染结果都给耦合在一起……）。但是训练端还是需要这套传统物理solver的。",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-08-28T05:40:49+08:00"
   },
   {
@@ -102,7 +115,8 @@ export default [
     "publishedAt": "2026-08-28T00:56:14+08:00",
     "content": "血亏…… Tibo又reset了……\n\n是不是不应该在现在补充理论啊，我感觉必须时刻保持coding的状态才能不浪费token啊……\n\n想想该怎么做",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260827-222343-d548",
@@ -112,98 +126,112 @@ export default [
     "relatedWriting": {
       "id": "20260827-145105",
       "title": "MIT 6.S184 Course Note"
-    }
+    },
+    "relatedTask": null
   },
   {
     "id": "20260827-180124-bb12",
     "publishedAt": "2026-08-27T18:01:24+08:00",
     "content": "AI Agent井喷时期必然是发Paper的蓝海窗口期，接下来这段时间一定要好好把握住历史的机遇。\n\n“人呐就都不知道，自己就不可以预料。一个人的命运啊，当然要靠自我奋斗，但是也要考虑到历史的行程。”",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260827-175516-7deb",
     "publishedAt": "2026-08-27T17:55:16+08:00",
     "content": "仔细想了想还是应该克制writing的数量，writing数量一旦膨胀起来只会降低每篇writing的含金量。因此计划一下合并系列writing。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260827-171948-efc2",
     "publishedAt": "2026-08-27T17:19:48+08:00",
     "content": "\"现在改革到了攻坚阶段，没有政治体制改革的成功，经济体制改革不可能进行到底，已经取得的成果还有可能得而复失。\"",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260827-025500-6770",
     "publishedAt": "2026-08-27T02:55:00+08:00",
     "content": "8月26日日报\n\n今天对自己的下阶段目标明确了不少。从明天开始计划好好学一下MIT 6.S184，然后有了一定基础了之后先做一套纯烟雾/云生图模型，然后集中考虑下Flow Map的Representation正式攻克下一篇paper的主课题。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260826-184150-3c36",
     "publishedAt": "2026-08-26T18:41:50+08:00",
     "content": "DIFFUSION MODEL DAY 1\n\n决定了，目前把传统的可微模拟 + 3D/4D重建差不多已经开发得差不多了（physica），渲染可视化底座也开发得差不多了（spectra）。下一步，正式迈入AI时代（笑，这个时代谁能免俗呢，这么强的工具谁不用谁落伍QAQ）。\n\n打算从我最熟悉的diffusion model做起，现在对于DiT的使用已经差不多比较熟练了，但是原理部分以及手写kernel部分还是欠缺比较大。所以下一个周期（打算用一个月的时间）深入研究一下这一整套pipeline，确保能够最终从零开始手写出整个DiT的pipeline然后实现在physica从零开始训练生成模型（还有点小激动）。\n\n开干吧！",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260826-021716-955a",
     "publishedAt": "2026-08-26T02:17:16+08:00",
     "content": "Codex确实不适合单干一个任务，适合多线程并发着做。\n\n单做一个任务太容易等待然后懈怠了，双开甚至三开更容易集中精力提高效率。我真的越来越感受到，未来五年，产能就是一切。AI Agent改变了太多东西的底层逻辑了……",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260826-013246-78b7",
     "publishedAt": "2026-08-26T01:32:46+08:00",
     "content": "8月25日日报\n\n把fluids/deformables的代码全部重构完了。下一步又感觉不知道该怎么继续了QAQ…… 迷惘…… 要一步到位做diffusion吗？感觉好虚无缥缈啊？感觉还是应该多读paper吧？",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260826-000407-2f6c",
     "publishedAt": "2026-08-26T00:04:07+08:00",
     "content": "AI Agent这波浪潮，究竟是对于存量者优势的强制摊平，还是增益呢…… 真的有点忧虑，也有点庆幸……\n\n但还是弄不清楚，究竟对我而言是有利还是不利…… 总感觉下一刻，就要被整个时代抛弃……",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260825-233547-5957",
     "publishedAt": "2026-08-25T23:35:47+08:00",
     "content": "出国之后打开网易云的机会越来越少，喜欢的歌都是灰色的。好几年没有正式听一听音乐了……",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260825-220827-6e66",
     "publishedAt": "2026-08-25T22:08:27+08:00",
     "content": "才发现一个事实：\n\n做音乐的时候，响度大就好听。拍照片的时候，亮度高就好看。\n\n还真是，力大砖飞的朴素理论QAQ。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260825-145318-9f34",
     "publishedAt": "2026-08-25T14:53:18+08:00",
     "content": "每次长时间不练琴，摸到又疯长起来的手指甲都会觉得难过。\n\n时间总是无情地惩罚懈怠的人。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260825-141030-22da",
     "publishedAt": "2026-08-25T14:10:30+08:00",
     "content": "想制定一个中长期任务，成功做完之后订一张去西雅图的机票。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260825-140551-91e9",
     "publishedAt": "2026-08-25T14:05:51+08:00",
     "content": "下个月开始计划测试一下一个月不打开视频平台。有点过于耽误思考深度了。即日起开始试运行。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260825-003445-1ca2",
@@ -211,6 +239,7 @@ export default [
     "content": "8月24日日报\n\n不知道为什么最近总是不在状态……\n\n我感觉自己的大脑cache真的不太够，项目一大起来就很容易大脑一片混沌，很难辨别出下一步究竟该怎么做，很难从宏观上把握住整个的进度。想想办法吧……",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-08-25T00:39:40+08:00"
   },
   {
@@ -218,14 +247,16 @@ export default [
     "publishedAt": "2026-08-24T17:51:53+08:00",
     "content": "8月23日日报\n\n给physica做完了keyframe + adjoint两篇paper的实现以及PINFS的实现（不得不感叹Agent的进化真的太快了，真得好好重新想想新的研究范式了，现在这套coding壁垒快全没了……）。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260823-155400-f89c",
     "publishedAt": "2026-08-23T15:54:00+08:00",
     "content": "2 PM PST又要reset了……还剩70%得快点用了QAQ\n\n但是实在想不出来有什么好做了QAQ，本来想着这个周期重点看一下paper的。。。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260822-233826-4b06",
@@ -238,6 +269,7 @@ export default [
       }
     ],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-08-24T01:17:52+08:00"
   },
   {
@@ -245,7 +277,8 @@ export default [
     "publishedAt": "2026-08-22T23:35:24+08:00",
     "content": "8月21日日报\n\n迷惘。不太清楚下一步该不该做keyframe smoke复现，也不太清楚怎么做。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260821-030448-8893",
@@ -253,6 +286,7 @@ export default [
     "content": "8月20日日报\n\n基本快完成基础的整套physica了（物理部分比想象中的快好多……）。\n\n得好好计划一下下一阶段的核心目标是什么了。",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-08-21T03:22:21+08:00"
   },
   {
@@ -260,21 +294,24 @@ export default [
     "publishedAt": "2026-08-20T20:36:05+08:00",
     "content": "8月19日日报\n\n码代码码出内伤了，效率越来越低…… 得换一下大脑了。明天开始想办法做一些别的事情。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260819-123945-9592",
     "publishedAt": "2026-08-19T12:39:45+08:00",
     "content": "原来20岁的时候就想到的事情，今天才能意识到真实的意义。\n\n不选择，也是一种选择。不选择，也要承担后果。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260819-121106-122c",
     "publishedAt": "2026-08-19T12:11:06+08:00",
     "content": "8月18日日报\n\n还是决定ALL in ONE的模式了，适合统一管理升级架构。开启physica新篇章~\n\nhttps://github.com/Xayah-Graphics/physica",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260818-170659-0ae3",
@@ -282,6 +319,7 @@ export default [
     "content": "8月17日日报\n\n今天效率还是有点低下。怎么回事……\n\n还是面临一个读代码的很大的问题，我既不想加一大段注释导致代码又臭又长降低易读性，但是分离文档的话有很麻烦，而且也不好维护（丢失/过时）。真的有点难办，想不到一个两全其美的办法…… 照理来说代码中嵌入注释应该是最好的办法，也便于Agent去阅读和及时更新，但是一旦嵌入中文就会引起一大堆问题，嵌入英文的话又得考虑一大堆格式和易读性的问题…… 太难办了QAQ",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-08-18T21:21:23+08:00"
   },
   {
@@ -289,7 +327,8 @@ export default [
     "publishedAt": "2026-08-17T21:14:33+08:00",
     "content": "8月16日日报\n\n没什么干劲儿…… 休息一天",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260816-020819-7462",
@@ -300,6 +339,7 @@ export default [
       "id": "20260801-130218",
       "title": "Spectra 2.0 Documentation"
     },
+    "relatedTask": null,
     "updatedAt": "2026-08-16T02:08:40+08:00"
   },
   {
@@ -307,63 +347,72 @@ export default [
     "publishedAt": "2026-08-16T02:03:19+08:00",
     "content": "8月15日日报\n\nspectra接上了 neural field 和 particle fluid 和 hybrid fluid 的可视化。仔细想想应该只剩下最后一个可微任务的可视化还没做吧？等把可微这块做完应该就只剩下把Editor打磨得更好用的细节了。\n\n接下来对于Token的需求会骤降了，需要把重心移动到读paper/练琴打谱上面来了。但是以防Tibo又猝不及防地reset，还是得好好想想该怎么充分利用剩下的token了。（是否应该深入学一下Stable Diffusion的native CUDA写法呢？感觉这技术很虚无飘渺但是又感觉是未来趋势不得不学，哎要不还是先搁置吧做主线要紧…… 想想还是把token放到复现论文这条路线上来吧）\n\nps：工欲善其事必先利其器，可视化平台从毕业那会开始就一直想做，直到Agent时代才慢慢最终找到答案…… 唉，只能说生不逢时。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260815-231702-1620",
     "publishedAt": "2026-08-15T23:17:02+08:00",
     "content": "有点纠结，究竟是要做大而全的physics库还是做单独算法的呢？\n\n感觉还是比较倾向于做单独算法的那种……",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260815-202943-920c",
     "publishedAt": "2026-08-15T20:29:43+08:00",
     "content": "8月14日日报\n\nspectra volume",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260815-125509-b4dc",
     "publishedAt": "2026-08-15T12:55:09+08:00",
     "content": "考虑一下用Vulkan + Slang写神经网络",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260814-171654-7eee",
     "publishedAt": "2026-08-14T17:16:54+08:00",
     "content": "8月13日日报\n\n整理了diff-solver的历史，和重构了可视化接口。考虑要不要给diff-solver也给改个名，改成类似于diff-physics或者类似于spectra这样完全全新的产品名字（HinaPE之类的）。有点纠结。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260814-100837-2d2f",
     "publishedAt": "2026-08-14T10:08:37+08:00",
     "content": "发现了一个音频转midi的整合包，看起来还不错。\n\nhttps://github.com/mason369/music-to-midi",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260813-182415-a1b8",
     "publishedAt": "2026-08-13T18:24:15+08:00",
     "content": "8月12日日报\n\n做了点spectra 2.0的小修小补",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260813-152139-b9dc",
     "publishedAt": "2026-08-13T15:21:39+08:00",
     "content": "心血来潮，想构思一首新曲子，暂定名为《千帆》吧。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260813-104159-55fa",
     "publishedAt": "2026-08-13T10:41:59+08:00",
     "content": "两个小时生死时速用完了100%额度…… 真惊险QAQ",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260812-144731-fdda",
@@ -371,6 +420,7 @@ export default [
     "content": "这Tibo是又暗示明天要reset吗？还有53%的剩余额度凌晨还有一张reset，这不就意味着接下来半天不到我得用150%以上的额度吗…… 太哈人了！😰",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-08-13T15:00:56+08:00"
   },
   {
@@ -378,14 +428,16 @@ export default [
     "publishedAt": "2026-08-12T10:11:22+08:00",
     "content": "抽空看完了央视做的江泽民第一集，做的真好😭。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260812-091242-b7cd",
     "publishedAt": "2026-08-12T09:12:42+08:00",
     "content": "仔细研究一下sig26的Differentiable Physics for Graphics and AI\n\nhttps://dl.acm.org/doi/10.1145/3799828.3811422",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260812-012921-f2fb",
@@ -398,6 +450,7 @@ export default [
       }
     ],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-08-22T23:39:55+08:00"
   },
   {
@@ -405,28 +458,32 @@ export default [
     "publishedAt": "2026-08-11T20:18:51+08:00",
     "content": "8月10日日报\n\nspectra最后一轮review。接下来应该只需要处理dynamic scene的具体事务处理了。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260810-103718-e173",
     "publishedAt": "2026-08-10T10:37:18+08:00",
     "content": "8月9日日报（+8月8日日报）\n\n这两天完善了许多spectra 2.0的动态场景的功能，已经接近可以完整release的状态了。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260809-080858-f3db",
     "publishedAt": "2026-08-09T08:08:58+08:00",
     "content": "有空深入读一下sig26新的course\n\nhttps://davicori.github.io/SIGGRAPH-Course-Physics",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260808-211431-6534",
     "publishedAt": "2026-08-08T21:14:31+08:00",
     "content": "刚发现蔡奇写过的一本书《玻璃房》。有时间可以拿来深入读一下。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260807-175755-a202",
@@ -434,6 +491,7 @@ export default [
     "content": "接下来要集中把Sato先生的paper过一遍，然后把重点paper彻底复现一遍。八月份的重点就放在这里吧，另外是可微solver的部分。",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-08-07T17:58:35+08:00"
   },
   {
@@ -442,6 +500,7 @@ export default [
     "content": "8月7日日报\n\n今天把spectra的场景部分也看明白了，就差个pathtracer部分详细学习了。\n\n当前还没法release正式版spectra 2.0。等明天codex额度恢复之后着手正式发布的工作。\n\n现在可以考虑一下之前没时间学的ingp和diff solver的部分。",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-08-08T13:51:39+08:00"
   },
   {
@@ -450,6 +509,7 @@ export default [
     "content": "8月6日日报\n\n仔细review了一遍spectra 2.0。目前的架构还是比较满意的，比较robust并且易读性和扩展性优秀。等codex额度恢复之后着力推进完善测试场景和把之前的项目接进来。下一阶段的重心应该逐渐回到项目这边来了。\n\n总算有一个比较优秀的可视化后端了。",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-08-06T23:50:54+08:00"
   },
   {
@@ -457,42 +517,48 @@ export default [
     "publishedAt": "2026-08-06T06:58:05+08:00",
     "content": "8月5日日报\n\n今天大概梳理了一下spectra的整个逻辑块。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260805-100905-60d3",
     "publishedAt": "2026-08-05T10:09:05+08:00",
     "content": "8月4日日报\n\n今天做了一个场景，差不多验证了spectra功能是完全的。codex戒断反应有点严重QAQ不太会古法编程了。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260804-144128-9207",
     "publishedAt": "2026-08-04T14:41:28+08:00",
     "content": "8月3日日报\n\n今天做完了spectra 2.0的beta。还剩下示例项目和把项目接进来。\n\n现在在考虑是否要做一个大而全的大项目（考虑HinaPE 2.0？）还是保持每个项目的独立？",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260803-114239-64a1",
     "publishedAt": "2026-08-03T11:42:39+08:00",
     "content": "8月2日日报。\n\n今天把spectra大架构整理完了，明天应该能release。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260802-110847-d614",
     "publishedAt": "2026-08-02T11:08:47+08:00",
     "content": "不知道今天能不能release spectra 2.0……",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260802-010856-578e",
     "publishedAt": "2026-08-02T01:08:56+08:00",
     "content": "8月1日日报。\n\n今天主要做了spectra的动态场景模块支持，以及LoRA数据集的制作。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260801-130607-4b7f",
@@ -500,6 +566,7 @@ export default [
     "content": "Codex又reset哈哈。接下来想想今天的日报计划吧~",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-08-01T13:06:18+08:00"
   },
   {
@@ -507,98 +574,112 @@ export default [
     "publishedAt": "2026-08-01T09:03:58+08:00",
     "content": "从这个月开始每天都要写详细的日报，贯彻下去形成Routine。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260801-083938-c4a1",
     "publishedAt": "2026-08-01T08:39:38+08:00",
     "content": "“我相信十年后的八月，我们还能再次相见……”\n\n十年，弹指一挥间……\n\n唉……",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260731-174736-73ae",
     "publishedAt": "2026-07-31T17:47:36+08:00",
     "content": "Codex到限额了QAQ。\n\n调整调整状态离开项目一会读点文章和写点代码吧。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260730-205051-9c5a",
     "publishedAt": "2026-07-30T20:50:51+08:00",
     "content": "爱丽丝综合征 Alice in Wonderland Syndrome (AIWS)\n\n有意思的发现。\n\nhttps://en.wikipedia.org/wiki/Alice_in_Wonderland_syndrome",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260730-201123-2c8a",
     "publishedAt": "2026-07-30T20:11:23+08:00",
     "content": "人活着就注定总是要受伤和伤害别人吗……\n\n好难过，想不清楚答案……",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260730-162101-637b",
     "publishedAt": "2026-07-30T16:21:01+08:00",
     "content": "最近心里总有个很naive的念头... 就像硅谷之火里的那样...\n\n有点想要先积累reputation，然后在phd结束之后尝试开始做startup\n\n商业的本质就是瞄准人的需求，满足的需求越多越迫切，潜在市场就越大。之前我一直害怕招人发工资，但AI时代倒是给了小型startup一些新的选择了... \n\n感觉值得找时间深思熟虑一下。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260726-232757-2fe0",
     "publishedAt": "2026-07-26T23:27:57+08:00",
     "content": "把editor功能集成到本page了。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260726-192811-f5d0",
     "publishedAt": "2026-07-26T19:28:11+08:00",
     "content": "重心要回到项目进度这边了。（codex额度用不完太浪费了）\n\n下一步我得好好想想怎么写项目文档了，必须沉下心照顾到每一个细节。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260726-071939-0340",
     "publishedAt": "2026-07-26T07:19:39+08:00",
     "content": "手机刷leetcode体验还不错诶，又多了一个随时随地消遣时间的好方法",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260725-111522-d845",
     "publishedAt": "2026-07-25T11:15:22+08:00",
     "content": "这几天Leetcode刷了22题，感觉可以稍微总结一下然后调整一下刷题策略了。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260725-110333-bec2",
     "publishedAt": "2026-07-25T11:03:33+08:00",
     "content": "今天看了下Cloudfare后台，发现这个页面国外的访问者比我想象的多啊。是否应该以后完全用英语写呢？考虑一下吧。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260724-150541-c95b",
     "publishedAt": "2026-07-24T15:05:41+08:00",
     "content": "精确是最好的优化器。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260724-125955-0e8e",
     "publishedAt": "2026-07-24T12:59:55+08:00",
     "content": "先一口气刷够50题然后再作下一步打算吧。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260724-092054-dc1b",
     "publishedAt": "2026-07-24T09:20:54+08:00",
     "content": "至少目前有两个标的可以认为是接近最终形态了。一个是英语，一个是Leetcode。这两个标的的性质良好，而且可预期的范围内属于终身受益。\n\n英语：维护一个固定的字典集合（https://dictionary.xayah.me）终身维护这34,137个词，可以预见终有一天能做到字典序记忆。\n\nLeetcode：约3000题（想办法同样维护一个网站来管理数据库）。同样也是终身有用，而且解法固定后期可以大幅提高效率。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260723-201010-5ece",
@@ -606,6 +687,7 @@ export default [
     "content": "梁文峰的投资者交流会报告需要抽时间看一下，有必要写个心得报告。\n\n--------------------\n花了点时间看完了。其实内容不多。\n首先就是强调了DeepSeek的克制的风格，这一点可以感受得到。\n然后和胡渊鸣一样说了下一步渐进式AGI的展望，看来AGI真的就在眼前了..... 这点真有点想象不到具体形式。梁的看法是先做持续学习，和我目前的认知比较一致。看来DeepSeek下一代也会加入到左右Coding Agent的选择中。\n然后就是人才和团队。看来DeepSeek被挖人的现象还是比较普遍的。\n最后是卡。华为卡看起来真有点东西，CUDA护城河也并非那么牢固。但这方面对于我的影响不大没必要细想了。",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-07-23T20:59:02+08:00"
   },
   {
@@ -613,28 +695,32 @@ export default [
     "publishedAt": "2026-07-23T17:10:24+08:00",
     "content": "第N + 1次开始刷Leetcode。Leetcode真的会刷上瘾……",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260723-051526-822a",
     "publishedAt": "2026-07-23T05:15:26+08:00",
     "content": "想个办法有个页面专门放刷leetcode的记录",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260722-060342-648c",
     "publishedAt": "2026-07-22T06:03:42+08:00",
     "content": "严格不可拒绝的Routine感觉是构建信任和稳定等长久要素的必需。\n\n例如妻子为丈夫每次出门回家后的一次kiss，无论当时外界变化、内部情绪如何，只要有这个锚点，一切都能回到稳态。\n\n重点是要构建这样一个Routine锚点，要严格做到不可拒绝。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260722-044432-fb0e",
     "publishedAt": "2026-07-22T04:44:32+08:00",
     "content": "“竞争”。还真是个好词。\n\n失败者会为自己的种种找各种理由借口来逃避失败，竞争者会忠实规划好竞争失败和竞争成功后的下一步，并且按照本次竞争的胜率压上筹码。\n\n一次失败就活不起了万劫不复了，和逃避竞争阿Q精神自我胜利了，都是竞争者不可沾染的恶劣习惯。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260721-172723-c335",
@@ -642,6 +728,7 @@ export default [
     "content": "【论心理疾病】\n近期的一些事件时常提醒我，跑得快不一定赢，不跌跟头才是成功。一直很想谈一下心理疾病问题，今天简单记录一下。\n\n这里不谈一大堆假装出来的和自以为自己定义的有一堆奇形怪状心理疾病。只论一些常见的，例如抑郁症焦虑症之类的。十分庆幸我自己的心理建设一向是比较健康的，一方面取决于我自己能量比较高，有自己的一套评价体系，因此外界能传导的压力较小；另一方面是，个人很鄙夷这种病，这里大言不惭地表达一下自己的真实想法，我认为这是一种弱者才会罹患的病（更不用提那些根本不是“罹患”而是附庸“风雅”的“患者”）。\n\n我知道这很容易在未来的某天变成回旋镖，我也见过一些很优秀的人最终因为这个导致人生进程突然中断一段时间。但不得不说，由于情绪或者由于情绪导致生理病变这是一个极其不应该的事情。情绪的奴隶是所有弱小者的共性，从某种意义上而言，我是个坚定的社会达尔文主义者。\n\n回到自身的现实，我综合认为目前的压力状况还是比较低，完全可以由自身再施加一些压力提高效率，促成飞轮效应。再加把劲！",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-07-21T17:27:50+08:00"
   },
   {
@@ -649,21 +736,24 @@ export default [
     "publishedAt": "2026-07-21T11:16:19+08:00",
     "content": "法律真是越来越幽默了，好玩。没有统战价值，怪得了谁呢？\n\n“越富有的，越要给予。越贫穷的，越要剥夺。”\n\n更加印证了我的一个结论：一定要有底牌，要有面对哪怕是”统治阶级意志“的底牌。迫害你的根本不是根本不可能是政治局级别的尚方宝剑，你只需要掌握能够让市县级假节钺忌惮你的底牌就足够了。\n\n在洼地里 ，把鸡蛋放进同一个篮子里的，就等着被吃干抹净牢底坐穿吧。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260721-064710-e834",
     "publishedAt": "2026-07-21T06:47:10+08:00",
     "content": "【Proposal】是否可以建立一个自我交易模型？\n\n基于：无理性假设[1]，赢者通吃定理[2]\n议题：既然自我主体本身是不可信任的，那么就应该把自我剥离也纳入到交易体系中。“我“并不是市场中特殊的东西，要把所有因子都加入到量化体系中来。\n\n[1] 理性是否真正理性：再读More is Different\n[2] “赢”理论的强通用性质",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260721-061830-15de",
     "publishedAt": "2026-07-21T06:18:30+08:00",
     "content": "潜意识里越来越意识到：一旦突破天花板，就必须主动或被动解除许多过去不敢想的默认领域。\n\n禁忌从不仅仅意味着禁忌本身。从另一个角度，禁忌本身就意味着额外利益空间。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260721-043704-498f",
@@ -671,6 +761,7 @@ export default [
     "content": "之前提到了月度总结/年度总结甚至日报的方案，但我总感觉还缺少了两样重要的东西。\n\n一个是知识库（或者叫沉淀库），存放所有可复现的知识和技能，比如快速写Native Vulkan App的框架，上手就能弹的曲子（指完全自己重新制谱重新标指法重新练习的有唯一弹法的谱），看过的论文（深度解析每一处要点），确定会做的Leetcode题之类的。\n\n另一个就是Context（具体名字我还没想好），也就是目前手头在做的工作，每个周期（比如每个月/每年）compact一遍。记忆力实在不好，很多工作做着做着就会丢Context，得好好想办法解决这个问题。",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-07-21T06:32:41+08:00"
   },
   {
@@ -678,42 +769,48 @@ export default [
     "publishedAt": "2026-07-21T04:11:13+08:00",
     "content": "TODO\n研究一下Deep Scattering: Rendering Atmospheric Clouds with Radiance-Predicting Neural Networks\n这看起来很Promising。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260721-034858-43dd",
     "publishedAt": "2026-07-21T03:48:58+08:00",
     "content": "有点苦恼，想不出一个初步的well-defined的目标验证问题。\n\n今天看到胡渊鸣的新文章提到业内共识在2028年左右实现AGI，这确实有点超出我目前的认知。我至今仍然把Agent当作一个大号的自动补全机器，对于真正的End to End目前的我无法想象。CG整个产业真的要重新发明一遍吗？对于PhD期间之前思考好的方向，是否要进行及时修正？\n\n但我真的看不到真正AI给这个领域进行颠覆的方向和未来…… 是我太过愚钝短视了吗？",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260720-014654-9de7",
     "publishedAt": "2026-07-20T01:46:54+08:00",
     "content": "【Paper想法2】也许可以命名成屏幕空间流体引导？这样能结合的特性就有\n\n1. Diffusion Model直接生成渲染后的预览图（允许艺术家在屏幕空间任意改动）\n2. 把相机位置以及时间戳加入到整个Guide Optimization Pipeline中（过去应该没有类似的工作吧，需要进一步调研）\n3. Intuitive Physics考虑一下",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260719-144637-93e8",
     "publishedAt": "2026-07-19T14:46:37+08:00",
     "content": "是不是应该停下来好好读几篇paper了啊。\n\n可是codex额度用不完总感觉有点亏……",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260719-093355-6ae6",
     "publishedAt": "2026-07-19T09:33:55+08:00",
     "content": "TODO\n做完这个谱之后插入做一个Old Memory的谱子。这应该工作量比较低，就是注意后期要合成弦乐。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260719-081632-6df3",
     "publishedAt": "2026-07-19T08:16:32+08:00",
     "content": "最近的想法越来越印证我目前的世界观了。但还没有经过现实验证，一定要记住不要纸上谈兵做模拟盘。\n\n得好好计划设计一下验证方案了。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260719-061603-c315",
@@ -721,6 +818,7 @@ export default [
     "content": "【Paper想法1】感觉如果不加Diffusion Model很难和前人做过的东西区分开来。\n\n但是前人做的有一个很大的缺点就是“很假”。如果我还是做target引导/轨迹引导，但是尽可能不用类似于external force控制而是根据特性来估计场景中真实的物理信息（因为视频本身肯定就是完全物理的，无论是synthetic video还是real shot video）。比如自然中的烟雾可以估计风场（对于短视频监督完全可以简化成方向和强度变化最不剧烈的假设），对于pyro这类就可以估计温度场之类的完全摒弃external force场，对于云就更好办了云有自身的三态变化规律完全可以拟合一个规则来估计。\n\n最终的成果可能可以做一个结合Differentiable Solver的In Paint 3D Diffusion Model。渲染一张图（比如夕阳下的蒸汽火车）然后让Diffusion Model自己生成一张比较合理美观的图片，然后允许单图恢复出3D密度，然后指定source（一般来说烟雾的source是比较容易指定也是比较固定的）生成整个物理动态轨迹。类似的思想可以迁移到Differentiable Cloth Simulation上。",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-07-21T04:40:16+08:00"
   },
   {
@@ -728,49 +826,56 @@ export default [
     "publishedAt": "2026-07-19T05:44:23+08:00",
     "content": "一定要允许错误。错误是好事，错误越大相对最终target的gradient越大，人才能更好更快地学习。一定要诚实面对错误，并且努力寻找修复错误的方案。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260719-052219-392e",
     "publishedAt": "2026-07-19T05:22:19+08:00",
     "content": "Kimi的杨植麟提到一本书 The Beginning of Infinity。有时间可以看一下。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260719-033957-2135",
     "publishedAt": "2026-07-19T03:39:57+08:00",
     "content": "网上乌烟瘴气的东西真的太多了，一定要控制住看垃圾信息的惯性。Trash in trash out，概率论的一大核心论题。\n\n人群的共识是让你用来赚取margin的，不是让你来反被影响的。一定要坚持以现实进步和利润落盘为唯一准则。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260719-032433-e431",
     "publishedAt": "2026-07-19T03:24:33+08:00",
     "content": "看来日报还是有必要的，今天开始每天维护一个日报Journal。概率论上已经得出来的结论还是要忠实遵循，理性是靠不住的，忠实执行计划才能稳步推进优化。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260718-171559-7666",
     "publishedAt": "2026-07-18T17:15:59+08:00",
     "content": "用人不疑，疑人不用。这个思想确实贯彻了我时至今日的价值观。如果有时间可以深入写一下。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260718-164549-5dbb",
     "publishedAt": "2026-07-18T16:45:49+08:00",
     "content": "codex确实改变了一切，顶尖高校的PhD的利用肯定能够达到一个饱和的地步/因此一定不能松懈，尽全力尽快完成基础建设开始写文章优化循环。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260718-154518-eb6b",
     "publishedAt": "2026-07-18T15:45:18+08:00",
     "content": "感觉还是计划执行论没有落地的原因。效率很难提上去。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260718-152140-ec41",
@@ -778,6 +883,7 @@ export default [
     "content": "今天要至少工作到23点，然后完成【计划0】到时间来check\n\n是否工作到11点？没有，六点钟的时候就撑不住先睡着了……",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-07-19T03:20:15+08:00"
   },
   {
@@ -785,35 +891,40 @@ export default [
     "publishedAt": "2026-07-18T14:36:51+08:00",
     "content": "时间能不能慢点…… 或者说你能不能勤奋起来啊别这么废了……\n\n这首曲子指法标注和校对还有练习不能再拖了。下个周期必须监督起来。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260718-143416-1afd",
     "publishedAt": "2026-07-18T14:34:16+08:00",
     "content": "每次无意间摸到自己手指甲又长起来了都会很失落，莫名想起来三国刘备经常说的“髀肉复生”。刘备长时间不骑马打仗，导致大腿上的肉都长起来了。我也一样，许久不练琴，松懈到手指甲都长起来了。\n\n真难受啊，究竟什么时候才能不那么差劲。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260718-135923-df11",
     "publishedAt": "2026-07-18T13:59:23+08:00",
     "content": "我得想出个方案快速上手一个我已经掌握技术栈但是Agent出来的项目。\n\n目前这套传统做法真的太低效率了。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260718-134045-ce59",
     "publishedAt": "2026-07-18T13:40:45+08:00",
     "content": "不要再去伤害任何人了…… 对不起对不起",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260718-133456-8e12",
     "publishedAt": "2026-07-18T13:34:56+08:00",
     "content": "也许我真的太差劲了吧。我什么都做不到…… 对不起对不起对不起对不起对不起",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260718-132611-0150",
@@ -821,6 +932,7 @@ export default [
     "content": "心好乱。\n\n一年多了，总是想起你。好多之前自以为是的理性、认知、想法什么的一旦考虑到你，就全都变了。之前还在一起的时候，深夜梦见惊醒后背湿透的感觉，永远也忘不掉。\n\n其实从第一天开始我就知道，结局早就注定了。你赠与我的回忆太美好了，美好到每次触碰到就会被深深刺痛一下。那时我总以为，再努力一点，更加强大一点，也许就能改写结局。可是我什么都做不到，更不明白什么是爱。\n\n”如果我们能活着出去的话，万水千山，你愿意陪我一起去看吗？“\n\n”9月1日，和Sakura去迪士尼。晚上出园的时候下了大雨，远处天空列车呼啸划过。但是有Sakura在，所以不可怕。“\n\n”小猪和小兔要永远在一起……“\n\n对不起。\n\n对不起。",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-07-18T13:33:15+08:00"
   },
   {
@@ -828,21 +940,24 @@ export default [
     "publishedAt": "2026-07-18T04:13:45+08:00",
     "content": "技能优势保持不了多久的，因此曝光赚取margin必然会导致整个领域的leap。所以到底该怎么维护优势赚取持久margin还得好好考虑一下。\n\n个人能力进步感觉肯定干不过专业下场的。有点难以琢磨呢。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260717-103417-0121",
     "publishedAt": "2026-07-17T10:34:17+08:00",
     "content": "做完了，希望能好好用上这个私人词典。\n\nhttps://dictionary.xayah.me",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260717-070931-d63f",
     "publishedAt": "2026-07-17T07:09:31+08:00",
     "content": "目前Writing和Journal的做法对于文章和小想法的记录很不错，可是还缺少一个类似于知识库沉淀的的东西，得想想办法。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260717-061144-ede0",
@@ -853,6 +968,7 @@ export default [
       "id": "20260717-061303",
       "title": "【方法论】预测未来与验证未来：计划与执行"
     },
+    "relatedTask": null,
     "updatedAt": "2026-07-17T06:14:45+08:00"
   },
   {
@@ -864,6 +980,7 @@ export default [
       "id": "20260717-034749",
       "title": "关于我：世界、爱情与意识形态"
     },
+    "relatedTask": null,
     "updatedAt": "2026-07-17T06:02:33+08:00"
   },
   {
@@ -871,21 +988,24 @@ export default [
     "publishedAt": "2026-07-17T03:20:50+08:00",
     "content": "深夜总是容易多愁善感。\n\n这一年思想真的改变了好多。关于世界，关于爱。\n\n我也搞不明白我自己，但我知道我很差劲，过去是，现在也是。你的离开也许确实是个明智之举。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260717-003332-b01f",
     "publishedAt": "2026-07-17T00:33:32+08:00",
     "content": "真的好难啊，坚持一下。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260716-142416-6a14",
     "publishedAt": "2026-07-16T14:24:16+08:00",
     "content": "想了想还是做二格/四格漫画等短篇吧，长篇太容易烂尾或者故事写崩了。\n\n把握好核心卖点，先把情节爆点写好，之后扩写应该就会容易得多。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260716-002842-a110",
@@ -893,6 +1013,7 @@ export default [
     "content": "https://www.zhihu.com/question/1976839227397399722\n\n这个“涌现（Emergence)\"很符合我文章中的一个观点诶。有时间好好研究一下。",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-07-17T14:34:22+08:00"
   },
   {
@@ -900,7 +1021,8 @@ export default [
     "publishedAt": "2026-07-15T23:57:38+08:00",
     "content": "Elaborate，精心设计。这个词很符合当前我想要做到的状态。虽然说很多领域都做不到实质顶尖，但是事实上如果花费有效时间精心设计一个闭环作品，取得的价值也能比较高，从某种意义上在specialized field来说达到顶尖也并非难事。\n\n平庸原理要好好把握。",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260715-171243-c07d",
@@ -908,6 +1030,7 @@ export default [
     "content": "要不要要求写日报呢？好纠结。\n\n感觉要是写日报很容易烂尾啊……但是不写的话又容易懈怠。\n\n先不要求吧，下周7月22日的时候看看当前计划执行的怎么样，如果顺利可以要求日报。",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-07-17T14:34:39+08:00"
   },
   {
@@ -919,6 +1042,7 @@ export default [
       "id": "20260717-124940",
       "title": "[DiffSolver-01] Towards Differentiable Solver: Start from Scratch"
     },
+    "relatedTask": null,
     "updatedAt": "2026-07-17T14:34:55+08:00"
   },
   {
@@ -926,7 +1050,8 @@ export default [
     "publishedAt": "2026-07-15T16:50:42+08:00",
     "content": "对了，忘了说，今后每个计划都要在Journal诚实记录，每个月都要在Journal月度总结（带一张数据报告图），每年都要在Writing写年度报告（带详细的数据报告）。这一条留档，做不到会被所有人耻笑哦~",
     "images": [],
-    "relatedWriting": null
+    "relatedWriting": null,
+    "relatedTask": null
   },
   {
     "id": "20260715-163630-4f8b",
@@ -934,6 +1059,7 @@ export default [
     "content": "之前写文章总是畏畏缩缩，总感觉今后要是给别人看。就像是把自己隐藏在最深处的小心思给别人看一样。但最近想开多了，自己其实没有什么不能公开的思想。\n\n更重要的是，我得写给自己看，这是这几天最大的想法。正如在概率论里提到的，既然没有理性，作为一个普通Model你得知道自己的Goal，越明确越好，人脑的Context是有限的，得有外部存储把状态和思考记下来，实时回顾调用才能更好地优化。\n\n至于给别人看，愿意看我文章的一般都是愿意了解我关心我的，这种情况下暴露真实的自己没什么不好。之前最顾虑的无非两点，第一点关于政治，担心因言获罪或者将来无意间惹到某些群体可能被翻个底朝天来。但去年开始政治性焦虑减少了非常多，而且考虑到既然决心走学术界的路bio全公开是必不可少的，况且自己的思想其实也没什么，没什么黑深残的过度极端思想。第二点是关于爱或者说性，保守主义思潮下的必然产物。但最近思考了很多关于这个排在“吃穿住“同一层级的一级需求，有很多新思考。从第一性原理思考发现自己完全没有必要过度反应，尤其是对自己思考的时候不要自我设限为禁区。这里先简单记录一下今后扩展成一篇文章。\n\n政治与性从某一层面上是同源的。性这一点和政治一样，人们都希望你不要谈论它，但人的社会属性和生物的本能决定了这二者你是避不开的。要知道，chaos is ladder，禁忌反而是margin的重要来源。对于这二者，最新我都有新思考。财富增长的本质是满足人的需求，政治的本质是控制资源分配的权力，所以想要向上增长财富必然逃不过政治（此处指法律），在灰色地带赚取利润是必须学习的一项重要技能。所以，驾驭政治最重要的是规避风险（此处需要在文章中具体写一写）。而性天生禁忌又必需的特性天然适合收割积累财富，它的本名应该叫做欲望，如何控制满足别人的欲望也是赚取利润必须好好学习的一项技能。所以，驾驭（他人）欲望最重要的也是规避风险。\n\n要想要成为”强“的人，能”赢“的人，能源源不断产出资源的人，思维一定不能被局限住。当然要能在神明注视的无垠荒野熬枯受淡筚路蓝缕，也要能在百鬼横行的禁忌之夜贪婪掠夺全身而退。\n\n所以，诚实面对自己，诚实面对神明。",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-07-15T16:41:47+08:00"
   },
   {
@@ -945,6 +1071,7 @@ export default [
       "id": "20260717-061303",
       "title": "【方法论】预测未来与验证未来：计划与执行"
     },
+    "relatedTask": null,
     "updatedAt": "2026-07-17T06:14:59+08:00"
   },
   {
@@ -953,6 +1080,7 @@ export default [
     "content": "想继续写一篇关于动态资源与利益产出的文章，但是今天似乎时间不太够了，要赶一下项目的工作了QAQ。\n另外，日记要多写，不然真的忘了就是忘了，相比本科毕业前认知真的丢了好多，要想办法慢慢捡回来继续发展一下。",
     "images": [],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-07-15T15:50:41+08:00"
   },
   {
@@ -964,6 +1092,7 @@ export default [
       "id": "20260715-090945",
       "title": "理性是否真正理性：再读 More is Different"
     },
+    "relatedTask": null,
     "updatedAt": "2026-07-15T15:05:57+08:00"
   },
   {
@@ -977,6 +1106,7 @@ export default [
       }
     ],
     "relatedWriting": null,
+    "relatedTask": null,
     "updatedAt": "2026-07-15T17:02:49+08:00"
   }
 ];

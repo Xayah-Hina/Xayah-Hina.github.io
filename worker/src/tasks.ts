@@ -1,5 +1,5 @@
 import { getTaskStateVersioned, putTaskStateConditional } from "./storage";
-import type { Env, TaskContribution, TaskItem, TaskProject, TaskState } from "./types";
+import type { Env, JournalRelatedTask, TaskContribution, TaskItem, TaskProject, TaskState } from "./types";
 import { asRecord, HttpError, randomHex, requiredString, singaporeTimestamp } from "./utils";
 
 const DATE = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
@@ -297,6 +297,26 @@ function publicData(state: TaskState): PublicTaskData {
   return {
     ...state,
     today: todayInSingapore(),
+  };
+}
+
+export async function relatedTaskSnapshot(env: Env, id: string): Promise<JournalRelatedTask | null> {
+  if (!TASK_ID.test(id)) return null;
+  const { state } = await versionedState(env);
+  const task = state.tasks.find((candidate) => candidate.id === id);
+  if (!task) return null;
+  const project = state.projects.find((candidate) => candidate.id === task.projectId);
+  if (!project) return null;
+  return {
+    id: task.id,
+    code: task.code,
+    title: task.title,
+    project: {
+      id: project.id,
+      key: project.key,
+      title: project.title,
+      color: project.color,
+    },
   };
 }
 

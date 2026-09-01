@@ -9,6 +9,8 @@ import {
 import { HttpError } from "../src/utils.ts";
 
 const year = "2026";
+const taskProjectId = `project-${"b".repeat(24)}`;
+const relatedTaskId = `task-${"a".repeat(24)}`;
 const entry = {
   id: "20260807-171423-7239",
   publishedAt: "2026-08-07T17:14:23+08:00",
@@ -16,7 +18,38 @@ const entry = {
   content: "Updated Journal content.",
   images: [],
   relatedWriting: null,
+  relatedTask: null,
 };
+
+function storedTaskState(taskTitle = "Canonical Task title") {
+  return {
+    schemaVersion: 3,
+    revision: "0",
+    updatedAt: "2026-08-08T10:00:00+08:00",
+    projects: [{
+      id: taskProjectId,
+      key: "SPEC",
+      title: "Spectra",
+      description: "",
+      color: "#22c55e",
+      status: "active",
+      createdAt: "2026-08-01T10:00:00+08:00",
+      updatedAt: "2026-08-01T10:00:00+08:00",
+    }],
+    tasks: [{
+      id: relatedTaskId,
+      code: "SPEC-2026-0001",
+      projectId: taskProjectId,
+      title: taskTitle,
+      status: "todo",
+      priority: "normal",
+      scheduledDate: null,
+      createdAt: "2026-08-01T10:00:00+08:00",
+      updatedAt: "2026-08-01T10:00:00+08:00",
+    }],
+    contributions: [],
+  };
+}
 function moduleSource(value: unknown): string {
   return `export default ${JSON.stringify(value, null, 2)};\n`;
 }
@@ -32,7 +65,7 @@ function githubFile(path: string, value: unknown): Response {
   }), { headers: { "Content-Type": "application/json" } });
 }
 
-function installJournalFetch(): () => void {
+function installJournalFetch(sourceEntry: unknown = entry): () => void {
   const original = globalThis.fetch;
   globalThis.fetch = async (input) => {
     const url = new URL(String(input));
@@ -40,7 +73,7 @@ function installJournalFetch(): () => void {
       return githubFile("journals/catalog.js", { years: [2026] });
     }
     if (url.pathname.endsWith(`/contents/journals/${year}.js`)) {
-      return githubFile(`journals/${year}.js`, [entry]);
+      return githubFile(`journals/${year}.js`, [sourceEntry]);
     }
     if (url.pathname.endsWith("/git/ref/heads/master")) {
       return Response.json({ object: { sha: "c".repeat(40) } });
@@ -59,7 +92,7 @@ function installJournalFetch(): () => void {
   };
 }
 
-function environment() {
+function environment(taskState: unknown = null) {
   const deleted: Array<string | string[]> = [];
   const puts: Array<{ key: string; options: unknown }> = [];
   return {
@@ -67,6 +100,13 @@ function environment() {
     puts,
     env: {
       CONTENT: {
+        async get(key: string) {
+          if (key !== "published/tasks/state.json" || taskState === null) return null;
+          return {
+            etag: "task-etag",
+            async json() { return structuredClone(taskState); },
+          };
+        },
         async put(key: string, _value: unknown, options: unknown) {
           puts.push({ key, options });
           return { etag: `etag-${puts.length}` };
@@ -124,6 +164,66 @@ test("authoring Journal reads come from the latest GitHub source", async () => {
     assert.deepEqual(await authoringJournalCatalogData(env), { years: ["2026"] });
     const result = await authoringJournalYearData(env, year);
     assert.equal(result.entries[0].content, entry.content);
+  } finally {
+    restore();
+  }
+});
+
+test("Journal Related Task snapshots come from canonical Task storage", async () => {
+  const restore = installJournalFetch();
+  const { env } = environment(storedTaskState());
+  try {
+    const result = await saveJournal(env, {
+      mode: "edit",
+      entry: {
+        id: entry.id,
+        publishedAt: entry.publishedAt,
+        content: `${entry.content} Linked.`,
+        relatedWriting: null,
+        relatedTask: {
+          id: relatedTaskId,
+          code: "FORGED-2099-9999",
+          title: "Forged title",
+          project: { id: taskProjectId, key: "BAD", title: "Forged", color: "#000000" },
+        },
+      },
+      images: [],
+      uploads: [],
+    });
+    assert.deepEqual(result.entries[0]?.relatedTask, {
+      id: relatedTaskId,
+      code: "SPEC-2026-0001",
+      title: "Canonical Task title",
+      project: { id: taskProjectId, key: "SPEC", title: "Spectra", color: "#22c55e" },
+    });
+  } finally {
+    restore();
+  }
+});
+
+test("editing a Journal preserves an existing Related Task snapshot", async () => {
+  const snapshot = {
+    id: relatedTaskId,
+    code: "SPEC-2026-0001",
+    title: "Original Task title",
+    project: { id: taskProjectId, key: "SPEC", title: "Original Project title", color: "#16a34a" },
+  };
+  const restore = installJournalFetch({ ...entry, relatedTask: snapshot });
+  const { env } = environment(storedTaskState("Renamed Task title"));
+  try {
+    const result = await saveJournal(env, {
+      mode: "edit",
+      entry: {
+        id: entry.id,
+        publishedAt: entry.publishedAt,
+        content: `${entry.content} Edited.`,
+        relatedWriting: null,
+        relatedTask: { id: relatedTaskId },
+      },
+      images: [],
+      uploads: [],
+    });
+    assert.deepEqual(result.entries[0]?.relatedTask, snapshot);
   } finally {
     restore();
   }

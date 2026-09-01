@@ -466,11 +466,21 @@
       aspect-ratio: 2 / 1;
     }
 
-    .journal-related {
-      display: inline-block;
+    .journal-relations {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
       margin-top: 0.85rem;
+      gap: 0.45rem 0.9rem;
+    }
+
+    .journal-related {
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
+      gap: 0.38rem;
       color: var(--link);
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       font-weight: 600;
       text-decoration: none;
     }
@@ -478,6 +488,20 @@
     .journal-related:hover {
       text-decoration: underline;
       text-underline-offset: 0.18em;
+    }
+
+    .journal-related-task-dot {
+      width: 0.45rem;
+      height: 0.45rem;
+      flex: 0 0 auto;
+      background: var(--project-color);
+      border-radius: 50%;
+    }
+
+    .journal-related-task-code {
+      color: var(--subtle);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
     }
 
     .journal-dialog {
@@ -638,6 +662,131 @@
       padding: 0.65rem;
       line-height: 1.6;
       resize: vertical;
+    }
+
+    .related-task-combobox {
+      position: relative;
+    }
+
+    .related-task-options {
+      position: absolute;
+      z-index: 3;
+      top: calc(100% + 0.35rem);
+      right: 0;
+      left: 0;
+      max-height: 18rem;
+      padding: 0.3rem;
+      overflow-y: auto;
+      background: var(--card-hover);
+      border: 1px solid var(--line);
+      border-radius: 0.55rem;
+      box-shadow: var(--shadow);
+    }
+
+    .related-task-options[hidden] {
+      display: none;
+    }
+
+    .related-task-option {
+      display: grid;
+      width: 100%;
+      padding: 0.55rem 0.6rem;
+      gap: 0.15rem;
+      color: var(--text);
+      background: transparent;
+      border: 0;
+      border-radius: 0.4rem;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .related-task-option:hover,
+    .related-task-option[data-active="true"] {
+      background: var(--card);
+    }
+
+    .related-task-option-heading,
+    .related-task-option-meta,
+    .related-task-selection-copy {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      gap: 0.4rem;
+    }
+
+    .related-task-option-dot,
+    .related-task-selection-dot {
+      width: 0.45rem;
+      height: 0.45rem;
+      flex: 0 0 auto;
+      background: var(--project-color);
+      border-radius: 50%;
+    }
+
+    .related-task-option-code,
+    .related-task-selection-code {
+      color: var(--subtle);
+      font: 0.6875rem/1.4 var(--font-mono);
+    }
+
+    .related-task-option-title {
+      overflow: hidden;
+      font-size: 0.8125rem;
+      font-weight: 650;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .related-task-option-meta {
+      padding-left: 0.85rem;
+      color: var(--subtle);
+      font-size: 0.6875rem;
+    }
+
+    .related-task-options-empty {
+      margin: 0;
+      padding: 0.65rem;
+      color: var(--subtle);
+      font-size: 0.75rem;
+    }
+
+    .related-task-selection {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 2.4rem;
+      padding: 0.4rem 0.55rem;
+      gap: 0.65rem;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 0.45rem;
+    }
+
+    .related-task-selection[hidden] {
+      display: none;
+    }
+
+    .related-task-selection-title {
+      min-width: 0;
+      overflow: hidden;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .related-task-selection-remove {
+      flex: 0 0 auto;
+      padding: 0.2rem;
+      color: var(--subtle);
+      background: transparent;
+      border: 0;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    .related-task-selection-remove:hover {
+      color: #dc2626;
     }
 
     .field-hint,
@@ -1082,7 +1231,7 @@
       </div>
       <div class="journal-content"></div>
       <div class="journal-media"></div>
-      <a class="journal-related"></a>
+      <div class="journal-relations" hidden></div>
     </article>
   </template>
 
@@ -1120,6 +1269,17 @@
             <span class="field-label">Content</span>
             <textarea class="field-textarea" name="content" placeholder="Write a short thought..."></textarea>
           </label>
+
+          <div class="field-group">
+            <label class="field-label" for="journal-related-task">Related Task</label>
+            <div class="related-task-combobox">
+              <input id="journal-related-task" class="field-input" name="relatedTaskSearch" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="related-task-options" placeholder="Search code, Task, or Project" autocomplete="off">
+              <input name="relatedTask" type="hidden">
+              <div id="related-task-options" class="related-task-options" role="listbox" hidden></div>
+              <div class="related-task-selection" hidden></div>
+            </div>
+            <span class="field-hint">Optional. Links this Journal to one Task, including completed or archived work.</span>
+          </div>
 
           <div class="field-group">
             <label class="field-label" for="journal-images">Images</label>
@@ -1265,6 +1425,7 @@
       const sectionMap = new Map(Object.entries(config.sections));
       const moduleVersion = Date.now().toString();
       const authoringRequestTimeout = 8000;
+      const taskCodePattern = /^[A-Z][A-Z0-9]{1,7}-\d{4}-\d{4}$/;
       let authoringSession = false;
       const writingEntriesByYear = new Map();
       const writingLoadPromises = new Map();
@@ -1301,6 +1462,7 @@
       const initialRoute = readRoute();
       const state = {
         section: initialRoute.sectionId,
+        taskCode: initialRoute.taskCode,
         queries: Object.fromEntries([...sectionMap.keys()].map((sectionId) => [sectionId, ""])),
         years: Object.fromEntries(
           [...sectionMap.keys()].map((sectionId) => [sectionId, latestYear(sectionId)])
@@ -1316,6 +1478,10 @@
         editorForm: null,
         editorImages: [],
         relatedWritingChoices: [],
+        relatedTaskChoices: [],
+        relatedTaskId: "",
+        relatedTaskActiveIndex: -1,
+        relatedTaskVisibleIds: [],
         originalEntry: null,
         originalBody: "",
         busy: false,
@@ -1435,6 +1601,18 @@
             || typeof entry.relatedWriting.title !== "string"
           )) {
             throw new TypeError(`Journal ${entry.id} has invalid related Writing data.`);
+          }
+          if (!Object.hasOwn(entry, "relatedTask") || (entry.relatedTask && (
+            typeof entry.relatedTask.id !== "string"
+            || typeof entry.relatedTask.code !== "string"
+            || typeof entry.relatedTask.title !== "string"
+            || !entry.relatedTask.project
+            || typeof entry.relatedTask.project.id !== "string"
+            || typeof entry.relatedTask.project.key !== "string"
+            || typeof entry.relatedTask.project.title !== "string"
+            || typeof entry.relatedTask.project.color !== "string"
+          ))) {
+            throw new TypeError(`Journal ${entry.id} has invalid related Task data.`);
           }
           if (entry.updatedAt && Number.isNaN(Date.parse(entry.updatedAt))) {
             throw new TypeError(`Journal ${entry.id} has an invalid updatedAt timestamp.`);
@@ -1567,21 +1745,26 @@
         return yearsBySection.get(sectionId)?.[0] || "";
       }
 
-      function routeHash(sectionId, year) {
+      function routeHash(sectionId, year, taskCode = "") {
+        if (sectionId === "task") return `#task${taskCode ? `/${taskCode}` : ""}`;
         return `#${sectionId}${year ? `/${year}` : ""}`;
       }
 
       function readRoute() {
-        const [requestedSection, requestedYear] = location.hash.slice(1).split("/");
+        const [requestedSection, requestedValue] = location.hash.slice(1).split("/");
         const sectionId = sectionMap.has(requestedSection) ? requestedSection : config.defaultSection;
+        if (sectionId === "task") {
+          const taskCode = taskCodePattern.test(requestedValue || "") ? requestedValue : "";
+          return { sectionId, year: "", taskCode, hash: routeHash(sectionId, "", taskCode) };
+        }
         const availableYears = yearsBySection.get(sectionId);
-        const year = availableYears.includes(requestedYear) ? requestedYear : latestYear(sectionId);
-        return { sectionId, year, hash: routeHash(sectionId, year) };
+        const year = availableYears.includes(requestedValue) ? requestedValue : latestYear(sectionId);
+        return { sectionId, year, taskCode: "", hash: routeHash(sectionId, year) };
       }
 
-      function updateRoute(sectionId, year, replace = false) {
+      function updateRoute(sectionId, year, replace = false, taskCode = "") {
         const url = new URL(location.href);
-        url.hash = routeHash(sectionId, year);
+        url.hash = routeHash(sectionId, year, taskCode);
         history[replace ? "replaceState" : "pushState"](null, "", url);
       }
 
@@ -1590,7 +1773,10 @@
           return [
             entry.content,
             ...(entry.images || []).map((image) => image.alt),
-            entry.relatedWriting?.title
+            entry.relatedWriting?.title,
+            entry.relatedTask?.code,
+            entry.relatedTask?.title,
+            entry.relatedTask?.project?.title
           ].filter(Boolean).join(" ").toLocaleLowerCase();
         }
 
@@ -1732,7 +1918,7 @@
         const time = fragment.querySelector(".journal-time");
         const content = fragment.querySelector(".journal-content");
         const media = fragment.querySelector(".journal-media");
-        const related = fragment.querySelector(".journal-related");
+        const relations = fragment.querySelector(".journal-relations");
 
         post.id = `journal-${entry.id}`;
         renderJournalTime(time, entry, timeZone);
@@ -1786,11 +1972,30 @@
         media.hidden = images.length === 0;
 
         if (entry.relatedWriting) {
-          related.href = `/writing/${entry.relatedWriting.id}/`;
-          related.textContent = `Related writing: ${entry.relatedWriting.title}`;
-        } else {
-          related.hidden = true;
+          const writing = document.createElement("a");
+          writing.className = "journal-related";
+          writing.href = `/writing/${entry.relatedWriting.id}/`;
+          writing.textContent = `Related writing: ${entry.relatedWriting.title}`;
+          relations.append(writing);
         }
+        if (entry.relatedTask) {
+          const task = document.createElement("a");
+          const dot = document.createElement("span");
+          const code = document.createElement("span");
+          const title = document.createElement("span");
+          task.className = "journal-related journal-related-task";
+          task.href = `#task/${entry.relatedTask.code}`;
+          task.title = `${entry.relatedTask.project.key} · ${entry.relatedTask.project.title}`;
+          dot.className = "journal-related-task-dot";
+          dot.style.setProperty("--project-color", entry.relatedTask.project.color);
+          dot.setAttribute("aria-hidden", "true");
+          code.className = "journal-related-task-code";
+          code.textContent = entry.relatedTask.code;
+          title.textContent = entry.relatedTask.title;
+          task.append(dot, code, document.createTextNode("—"), title);
+          relations.append(task);
+        }
+        relations.hidden = relations.childElementCount === 0;
 
         return fragment;
       }
@@ -1857,7 +2062,7 @@
 
         if (state.section === "task") {
           byId("archive-summary").textContent = "";
-          tasks.mount(archiveList);
+          tasks.mount(archiveList, state.taskCode);
           return;
         }
 
@@ -1966,8 +2171,17 @@
       }
 
       function selectSection(sectionId, updateHistory = true) {
-        if (!sectionMap.has(sectionId) || sectionId === state.section) return;
+        if (!sectionMap.has(sectionId)) return;
+        if (sectionId === state.section) {
+          if (sectionId === "task" && state.taskCode) {
+            state.taskCode = "";
+            if (updateHistory) updateRoute(sectionId, "");
+            renderSection();
+          }
+          return;
+        }
         state.section = sectionId;
+        state.taskCode = "";
         if (!yearsBySection.get(sectionId).includes(state.years[sectionId])) {
           state.years[sectionId] = latestYear(sectionId);
         }
@@ -1985,8 +2199,9 @@
       function applyRoute() {
         const route = readRoute();
         state.section = route.sectionId;
+        state.taskCode = route.taskCode;
         state.years[route.sectionId] = route.year;
-        if (location.hash !== route.hash) updateRoute(route.sectionId, route.year, true);
+        if (location.hash !== route.hash) updateRoute(route.sectionId, route.year, true, route.taskCode);
         renderSection();
       }
 
@@ -2087,6 +2302,32 @@
           const button = event.target.closest("[data-remove-image]");
           if (!button) return;
           removeEditorImage(button.dataset.removeImage);
+        });
+
+        const relatedTaskInput = authoring.editorForm.elements.relatedTaskSearch;
+        const relatedTaskOptions = authoring.editorDialog.querySelector("#related-task-options");
+        relatedTaskInput.addEventListener("focus", renderRelatedTaskOptions);
+        relatedTaskInput.addEventListener("input", () => {
+          authoring.relatedTaskActiveIndex = -1;
+          renderRelatedTaskOptions();
+        });
+        relatedTaskInput.addEventListener("keydown", handleRelatedTaskKeydown);
+        relatedTaskOptions.addEventListener("pointerdown", (event) => event.preventDefault());
+        relatedTaskOptions.addEventListener("click", (event) => {
+          const option = event.target.closest("[data-related-task-id]");
+          if (option) selectRelatedTask(option.dataset.relatedTaskId);
+        });
+        authoring.editorDialog.querySelector(".related-task-selection").addEventListener("click", (event) => {
+          if (!event.target.closest("[data-related-task-remove]")) return;
+          selectRelatedTask();
+          relatedTaskInput.focus();
+        });
+        authoring.editorDialog.addEventListener("focusout", () => {
+          window.setTimeout(() => {
+            if (!authoring.editorDialog.querySelector(".related-task-combobox")?.contains(document.activeElement)) {
+              closeRelatedTaskOptions();
+            }
+          });
         });
 
         byId("archive-list").addEventListener("click", (event) => {
@@ -2818,11 +3059,174 @@
         return authoring.relatedWritingChoices.find((entry) => entry.id === selectedId)?.display || "";
       }
 
+      function relatedTaskSearchText(task) {
+        return [task.code, task.title, task.project.key, task.project.title]
+          .join(" ")
+          .toLocaleLowerCase();
+      }
+
+      function closeRelatedTaskOptions() {
+        if (!authoring.editorDialog) return;
+        const input = authoring.editorForm.elements.relatedTaskSearch;
+        const options = authoring.editorDialog.querySelector("#related-task-options");
+        options.hidden = true;
+        input.setAttribute("aria-expanded", "false");
+        input.removeAttribute("aria-activedescendant");
+        authoring.relatedTaskActiveIndex = -1;
+        authoring.relatedTaskVisibleIds = [];
+      }
+
+      function selectRelatedTask(id = "") {
+        if (!authoring.editorDialog) return;
+        const input = authoring.editorForm.elements.relatedTaskSearch;
+        const hidden = authoring.editorForm.elements.relatedTask;
+        const selection = authoring.editorDialog.querySelector(".related-task-selection");
+        const task = authoring.relatedTaskChoices.find((candidate) => candidate.id === id) || null;
+        authoring.relatedTaskId = task?.id || "";
+        hidden.value = authoring.relatedTaskId;
+        input.hidden = Boolean(task);
+        selection.hidden = !task;
+        selection.replaceChildren();
+
+        if (!task) {
+          input.value = "";
+          closeRelatedTaskOptions();
+          return;
+        }
+
+        const copy = document.createElement("span");
+        const dot = document.createElement("span");
+        const code = document.createElement("span");
+        const title = document.createElement("span");
+        const remove = document.createElement("button");
+        copy.className = "related-task-selection-copy";
+        copy.title = `${task.project.key} · ${task.project.title}`;
+        dot.className = "related-task-selection-dot";
+        dot.style.setProperty("--project-color", task.project.color);
+        code.className = "related-task-selection-code";
+        code.textContent = task.code;
+        title.className = "related-task-selection-title";
+        title.textContent = task.title;
+        remove.className = "related-task-selection-remove";
+        remove.type = "button";
+        remove.dataset.relatedTaskRemove = "true";
+        remove.setAttribute("aria-label", `Remove related Task ${task.code}`);
+        remove.textContent = "Remove";
+        copy.append(dot, code, title);
+        selection.append(copy, remove);
+        closeRelatedTaskOptions();
+      }
+
+      function renderRelatedTaskOptions() {
+        const input = authoring.editorForm.elements.relatedTaskSearch;
+        const options = authoring.editorDialog.querySelector("#related-task-options");
+        const query = input.value.trim().toLocaleLowerCase();
+        const matches = authoring.relatedTaskChoices
+          .filter((task) => !query || relatedTaskSearchText(task).includes(query))
+          .slice(0, 8);
+        authoring.relatedTaskVisibleIds = matches.map((task) => task.id);
+        authoring.relatedTaskActiveIndex = Math.min(authoring.relatedTaskActiveIndex, matches.length - 1);
+        options.replaceChildren();
+
+        if (matches.length === 0) {
+          const empty = document.createElement("p");
+          empty.className = "related-task-options-empty";
+          empty.textContent = query ? "No matching Tasks." : "No Tasks available.";
+          options.append(empty);
+        } else {
+          for (const [index, task] of matches.entries()) {
+            const option = document.createElement("button");
+            const heading = document.createElement("span");
+            const dot = document.createElement("span");
+            const code = document.createElement("span");
+            const title = document.createElement("span");
+            const meta = document.createElement("span");
+            option.className = "related-task-option";
+            option.id = `related-task-option-${index}`;
+            option.type = "button";
+            option.role = "option";
+            option.dataset.relatedTaskId = task.id;
+            option.dataset.active = String(index === authoring.relatedTaskActiveIndex);
+            option.setAttribute("aria-selected", "false");
+            heading.className = "related-task-option-heading";
+            dot.className = "related-task-option-dot";
+            dot.style.setProperty("--project-color", task.project.color);
+            code.className = "related-task-option-code";
+            code.textContent = task.code;
+            title.className = "related-task-option-title";
+            title.textContent = task.title;
+            meta.className = "related-task-option-meta";
+            const stateLabel = task.archived
+              ? "Archived"
+              : ({ todo: "To do", in_progress: "In progress", done: "Completed" }[task.status] || task.status);
+            meta.textContent = `${task.project.key} · ${task.project.title} · ${stateLabel}`;
+            heading.append(dot, code, title);
+            option.append(heading, meta);
+            options.append(option);
+          }
+        }
+
+        options.hidden = false;
+        input.setAttribute("aria-expanded", "true");
+        if (authoring.relatedTaskActiveIndex >= 0) {
+          input.setAttribute("aria-activedescendant", `related-task-option-${authoring.relatedTaskActiveIndex}`);
+        } else {
+          input.removeAttribute("aria-activedescendant");
+        }
+      }
+
+      function handleRelatedTaskKeydown(event) {
+        if (event.key === "Escape") {
+          if (!authoring.editorDialog.querySelector("#related-task-options").hidden) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+          closeRelatedTaskOptions();
+          return;
+        }
+        if (event.key === "Tab") {
+          closeRelatedTaskOptions();
+          return;
+        }
+        if (!["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) return;
+        const optionsOpen = !authoring.editorDialog.querySelector("#related-task-options").hidden;
+        if (event.key === "Enter" && !optionsOpen) return;
+        event.preventDefault();
+        if (event.key === "Enter") {
+          const selectedIndex = authoring.relatedTaskActiveIndex < 0 ? 0 : authoring.relatedTaskActiveIndex;
+          const selectedId = authoring.relatedTaskVisibleIds[selectedIndex];
+          if (selectedId) selectRelatedTask(selectedId);
+          return;
+        }
+        if (!optionsOpen) renderRelatedTaskOptions();
+        const count = authoring.relatedTaskVisibleIds.length;
+        if (!count) return;
+        const direction = event.key === "ArrowDown" ? 1 : -1;
+        const start = authoring.relatedTaskActiveIndex < 0
+          ? (direction > 0 ? -1 : 0)
+          : authoring.relatedTaskActiveIndex;
+        authoring.relatedTaskActiveIndex = (start + direction + count) % count;
+        renderRelatedTaskOptions();
+      }
+
+      async function populateRelatedTaskChoices(selected = null) {
+        const choices = await tasks.relatedChoices();
+        if (selected && !choices.some((task) => task.id === selected.id)) {
+          choices.push({ ...structuredClone(selected), status: "done", scheduledDate: null, archived: true });
+        }
+        const statusRank = { in_progress: 0, todo: 1, done: 2 };
+        authoring.relatedTaskChoices = choices.sort((left, right) =>
+          Number(left.archived) - Number(right.archived)
+          || (statusRank[left.status] ?? 3) - (statusRank[right.status] ?? 3)
+          || left.code.localeCompare(right.code));
+        selectRelatedTask(selected?.id || "");
+      }
+
       async function openNewEditor() {
         if (!canAuthorJournal() || authoring.busy) return;
         resetEditor();
         try {
-          await populateRelatedWritingChoices();
+          await Promise.all([populateRelatedWritingChoices(), populateRelatedTaskChoices()]);
         } catch (error) {
           setAuthoringStatus(error.message || "Writing suggestions could not be loaded.", "error");
           return;
@@ -2843,7 +3247,10 @@
         resetEditor();
         let relatedWritingValue;
         try {
-          relatedWritingValue = await populateRelatedWritingChoices(entry.relatedWriting?.id);
+          [relatedWritingValue] = await Promise.all([
+            populateRelatedWritingChoices(entry.relatedWriting?.id),
+            populateRelatedTaskChoices(entry.relatedTask)
+          ]);
         } catch (error) {
           setAuthoringStatus(error.message || "Writing suggestions could not be loaded.", "error");
           return;
@@ -2876,9 +3283,14 @@
         }
         authoring.editorImages = [];
         authoring.relatedWritingChoices = [];
+        authoring.relatedTaskChoices = [];
+        authoring.relatedTaskId = "";
+        authoring.relatedTaskActiveIndex = -1;
+        authoring.relatedTaskVisibleIds = [];
         authoring.originalEntry = null;
         authoring.originalBody = "";
         authoring.editorForm.reset();
+        selectRelatedTask();
         authoring.editorDialog.querySelector(".editor-image-list").replaceChildren();
         setEditorMessage("");
       }
@@ -3040,6 +3452,10 @@
         const relatedWriting = relatedWritingValue
           ? authoring.relatedWritingChoices.find((entry) => entry.display === relatedWritingValue)
           : null;
+        const relatedTaskId = form.relatedTask.value;
+        const relatedTask = relatedTaskId
+          ? authoring.relatedTaskChoices.find((task) => task.id === relatedTaskId)
+          : null;
 
         if (!body && authoring.editorImages.length === 0) {
           setEditorMessage("Add content or at least one image.", "error");
@@ -3047,6 +3463,10 @@
         }
         if (relatedWritingValue && !relatedWriting) {
           setEditorMessage("Select a Writing from the suggestions.", "error");
+          return;
+        }
+        if (relatedTaskId && !relatedTask) {
+          setEditorMessage("Select a Task from the suggestions.", "error");
           return;
         }
 
@@ -3074,7 +3494,14 @@
           );
           const result = await journalRequest("save", {
             mode: original ? "edit" : "create",
-            entry: { id, publishedAt, content, images: [], relatedWriting: relatedWriting ? { id: relatedWriting.id } : null },
+            entry: {
+              id,
+              publishedAt,
+              content,
+              images: [],
+              relatedWriting: relatedWriting ? { id: relatedWriting.id } : null,
+              relatedTask: relatedTask ? { id: relatedTask.id } : null
+            },
             images: imageSpecs,
             uploads
           });
@@ -3167,9 +3594,22 @@
         if (imageButton) openJournalLightbox(imageButton);
       });
 
-      window.addEventListener("popstate", applyRoute);
+      let routeApplyQueued = false;
+      function scheduleRouteApply() {
+        if (routeApplyQueued) return;
+        routeApplyQueued = true;
+        queueMicrotask(() => {
+          routeApplyQueued = false;
+          applyRoute();
+        });
+      }
 
-      if (location.hash !== initialRoute.hash) updateRoute(initialRoute.sectionId, initialRoute.year, true);
+      window.addEventListener("popstate", scheduleRouteApply);
+      window.addEventListener("hashchange", scheduleRouteApply);
+
+      if (location.hash !== initialRoute.hash) {
+        updateRoute(initialRoute.sectionId, initialRoute.year, true, initialRoute.taskCode);
+      }
       renderSection();
 
       void (async () => {

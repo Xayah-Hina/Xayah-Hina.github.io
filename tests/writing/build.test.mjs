@@ -168,7 +168,7 @@ test("homepage renders static content before bounded cloud authoring initializat
   const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
   assert.match(html, /const authoringRequestTimeout = 8000;/);
   assert.match(html, /const controller = new AbortController\(\);[\s\S]*signal: controller\.signal[\s\S]*window\.clearTimeout\(timeout\);/);
-  assert.match(html, /window\.addEventListener\("popstate", applyRoute\);[\s\S]*renderSection\(\);\s*\n\s*void \(async \(\) => \{\s*\n\s*await setupCloudAuthoring\(\);/);
+  assert.match(html, /window\.addEventListener\("popstate", scheduleRouteApply\);[\s\S]*window\.addEventListener\("hashchange", scheduleRouteApply\);[\s\S]*renderSection\(\);\s*\n\s*void \(async \(\) => \{\s*\n\s*await setupCloudAuthoring\(\);/);
   assert.match(html, /if \(generation !== writingDataGeneration\) return loadWritingYear\(year\);[\s\S]*if \(writingLoadPromises\.get\(year\) === promise\) writingLoadPromises\.delete\(year\);/);
   assert.match(html, /if \(generation !== journalDataGeneration\) return loadJournalYear\(year\);[\s\S]*if \(journalLoadPromises\.get\(year\) === promise\) journalLoadPromises\.delete\(year\);/);
 });

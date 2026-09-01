@@ -1,6 +1,7 @@
 import { branchHead, commitFiles, readDataModule } from "./github";
+import { relatedTaskSnapshot } from "./tasks";
 import { pendingWriting, publishedWritingById } from "./writing";
-import type { Env, FileChange, JournalEntry, JournalImage, SyncStatus } from "./types";
+import type { Env, FileChange, JournalEntry, JournalImage, JournalRelatedTask, SyncStatus } from "./types";
 import {
   asRecord,
   decodeBase64,
@@ -13,6 +14,11 @@ import {
 } from "./utils";
 
 const JOURNAL_ID = /^(\d{8}-\d{6})-[a-f0-9]{4}$/;
+const PROJECT_ID = /^project-[a-f0-9]{24}$/;
+const PROJECT_KEY = /^[A-Z][A-Z0-9]{1,7}$/;
+const TASK_ID = /^task-[a-f0-9]{24}$/;
+const TASK_CODE = /^[A-Z][A-Z0-9]{1,7}-\d{4}-\d{4}$/;
+const COLOR = /^#[0-9a-f]{6}$/i;
 const SINGAPORE_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\+08:00$/;
 const ALLOWED_TYPES: Record<string, string[]> = {
   "image/jpeg": ["jpg", "jpeg"],
@@ -68,6 +74,31 @@ function validateImage(value: unknown): JournalImage {
   return { src, alt };
 }
 
+function validateRelatedTaskSnapshot(value: unknown, entryId: string): JournalRelatedTask {
+  const record = asRecord(value, `Journal ${entryId} has invalid related Task data.`);
+  const project = asRecord(record.project, `Journal ${entryId} has invalid related Task Project data.`);
+  const id = requiredString(record.id, "Related Task id", 64);
+  const code = requiredString(record.code, "Related Task code", 32);
+  const projectId = requiredString(project.id, "Related Task Project id", 64);
+  const projectKey = requiredString(project.key, "Related Task Project key", 8);
+  const color = requiredString(project.color, "Related Task Project color", 7).toLowerCase();
+  if (!TASK_ID.test(id) || !TASK_CODE.test(code) || !PROJECT_ID.test(projectId)
+    || !PROJECT_KEY.test(projectKey) || !code.startsWith(`${projectKey}-`) || !COLOR.test(color)) {
+    throw new HttpError(502, `Journal ${entryId} has invalid related Task data.`);
+  }
+  return {
+    id,
+    code,
+    title: requiredString(record.title, "Related Task title", 180),
+    project: {
+      id: projectId,
+      key: projectKey,
+      title: requiredString(project.title, "Related Task Project title", 120),
+      color,
+    },
+  };
+}
+
 function journalIdentityMatches(id: string, publishedAt: string): boolean {
   const publishedTimestamp = publishedAt.slice(0, 19).replace(/[-:]/g, "").replace("T", "-");
   return id.slice(0, 15) === publishedTimestamp;
@@ -89,7 +120,10 @@ function validateJournalEntry(value: unknown, year: string): JournalEntry {
       title: requiredString(related.title, "Related Writing title", 200),
     };
   }
-  const result: JournalEntry = { id, publishedAt, content, images, relatedWriting };
+  const relatedTask = record.relatedTask === null || record.relatedTask === undefined
+    ? null
+    : validateRelatedTaskSnapshot(record.relatedTask, id);
+  const result: JournalEntry = { id, publishedAt, content, images, relatedWriting, relatedTask };
   if (record.updatedAt !== undefined) result.updatedAt = validatePublishedAt(record.updatedAt);
   return result;
 }
@@ -127,7 +161,7 @@ export async function authoringJournalYearData(env: Env, year: string) {
   return { entries: await journalEntries(env, year) };
 }
 
-async function validateRelated(env: Env, value: unknown): Promise<JournalEntry["relatedWriting"]> {
+async function validateRelatedWriting(env: Env, value: unknown): Promise<JournalEntry["relatedWriting"]> {
   if (value === null || value === undefined) return null;
   const record = asRecord(value, "Related Writing is invalid.");
   const id = requiredString(record.id, "Related Writing id", 64);
@@ -174,6 +208,21 @@ async function deleteUploadedObjects(env: Env, keys: string[]): Promise<void> {
   if (keys.length) await env.CONTENT.delete(keys);
 }
 
+async function validateRelatedTask(
+  env: Env,
+  value: unknown,
+  existing: JournalRelatedTask | null = null,
+): Promise<JournalRelatedTask | null> {
+  if (value === null || value === undefined) return null;
+  const record = asRecord(value, "Related Task is invalid.");
+  const id = requiredString(record.id, "Related Task id", 64);
+  if (!TASK_ID.test(id)) throw new HttpError(400, "Related Task is invalid.");
+  if (existing?.id === id) return existing;
+  const snapshot = await relatedTaskSnapshot(env, id);
+  if (!snapshot) throw new HttpError(400, "Related Task is no longer available.");
+  return snapshot;
+}
+
 export async function saveJournal(env: Env, payload: Record<string, unknown>) {
   const mode = payload.mode;
   if (mode !== "create" && mode !== "edit") throw new HttpError(400, "Journal save mode is invalid.");
@@ -187,13 +236,16 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
   const content = requiredString(rawEntry.content ?? "", "Journal content", 100_000, true);
   const expectedHead = await branchHead(env);
   const snapshotEnv = { ...env, GITHUB_BRANCH: expectedHead };
-  const relatedWriting = await validateRelated(snapshotEnv, rawEntry.relatedWriting);
+  const relatedWriting = await validateRelatedWriting(snapshotEnv, rawEntry.relatedWriting);
   const years = await journalYears(snapshotEnv);
   const previous = await journalEntries(snapshotEnv, year, years.includes(year));
   const original = previous.find((entry) => entry.id === id) || null;
   if (mode === "create" && original) throw new HttpError(409, "Journal id already exists.");
   if (mode === "edit" && !original) throw new HttpError(404, "The Journal entry is no longer available.");
   if (original && original.publishedAt !== publishedAt) throw new HttpError(400, "The Journal publication time cannot be changed.");
+  const relatedTask = rawEntry.relatedTask === undefined
+    ? original?.relatedTask || null
+    : await validateRelatedTask(env, rawEntry.relatedTask, original?.relatedTask || null);
 
   if (!Array.isArray(payload.images)) throw new HttpError(400, "Journal images are invalid.");
   const uploads = parseUploads(payload.uploads);
@@ -245,7 +297,7 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
     throw error;
   }
 
-  const candidate: JournalEntry = { id, publishedAt, content, images, relatedWriting };
+  const candidate: JournalEntry = { id, publishedAt, content, images, relatedWriting, relatedTask };
   if (original && JSON.stringify(withoutUpdatedAt(original)) === JSON.stringify(candidate)) {
     if (await branchHead(env) !== expectedHead) {
       throw new HttpError(409, "The Journal changed while this edit was open. Reload and try again.");

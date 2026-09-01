@@ -47,12 +47,25 @@ export interface JournalImage {
   alt: string;
 }
 
+export interface JournalRelatedTask {
+  id: string;
+  code: string;
+  title: string;
+  project: {
+    id: string;
+    key: string;
+    title: string;
+    color: string;
+  };
+}
+
 export interface JournalEntry {
   id: string;
   publishedAt: string;
   content: string;
   images: JournalImage[];
   relatedWriting: { id: string; title: string } | null;
+  relatedTask: JournalRelatedTask | null;
   updatedAt?: string;
 }
 

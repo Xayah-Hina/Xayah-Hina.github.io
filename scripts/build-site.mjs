@@ -112,11 +112,27 @@ function validateJournalCatalog(value) {
   return years.map(String);
 }
 
+function validateRelatedTask(value, entryId) {
+  if (value === null) return;
+  if (!exactKeys(value, ["id", "code", "title", "project"])
+    || typeof value.id !== "string" || !/^task-[a-f0-9]{24}$/.test(value.id)
+    || typeof value.code !== "string" || !/^[A-Z][A-Z0-9]{1,7}-\d{4}-\d{4}$/.test(value.code)
+    || typeof value.title !== "string" || !value.title.trim() || value.title.length > 180
+    || !exactKeys(value.project, ["id", "key", "title", "color"])
+    || typeof value.project.id !== "string" || !/^project-[a-f0-9]{24}$/.test(value.project.id)
+    || typeof value.project.key !== "string" || !/^[A-Z][A-Z0-9]{1,7}$/.test(value.project.key)
+    || !value.code.startsWith(`${value.project.key}-`)
+    || typeof value.project.title !== "string" || !value.project.title.trim() || value.project.title.length > 120
+    || typeof value.project.color !== "string" || !/^#[0-9a-f]{6}$/i.test(value.project.color)) {
+    throw new Error(`Journal ${entryId} has invalid related Task data.`);
+  }
+}
+
 function validateJournalEntries(value, year, ids, imageSources) {
   if (!Array.isArray(value)) throw new Error(`journals/${year}.js must export an array.`);
   let previous = null;
   for (const entry of value) {
-    if (!exactKeys(entry, ["id", "publishedAt", "content", "images", "relatedWriting"], ["updatedAt"])
+    if (!exactKeys(entry, ["id", "publishedAt", "content", "images", "relatedWriting", "relatedTask"], ["updatedAt"])
       || typeof entry.content !== "string" || entry.content.length > 100_000 || !Array.isArray(entry.images)) {
       throw new Error(`journals/${year}.js contains an invalid entry.`);
     }
@@ -140,6 +156,7 @@ function validateJournalEntries(value, year, ids, imageSources) {
       || entry.relatedWriting.title.length > 200)) {
       throw new Error(`Journal ${entry.id} has invalid related Writing data.`);
     }
+    validateRelatedTask(entry.relatedTask, entry.id);
     for (const image of entry.images) {
       const src = validateImage(image, { year, owner: entry.id });
       if (imageSources.has(src)) throw new Error(`Journal data contains duplicate image URL ${src}.`);

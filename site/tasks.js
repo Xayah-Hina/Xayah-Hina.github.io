@@ -456,9 +456,16 @@ function heatmap(data) {
   return section;
 }
 
-function taskRow(task, project, data, editable) {
+function taskRow(task, project, data, editable, focused = false) {
   const item = node("li", "task-row");
   item.dataset.taskId = task.id;
+  item.dataset.taskCode = task.code;
+  if (focused) {
+    item.classList.add("task-row-focused");
+    item.dataset.taskFocusTarget = "true";
+    item.tabIndex = -1;
+    item.setAttribute("aria-current", "true");
+  }
   const marker = editable ? button("", "toggle-task", "task-check") : node("span", "task-check");
   marker.dataset.status = task.status;
   marker.setAttribute("aria-label", task.status === "done" ? `Reopen ${task.title}` : `Complete ${task.title}`);
@@ -516,7 +523,7 @@ function todayPanel(data, editable) {
   return section;
 }
 
-function projectCard(project, data, editable) {
+function projectCard(project, data, editable, focusedCode = "") {
   const card = node("article", "task-project-card");
   card.dataset.projectId = project.id;
   const head = node("div", "task-project-head");
@@ -530,7 +537,7 @@ function projectCard(project, data, editable) {
   if (project.description) card.append(node("p", "task-project-description", project.description));
 
   const projectTasks = data.tasks
-    .filter((task) => task.projectId === project.id && !task.archivedAt)
+    .filter((task) => task.projectId === project.id && (!task.archivedAt || task.code === focusedCode))
     .sort((left, right) => {
       if (left.status === "done" && right.status !== "done") return 1;
       if (right.status === "done" && left.status !== "done") return -1;
@@ -548,7 +555,7 @@ function projectCard(project, data, editable) {
 
   if (projectTasks.length) {
     const list = node("ul", "task-project-task-list");
-    for (const task of projectTasks) list.append(taskRow(task, null, data, editable));
+    for (const task of projectTasks) list.append(taskRow(task, null, data, editable, task.code === focusedCode));
     card.append(list);
   }
   if (editable) {
@@ -559,12 +566,13 @@ function projectCard(project, data, editable) {
   return card;
 }
 
-function projectsPanel(data, editable) {
+function projectsPanel(data, editable, focusedCode = "") {
   const section = node("section", "task-section task-projects");
   const header = node("header", "task-panel-header");
   const copy = node("div", "task-panel-copy");
   copy.append(node("h3", "task-panel-title", "Projects"));
-  const projects = data.projects.filter((project) => !project.archivedAt);
+  const focusedTask = data.tasks.find((task) => task.code === focusedCode);
+  const projects = data.projects.filter((project) => !project.archivedAt || project.id === focusedTask?.projectId);
   const active = projects.filter((project) => project.status === "active");
   const tools = node("div", "task-panel-tools");
   tools.append(node("span", "task-panel-meta", `${active.length} active`));
@@ -583,12 +591,12 @@ function projectsPanel(data, editable) {
   const order = { active: 0, paused: 1, completed: 2 };
   projects.sort((left, right) => order[left.status] - order[right.status]
     || String(right.updatedAt).localeCompare(String(left.updatedAt)));
-  for (const project of projects) grid.append(projectCard(project, data, editable));
+  for (const project of projects) grid.append(projectCard(project, data, editable, focusedCode));
   section.append(grid);
   return section;
 }
 
-function page(data, authoring) {
+function page(data, authoring, focusedCode = "") {
   const root = node("div", "task-page");
   root.append(node("h2", "visually-hidden", "Tasks"), heatmap(data));
   if (authoring.message) {
@@ -597,7 +605,13 @@ function page(data, authoring) {
     feedback.setAttribute("role", authoring.messageKind === "error" ? "alert" : "status");
     root.append(feedback);
   }
-  root.append(todayPanel(data, authoring.enabled), projectsPanel(data, authoring.enabled));
+  if (focusedCode && !data.tasks.some((task) => task.code === focusedCode)) {
+    const notice = node("p", "task-feedback", `Task ${focusedCode} could not be found.`);
+    notice.dataset.kind = "error";
+    notice.setAttribute("role", "status");
+    root.append(notice);
+  }
+  root.append(todayPanel(data, authoring.enabled), projectsPanel(data, authoring.enabled, focusedCode));
   return root;
 }
 
@@ -646,6 +660,8 @@ export function createTasksController({ canAuthor = () => false, request, confir
   let loading = null;
   let loaded = false;
   let root = null;
+  let focusedCode = "";
+  let revealedCode = "";
   const authoring = { enabled: false, busy: false, message: "", messageKind: "status" };
   const editor = {
     projectDialog: null,
@@ -660,7 +676,18 @@ export function createTasksController({ canAuthor = () => false, request, confir
   function render() {
     if (!root?.isConnected) return;
     authoring.enabled = Boolean(canAuthor());
-    root.replaceChildren(page(data, authoring));
+    root.replaceChildren(page(data, authoring, focusedCode));
+    if (!focusedCode || revealedCode === focusedCode) return;
+    requestAnimationFrame(() => {
+      const target = root?.querySelector("[data-task-focus-target]");
+      if (!target) return;
+      revealedCode = focusedCode;
+      target.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "center"
+      });
+      target.focus({ preventScroll: true });
+    });
   }
 
   async function load(force = false) {
@@ -928,12 +955,15 @@ export function createTasksController({ canAuthor = () => false, request, confir
     if (action === "toggle-task" && task) void toggleTask(task);
   }
 
-  function mount(element) {
+  function mount(element, taskCode = "") {
     if (root !== element) {
       root?.removeEventListener("click", handleClick);
       root = element;
       root.addEventListener("click", handleClick);
     }
+    const nextFocusedCode = TASK_CODE.test(taskCode) ? taskCode : "";
+    if (nextFocusedCode !== focusedCode) revealedCode = "";
+    focusedCode = nextFocusedCode;
     render();
     void load().then(render).catch(() => {
       if (!root?.isConnected) return;
@@ -942,5 +972,28 @@ export function createTasksController({ canAuthor = () => false, request, confir
     });
   }
 
-  return { mount, refresh: () => load(true).then(render) };
+  async function relatedChoices() {
+    await load();
+    const projects = new Map(data.projects.map((project) => [project.id, project]));
+    return data.tasks.flatMap((task) => {
+      const project = projects.get(task.projectId);
+      if (!project) return [];
+      return [{
+        id: task.id,
+        code: task.code,
+        title: task.title,
+        status: task.status,
+        scheduledDate: task.scheduledDate,
+        archived: Boolean(task.archivedAt || project.archivedAt),
+        project: {
+          id: project.id,
+          key: project.key,
+          title: project.title,
+          color: project.color
+        }
+      }];
+    });
+  }
+
+  return { mount, refresh: () => load(true).then(render), relatedChoices };
 }

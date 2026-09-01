@@ -413,6 +413,27 @@ button.task-row-title:hover {
   border-top: 1px solid var(--line);
 }
 
+.task-row-focused {
+  position: relative;
+  z-index: 1;
+  border-radius: 0.35rem;
+  outline: 2px solid color-mix(in srgb, var(--task-accent) 45%, transparent);
+  outline-offset: 0.3rem;
+  animation: task-focus-reveal 1.8s ease-out both;
+}
+
+@keyframes task-focus-reveal {
+  0%, 35% {
+    background: color-mix(in srgb, var(--task-accent) 13%, transparent);
+    outline-color: color-mix(in srgb, var(--task-accent) 58%, transparent);
+  }
+
+  100% {
+    background: transparent;
+    outline-color: color-mix(in srgb, var(--task-accent) 32%, transparent);
+  }
+}
+
 .task-project-head,
 .task-project-identity,
 .task-project-meta {
@@ -648,5 +669,9 @@ button.task-row-title:hover {
   button.task-heatmap-cell,
   .task-contribution-popover {
     transition: none;
+  }
+
+  .task-row-focused {
+    animation: none;
   }
 }
