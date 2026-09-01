@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260902-034114-cc50",
+    "publishedAt": "2026-09-02T03:41:14+08:00",
+    "content": "阶段方向 https://chatgpt.com/s/t_6a972a081b148191943a1525d530f1ca",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260902-013209-493f",
     "publishedAt": "2026-09-02T01:32:09+08:00",
     "content": "一天时间用到了还剩28%的token…… 也不知道接下来应该继续尽力用还是该节约一点呢？想了想接下来的目标应该就是FlowDiT的训练可视化以及代码精读了，token没了的感觉确实很难受，但是又怕下一个reset又要来了，有点纠结……",
