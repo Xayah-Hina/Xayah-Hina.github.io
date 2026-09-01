@@ -280,6 +280,14 @@ textarea {
   .footer-meta-group {
     justify-content: center;
   }
+
+  .section-switch {
+    gap: 0.75rem;
+  }
+
+  .section-switch-button {
+    font-size: 0.8125rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

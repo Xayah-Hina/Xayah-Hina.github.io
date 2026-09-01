@@ -1,8 +1,8 @@
-import type { Env, MonthlyPlanState, WritingDraft } from "./types";
+import type { Env, TaskState, WritingDraft } from "./types";
 import { HttpError } from "./utils";
 
 const draftKey = (id: string) => `private/writing/drafts/${id}.json`;
-const monthlyPlanStateKey = "published/monthly-plans/state.json";
+const taskStateKey = "published/tasks/state.json";
 export const privateWritingAssetKey = (id: string, name: string) => `private/writing/assets/${id}/${name}`;
 export const publishedWritingAssetKey = (id: string, name: string) => `published/writing/${id}/${name}`;
 
@@ -196,38 +196,38 @@ export async function expiredWritingDeletionIds(env: Env): Promise<string[]> {
   return ids;
 }
 
-export async function getMonthlyPlanStateVersioned(
+export async function getTaskStateVersioned(
   env: Env,
-): Promise<{ state: MonthlyPlanState; etag: string } | null> {
-  const object = await env.CONTENT.get(monthlyPlanStateKey);
+): Promise<{ state: TaskState; etag: string } | null> {
+  const object = await env.CONTENT.get(taskStateKey);
   if (!object) return null;
   try {
-    return { state: await object.json<MonthlyPlanState>(), etag: object.etag };
+    return { state: await object.json<TaskState>(), etag: object.etag };
   } catch {
-    throw new HttpError(500, "Stored Monthly Plan data is invalid.");
+    throw new HttpError(500, "Stored Task data is invalid.");
   }
 }
 
-export async function putMonthlyPlanStateConditional(
+export async function putTaskStateConditional(
   env: Env,
-  state: MonthlyPlanState,
+  state: TaskState,
   etag: string | null,
 ): Promise<boolean> {
   const value = JSON.stringify(state);
-  const result = await env.CONTENT.put(monthlyPlanStateKey, value, {
+  const result = await env.CONTENT.put(taskStateKey, value, {
     httpMetadata: { contentType: "application/json; charset=utf-8" },
     onlyIf: etag ? { etagMatches: etag } : { etagDoesNotMatch: "*" },
   });
   if (!result) return false;
   const timestamp = state.updatedAt.replace(/[^0-9A-Za-z.-]/g, "-");
-  const historyKey = `private/monthly-plans/history/${timestamp}-${state.revision}.json`;
+  const historyKey = `private/tasks/history/${timestamp}-${state.revision}.json`;
   try {
     await env.CONTENT.put(historyKey, value, {
       httpMetadata: { contentType: "application/json; charset=utf-8" },
       onlyIf: { etagDoesNotMatch: "*" },
     });
   } catch (error) {
-    console.warn("Monthly Plan state was saved, but its recovery snapshot was deferred", error);
+    console.warn("Task state was saved, but its recovery snapshot was deferred", error);
   }
   return true;
 }

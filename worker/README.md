@@ -8,7 +8,7 @@ This Worker serves the authenticated same-origin authoring APIs used by
 
 - `Xayah-Hina.github.io` on GitHub `master`: published Journal, Monthly Note, and Front matter Markdown Writing sources.
 - `dictionary` on GitHub `master`: the standalone Dictionary source and published Personal Knowledge.
-- Private R2 bucket: unpublished Writing and Dictionary drafts, private Writing image uploads, and mutable Monthly Plan state/history.
+- Private R2 bucket: unpublished Writing and Dictionary drafts, private Writing image uploads, and mutable Task state/history.
 - Public R2 objects: immutable, content-addressed Journal and Writing media.
 - GitHub Pages: independently builds allowlisted main-site and Dictionary artifacts.
 
@@ -19,7 +19,7 @@ No D1 database is used.
 - Worker: `xayah-site-editor`
 - R2 bucket: `xayah-site-editor-content`
 - Custom domain: `media.xayah.me`
-- Worker routes: `xayah.me/api/*`, `xayah.me/data/monthly-plans/*`, and `dictionary.xayah.me/api/*`
+- Worker routes: `xayah.me/api/*`, `xayah.me/data/tasks`, and `dictionary.xayah.me/api/*`
 - One Cloudflare Access self-hosted application covering `xayah.me/api/*` and
   `dictionary.xayah.me/api/*`
 
@@ -52,8 +52,8 @@ Images are uploaded to `private/writing/assets/<id>/<sha256>.<ext>`. Publish cop
 
 Unreferenced public Writing images are removed only after the new page revision is live.
 
-## Monthly Plans lifecycle
+## Tasks lifecycle
 
-Monthly Plans are operational state rather than published Journal source. The current document lives at `published/monthly-plans/state.json` in R2, while every successfully written version also gets a recovery snapshot under `private/monthly-plans/history/`. Conditional ETag writes reject stale tabs with HTTP 409.
+Projects, their child tasks, and daily activity totals are operational state rather than published Journal source. The current document lives at `published/tasks/state.json` in R2, while every successfully written version also gets a recovery snapshot under `private/tasks/history/`. Conditional ETag writes reject stale tabs with HTTP 409.
 
-`GET /data/monthly-plans/YYYY-MM` is public and returns only the plans projected into that month. Creating, editing, archiving, restoring, and checking in use authenticated `/api/journal/plans/*` endpoints. Check-ins update R2 only, so a daily completion does not create a GitHub commit or trigger a Pages deployment.
+`GET /data/tasks` is public. Creating, editing, archiving, and completing Projects or Tasks uses the authenticated `/api/tasks/save` endpoint. Each meaningful mutation increments the Singapore-day activity record; completions carry extra weight in the contribution wall. These changes stay in R2 and do not create GitHub commits or trigger Pages deployments.

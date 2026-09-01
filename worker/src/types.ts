@@ -62,27 +62,44 @@ export interface MonthlyNote {
   updatedAt?: string;
 }
 
-export type MonthlyPlanSchedule =
-  | { type: "daily" }
-  | { type: "weekdays"; weekdays: number[] };
-
-export interface MonthlyPlan {
+export interface TaskProject {
   id: string;
   title: string;
-  startDate: string;
-  endDate: string;
-  schedule: MonthlyPlanSchedule;
-  completedDates: string[];
+  description: string;
+  color: string;
+  status: "active" | "paused" | "completed";
   createdAt: string;
   updatedAt: string;
+  completedAt?: string;
   archivedAt?: string;
 }
 
-export interface MonthlyPlanState {
+export interface TaskItem {
+  id: string;
+  projectId: string;
+  title: string;
+  status: "todo" | "in_progress" | "done";
+  priority: "normal" | "high";
+  scheduledDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  archivedAt?: string;
+}
+
+export interface TaskActivityDay {
+  date: string;
+  updates: number;
+  completions: number;
+}
+
+export interface TaskState {
   schemaVersion: 1;
   revision: string;
   updatedAt: string;
-  plans: MonthlyPlan[];
+  projects: TaskProject[];
+  tasks: TaskItem[];
+  activity: TaskActivityDay[];
 }
 
 export interface FileChange {

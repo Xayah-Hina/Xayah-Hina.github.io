@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import worker, { endpointAllowed, publicMonthlyPlanMonth, sessionResponse } from "../src/index.ts";
+import worker, { endpointAllowed, isPublicTasksPath, sessionResponse } from "../src/index.ts";
 
 test("public API scopes expose only their own authoring endpoints", () => {
   assert.equal(endpointAllowed("main", "/api/session"), true);
@@ -8,14 +8,15 @@ test("public API scopes expose only their own authoring endpoints", () => {
   assert.equal(endpointAllowed("main", "/api/editor/status"), false);
   assert.equal(endpointAllowed("main", "/api/writing/open"), true);
   assert.equal(endpointAllowed("main", "/api/journal/save"), true);
+  assert.equal(endpointAllowed("main", "/api/tasks/save"), true);
   assert.equal(endpointAllowed("main", "/api/dictionary/open"), false);
 
   assert.equal(endpointAllowed("dictionary", "/api/session"), true);
   assert.equal(endpointAllowed("dictionary", "/api/dictionary/open"), true);
   assert.equal(endpointAllowed("dictionary", "/api/writing/open"), false);
   assert.equal(endpointAllowed("dictionary", "/api/journal/save"), false);
-  assert.equal(publicMonthlyPlanMonth("/data/monthly-plans/2026-08"), "2026-08");
-  assert.equal(publicMonthlyPlanMonth("/data/monthly-plans/2026-13"), null);
+  assert.equal(isPublicTasksPath("/data/tasks"), true);
+  assert.equal(isPublicTasksPath("/data/tasks/old"), false);
 });
 
 test("session return redirects stay on the requesting origin", () => {

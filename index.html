@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
 
-  <title>Writing &amp; Journal - Xayah Hina</title>
-  <meta name="description" content="Writing and journal entries by Xayah Hina on computer graphics, music, and everyday life.">
+  <title>Writing, Journal &amp; Tasks - Xayah Hina</title>
+  <meta name="description" content="Writing, journal entries, and current projects by Xayah Hina.">
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#090c10">
   <link rel="canonical" href="https://xayah.me/">
   <link rel="icon" href="https://raw.githubusercontent.com/Xayah-Graphics/imagebed/7772e40fee3de8f8ca11134d04ef5f5816b8ef60/Hatsune.Miku.full.1961310.JPG">
-  <meta property="og:title" content="Writing &amp; Journal - Xayah Hina">
-  <meta property="og:description" content="Writing and journal entries on graphics, music, and everyday life.">
+  <meta property="og:title" content="Writing, Journal &amp; Tasks - Xayah Hina">
+  <meta property="og:description" content="Writing, journal entries, and current projects by Xayah Hina.">
   <meta property="og:url" content="https://xayah.me/">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary">
@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="/assets/generated/__SITE_SHELL_CSS__">
   <link rel="stylesheet" href="/assets/generated/__KATEX_CSS__">
   <link rel="stylesheet" href="/assets/generated/__WRITING_AUTHORING_CSS__">
-  <link rel="stylesheet" href="/assets/generated/__MONTHLY_PLANS_CSS__">
+  <link rel="stylesheet" href="/assets/generated/__TASKS_CSS__">
 
   <!-- Add formal writing and journal entries to their respective sections. -->
   <script>
@@ -41,6 +41,13 @@
           searchPlaceholder: "Search journal",
           empty: "No journal entries have been published yet.",
           noResults: "No journal entries match this search."
+        },
+        task: {
+          title: "Task",
+          searchLabel: "Search tasks",
+          searchPlaceholder: "Search tasks",
+          empty: "No tasks yet.",
+          noResults: "No tasks match this search."
         }
       },
       labels: {
@@ -350,6 +357,13 @@
       align-items: flex-start;
       justify-content: space-between;
       gap: 0.75rem;
+    }
+
+    .journal-month-panel-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.5rem;
     }
 
     .journal-month-panel-heading {
@@ -1121,6 +1135,7 @@
     <div id="section-switch" class="section-switch" role="group" aria-label="Choose a section">
       <button class="section-switch-button" type="button" data-section="writing" aria-pressed="true">Writing</button>
       <button class="section-switch-button" type="button" data-section="journal" aria-pressed="false">Journal</button>
+      <button class="section-switch-button" type="button" data-section="task" aria-pressed="false">Task</button>
     </div>
   </nav>
 
@@ -1385,7 +1400,7 @@
     (async () => {
       "use strict";
 
-      const { createMonthlyPlansController } = await import("/assets/generated/__MONTHLY_PLANS_JS__");
+      const { createTasksController } = await import("/assets/generated/__TASKS_JS__");
 
       const config = WRITING_CONFIG;
       const byId = (id) => document.getElementById(id);
@@ -1423,7 +1438,8 @@
 
       const yearsBySection = new Map([
         ["writing", writingYears],
-        ["journal", journalYears]
+        ["journal", journalYears],
+        ["task", []]
       ]);
       const initialRoute = readRoute();
       const state = {
@@ -1488,10 +1504,9 @@
         publishEnabled: false,
         unpublished: false
       };
-      const monthlyPlans = createMonthlyPlansController({
-        canAuthor: () => canAuthorJournal(),
-        request: (action, payload) => journalRequest(action, payload),
-        setStatus: (message, kind) => setAuthoringStatus(message, kind),
+      const tasks = createTasksController({
+        canAuthor: () => authoringSession,
+        request: (payload) => editorRequest("/api/tasks/save", payload),
         confirmAction: (title, message, label) => confirmDeletion(title, message, label)
       });
 
@@ -2020,11 +2035,6 @@
           panel.append(content);
         }
 
-        const plansRoot = document.createElement("div");
-        plansRoot.className = "monthly-plans-root";
-        panel.append(plansRoot);
-        monthlyPlans.mount(plansRoot, month, actions);
-
         if (note?.reportImage) {
           const button = document.createElement("button");
           const image = document.createElement("img");
@@ -2126,6 +2136,12 @@
 
         archiveList.replaceChildren();
 
+        if (state.section === "task") {
+          byId("archive-summary").textContent = "";
+          tasks.mount(archiveList);
+          return;
+        }
+
         const catalogError = state.section === "journal" ? journalCatalogError : writingCatalogError;
         const entriesByYear = state.section === "journal" ? journalEntriesByYear : writingEntriesByYear;
         const loadErrors = state.section === "journal" ? journalLoadErrors : writingLoadErrors;
@@ -2200,6 +2216,8 @@
         byId("search-label").textContent = section.searchLabel;
         byId("search-input").placeholder = section.searchPlaceholder;
         byId("search-input").value = state.queries[state.section];
+        byId("archive").dataset.sectionView = state.section;
+        byId("skip-link").textContent = state.section === "task" ? "Skip to task workspace" : "Skip to entries";
 
         renderSectionSwitch();
         renderYearFilter();

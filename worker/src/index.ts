@@ -8,7 +8,7 @@ import {
   saveJournal,
   saveMonthlyNote,
 } from "./journal";
-import { monthlyPlansResponse, saveMonthlyPlan, saveMonthlyPlanCheckIns } from "./monthly-plans";
+import { saveTasks, tasksResponse } from "./tasks";
 import type { Env } from "./types";
 import { HttpError, jsonResponse, readJsonObject } from "./utils";
 import {
@@ -86,12 +86,12 @@ async function authoringStatus(env: Env, scope: ApiScope): Promise<Response> {
 
 export function endpointAllowed(scope: ApiScope, pathname: string): boolean {
   if (pathname === "/api/session" || pathname === "/api/authoring/status") return true;
-  if (scope === "main") return pathname.startsWith("/api/writing/") || pathname.startsWith("/api/journal/");
+  if (scope === "main") return pathname.startsWith("/api/writing/") || pathname.startsWith("/api/journal/") || pathname.startsWith("/api/tasks/");
   return pathname.startsWith("/api/dictionary/");
 }
 
-export function publicMonthlyPlanMonth(pathname: string): string | null {
-  return /^\/data\/monthly-plans\/(\d{4}-(?:0[1-9]|1[0-2]))$/.exec(pathname)?.[1] || null;
+export function isPublicTasksPath(pathname: string): boolean {
+  return pathname === "/data/tasks";
 }
 
 export function sessionResponse(url: URL): Response {
@@ -137,8 +137,7 @@ async function authoringApi(request: Request, env: Env, url: URL, scope: ApiScop
     "/api/journal/save": saveJournal,
     "/api/journal/delete": deleteJournal,
     "/api/journal/monthly/save": saveMonthlyNote,
-    "/api/journal/plans/save": saveMonthlyPlan,
-    "/api/journal/plans/check-ins": saveMonthlyPlanCheckIns,
+    "/api/tasks/save": saveTasks,
     "/api/writing/open": openWriting,
     "/api/writing/create": createWriting,
     "/api/writing/save": saveWriting,
@@ -187,9 +186,8 @@ export default {
     }
     try {
       if (url.hostname === new URL(env.MEDIA_ORIGIN).hostname) return secureResponse(await publicMedia(request, env, url));
-      const monthlyPlanMonth = publicMonthlyPlanMonth(url.pathname);
-      if (url.hostname === new URL(env.PUBLIC_SITE_ORIGIN).hostname && monthlyPlanMonth) {
-        return secureResponse(await monthlyPlansResponse(env, request, monthlyPlanMonth));
+      if (url.hostname === new URL(env.PUBLIC_SITE_ORIGIN).hostname && isPublicTasksPath(url.pathname)) {
+        return secureResponse(await tasksResponse(env, request));
       }
       if (url.hostname === new URL(env.PUBLIC_SITE_ORIGIN).hostname && url.pathname.startsWith("/api/")) {
         return secureResponse(await handlePublicApi(request, env, url, "main"));
@@ -199,7 +197,7 @@ export default {
       }
       throw new HttpError(404, "Unknown hostname.");
     } catch (error) {
-      const jsonPath = url.pathname.startsWith("/api/") || url.pathname.startsWith("/data/monthly-plans/");
+      const jsonPath = url.pathname.startsWith("/api/") || isPublicTasksPath(url.pathname);
       if (error instanceof HttpError) {
         if (jsonPath) return secureResponse(jsonResponse({ error: error.message }, error.status));
         return secureResponse(new Response(error.message, { status: error.status, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } }));

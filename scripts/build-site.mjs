@@ -256,6 +256,7 @@ function articleHtml(entry, rendered, assets) {
     <div class="section-switch" role="group" aria-label="Choose a section">
       <a class="section-switch-button" href="/#writing/${metadata.id.slice(0, 4)}" aria-current="page">Writing</a>
       <a class="section-switch-button" href="/#journal/${metadata.id.slice(0, 4)}">Journal</a>
+      <a class="section-switch-button" href="/#task">Task</a>
     </div>
   </nav>
   <main id="article" class="article-container">
@@ -342,25 +343,25 @@ const authoringCssBundle = await esbuild({
   minify: true,
   write: false,
 });
-const monthlyPlansJsBundle = await esbuild({
-  entryPoints: [path.join(root, "site", "monthly-plans.js")],
+const tasksJsBundle = await esbuild({
+  entryPoints: [path.join(root, "site", "tasks.js")],
   bundle: true,
   format: "esm",
   platform: "browser",
   minify: true,
   write: false,
 });
-const monthlyPlansCssBundle = await esbuild({
-  entryPoints: [path.join(root, "site", "monthly-plans.css")],
+const tasksCssBundle = await esbuild({
+  entryPoints: [path.join(root, "site", "tasks.css")],
   bundle: true,
   minify: true,
   write: false,
 });
 const authoringJsSource = authoringJsBundle.outputFiles[0]?.contents;
 const authoringCssSource = authoringCssBundle.outputFiles[0]?.contents;
-const monthlyPlansJsSource = monthlyPlansJsBundle.outputFiles[0]?.contents;
-const monthlyPlansCssSource = monthlyPlansCssBundle.outputFiles[0]?.contents;
-if (!authoringJsSource || !authoringCssSource || !monthlyPlansJsSource || !monthlyPlansCssSource) {
+const tasksJsSource = tasksJsBundle.outputFiles[0]?.contents;
+const tasksCssSource = tasksCssBundle.outputFiles[0]?.contents;
+if (!authoringJsSource || !authoringCssSource || !tasksJsSource || !tasksCssSource) {
   throw new Error("Site interactive assets could not be bundled.");
 }
 const assetsManifest = {
@@ -371,8 +372,8 @@ const assetsManifest = {
   articleAuthoringJs: `writing-article-authoring.${hash(articleAuthoringJsSource)}.js`,
   authoringJs: `writing-authoring.${hash(authoringJsSource)}.js`,
   authoringCss: `writing-authoring.${hash(authoringCssSource)}.css`,
-  monthlyPlansJs: `monthly-plans.${hash(monthlyPlansJsSource)}.js`,
-  monthlyPlansCss: `monthly-plans.${hash(monthlyPlansCssSource)}.css`,
+  tasksJs: `tasks.${hash(tasksJsSource)}.js`,
+  tasksCss: `tasks.${hash(tasksCssSource)}.css`,
   katexCss: `katex.${hash(katexCssSource)}.css`,
 };
 await Promise.all([
@@ -383,8 +384,8 @@ await Promise.all([
   fs.writeFile(path.join(generatedAssets, assetsManifest.articleAuthoringJs), articleAuthoringJsSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.authoringJs), authoringJsSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.authoringCss), authoringCssSource),
-  fs.writeFile(path.join(generatedAssets, assetsManifest.monthlyPlansJs), monthlyPlansJsSource),
-  fs.writeFile(path.join(generatedAssets, assetsManifest.monthlyPlansCss), monthlyPlansCssSource),
+  fs.writeFile(path.join(generatedAssets, assetsManifest.tasksJs), tasksJsSource),
+  fs.writeFile(path.join(generatedAssets, assetsManifest.tasksCss), tasksCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.katexCss), katexCssSource),
 ]);
 const shellPlaceholder = "__SITE_SHELL_CSS__";
@@ -392,8 +393,8 @@ const typographyPlaceholder = "__TYPOGRAPHY_CSS__";
 const katexPlaceholder = "__KATEX_CSS__";
 const authoringCssPlaceholder = "__WRITING_AUTHORING_CSS__";
 const authoringJsPlaceholder = "__WRITING_AUTHORING_JS__";
-const monthlyPlansJsPlaceholder = "__MONTHLY_PLANS_JS__";
-const monthlyPlansCssPlaceholder = "__MONTHLY_PLANS_CSS__";
+const tasksJsPlaceholder = "__TASKS_JS__";
+const tasksCssPlaceholder = "__TASKS_CSS__";
 const htmlReplacements = new Map([
   ["index.html", [
     [typographyPlaceholder, assetsManifest.typographyCss],
@@ -401,8 +402,8 @@ const htmlReplacements = new Map([
     [katexPlaceholder, assetsManifest.katexCss],
     [authoringCssPlaceholder, assetsManifest.authoringCss],
     [authoringJsPlaceholder, assetsManifest.authoringJs],
-    [monthlyPlansJsPlaceholder, assetsManifest.monthlyPlansJs],
-    [monthlyPlansCssPlaceholder, assetsManifest.monthlyPlansCss],
+    [tasksJsPlaceholder, assetsManifest.tasksJs],
+    [tasksCssPlaceholder, assetsManifest.tasksCss],
   ]],
 ]);
 for (const [relative, replacements] of htmlReplacements) {
