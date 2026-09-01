@@ -1,5 +1,23 @@
 export default [
   {
+    "id": "20260901-230151-d9f1",
+    "publishedAt": "2026-09-01T23:01:51+08:00",
+    "content": "9月1日日报\n\n1. 做完了task系统。\n2. spectra全面支持了usd场景。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": {
+      "id": "task-7d849f1afff2b39ea1aeb4a6",
+      "code": "SPEC-2026-0001",
+      "title": "全面支持usd场景",
+      "project": {
+        "id": "project-f6bb03c4172e732d1d746f7b",
+        "key": "SPEC",
+        "title": "Spectra",
+        "color": "#842e2e"
+      }
+    }
+  },
+  {
     "id": "20260901-060602-afb1",
     "publishedAt": "2026-09-01T06:06:02+08:00",
     "content": "新的一个月，新目标！\n\n这个月正式开始推行政治体制改革！加油！同时，全面升级日报需要报告的内容。",
