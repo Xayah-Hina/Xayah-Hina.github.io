@@ -1,5 +1,5 @@
 import { getTaskStateVersioned, putTaskStateConditional } from "./storage";
-import type { Env, TaskActivityDay, TaskItem, TaskProject, TaskState } from "./types";
+import type { Env, TaskContribution, TaskItem, TaskProject, TaskState } from "./types";
 import { asRecord, HttpError, randomHex, requiredString, singaporeTimestamp } from "./utils";
 
 const DATE = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
@@ -11,7 +11,7 @@ const REVISION = /^(?:0|[a-f0-9]{32})$/;
 const COLOR = /^#[0-9a-f]{6}$/i;
 const MAX_PROJECTS = 100;
 const MAX_TASKS = 2000;
-const MAX_ACTIVITY_DAYS = 730;
+const MAX_LEGACY_ACTIVITY_DAYS = 730;
 
 type TaskMode =
   | "createProject"
@@ -28,17 +28,16 @@ interface VersionedTaskState {
 
 export interface PublicTaskData extends TaskState {
   today: string;
-  activity: Array<TaskActivityDay & { score: number }>;
 }
 
 function emptyState(): TaskState {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     revision: "0",
     updatedAt: "1970-01-01T00:00:00.000Z",
     projects: [],
     tasks: [],
-    activity: [],
+    contributions: [],
   };
 }
 
@@ -125,17 +124,19 @@ function migrateIdentifiers(projects: TaskProject[], tasks: TaskItem[]): void {
   }
 }
 
-function storedProject(value: unknown, schemaVersion: 1 | 2): TaskProject {
+type StoredSchemaVersion = 1 | 2 | 3;
+
+function storedProject(value: unknown, schemaVersion: StoredSchemaVersion): TaskProject {
   const record = asRecord(value, "Stored Task data contains an invalid project.");
   if (!PROJECT_ID.test(String(record.id || ""))
     || !["active", "paused", "completed"].includes(String(record.status || ""))
     || !COLOR.test(String(record.color || ""))
-    || (schemaVersion === 2 && !PROJECT_KEY.test(String(record.key || "")))) {
+    || (schemaVersion >= 2 && !PROJECT_KEY.test(String(record.key || "")))) {
     throw new HttpError(500, "Stored Task data contains an invalid project.");
   }
   const project: TaskProject = {
     id: String(record.id),
-    key: schemaVersion === 2 ? String(record.key) : "",
+    key: schemaVersion >= 2 ? String(record.key) : "",
     title: requiredString(record.title, "Stored project title", 120),
     description: requiredString(record.description, "Stored project description", 600, true),
     color: String(record.color).toLowerCase(),
@@ -148,17 +149,17 @@ function storedProject(value: unknown, schemaVersion: 1 | 2): TaskProject {
   return project;
 }
 
-function storedTask(value: unknown, schemaVersion: 1 | 2): TaskItem {
+function storedTask(value: unknown, schemaVersion: StoredSchemaVersion): TaskItem {
   const record = asRecord(value, "Stored Task data contains an invalid task.");
   if (!TASK_ID.test(String(record.id || "")) || !PROJECT_ID.test(String(record.projectId || ""))
     || !["todo", "in_progress", "done"].includes(String(record.status || ""))
     || !["normal", "high"].includes(String(record.priority || ""))
-    || (schemaVersion === 2 && !TASK_CODE.test(String(record.code || "")))) {
+    || (schemaVersion >= 2 && !TASK_CODE.test(String(record.code || "")))) {
     throw new HttpError(500, "Stored Task data contains an invalid task.");
   }
   const task: TaskItem = {
     id: String(record.id),
-    code: schemaVersion === 2 ? String(record.code) : "",
+    code: schemaVersion >= 2 ? String(record.code) : "",
     projectId: String(record.projectId),
     title: requiredString(record.title, "Stored task title", 180),
     status: record.status as TaskItem["status"],
@@ -172,38 +173,94 @@ function storedTask(value: unknown, schemaVersion: 1 | 2): TaskItem {
   return task;
 }
 
-function storedActivity(value: unknown): TaskActivityDay {
+function validateLegacyActivity(value: unknown): { date: string } {
   const record = asRecord(value, "Stored Task data contains an invalid activity day.");
   const date = parseDate(record.date, "Stored activity date");
   if (!Number.isInteger(record.updates) || Number(record.updates) < 0
     || !Number.isInteger(record.completions) || Number(record.completions) < 0) {
     throw new HttpError(500, "Stored Task data contains an invalid activity day.");
   }
-  return { date: date!, updates: Number(record.updates), completions: Number(record.completions) };
+  return { date: date! };
+}
+
+function contributionSnapshot(task: TaskItem, project: TaskProject, completedAt: string): TaskContribution {
+  return {
+    taskId: task.id,
+    taskCode: task.code,
+    taskTitle: task.title,
+    projectId: project.id,
+    projectKey: project.key,
+    projectTitle: project.title,
+    projectColor: project.color,
+    completedAt,
+  };
+}
+
+function migrateContributions(projects: TaskProject[], tasks: TaskItem[]): TaskContribution[] {
+  const projectById = new Map(projects.map((project) => [project.id, project]));
+  return tasks
+    .filter((task) => task.completedAt)
+    .sort((left, right) => left.completedAt!.localeCompare(right.completedAt!) || left.id.localeCompare(right.id))
+    .map((task) => {
+      const project = projectById.get(task.projectId);
+      if (!project) throw new HttpError(500, "Stored Task data contains an orphaned task.");
+      return contributionSnapshot(task, project, task.completedAt!);
+    });
+}
+
+function storedContribution(value: unknown): TaskContribution {
+  const record = asRecord(value, "Stored Task data contains an invalid contribution.");
+  if (!TASK_ID.test(String(record.taskId || ""))
+    || !TASK_CODE.test(String(record.taskCode || ""))
+    || !PROJECT_ID.test(String(record.projectId || ""))
+    || !PROJECT_KEY.test(String(record.projectKey || ""))
+    || !COLOR.test(String(record.projectColor || ""))) {
+    throw new HttpError(500, "Stored Task data contains an invalid contribution.");
+  }
+  return {
+    taskId: String(record.taskId),
+    taskCode: String(record.taskCode),
+    taskTitle: requiredString(record.taskTitle, "Stored contribution Task title", 180),
+    projectId: String(record.projectId),
+    projectKey: String(record.projectKey),
+    projectTitle: requiredString(record.projectTitle, "Stored contribution Project title", 120),
+    projectColor: String(record.projectColor).toLowerCase(),
+    completedAt: parseTimestamp(record.completedAt, "Stored contribution completedAt"),
+  };
 }
 
 function validateState(value: unknown): TaskState {
   const record = asRecord(value, "Stored Task data is invalid.");
-  if (![1, 2].includes(Number(record.schemaVersion)) || !REVISION.test(String(record.revision || ""))
+  const schemaVersion = Number(record.schemaVersion) as StoredSchemaVersion;
+  if (![1, 2, 3].includes(schemaVersion) || !REVISION.test(String(record.revision || ""))
     || !Array.isArray(record.projects) || record.projects.length > MAX_PROJECTS
     || !Array.isArray(record.tasks) || record.tasks.length > MAX_TASKS
-    || !Array.isArray(record.activity) || record.activity.length > MAX_ACTIVITY_DAYS) {
+    || (schemaVersion < 3 && (!Array.isArray(record.activity) || record.activity.length > MAX_LEGACY_ACTIVITY_DAYS))
+    || (schemaVersion === 3 && (!Array.isArray(record.contributions) || record.contributions.length > MAX_TASKS))) {
     throw new HttpError(500, "Stored Task data is invalid.");
   }
-  const schemaVersion = Number(record.schemaVersion) as 1 | 2;
   const projects = record.projects.map((project) => storedProject(project, schemaVersion));
   const tasks = record.tasks.map((task) => storedTask(task, schemaVersion));
-  const activity = record.activity.map(storedActivity).sort((left, right) => left.date.localeCompare(right.date));
   if (schemaVersion === 1) migrateIdentifiers(projects, tasks);
+  const legacyActivity = schemaVersion < 3
+    ? (record.activity as unknown[]).map(validateLegacyActivity)
+    : [];
+  const contributions = (schemaVersion === 3
+    ? (record.contributions as unknown[]).map(storedContribution)
+    : migrateContributions(projects, tasks))
+    .sort((left, right) => left.completedAt.localeCompare(right.completedAt) || left.taskId.localeCompare(right.taskId));
   if (new Set(projects.map((project) => project.id)).size !== projects.length
     || new Set(tasks.map((task) => task.id)).size !== tasks.length
     || new Set(projects.map((project) => project.key)).size !== projects.length
     || new Set(tasks.map((task) => task.code)).size !== tasks.length
-    || new Set(activity.map((day) => day.date)).size !== activity.length) {
+    || new Set(legacyActivity.map((day) => day.date)).size !== legacyActivity.length
+    || new Set(contributions.map((contribution) => contribution.taskId)).size !== contributions.length) {
     throw new HttpError(500, "Stored Task data contains duplicate records.");
   }
   const projectIds = new Set(projects.map((project) => project.id));
   const projectKeys = new Set(projects.map((project) => project.key));
+  const tasksById = new Map(tasks.map((task) => [task.id, task]));
+  const projectsById = new Map(projects.map((project) => [project.id, project]));
   if (tasks.some((task) => !projectIds.has(task.projectId))) {
     throw new HttpError(500, "Stored Task data contains an orphaned task.");
   }
@@ -213,13 +270,20 @@ function validateState(value: unknown): TaskState {
       throw new HttpError(500, "Stored Task data contains an invalid Task code.");
     }
   }
+  for (const contribution of contributions) {
+    const task = tasksById.get(contribution.taskId);
+    const project = projectsById.get(contribution.projectId);
+    if (!task || !project || contribution.taskCode !== task.code || contribution.projectKey !== project.key) {
+      throw new HttpError(500, "Stored Task data contains an orphaned contribution.");
+    }
+  }
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     revision: String(record.revision),
     updatedAt: parseTimestamp(record.updatedAt, "Stored Task updatedAt"),
     projects,
     tasks,
-    activity,
+    contributions,
   };
 }
 
@@ -233,21 +297,7 @@ function publicData(state: TaskState): PublicTaskData {
   return {
     ...state,
     today: todayInSingapore(),
-    activity: state.activity.map((day) => ({ ...day, score: day.updates + day.completions * 2 })),
   };
-}
-
-function addActivity(activity: TaskActivityDay[], completions = 0): TaskActivityDay[] {
-  const today = todayInSingapore();
-  const next = activity.map((day) => ({ ...day }));
-  const existing = next.find((day) => day.date === today);
-  if (existing) {
-    existing.updates += 1;
-    existing.completions += completions;
-  } else {
-    next.push({ date: today, updates: 1, completions });
-  }
-  return next.sort((left, right) => left.date.localeCompare(right.date)).slice(-MAX_ACTIVITY_DAYS);
 }
 
 function mutationPayload(payload: Record<string, unknown>): { mode: TaskMode; baseRevision: string; value: Record<string, unknown> } {
@@ -310,9 +360,8 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
   const timestamp = singaporeTimestamp();
   let projects = current.state.projects.map((project) => ({ ...project }));
   let tasks = current.state.tasks.map((task) => ({ ...task }));
-  let activity = current.state.activity;
+  const contributions = current.state.contributions.map((contribution) => ({ ...contribution }));
   let status = "updated";
-  let completions = 0;
 
   if (mode === "createProject") {
     if (projects.length >= MAX_PROJECTS) throw new HttpError(400, "The 100-project limit has been reached.");
@@ -360,32 +409,34 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
   } else if (mode === "createTask") {
     if (tasks.length >= MAX_TASKS) throw new HttpError(400, "The 2,000-task limit has been reached.");
     const input = taskInput(value);
-    if (!projects.some((project) => project.id === input.projectId && !project.archivedAt)) {
+    const project = projects.find((candidate) => candidate.id === input.projectId && !candidate.archivedAt);
+    if (!project) {
       throw new HttpError(400, "Task project is unavailable.");
     }
     const task: TaskItem = {
       id: `task-${randomHex(12)}`,
-      code: nextTaskCode(projects.find((project) => project.id === input.projectId)!.key, timestamp, tasks),
+      code: nextTaskCode(project.key, timestamp, tasks),
       ...input,
       createdAt: timestamp,
       updatedAt: timestamp,
       ...(input.status === "done" ? { completedAt: timestamp } : {}),
     };
     tasks.push(task);
-    if (input.status === "done") completions = 1;
+    if (input.status === "done") contributions.push(contributionSnapshot(task, project, timestamp));
     status = "created";
   } else if (mode === "updateTask") {
     const id = String(value.id || "");
     const index = tasks.findIndex((task) => task.id === id && !task.archivedAt);
     if (index < 0) throw new HttpError(404, "Task was not found.");
     const input = taskInput(value);
-    if (!projects.some((project) => project.id === input.projectId && !project.archivedAt)) {
+    const project = projects.find((candidate) => candidate.id === input.projectId && !candidate.archivedAt);
+    if (!project) {
       throw new HttpError(400, "Task project is unavailable.");
     }
     if (sameTask(tasks[index], input)) return { ...publicData(current.state), status: "unchanged" };
     const original = tasks[index];
-    if (original.status !== "done" && input.status === "done") completions = 1;
-    tasks[index] = {
+    const completedNow = original.status !== "done" && input.status === "done";
+    const updated: TaskItem = {
       ...original,
       ...input,
       updatedAt: timestamp,
@@ -393,6 +444,10 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
         ? { completedAt: original.status === "done" ? original.completedAt : timestamp }
         : { completedAt: undefined }),
     };
+    tasks[index] = updated;
+    if (completedNow && !contributions.some((contribution) => contribution.taskId === updated.id)) {
+      contributions.push(contributionSnapshot(updated, project, timestamp));
+    }
   } else {
     const id = String(value.id || "");
     const task = tasks.find((candidate) => candidate.id === id);
@@ -402,14 +457,13 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
     status = "archived";
   }
 
-  activity = addActivity(activity, completions);
   const next: TaskState = {
-    schemaVersion: 2,
+    schemaVersion: 3,
     revision: randomHex(16),
     updatedAt: timestamp,
     projects,
     tasks,
-    activity,
+    contributions,
   };
   if (!await putTaskStateConditional(env, next, current.etag)) {
     throw new HttpError(409, "Tasks changed while saving. Reload and try again.");

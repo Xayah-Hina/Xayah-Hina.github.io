@@ -48,7 +48,7 @@ test("Tasks create a project and child task, then record a completion", async ()
   assert.equal(projectResult.status, "created");
   assert.equal(projectResult.projects.length, 1);
   assert.equal(projectResult.projects[0].key, "DS");
-  assert.equal(projectResult.activity[0].updates, 1);
+  assert.deepEqual(projectResult.contributions, []);
 
   const taskResult = await saveTasks(env, {
     mode: "createTask",
@@ -63,6 +63,7 @@ test("Tasks create a project and child task, then record a completion", async ()
   });
   assert.equal(taskResult.tasks.length, 1);
   assert.equal(taskResult.tasks[0].code, `DS-${today.slice(0, 4)}-0001`);
+  assert.deepEqual(taskResult.contributions, []);
 
   const completed = await saveTasks(env, {
     mode: "updateTask",
@@ -70,18 +71,40 @@ test("Tasks create a project and child task, then record a completion", async ()
     task: { ...taskResult.tasks[0], status: "done" },
   });
   assert.equal(completed.tasks[0].status, "done");
-  assert.equal(completed.activity[0].updates, 3);
-  assert.equal(completed.activity[0].completions, 1);
-  assert.equal(completed.activity[0].score, 5);
+  assert.equal(completed.contributions.length, 1);
+  assert.deepEqual(completed.contributions[0], {
+    taskId: completed.tasks[0].id,
+    taskCode: completed.tasks[0].code,
+    taskTitle: "Implement the linear solve",
+    projectId: completed.projects[0].id,
+    projectKey: "DS",
+    projectTitle: "Differentiable Solver",
+    projectColor: "#2f855a",
+    completedAt: completed.tasks[0].completedAt,
+  });
+
+  const reopened = await saveTasks(env, {
+    mode: "updateTask",
+    baseRevision: completed.revision,
+    task: { ...completed.tasks[0], title: "Renamed after completion", status: "todo" },
+  });
+  const recompleted = await saveTasks(env, {
+    mode: "updateTask",
+    baseRevision: reopened.revision,
+    task: { ...reopened.tasks[0], status: "done" },
+  });
+  assert.equal(recompleted.contributions.length, 1);
+  assert.equal(recompleted.contributions[0].taskTitle, "Implement the linear solve");
   assert.ok(objects.has("published/tasks/state.json"));
   assert.ok([...objects.keys()].some((key) => key.startsWith("private/tasks/history/")));
 
   const response = await tasksResponse(env, new Request("https://xayah.me/data/tasks"));
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("cache-control"), "public, max-age=0, must-revalidate");
-  const data = await response.json() as typeof completed;
+  assert.match(response.headers.get("etag")!, /^"v3-/);
+  const data = await response.json() as typeof recompleted;
   assert.equal(data.today, today);
-  assert.equal(data.tasks[0].title, "Implement the linear solve");
+  assert.equal(data.tasks[0].title, "Renamed after completion");
   const unchanged = await tasksResponse(env, new Request("https://xayah.me/data/tasks", {
     headers: { "If-None-Match": response.headers.get("etag")! },
   }));
@@ -225,10 +248,11 @@ test("schema version 1 Task state receives deterministic Project keys and Task c
 
   const response = await tasksResponse(env, new Request("https://xayah.me/data/tasks"));
   const migrated = await response.json() as Record<string, any>;
-  assert.equal(migrated.schemaVersion, 2);
+  assert.equal(migrated.schemaVersion, 3);
   assert.equal(migrated.projects[0].key, "DS");
   assert.equal(migrated.tasks[0].code, "DS-2026-0001");
   assert.equal(migrated.tasks[0].title, "T090101");
+  assert.deepEqual(migrated.contributions, []);
 
   await saveTasks(env, {
     mode: "updateTask",
@@ -236,7 +260,60 @@ test("schema version 1 Task state receives deterministic Project keys and Task c
     task: { ...migrated.tasks[0], title: "Implement the solver" },
   });
   const stored = JSON.parse(objects.get("published/tasks/state.json")!.value);
-  assert.equal(stored.schemaVersion, 2);
+  assert.equal(stored.schemaVersion, 3);
   assert.equal(stored.projects[0].key, "DS");
   assert.equal(stored.tasks[0].code, "DS-2026-0001");
+});
+
+test("schema version 2 completed Tasks become immutable contribution snapshots", async () => {
+  const { env, objects } = environment();
+  const projectId = `project-${"c".repeat(24)}`;
+  const taskId = `task-${"d".repeat(24)}`;
+  const completedAt = "2026-09-01T20:54:32+08:00";
+  objects.set("published/tasks/state.json", {
+    etag: "etag-v2",
+    value: JSON.stringify({
+      schemaVersion: 2,
+      revision: "0",
+      updatedAt: completedAt,
+      projects: [{
+        id: projectId,
+        key: "SPEC",
+        title: "Spectra",
+        description: "Renderer",
+        color: "#842e2e",
+        status: "active",
+        createdAt: "2026-09-01T20:52:11+08:00",
+        updatedAt: completedAt,
+      }],
+      tasks: [{
+        id: taskId,
+        code: "SPEC-2026-0001",
+        projectId,
+        title: "Support USD scenes",
+        status: "done",
+        priority: "normal",
+        scheduledDate: "2026-09-01",
+        createdAt: "2026-09-01T20:52:48+08:00",
+        updatedAt: completedAt,
+        completedAt,
+      }],
+      activity: [{ date: "2026-09-01", updates: 3, completions: 1 }],
+    }),
+  });
+
+  const response = await tasksResponse(env, new Request("https://xayah.me/data/tasks"));
+  const migrated = await response.json() as Record<string, any>;
+  assert.equal(migrated.schemaVersion, 3);
+  assert.equal(migrated.contributions.length, 1);
+  assert.deepEqual(migrated.contributions[0], {
+    taskId,
+    taskCode: "SPEC-2026-0001",
+    taskTitle: "Support USD scenes",
+    projectId,
+    projectKey: "SPEC",
+    projectTitle: "Spectra",
+    projectColor: "#842e2e",
+    completedAt,
+  });
 });

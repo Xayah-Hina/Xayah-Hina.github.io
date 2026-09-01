@@ -44,7 +44,7 @@ test("Journal build publishes only validated catalog modules and rejects unsafe 
     const catalog = (await import(catalogUrl)).default;
     const expected = [
       "catalog.js",
-      ...catalog.years.flatMap((year) => [`${year}.js`, `monthly/${year}.js`]),
+      ...catalog.years.map((year) => `${year}.js`),
     ].sort();
     assert.deepEqual(filesBelow(path.join(output, "journals")).sort(), expected);
     assert.equal(fs.existsSync(path.join(output, "journals", "secret.txt")), false);

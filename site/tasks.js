@@ -23,13 +23,13 @@ function singaporeDate() {
 
 function emptyData() {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     revision: "0",
     today: singaporeDate(),
     updatedAt: null,
     projects: [],
     tasks: [],
-    activity: []
+    contributions: []
   };
 }
 
@@ -94,12 +94,39 @@ function migrateIdentifiers(projects, tasks) {
   }
 }
 
+function validTimestamp(value) {
+  return typeof value === "string" && value.length <= 40 && Number.isFinite(Date.parse(value));
+}
+
+function contributionSnapshot(task, project) {
+  return {
+    taskId: task.id,
+    taskCode: task.code,
+    taskTitle: task.title,
+    projectId: project.id,
+    projectKey: project.key,
+    projectTitle: project.title,
+    projectColor: project.color,
+    completedAt: task.completedAt
+  };
+}
+
+function migrateContributions(projects, tasks) {
+  const projectsById = new Map(projects.map((project) => [project.id, project]));
+  return tasks
+    .filter((task) => validTimestamp(task.completedAt))
+    .sort((left, right) => left.completedAt.localeCompare(right.completedAt) || left.id.localeCompare(right.id))
+    .map((task) => contributionSnapshot(task, projectsById.get(task.projectId)));
+}
+
 function validateData(value) {
   const schemaVersion = Number(value?.schemaVersion);
   if (!value || typeof value !== "object" || Array.isArray(value)
-    || ![1, 2].includes(schemaVersion) || typeof value.revision !== "string"
+    || ![1, 2, 3].includes(schemaVersion) || typeof value.revision !== "string"
     || !DATE.test(value.today || "") || !Array.isArray(value.projects)
-    || !Array.isArray(value.tasks) || !Array.isArray(value.activity)) {
+    || !Array.isArray(value.tasks)
+    || (schemaVersion < 3 && !Array.isArray(value.activity))
+    || (schemaVersion === 3 && !Array.isArray(value.contributions))) {
     throw new TypeError("Task data is invalid.");
   }
   const projectIds = new Set();
@@ -107,7 +134,8 @@ function validateData(value) {
   for (const project of projects) {
     if (!project || typeof project.id !== "string" || projectIds.has(project.id)
       || typeof project.title !== "string" || !PROJECT_STATUSES.has(project.status)
-      || (schemaVersion === 2 && !PROJECT_KEY.test(project.key || ""))) {
+      || !/^#[0-9a-f]{6}$/i.test(project.color || "")
+      || (schemaVersion >= 2 && !PROJECT_KEY.test(project.key || ""))) {
       throw new TypeError("Task data contains an invalid project.");
     }
     projectIds.add(project.id);
@@ -118,7 +146,8 @@ function validateData(value) {
     if (!task || typeof task.id !== "string" || taskIds.has(task.id)
       || !projectIds.has(task.projectId) || typeof task.title !== "string"
       || !TASK_STATUSES.has(task.status)
-      || (schemaVersion === 2 && !TASK_CODE.test(task.code || ""))
+      || (schemaVersion >= 2 && !TASK_CODE.test(task.code || ""))
+      || (task.completedAt !== undefined && !validTimestamp(task.completedAt))
       || (task.scheduledDate !== null && !DATE.test(task.scheduledDate || ""))) {
       throw new TypeError("Task data contains an invalid task.");
     }
@@ -129,20 +158,41 @@ function validateData(value) {
     || new Set(tasks.map((task) => task.code)).size !== tasks.length) {
     throw new TypeError("Task data contains duplicate identifiers.");
   }
-  for (const day of value.activity) {
-    if (!day || !DATE.test(day.date || "") || !Number.isInteger(day.updates)
-      || !Number.isInteger(day.completions) || !Number.isFinite(day.score)) {
-      throw new TypeError("Task data contains invalid activity.");
+  if (schemaVersion < 3) {
+    for (const day of value.activity) {
+      if (!day || !DATE.test(day.date || "") || !Number.isInteger(day.updates)
+        || !Number.isInteger(day.completions) || !Number.isFinite(day.score)) {
+        throw new TypeError("Task data contains invalid activity.");
+      }
     }
   }
+  const contributions = schemaVersion === 3
+    ? value.contributions.map((contribution) => ({ ...contribution }))
+    : migrateContributions(projects, tasks);
+  const contributionTaskIds = new Set();
+  const projectsById = new Map(projects.map((project) => [project.id, project]));
+  const tasksById = new Map(tasks.map((task) => [task.id, task]));
+  for (const contribution of contributions) {
+    const task = tasksById.get(contribution?.taskId);
+    const project = projectsById.get(contribution?.projectId);
+    if (!contribution || !taskIds.has(contribution.taskId) || contributionTaskIds.has(contribution.taskId)
+      || !TASK_CODE.test(contribution.taskCode || "") || !projectIds.has(contribution.projectId)
+      || !PROJECT_KEY.test(contribution.projectKey || "") || typeof contribution.taskTitle !== "string"
+      || typeof contribution.projectTitle !== "string" || !/^#[0-9a-f]{6}$/i.test(contribution.projectColor || "")
+      || !validTimestamp(contribution.completedAt) || contribution.taskCode !== task?.code
+      || contribution.projectKey !== project?.key) {
+      throw new TypeError("Task data contains an invalid contribution.");
+    }
+    contributionTaskIds.add(contribution.taskId);
+  }
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     revision: value.revision,
     today: value.today,
     updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : null,
     projects,
     tasks,
-    activity: value.activity.map((day) => ({ ...day }))
+    contributions
   };
 }
 
@@ -169,29 +219,40 @@ function formatDay(value) {
   }).format(new Date(`${value}T00:00:00Z`));
 }
 
-function activityMap(data) {
-  return new Map(data.activity.map((day) => [day.date, day]));
+function contributionMap(data) {
+  const days = new Map();
+  for (const contribution of data.contributions) {
+    const date = contribution.completedAt.slice(0, 10);
+    const entries = days.get(date) || [];
+    entries.push(contribution);
+    days.set(date, entries);
+  }
+  return days;
 }
 
-function contributionLevel(day) {
-  const score = Number(day?.score || 0);
-  if (score <= 0) return 0;
-  if (score <= 2) return 1;
-  if (score <= 4) return 2;
-  if (score <= 7) return 3;
-  return 4;
+function contributionLevel(contributions) {
+  return Math.min(4, contributions?.length || 0);
 }
 
 function currentStreak(data) {
-  const days = activityMap(data);
+  const days = contributionMap(data);
   let cursor = data.today;
-  if (!days.get(cursor)?.score) cursor = dateShift(cursor, -1);
+  if (!days.get(cursor)?.length) cursor = dateShift(cursor, -1);
   let count = 0;
-  while (days.get(cursor)?.score) {
+  while (days.get(cursor)?.length) {
     count += 1;
     cursor = dateShift(cursor, -1);
   }
   return count;
+}
+
+function formatCompletionTime(value) {
+  return new Intl.DateTimeFormat("en", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: "Asia/Singapore"
+  }).format(new Date(value));
 }
 
 function taskCompletedToday(task, today) {
@@ -213,46 +274,155 @@ function todayTasks(data) {
     });
 }
 
+function contributionPopoverContent(date, contributions) {
+  const fragment = document.createDocumentFragment();
+  const header = node("header", "task-contribution-popover-header");
+  const day = node("time", "task-contribution-popover-date", formatDay(date));
+  day.dateTime = date;
+  header.append(
+    day,
+    node("span", "task-contribution-popover-count", `${contributions.length} completed`)
+  );
+  const list = node("ul", "task-contribution-list");
+  for (const contribution of contributions) {
+    const item = node("li", "task-contribution-item");
+    const heading = node("div", "task-contribution-heading");
+    heading.append(
+      node("span", "task-contribution-check", "✓"),
+      node("span", "task-contribution-code", contribution.taskCode),
+      node("time", "task-contribution-time", formatCompletionTime(contribution.completedAt))
+    );
+    const title = node("strong", "task-contribution-title", contribution.taskTitle);
+    const meta = node("span", "task-contribution-project");
+    const dot = node("span", "task-contribution-project-dot");
+    dot.style.setProperty("--project-color", contribution.projectColor);
+    meta.append(dot, document.createTextNode(`${contribution.projectKey} · ${contribution.projectTitle}`));
+    item.append(heading, title, meta);
+    list.append(item);
+  }
+  fragment.append(header, list);
+  return fragment;
+}
+
 function heatmap(data) {
   const today = new Date(`${data.today}T00:00:00Z`);
   const daysUntilSaturday = (6 - today.getUTCDay() + 7) % 7;
   const end = dateShift(data.today, daysUntilSaturday);
   const start = dateShift(end, -(53 * 7 - 1));
-  const section = node("section", "task-panel task-contributions");
+  const section = node("section", "task-section task-contributions");
   const header = node("header", "task-panel-header");
   const copy = node("div", "task-panel-copy");
-  copy.append(
-    node("h3", "task-panel-title", "Daily activity"),
-    node("p", "task-panel-subtitle", "Every update counts. Completions carry a little more weight.")
-  );
-  const activeDays = data.activity.filter((day) => day.date >= start && day.date <= data.today && day.score > 0).length;
-  header.append(copy, node("span", "task-panel-meta", `${activeDays} active ${activeDays === 1 ? "day" : "days"}`));
+  copy.append(node("h3", "task-panel-title", "Contributions"));
+  const days = contributionMap(data);
+  const displayed = data.contributions.filter((contribution) => {
+    const date = contribution.completedAt.slice(0, 10);
+    return date >= start && date <= data.today;
+  });
+  const streak = currentStreak(data);
+  header.append(copy, node(
+    "span",
+    "task-panel-meta",
+    `${displayed.length} completed · ${streak} day streak`
+  ));
 
   const viewport = node("div", "task-heatmap-viewport");
   const graph = node("div", "task-heatmap");
-  graph.setAttribute("role", "img");
-  graph.setAttribute("aria-label", `Task activity during the past year, ${activeDays} active days`);
+  graph.setAttribute("role", "group");
+  graph.setAttribute("aria-label", `Task contributions during the past year, ${displayed.length} completed`);
   const labels = node("div", "task-heatmap-weekdays");
   labels.setAttribute("aria-hidden", "true");
   labels.append(node("span", "", "Mon"), node("span", "", "Wed"), node("span", "", "Fri"));
 
-  const days = activityMap(data);
+  const popover = node("div", "task-contribution-popover");
+  popover.id = "task-contribution-popover";
+  popover.setAttribute("popover", "auto");
+  popover.setAttribute("role", "tooltip");
+  const supportsPopover = typeof popover.showPopover === "function";
+  let activeCell = null;
+  let pinned = false;
+  let fallbackOpen = false;
+  let hideTimer = 0;
+
+  const isOpen = () => supportsPopover ? popover.matches(":popover-open") : fallbackOpen;
+  const clearHide = () => window.clearTimeout(hideTimer);
+  const closePopover = () => {
+    clearHide();
+    activeCell?.setAttribute("aria-expanded", "false");
+    activeCell = null;
+    pinned = false;
+    if (supportsPopover && isOpen()) popover.hidePopover();
+    if (!supportsPopover) {
+      fallbackOpen = false;
+      popover.removeAttribute("data-open");
+    }
+  };
+  const positionPopover = (cell) => {
+    const anchor = cell.getBoundingClientRect();
+    const panel = popover.getBoundingClientRect();
+    const edge = 8;
+    const left = Math.min(
+      window.innerWidth - panel.width - edge,
+      Math.max(edge, anchor.left + anchor.width / 2 - panel.width / 2)
+    );
+    const above = anchor.top - panel.height - 10;
+    const top = above >= edge ? above : Math.min(window.innerHeight - panel.height - edge, anchor.bottom + 10);
+    popover.style.left = `${left}px`;
+    popover.style.top = `${Math.max(edge, top)}px`;
+  };
+  const showPopover = (cell, date, contributions, shouldPin = false) => {
+    clearHide();
+    if (activeCell && activeCell !== cell) activeCell.setAttribute("aria-expanded", "false");
+    activeCell = cell;
+    pinned = shouldPin;
+    popover.replaceChildren(contributionPopoverContent(date, contributions));
+    popover.style.visibility = "hidden";
+    if (supportsPopover && !isOpen()) popover.showPopover();
+    if (!supportsPopover) {
+      fallbackOpen = true;
+      popover.dataset.open = "true";
+    }
+    cell.setAttribute("aria-expanded", "true");
+    positionPopover(cell);
+    popover.style.visibility = "";
+  };
+  const scheduleHide = () => {
+    clearHide();
+    if (!pinned) hideTimer = window.setTimeout(closePopover, 140);
+  };
+
   const weeks = node("div", "task-heatmap-weeks");
-  weeks.setAttribute("aria-hidden", "true");
   for (let week = 0; week < 53; week += 1) {
     const column = node("div", "task-heatmap-week");
     for (let weekday = 0; weekday < 7; weekday += 1) {
       const date = dateShift(start, week * 7 + weekday);
-      const activity = days.get(date);
-      const cell = node("span", "task-heatmap-cell");
+      const contributions = days.get(date) || [];
       const future = date > data.today;
-      const updates = Number(activity?.updates || 0);
-      const completions = Number(activity?.completions || 0);
-      const detail = future
-        ? `${formatDay(date)} · future`
-        : `${formatDay(date)} · ${updates} ${updates === 1 ? "update" : "updates"}, ${completions} completed`;
-      cell.dataset.level = future ? "future" : String(contributionLevel(activity));
-      cell.title = detail;
+      const active = !future && contributions.length > 0;
+      const cell = node(active ? "button" : "span", "task-heatmap-cell");
+      cell.dataset.level = future ? "future" : String(contributionLevel(contributions));
+      if (active) {
+        cell.type = "button";
+        cell.setAttribute("aria-label", `${formatDay(date)}, ${contributions.length} completed`);
+        cell.setAttribute("aria-controls", popover.id);
+        cell.setAttribute("aria-expanded", "false");
+        cell.addEventListener("mouseenter", () => {
+          if (!pinned) showPopover(cell, date, contributions);
+        });
+        cell.addEventListener("mouseleave", scheduleHide);
+        cell.addEventListener("focus", () => {
+          if (!pinned) showPopover(cell, date, contributions);
+        });
+        cell.addEventListener("blur", scheduleHide);
+        cell.addEventListener("click", () => {
+          if (pinned && activeCell === cell) closePopover();
+          else showPopover(cell, date, contributions, true);
+        });
+        cell.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") closePopover();
+        });
+      } else if (!future) {
+        cell.title = `${formatDay(date)} · No task completed`;
+      }
       column.append(cell);
     }
     weeks.append(column);
@@ -269,7 +439,20 @@ function heatmap(data) {
     legend.append(swatch);
   }
   legend.append(node("span", "", "More"));
-  section.append(header, viewport, legend);
+  popover.addEventListener("mouseenter", clearHide);
+  popover.addEventListener("mouseleave", scheduleHide);
+  popover.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closePopover();
+  });
+  popover.addEventListener("toggle", (event) => {
+    if (event.newState === "closed") {
+      activeCell?.setAttribute("aria-expanded", "false");
+      activeCell = null;
+      pinned = false;
+    }
+  });
+  viewport.addEventListener("scroll", closePopover, { passive: true });
+  section.append(header, viewport, legend, popover);
   return section;
 }
 
@@ -301,26 +484,27 @@ function taskRow(task, project, data, editable) {
 }
 
 function todayPanel(data, editable) {
-  const section = node("section", "task-panel task-today");
+  const section = node("section", "task-section task-today");
   const header = node("header", "task-panel-header");
-  const copy = node("div", "task-panel-copy");
-  copy.append(
-    node("p", "task-eyebrow", formatDay(data.today)),
-    node("h3", "task-panel-title", "Today")
-  );
+  const copy = node("div", "task-panel-copy task-section-heading");
+  const date = node("time", "task-section-date", formatDay(data.today));
+  date.dateTime = data.today;
+  copy.append(node("h3", "task-panel-title", "Today"), date);
   const tasks = todayTasks(data);
   const completed = tasks.filter((task) => taskCompletedToday(task, data.today)).length;
-  header.append(copy, node("span", "task-panel-meta", `${completed}/${tasks.length} done`));
+  const tools = node("div", "task-panel-tools");
+  tools.append(node("span", "task-panel-meta", `${completed}/${tasks.length} done`));
+  if (editable) {
+    const newTask = button("New task", "new-task", "control-button task-section-action");
+    newTask.disabled = !data.projects.some((project) => !project.archivedAt);
+    tools.append(newTask);
+  }
+  header.append(copy, tools);
   section.append(header);
 
   if (!tasks.length) {
     const empty = node("div", "task-empty-compact");
-    empty.append(
-      node("strong", "", "A clear day."),
-      node("p", "", editable
-        ? "Schedule a task for today, or enjoy the breathing room."
-        : "Nothing is scheduled here today.")
-    );
+    empty.append(node("strong", "", "Nothing scheduled."));
     section.append(empty);
     return section;
   }
@@ -376,26 +560,21 @@ function projectCard(project, data, editable) {
 }
 
 function projectsPanel(data, editable) {
-  const section = node("section", "task-panel task-projects");
+  const section = node("section", "task-section task-projects");
   const header = node("header", "task-panel-header");
   const copy = node("div", "task-panel-copy");
-  copy.append(
-    node("h3", "task-panel-title", "Projects"),
-    node("p", "task-panel-subtitle", "Direction above, next actions below.")
-  );
+  copy.append(node("h3", "task-panel-title", "Projects"));
   const projects = data.projects.filter((project) => !project.archivedAt);
   const active = projects.filter((project) => project.status === "active");
-  header.append(copy, node("span", "task-panel-meta", `${active.length} active`));
+  const tools = node("div", "task-panel-tools");
+  tools.append(node("span", "task-panel-meta", `${active.length} active`));
+  if (editable) tools.append(button("New project", "new-project", "control-button task-section-action"));
+  header.append(copy, tools);
   section.append(header);
 
   if (!projects.length) {
     const empty = node("div", "task-empty-compact");
-    empty.append(
-      node("strong", "", "No projects yet."),
-      node("p", "", editable
-        ? "Create one when you are ready to turn a direction into smaller steps."
-        : "Projects will appear here as they take shape.")
-    );
+    empty.append(node("strong", "", "No projects yet."));
     section.append(empty);
     return section;
   }
@@ -411,50 +590,14 @@ function projectsPanel(data, editable) {
 
 function page(data, authoring) {
   const root = node("div", "task-page");
-  const top = node("header", "task-page-header");
-  const copy = node("div", "task-page-copy");
-  copy.append(
-    node("h2", "task-page-title", "Tasks"),
-    node("p", "task-page-lede", "Keep the big picture visible, then move it forward one concrete task at a time.")
-  );
-  const today = todayTasks(data);
-  const todayDone = today.filter((task) => taskCompletedToday(task, data.today)).length;
-  const activeProjects = data.projects.filter((project) => project.status === "active" && !project.archivedAt).length;
-  const stats = node("div", "task-stats");
-  for (const [value, label] of [
-    [`${todayDone}/${today.length}`, "Today"],
-    [String(activeProjects), "Active projects"],
-    [String(currentStreak(data)), "Day streak"]
-  ]) {
-    const stat = node("div", "task-stat");
-    stat.append(node("strong", "task-stat-value", value), node("span", "task-stat-label", label));
-    stats.append(stat);
-  }
-  copy.append(stats);
-  top.append(copy);
-
-  if (authoring.enabled) {
-    const side = node("div", "task-page-side");
-    const actions = node("div", "task-page-actions");
-    const newTask = button("New task", "new-task", "control-button");
-    newTask.disabled = !data.projects.some((project) => !project.archivedAt);
-    const newProject = button("New project", "new-project", "control-button control-button-primary");
-    actions.append(newTask, newProject);
-    side.append(actions);
-    top.append(side);
-  }
-
+  root.append(node("h2", "visually-hidden", "Tasks"), heatmap(data));
   if (authoring.message) {
     const feedback = node("p", "task-feedback", authoring.message);
     feedback.dataset.kind = authoring.messageKind;
     feedback.setAttribute("role", authoring.messageKind === "error" ? "alert" : "status");
-    root.append(top, feedback);
-  } else {
-    root.append(top);
+    root.append(feedback);
   }
-  const columns = node("div", "task-columns");
-  columns.append(todayPanel(data, authoring.enabled), projectsPanel(data, authoring.enabled));
-  root.append(heatmap(data), columns);
+  root.append(todayPanel(data, authoring.enabled), projectsPanel(data, authoring.enabled));
   return root;
 }
 

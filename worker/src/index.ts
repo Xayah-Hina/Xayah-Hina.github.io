@@ -6,7 +6,6 @@ import {
   deleteJournal,
   journalYears,
   saveJournal,
-  saveMonthlyNote,
 } from "./journal";
 import { saveTasks, tasksResponse } from "./tasks";
 import type { Env } from "./types";
@@ -136,7 +135,6 @@ async function authoringApi(request: Request, env: Env, url: URL, scope: ApiScop
   const actions: Record<string, (env: Env, payload: Record<string, unknown>) => Promise<unknown>> = {
     "/api/journal/save": saveJournal,
     "/api/journal/delete": deleteJournal,
-    "/api/journal/monthly/save": saveMonthlyNote,
     "/api/tasks/save": saveTasks,
     "/api/writing/open": openWriting,
     "/api/writing/create": createWriting,
@@ -160,7 +158,7 @@ async function handlePublicApi(request: Request, env: Env, url: URL, scope: ApiS
 
 async function publicMedia(request: Request, env: Env, url: URL): Promise<Response> {
   if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "Published media is read-only.");
-  const journalPath = /^\/(?:journals|monthly)\/\d{4}\/[A-Za-z0-9._-]+$/;
+  const journalPath = /^\/journals\/\d{4}\/[A-Za-z0-9._-]+$/;
   const writingPath = /^\/writing\/\d{8}-\d{6}\/[a-f0-9]{64}\.(?:jpg|jpeg|png|webp|gif|avif)$/;
   if (!journalPath.test(url.pathname) && !writingPath.test(url.pathname)) {
     throw new HttpError(404, "Published media was not found.");

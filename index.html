@@ -341,100 +341,6 @@
       content: "";
     }
 
-    .journal-month-panel {
-      display: grid;
-      margin: 0 0 0.35rem;
-      padding: 1rem;
-      gap: 0.85rem;
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-left: 3px solid var(--link);
-      border-radius: 0.65rem;
-    }
-
-    .journal-month-panel-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 0.75rem;
-    }
-
-    .journal-month-panel-actions {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 0.5rem;
-    }
-
-    .journal-month-panel-heading {
-      display: flex;
-      align-items: center;
-      min-width: 0;
-      gap: 0.55rem;
-    }
-
-    .journal-month-panel-title {
-      margin: 0;
-      color: var(--text);
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    .journal-month-status {
-      padding: 0.12rem 0.42rem;
-      color: var(--link);
-      background: var(--page);
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      font-size: 0.6875rem;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-
-    .journal-month-note {
-      margin: 0;
-      color: var(--text-secondary);
-      line-height: 1.7;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-    }
-
-    .journal-month-placeholder {
-      color: var(--muted);
-    }
-
-    .journal-month-report-button {
-      display: block;
-      width: fit-content;
-      max-width: 100%;
-      padding: 0;
-      overflow: hidden;
-      background: var(--page);
-      border: 1px solid var(--line);
-      border-radius: 0.5rem;
-      cursor: zoom-in;
-    }
-
-    .journal-month-report-image {
-      display: block;
-      width: auto;
-      max-width: 100%;
-      max-height: 28rem;
-      object-fit: contain;
-    }
-
-    .journal-month-panel-footer {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-      color: var(--subtle);
-      font-size: 0.75rem;
-      font-variant-numeric: tabular-nums;
-    }
-
     .journal-feed {
       display: grid;
       gap: 0;
@@ -732,14 +638,6 @@
       padding: 0.65rem;
       line-height: 1.6;
       resize: vertical;
-    }
-
-    .journal-monthly-editor-form .field-textarea {
-      min-height: 14rem;
-    }
-
-    .monthly-editor-image:empty {
-      display: none;
     }
 
     .field-hint,
@@ -1098,11 +996,6 @@
         justify-content: flex-end;
       }
 
-      .journal-month-panel-header {
-        align-items: center;
-        flex-wrap: wrap;
-      }
-
       .editor-image-item {
         grid-template-columns: 3.75rem minmax(0, 1fr);
       }
@@ -1253,41 +1146,6 @@
     </dialog>
   </template>
 
-  <template id="journal-monthly-editor-template">
-    <dialog class="journal-dialog" aria-labelledby="journal-monthly-editor-title">
-      <form class="journal-editor-form journal-monthly-editor-form" novalidate>
-        <header class="dialog-header">
-          <h2 id="journal-monthly-editor-title" class="dialog-title">Edit Monthly Note</h2>
-          <button class="dialog-close" type="button" data-monthly-editor-action="close" aria-label="Close">×</button>
-        </header>
-
-        <div class="dialog-body">
-          <p class="editor-published-at monthly-editor-month"></p>
-
-          <label class="field-group">
-            <span class="field-label">Note</span>
-            <textarea class="field-textarea" name="note" placeholder="Write this month freely..."></textarea>
-          </label>
-
-          <div class="field-group">
-            <label class="field-label" for="journal-monthly-image">Report image</label>
-            <input id="journal-monthly-image" class="field-input" name="reportImage" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif">
-            <span class="field-hint">Optional. JPEG, PNG, WebP, GIF, or AVIF.</span>
-            <div class="monthly-editor-image"></div>
-          </div>
-
-          <p class="field-hint">Saving the note and report image empty clears the saved note and restores the placeholder panel.</p>
-          <p class="editor-message" role="alert"></p>
-        </div>
-
-        <footer class="dialog-actions">
-          <button class="control-button" type="button" data-monthly-editor-action="close">Cancel</button>
-          <button class="control-button control-button-primary" type="submit">Save review</button>
-        </footer>
-      </form>
-    </dialog>
-  </template>
-
   <template id="confirm-template">
     <dialog class="journal-dialog" aria-labelledby="confirm-title">
       <div class="confirm-dialog-body">
@@ -1413,7 +1271,6 @@
       const writingLoadErrors = new Map();
       let writingDataGeneration = 0;
       const journalEntriesByYear = new Map();
-      const journalMonthlyByYear = new Map();
       const journalLoadPromises = new Map();
       const journalLoadErrors = new Map();
       let journalDataGeneration = 0;
@@ -1461,10 +1318,6 @@
         relatedWritingChoices: [],
         originalEntry: null,
         originalBody: "",
-        monthlyDialog: null,
-        monthlyForm: null,
-        monthlyMonth: "",
-        monthlyImage: null,
         busy: false,
         confirmDialog: null,
         confirmResolver: null
@@ -1592,38 +1445,6 @@
         return sortEntries(value, "journal");
       }
 
-      function validateJournalMonthly(value, year) {
-        if (!value || typeof value !== "object" || Array.isArray(value)) {
-          throw new TypeError(`Journal monthly notes for ${year} must export an object.`);
-        }
-        const notes = new Map();
-
-        for (const [month, note] of Object.entries(value)) {
-          if (!/^\d{4}-(?:0[1-9]|1[0-2])$/.test(month) || month.slice(0, 4) !== year) {
-            throw new TypeError(`Monthly note ${month} does not belong to ${year}.`);
-          }
-          if (!note || typeof note !== "object" || Array.isArray(note)) {
-            throw new TypeError(`Monthly note ${month} is invalid.`);
-          }
-          if (typeof note.note !== "string") {
-            throw new TypeError(`Monthly note ${month} has invalid content.`);
-          }
-          if (note.reportImage && (
-            typeof note.reportImage.src !== "string"
-            || typeof note.reportImage.alt !== "string"
-            || !note.reportImage.src.startsWith(`https://media.xayah.me/monthly/${year}/${month}-report-`)
-          )) {
-            throw new TypeError(`Monthly note ${month} has an invalid report image.`);
-          }
-          if (note.updatedAt && Number.isNaN(Date.parse(note.updatedAt))) {
-            throw new TypeError(`Monthly note ${month} has an invalid update time.`);
-          }
-          notes.set(month, structuredClone(note));
-        }
-
-        return notes;
-      }
-
       function validateWritingEntries(value, year) {
         if (!Array.isArray(value)) throw new TypeError(`Writing ${year} must export an array.`);
         const ids = new Set();
@@ -1710,19 +1531,14 @@
           ? fetch(`/api/journal/year/${year}`, { cache: "no-store" }).then(async (response) => {
               const result = await response.json();
               if (!response.ok) throw new Error(result.error || `Journal ${year} could not be loaded.`);
-              return [result.entries, result.monthly];
+              return result.entries;
             })
-          : Promise.all([
-              importDataModule(`journals/${year}.js`),
-              importDataModule(`journals/monthly/${year}.js`)
-            ]).then(([module, monthlyModule]) => [module.default, monthlyModule.default]);
+          : importDataModule(`journals/${year}.js`).then((module) => module.default);
         const promise = source
-          .then(([entryData, monthlyData]) => {
+          .then((entryData) => {
             if (generation !== journalDataGeneration) return loadJournalYear(year);
             const entries = validateJournalEntries(entryData, year);
-            const notes = validateJournalMonthly(monthlyData, year);
             journalEntriesByYear.set(year, entries);
-            journalMonthlyByYear.set(year, notes);
             return entries;
           })
           .catch((error) => {
@@ -1825,16 +1641,6 @@
           year: "numeric",
           timeZone: "UTC"
         }).format(new Date(`${monthKey}-01T00:00:00Z`));
-      }
-
-      function currentJournalMonth(timeZone) {
-        const parts = new Intl.DateTimeFormat("en", {
-          year: "numeric",
-          month: "2-digit",
-          timeZone
-        }).formatToParts(new Date());
-        const value = (type) => parts.find((part) => part.type === type)?.value || "";
-        return `${value("year")}-${value("month")}`;
       }
 
       function renderSectionSwitch() {
@@ -1989,92 +1795,6 @@
         return fragment;
       }
 
-      function renderJournalMonthPanel(month, monthEntries, timeZone) {
-        const note = journalMonthlyByYear.get(month.slice(0, 4))?.get(month);
-        const panel = document.createElement("aside");
-        const header = document.createElement("header");
-        const heading = document.createElement("div");
-        const actions = document.createElement("div");
-        const title = document.createElement("h3");
-        const footer = document.createElement("footer");
-        const titleId = `monthly-note-${month}`;
-
-        panel.className = "journal-month-panel";
-        panel.setAttribute("aria-labelledby", titleId);
-        header.className = "journal-month-panel-header";
-        heading.className = "journal-month-panel-heading";
-        actions.className = "journal-month-panel-actions";
-        title.className = "journal-month-panel-title";
-        title.id = titleId;
-        title.textContent = "Monthly Note";
-        heading.append(title);
-
-        if (month === currentJournalMonth(timeZone)) {
-          const status = document.createElement("span");
-          status.className = "journal-month-status";
-          status.textContent = "In progress";
-          heading.append(status);
-        }
-        header.append(heading, actions);
-
-        if (canAuthorJournal()) {
-          const edit = document.createElement("button");
-          edit.className = "journal-action-button";
-          edit.type = "button";
-          edit.dataset.journalMonthlyAction = "edit";
-          edit.dataset.journalMonth = month;
-          edit.textContent = "Edit note";
-          actions.append(edit);
-        }
-        panel.append(header);
-
-        if (note?.note) {
-          const content = document.createElement("p");
-          content.className = "journal-month-note";
-          content.textContent = note.note;
-          panel.append(content);
-        }
-
-        if (note?.reportImage) {
-          const button = document.createElement("button");
-          const image = document.createElement("img");
-          const alt = note.reportImage.alt || `${formatJournalMonth(month)} monthly report`;
-          button.className = "journal-month-report-button";
-          button.type = "button";
-          button.dataset.journalImage = "";
-          button.dataset.imageSrc = note.reportImage.src;
-          button.dataset.imageAlt = alt;
-          button.setAttribute("aria-label", `View larger: ${alt}`);
-          image.className = "journal-month-report-image";
-          image.src = note.reportImage.src;
-          image.alt = alt;
-          image.loading = "lazy";
-          image.decoding = "async";
-          button.append(image);
-          panel.append(button);
-        }
-
-        if (!note) {
-          const placeholder = document.createElement("p");
-          placeholder.className = "journal-month-note journal-month-placeholder";
-          placeholder.textContent = month === currentJournalMonth(timeZone)
-            ? "This month is still being written."
-            : "No monthly note has been published.";
-          panel.append(placeholder);
-        }
-
-        footer.className = "journal-month-panel-footer";
-        footer.append(`${monthEntries.length} Journal ${monthEntries.length === 1 ? "entry" : "entries"}`);
-        if (note?.updatedAt) {
-          const updated = document.createElement("time");
-          updated.dateTime = note.updatedAt;
-          updated.textContent = `Updated ${formatJournalTimestamp(note.updatedAt, timeZone)}`;
-          footer.append(" · ", updated);
-        }
-        panel.append(footer);
-        return panel;
-      }
-
       function visibleEntries() {
         const query = state.queries[state.section].trim().toLocaleLowerCase();
         const year = state.years[state.section];
@@ -2110,7 +1830,6 @@
         for (const [month, monthEntries] of groups) {
           const section = document.createElement("section");
           const heading = document.createElement("h2");
-          const panel = renderJournalMonthPanel(month, monthEntries, timeZone);
           const feed = document.createElement("div");
 
           section.className = "journal-month-group";
@@ -2124,7 +1843,7 @@
             feed.append(renderJournalEntry(entry, timeZone));
           }
 
-          section.append(heading, panel, feed);
+          section.append(heading, feed);
           archiveList.append(section);
         }
       }
@@ -2319,7 +2038,6 @@
           yearsBySection.set("journal", journalYears);
           journalDataGeneration += 1;
           journalEntriesByYear.clear();
-          journalMonthlyByYear.clear();
           journalLoadPromises.clear();
           journalLoadErrors.clear();
           journalCatalogError = null;
@@ -2341,11 +2059,6 @@
         authoring.editorDialog = editorFragment.querySelector("dialog");
         authoring.editorForm = editorFragment.querySelector("form");
         document.body.append(editorFragment);
-
-        const monthlyEditorFragment = byId("journal-monthly-editor-template").content.cloneNode(true);
-        authoring.monthlyDialog = monthlyEditorFragment.querySelector("dialog");
-        authoring.monthlyForm = monthlyEditorFragment.querySelector("form");
-        document.body.append(monthlyEditorFragment);
 
         const confirmFragment = byId("confirm-template").content.cloneNode(true);
         authoring.confirmDialog = confirmFragment.querySelector("dialog");
@@ -2376,30 +2089,7 @@
           removeEditorImage(button.dataset.removeImage);
         });
 
-        authoring.monthlyForm.addEventListener("submit", saveMonthlyNote);
-        authoring.monthlyForm.elements.reportImage.addEventListener("change", addMonthlyReportImage);
-        authoring.monthlyDialog.addEventListener("cancel", (event) => {
-          event.preventDefault();
-          if (!authoring.busy) closeMonthlyEditor();
-        });
-        for (const button of authoring.monthlyDialog.querySelectorAll('[data-monthly-editor-action="close"]')) {
-          button.addEventListener("click", closeMonthlyEditor);
-        }
-        authoring.monthlyDialog.querySelector(".monthly-editor-image").addEventListener("input", (event) => {
-          if (authoring.monthlyImage && event.target.matches("input")) {
-            authoring.monthlyImage.alt = event.target.value;
-          }
-        });
-        authoring.monthlyDialog.querySelector(".monthly-editor-image").addEventListener("click", (event) => {
-          if (event.target.closest("[data-remove-monthly-image]")) removeMonthlyReportImage();
-        });
-
         byId("archive-list").addEventListener("click", (event) => {
-          const monthlyButton = event.target.closest("[data-journal-monthly-action]");
-          if (monthlyButton && canAuthorJournal() && !authoring.busy) {
-            openMonthlyEditor(monthlyButton.dataset.journalMonth);
-            return;
-          }
           const button = event.target.closest("[data-journal-action]");
           if (!button || !canAuthorJournal() || authoring.busy) return;
           if (button.dataset.journalAction === "edit") openEditEditor(button.dataset.journalId);
@@ -2540,9 +2230,6 @@
         if (authoring.newButton) authoring.newButton.disabled = busy || !canAuthorJournal();
         if (authoring.editorForm) {
           for (const control of authoring.editorForm.elements) control.disabled = busy;
-        }
-        if (authoring.monthlyForm) {
-          for (const control of authoring.monthlyForm.elements) control.disabled = busy;
         }
       }
 
@@ -3257,154 +2944,6 @@
           remove.textContent = "Remove";
           item.append(image, alt, remove);
           list.append(item);
-        }
-      }
-
-      function openMonthlyEditor(month) {
-        if (!canAuthorJournal() || authoring.busy || !/^\d{4}-\d{2}$/.test(month || "")) return;
-        resetMonthlyEditor();
-        authoring.monthlyMonth = month;
-        const note = journalMonthlyByYear.get(month.slice(0, 4))?.get(month);
-        const form = authoring.monthlyForm.elements;
-        form.note.value = note?.note || "";
-        if (note?.reportImage) {
-          authoring.monthlyImage = {
-            key: crypto.randomUUID(),
-            kind: "existing",
-            src: note.reportImage.src,
-            alt: note.reportImage.alt || "",
-            previewUrl: new URL(note.reportImage.src, location.href).href
-          };
-          renderMonthlyReportImage();
-        }
-        const monthLabel = formatJournalMonth(month);
-        authoring.monthlyDialog.querySelector(".dialog-title").textContent = `${monthLabel} Monthly Note`;
-        authoring.monthlyDialog.querySelector(".monthly-editor-month").textContent = `Permanent panel below ${monthLabel}`;
-        authoring.monthlyDialog.showModal();
-        form.note.focus();
-      }
-
-      function resetMonthlyEditor() {
-        if (authoring.monthlyImage?.kind === "new") {
-          URL.revokeObjectURL(authoring.monthlyImage.previewUrl);
-        }
-        authoring.monthlyMonth = "";
-        authoring.monthlyImage = null;
-        authoring.monthlyForm?.reset();
-        authoring.monthlyDialog?.querySelector(".monthly-editor-image").replaceChildren();
-        setMonthlyEditorMessage("");
-      }
-
-      function closeMonthlyEditor() {
-        if (authoring.busy) return;
-        if (authoring.monthlyDialog.open) authoring.monthlyDialog.close();
-        resetMonthlyEditor();
-      }
-
-      function addMonthlyReportImage(event) {
-        const acceptedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
-        const file = event.currentTarget.files[0];
-        event.currentTarget.value = "";
-        if (!file) return;
-        if (!acceptedTypes.has(file.type)) {
-          setMonthlyEditorMessage(`Unsupported image: ${file.name}`, "error");
-          return;
-        }
-        if (authoring.monthlyImage?.kind === "new") {
-          URL.revokeObjectURL(authoring.monthlyImage.previewUrl);
-        }
-        authoring.monthlyImage = {
-          key: crypto.randomUUID(),
-          kind: "new",
-          file,
-          alt: "",
-          previewUrl: URL.createObjectURL(file)
-        };
-        renderMonthlyReportImage();
-        setMonthlyEditorMessage("");
-      }
-
-      function removeMonthlyReportImage() {
-        if (authoring.monthlyImage?.kind === "new") {
-          URL.revokeObjectURL(authoring.monthlyImage.previewUrl);
-        }
-        authoring.monthlyImage = null;
-        renderMonthlyReportImage();
-      }
-
-      function renderMonthlyReportImage() {
-        const container = authoring.monthlyDialog.querySelector(".monthly-editor-image");
-        container.replaceChildren();
-        if (!authoring.monthlyImage) return;
-
-        const item = document.createElement("div");
-        const image = document.createElement("img");
-        const alt = document.createElement("input");
-        const remove = document.createElement("button");
-        item.className = "editor-image-item";
-        image.className = "editor-image-preview";
-        image.src = authoring.monthlyImage.previewUrl;
-        image.alt = "";
-        alt.className = "field-input";
-        alt.type = "text";
-        alt.value = authoring.monthlyImage.alt;
-        alt.placeholder = "Alternative text (optional)";
-        alt.setAttribute("aria-label", "Monthly report image alternative text");
-        remove.className = "editor-image-remove";
-        remove.type = "button";
-        remove.dataset.removeMonthlyImage = "";
-        remove.textContent = "Remove";
-        item.append(image, alt, remove);
-        container.append(item);
-      }
-
-      function setMonthlyEditorMessage(message, kind = "status") {
-        if (!authoring.monthlyDialog) return;
-        const element = authoring.monthlyDialog.querySelector(".editor-message");
-        element.textContent = message;
-        element.dataset.kind = kind;
-      }
-
-      async function saveMonthlyNote(event) {
-        event.preventDefault();
-        if (!canAuthorJournal() || authoring.busy || !authoring.monthlyMonth) return;
-
-        const form = authoring.monthlyForm.elements;
-        setAuthoringBusy(true);
-        setMonthlyEditorMessage("Saving...");
-        let completed = false;
-        try {
-          const month = authoring.monthlyMonth;
-          const image = authoring.monthlyImage;
-          const reportImage = image
-            ? (image.kind === "existing"
-              ? { kind: "existing", src: image.src, alt: image.alt.trim() }
-              : { kind: "new", key: image.key, alt: image.alt.trim() })
-            : null;
-          const uploads = image?.kind === "new" ? [await encodeImageFile(image)] : [];
-          const result = await journalRequest("monthly/save", {
-            year: month.slice(0, 4),
-            month,
-            note: {
-              content: form.note.value.trim()
-            },
-            reportImage,
-            uploads
-          });
-          const resultYear = String(result.year || "");
-          journalMonthlyByYear.set(resultYear, validateJournalMonthly(result.notes, resultYear));
-          if (state.section === "journal" && state.years.journal === resultYear) renderArchive();
-
-          const feedback = operationSyncFeedback(result, result.status === "unchanged"
-            ? "No monthly note changes to save."
-            : (result.status === "cleared" ? "Monthly note cleared." : "Monthly note saved."));
-          setAuthoringStatus(feedback.message, feedback.kind);
-          completed = true;
-        } catch (error) {
-          setMonthlyEditorMessage(error.message || "The monthly note could not be saved.", "error");
-        } finally {
-          setAuthoringBusy(false);
-          if (completed) closeMonthlyEditor();
         }
       }
 

@@ -56,12 +56,6 @@ export interface JournalEntry {
   updatedAt?: string;
 }
 
-export interface MonthlyNote {
-  note: string;
-  reportImage: JournalImage | null;
-  updatedAt?: string;
-}
-
 export interface TaskProject {
   id: string;
   key: string;
@@ -89,19 +83,24 @@ export interface TaskItem {
   archivedAt?: string;
 }
 
-export interface TaskActivityDay {
-  date: string;
-  updates: number;
-  completions: number;
+export interface TaskContribution {
+  taskId: string;
+  taskCode: string;
+  taskTitle: string;
+  projectId: string;
+  projectKey: string;
+  projectTitle: string;
+  projectColor: string;
+  completedAt: string;
 }
 
 export interface TaskState {
-  schemaVersion: 2;
+  schemaVersion: 3;
   revision: string;
   updatedAt: string;
   projects: TaskProject[];
   tasks: TaskItem[];
-  activity: TaskActivityDay[];
+  contributions: TaskContribution[];
 }
 
 export interface FileChange {

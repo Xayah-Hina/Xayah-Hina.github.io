@@ -5,7 +5,6 @@ import {
   authoringJournalCatalogData,
   authoringJournalYearData,
   saveJournal,
-  saveMonthlyNote,
 } from "../src/journal.ts";
 import { HttpError } from "../src/utils.ts";
 
@@ -18,14 +17,6 @@ const entry = {
   images: [],
   relatedWriting: null,
 };
-const monthly = {
-  "2026-08": {
-    note: "August note",
-    reportImage: null,
-    updatedAt: "2026-08-08T10:00:00+08:00",
-  },
-};
-
 function moduleSource(value: unknown): string {
   return `export default ${JSON.stringify(value, null, 2)};\n`;
 }
@@ -50,9 +41,6 @@ function installJournalFetch(): () => void {
     }
     if (url.pathname.endsWith(`/contents/journals/${year}.js`)) {
       return githubFile(`journals/${year}.js`, [entry]);
-    }
-    if (url.pathname.endsWith(`/contents/journals/monthly/${year}.js`)) {
-      return githubFile(`journals/monthly/${year}.js`, monthly);
     }
     if (url.pathname.endsWith("/git/ref/heads/master")) {
       return Response.json({ object: { sha: "c".repeat(40) } });
@@ -136,7 +124,6 @@ test("authoring Journal reads come from the latest GitHub source", async () => {
     assert.deepEqual(await authoringJournalCatalogData(env), { years: ["2026"] });
     const result = await authoringJournalYearData(env, year);
     assert.equal(result.entries[0].content, entry.content);
-    assert.equal(result.monthly["2026-08"].note, "August note");
   } finally {
     restore();
   }
@@ -165,32 +152,6 @@ test("new Journal media uses non-reusable immutable object names", async () => {
     const secondMedia = second.puts.find(({ key }) => key.startsWith("published/journals/"));
     assert.ok(firstMedia && secondMedia);
     assert.match(firstMedia.key, new RegExp(`^published/journals/${year}/${entry.id}-[a-f0-9]{24}\\.png$`));
-    assert.notEqual(firstMedia.key, secondMedia.key);
-    assert.deepEqual((firstMedia.options as { onlyIf: unknown }).onlyIf, { etagDoesNotMatch: "*" });
-  } finally {
-    restore();
-  }
-});
-
-test("monthly report media also uses create-only immutable object names", async () => {
-  const restore = installJournalFetch();
-  const first = environment();
-  const second = environment();
-  const bytes = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-  const payload = {
-    year,
-    month: "2026-08",
-    note: { content: "Updated monthly note" },
-    reportImage: { kind: "new", key: "report", alt: "Report" },
-    uploads: [{ key: "report", name: "report.png", type: "image/png", data: bytes.toString("base64") }],
-  };
-  try {
-    await saveMonthlyNote(first.env, payload);
-    await saveMonthlyNote(second.env, payload);
-    const firstMedia = first.puts.find(({ key }) => key.startsWith("published/monthly/"));
-    const secondMedia = second.puts.find(({ key }) => key.startsWith("published/monthly/"));
-    assert.ok(firstMedia && secondMedia);
-    assert.match(firstMedia.key, /^published\/monthly\/2026\/2026-08-report-[a-f0-9]{24}\.png$/);
     assert.notEqual(firstMedia.key, secondMedia.key);
     assert.deepEqual((firstMedia.options as { onlyIf: unknown }).onlyIf, { etagDoesNotMatch: "*" });
   } finally {

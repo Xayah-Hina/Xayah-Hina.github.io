@@ -79,7 +79,7 @@ function validWritingId(value) {
   ][index]);
 }
 
-function validateImage(value, { year, owner, monthly = false }) {
+function validateImage(value, { year, owner }) {
   if (!exactKeys(value, ["src", "alt"]) || typeof value.src !== "string" || value.src.length > 2000
     || typeof value.alt !== "string" || value.alt.length > 5000) {
     throw new Error(`${owner} contains an invalid image.`);
@@ -91,9 +91,7 @@ function validateImage(value, { year, owner, monthly = false }) {
     throw new Error(`${owner} contains an unsafe image URL.`);
   }
   const extension = "(?:jpe?g|png|webp|gif|avif)";
-  const pathPattern = monthly
-    ? new RegExp(`^/monthly/${year}/${owner}-report-(?:[a-f0-9]{8}|[a-f0-9]{24})\\.${extension}$`)
-    : new RegExp(`^/journals/${year}/${owner}-(?:\\d{2}|[a-f0-9]{24})\\.${extension}$`);
+  const pathPattern = new RegExp(`^/journals/${year}/${owner}-(?:\\d{2}|[a-f0-9]{24})\\.${extension}$`);
   if (url.origin !== mediaOrigin || url.protocol !== "https:" || url.username || url.password
     || url.search || url.hash || value.src !== url.href || !pathPattern.test(url.pathname)) {
     throw new Error(`${owner} contains an unsafe image URL.`);
@@ -150,26 +148,6 @@ function validateJournalEntries(value, year, ids, imageSources) {
   }
 }
 
-function validateMonthlyNotes(value, year, imageSources) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error(`journals/monthly/${year}.js must export an object.`);
-  }
-  for (const [month, note] of Object.entries(value)) {
-    if (!/^\d{4}-(?:0[1-9]|1[0-2])$/.test(month) || !month.startsWith(year)
-      || !exactKeys(note, ["note", "reportImage"], ["updatedAt"])
-      || typeof note.note !== "string" || note.note.length > 100_000) {
-      throw new Error(`Monthly note ${month} is invalid.`);
-    }
-    if (!note.note.trim() && note.reportImage === null) throw new Error(`Monthly note ${month} is empty.`);
-    if (note.updatedAt !== undefined) timestamp(note.updatedAt, `Monthly note ${month} updatedAt`);
-    if (note.reportImage !== null) {
-      const src = validateImage(note.reportImage, { year, owner: month, monthly: true });
-      if (imageSources.has(src)) throw new Error(`Journal data contains duplicate image URL ${src}.`);
-      imageSources.add(src);
-    }
-  }
-}
-
 async function readJournalModules() {
   const catalog = parseJsonModule(await fs.readFile(path.join(journalSourceRoot, "catalog.js"), "utf8"), "journals/catalog.js");
   const years = validateJournalCatalog(catalog);
@@ -178,12 +156,9 @@ async function readJournalModules() {
   const modules = [{ relative: "journals/catalog.js", value: catalog }];
   for (const year of years) {
     const entryRelative = `journals/${year}.js`;
-    const monthlyRelative = `journals/monthly/${year}.js`;
     const entries = parseJsonModule(await fs.readFile(path.join(journalSourceRoot, `${year}.js`), "utf8"), entryRelative);
-    const monthly = parseJsonModule(await fs.readFile(path.join(journalSourceRoot, "monthly", `${year}.js`), "utf8"), monthlyRelative);
     validateJournalEntries(entries, year, ids, imageSources);
-    validateMonthlyNotes(monthly, year, imageSources);
-    modules.push({ relative: entryRelative, value: entries }, { relative: monthlyRelative, value: monthly });
+    modules.push({ relative: entryRelative, value: entries });
   }
   return modules;
 }

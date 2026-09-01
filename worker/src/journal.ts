@@ -1,6 +1,6 @@
 import { branchHead, commitFiles, readDataModule } from "./github";
 import { pendingWriting, publishedWritingById } from "./writing";
-import type { Env, FileChange, JournalEntry, JournalImage, MonthlyNote, SyncStatus } from "./types";
+import type { Env, FileChange, JournalEntry, JournalImage, SyncStatus } from "./types";
 import {
   asRecord,
   decodeBase64,
@@ -14,7 +14,6 @@ import {
 
 const JOURNAL_ID = /^(\d{8}-\d{6})-[a-f0-9]{4}$/;
 const SINGAPORE_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\+08:00$/;
-const MONTH = /^\d{4}-(?:0[1-9]|1[0-2])$/;
 const ALLOWED_TYPES: Record<string, string[]> = {
   "image/jpeg": ["jpg", "jpeg"],
   "image/png": ["png"],
@@ -106,22 +105,6 @@ function validateJournalEntries(value: unknown, year: string): JournalEntry[] {
   return entries.sort((left, right) => right.publishedAt.localeCompare(left.publishedAt));
 }
 
-function validateMonthly(value: unknown, year: string): Record<string, MonthlyNote> {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new HttpError(502, `journals/monthly/${year}.js must export an object.`);
-  }
-  const notes: Record<string, MonthlyNote> = {};
-  for (const [month, raw] of Object.entries(value)) {
-    if (!MONTH.test(month) || month.slice(0, 4) !== year) throw new HttpError(502, `Monthly note ${month} is invalid.`);
-    const record = asRecord(raw, `Monthly note ${month} is invalid.`);
-    const note = requiredString(record.note ?? "", "Monthly note content", 100_000, true);
-    const reportImage = record.reportImage === null || record.reportImage === undefined ? null : validateImage(record.reportImage);
-    notes[month] = { note, reportImage };
-    if (record.updatedAt !== undefined) notes[month].updatedAt = validatePublishedAt(record.updatedAt);
-  }
-  return notes;
-}
-
 export async function journalYears(env: Env): Promise<string[]> {
   const catalog = await readDataModule<{ years?: unknown[] }>(env, "journals/catalog.js");
   if (!catalog || !Array.isArray(catalog.years)) throw new HttpError(502, "journals/catalog.js must contain a years array.");
@@ -133,11 +116,6 @@ async function journalEntries(env: Env, year: string, required = true): Promise<
   return raw === null ? [] : validateJournalEntries(raw, year);
 }
 
-async function monthlyNotes(env: Env, year: string, required = false): Promise<Record<string, MonthlyNote>> {
-  const raw = await readDataModule<unknown>(env, `journals/monthly/${year}.js`, env.GITHUB_BRANCH, required);
-  return raw === null ? {} : validateMonthly(raw, year);
-}
-
 export async function authoringJournalCatalogData(env: Env) {
   return { years: await journalYears(env) };
 }
@@ -146,11 +124,7 @@ export async function authoringJournalYearData(env: Env, year: string) {
   if (!/^\d{4}$/.test(year)) throw new HttpError(400, "Journal year is invalid.");
   const years = await journalYears(env);
   if (!years.includes(year)) throw new HttpError(404, "The Journal year is no longer available.");
-  const [entries, monthly] = await Promise.all([
-    journalEntries(env, year),
-    monthlyNotes(env, year),
-  ]);
-  return { entries, monthly };
+  return { entries: await journalEntries(env, year) };
 }
 
 async function validateRelated(env: Env, value: unknown): Promise<JournalEntry["relatedWriting"]> {
@@ -290,7 +264,6 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
     { path: `journals/${year}.js`, content: moduleSource(entries) },
     { path: "journals/catalog.js", content: moduleSource({ years: nextYears.map(Number) }) },
   ];
-  if (!years.includes(year)) changes.push({ path: `journals/monthly/${year}.js`, content: moduleSource({}) });
   try {
     await commitFiles(env, `${original ? "Journal: update" : "Journal: publish"} ${id}`, changes, env.GITHUB_BRANCH, expectedHead);
   } catch (error) {
@@ -322,89 +295,9 @@ export async function deleteJournal(env: Env, payload: Record<string, unknown>) 
     { path: `journals/${year}.js`, content: entries.length ? moduleSource(entries) : null },
     { path: "journals/catalog.js", content: moduleSource({ years: nextYears.map(Number) }) },
   ];
-  if (!entries.length) changes.push({ path: `journals/monthly/${year}.js`, content: null });
   await commitFiles(env, `Journal: delete ${id}`, changes, env.GITHUB_BRANCH, expectedHead);
   return {
     year, years: nextYears, entries, status: "deleted",
     sync: sync(env, "synced", "Deleted from GitHub; Pages deployment has started.", await pendingWriting(env)),
-  };
-}
-
-export async function saveMonthlyNote(env: Env, payload: Record<string, unknown>) {
-  const year = requiredString(payload.year, "Monthly note year", 4);
-  const month = requiredString(payload.month, "Monthly note month", 7);
-  if (!/^\d{4}$/.test(year) || !MONTH.test(month) || month.slice(0, 4) !== year) throw new HttpError(400, "Monthly note date is invalid.");
-  const expectedHead = await branchHead(env);
-  const snapshotEnv = { ...env, GITHUB_BRANCH: expectedHead };
-  const years = await journalYears(snapshotEnv);
-  if (!years.includes(year)) throw new HttpError(404, "The Journal year is no longer available.");
-  const entries = await journalEntries(snapshotEnv, year);
-  if (!entries.some((entry) => entry.publishedAt.slice(0, 7) === month)) throw new HttpError(404, "The Journal month is no longer available.");
-  const noteRecord = asRecord(payload.note, "Monthly note is invalid.");
-  const note = requiredString(noteRecord.content ?? "", "Monthly note content", 100_000, true);
-  const previous = await monthlyNotes(snapshotEnv, year);
-  const original = previous[month] || null;
-  const uploads = parseUploads(payload.uploads);
-  const spec = payload.reportImage;
-  let reportImage: JournalImage | null = null;
-  let newKey: string | null = null;
-  if (spec !== null && spec !== undefined) {
-    const image = asRecord(spec, "Monthly report image is invalid.");
-    const alt = requiredString(image.alt ?? "", "Monthly report image alternative text", 5000, true);
-    if (image.kind === "existing") {
-      const src = requiredString(image.src, "Monthly report image source", 2000);
-      if (!original?.reportImage || original.reportImage.src !== src || uploads.size) throw new HttpError(400, "The existing monthly report image is invalid.");
-      reportImage = { src, alt };
-    } else if (image.kind === "new") {
-      const key = requiredString(image.key, "Monthly image upload key", 200);
-      const upload = uploads.get(key);
-      if (!upload || uploads.size !== 1) throw new HttpError(400, "A monthly image upload does not match its descriptor.");
-      const name = `${month}-report-${randomHex(12)}.${upload.extension}`;
-      newKey = `published/monthly/${year}/${name}`;
-      const created = await env.CONTENT.put(newKey, upload.bytes, {
-        httpMetadata: { contentType: upload.type },
-        onlyIf: { etagDoesNotMatch: "*" },
-      });
-      if (!created) throw new HttpError(409, "A monthly report image key collision occurred. Try saving again.");
-      reportImage = { src: `${env.MEDIA_ORIGIN}/monthly/${year}/${name}`, alt };
-    } else {
-      throw new HttpError(400, "Monthly report image is invalid.");
-    }
-  } else if (uploads.size) {
-    throw new HttpError(400, "The request contains an unused monthly report image upload.");
-  }
-
-  const candidate: MonthlyNote = { note, reportImage };
-  const hasContent = Boolean(note || reportImage);
-  if ((original && hasContent && JSON.stringify(withoutUpdatedAt(original)) === JSON.stringify(candidate)) || (!original && !hasContent)) {
-    if (await branchHead(env) !== expectedHead) {
-      throw new HttpError(409, "The Journal changed while this edit was open. Reload and try again.");
-    }
-    if (newKey) await env.CONTENT.delete(newKey);
-    return {
-      year, month, notes: previous, status: "unchanged",
-      sync: sync(env, "unchanged", "No remote update was needed.", await pendingWriting(env)),
-    };
-  }
-  const notes = { ...previous };
-  let status: "created" | "updated" | "cleared";
-  if (hasContent) {
-    candidate.updatedAt = singaporeTimestamp();
-    notes[month] = candidate;
-    status = original ? "updated" : "created";
-  } else {
-    delete notes[month];
-    status = "cleared";
-  }
-  const changes: FileChange[] = [{ path: `journals/monthly/${year}.js`, content: moduleSource(notes) }];
-  try {
-    await commitFiles(env, `Journal: update monthly note ${month}`, changes, env.GITHUB_BRANCH, expectedHead);
-  } catch (error) {
-    if (newKey) await env.CONTENT.delete(newKey);
-    throw error;
-  }
-  return {
-    year, month, notes, status,
-    sync: sync(env, "synced", "Published to GitHub; Pages deployment has started.", await pendingWriting(env)),
   };
 }

@@ -6,7 +6,7 @@ This Worker serves the authenticated same-origin authoring APIs used by
 
 ## Data ownership
 
-- `Xayah-Hina.github.io` on GitHub `master`: published Journal, Monthly Note, and Front matter Markdown Writing sources.
+- `Xayah-Hina.github.io` on GitHub `master`: published Journal and Front matter Markdown Writing sources.
 - `dictionary` on GitHub `master`: the standalone Dictionary source and published Personal Knowledge.
 - Private R2 bucket: unpublished Writing and Dictionary drafts, private Writing image uploads, and mutable Task state/history.
 - Public R2 objects: immutable, content-addressed Journal and Writing media.
@@ -54,8 +54,8 @@ Unreferenced public Writing images are removed only after the new page revision 
 
 ## Tasks lifecycle
 
-Projects, their child tasks, and daily activity totals are operational state rather than published Journal source. The current document lives at `published/tasks/state.json` in R2, while every successfully written version also gets a recovery snapshot under `private/tasks/history/`. Conditional ETag writes reject stale tabs with HTTP 409.
+Projects, their child tasks, and immutable completion records are operational state rather than published Journal source. The current document lives at `published/tasks/state.json` in R2, while every successfully written version also gets a recovery snapshot under `private/tasks/history/`. Conditional ETag writes reject stale tabs with HTTP 409.
 
-`GET /data/tasks` is public. Creating, editing, archiving, and completing Projects or Tasks uses the authenticated `/api/tasks/save` endpoint. Each meaningful mutation increments the Singapore-day activity record; completions carry extra weight in the contribution wall. These changes stay in R2 and do not create GitHub commits or trigger Pages deployments.
+`GET /data/tasks` is public. Creating, editing, archiving, and completing Projects or Tasks uses the authenticated `/api/tasks/save` endpoint. Only a Task's first transition to Done creates a contribution. Editing, moving, or reopening a Task does not add activity, and completing it again does not duplicate the contribution. Each contribution snapshots the Task and Project identity, title, color, and completion time so the historical wall does not change when current data is edited. These changes stay in R2 and do not create GitHub commits or trigger Pages deployments.
 
-Projects receive an immutable 2–8 character key when created. Tasks receive an immutable human-facing code in the form `PROJECT-YYYY-NNNN`, where the year is the Singapore creation year and the sequence is scoped to that Project and year. The random internal ids remain the relationship keys. Schema version 1 Task documents are deterministically upgraded to version 2 in memory and are persisted as version 2 on the next mutation.
+Projects receive an immutable 2–8 character key when created. Tasks receive an immutable human-facing code in the form `PROJECT-YYYY-NNNN`, where the year is the Singapore creation year and the sequence is scoped to that Project and year. The random internal ids remain the relationship keys. Schema version 1 and 2 Task documents are deterministically upgraded to version 3 in memory and are persisted as version 3 on the next mutation.

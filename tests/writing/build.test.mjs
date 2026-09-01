@@ -78,7 +78,12 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.match(tasksCss, /task-heatmap-weeks/);
   assert.match(tasksCss, /task-project-card/);
   assert.match(tasksCss, /task-row-code/);
-  assert.match(tasksJs, /Daily activity/);
+  assert.match(tasksCss, /task-section-heading/);
+  assert.match(tasksCss, /task-contribution-popover/);
+  assert.doesNotMatch(tasksCss, /task-columns|task-page-header/);
+  assert.match(tasksJs, /Contributions/);
+  assert.match(tasksJs, /task-contribution-popover/);
+  assert.doesNotMatch(tasksJs, /Daily activity|Keep the big picture visible|Every update counts|Direction above/);
   assert.match(tasksJs, /data\/tasks/);
   assert.match(tasksJs, /Next code/);
   assert.match(tasksJs, /Fixed after creation/);
