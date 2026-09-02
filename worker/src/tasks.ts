@@ -17,7 +17,17 @@ const SESSION_ID = /^session-[a-f0-9]{24}$/;
 const PROJECT_KEY = /^[A-Z][A-Z0-9]{1,7}$/;
 const TASK_CODE = /^([A-Z][A-Z0-9]{1,7})-(\d{4})-(\d{4})$/;
 const REVISION = /^(?:0|[a-f0-9]{32})$/;
-const COLOR = /^#[0-9a-f]{6}$/i;
+export const PROJECT_COLORS = [
+  "#7c3aed",
+  "#059669",
+  "#ea580c",
+  "#0284c7",
+  "#e11d48",
+  "#65a30d",
+  "#c026d3",
+  "#ca8a04",
+] as const;
+const PROJECT_COLOR_SET = new Set<string>(PROJECT_COLORS);
 const SESSION_STATES = new Set<TaskSession["state"]>(["scheduled", "done", "partial", "no_progress"]);
 const MAX_PROJECTS = 100;
 const MAX_TASKS = 2000;
@@ -133,6 +143,15 @@ function nextTaskCode(projectKey: string, createdAt: string, tasks: TaskItem[]):
   return `${prefix}${String(sequence).padStart(4, "0")}`;
 }
 
+export function nextProjectColor(projects: TaskProject[]): string {
+  const usage = new Map<string, number>(PROJECT_COLORS.map((color) => [color, 0]));
+  for (const project of projects) {
+    if (!project.archivedAt && usage.has(project.color)) usage.set(project.color, usage.get(project.color)! + 1);
+  }
+  const minimum = Math.min(...usage.values());
+  return PROJECT_COLORS.find((color) => usage.get(color) === minimum)!;
+}
+
 function assertOnlyKeys(record: Record<string, unknown>, keys: string[], message: string): void {
   const allowed = new Set(keys);
   if (Object.keys(record).some((key) => !allowed.has(key))) throw new HttpError(400, message);
@@ -142,7 +161,7 @@ function storedProject(value: unknown): TaskProject {
   const record = asRecord(value, "Stored Task data contains an invalid Project.");
   assertOnlyKeys(record, ["id", "key", "title", "description", "color", "status", "createdAt", "updatedAt", "completedAt", "archivedAt"], "Stored Task data contains an invalid Project.");
   if (!PROJECT_ID.test(String(record.id || "")) || !PROJECT_KEY.test(String(record.key || ""))
-    || !COLOR.test(String(record.color || "")) || !["active", "paused", "completed"].includes(String(record.status || ""))) {
+    || !PROJECT_COLOR_SET.has(String(record.color || "").toLowerCase()) || !["active", "paused", "completed"].includes(String(record.status || ""))) {
     throw new HttpError(500, "Stored Task data contains an invalid Project.");
   }
   const project: TaskProject = {
@@ -213,7 +232,7 @@ function storedContribution(value: unknown): TaskContribution {
   assertOnlyKeys(record, ["taskId", "taskCode", "taskTitle", "projectId", "projectKey", "projectTitle", "projectColor", "completedAt"], "Stored Task data contains an invalid Contribution.");
   if (!TASK_ID.test(String(record.taskId || "")) || !TASK_CODE.test(String(record.taskCode || ""))
     || !PROJECT_ID.test(String(record.projectId || "")) || !PROJECT_KEY.test(String(record.projectKey || ""))
-    || !COLOR.test(String(record.projectColor || ""))) {
+    || !PROJECT_COLOR_SET.has(String(record.projectColor || "").toLowerCase())) {
     throw new HttpError(500, "Stored Task data contains an invalid Contribution.");
   }
   return {
@@ -326,13 +345,11 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
   if (mode === "createProject") {
     if (projects.length >= MAX_PROJECTS) throw new HttpError(400, "The Project limit has been reached.");
     const value = projectInput(payload.project);
-    assertOnlyKeys(value, ["key", "title", "description", "color", "status"], "Project data is invalid.");
+    assertOnlyKeys(value, ["key", "title", "description", "status"], "Project data is invalid.");
     const title = requiredString(value.title, "Project title", 120);
     const requestedKey = typeof value.key === "string" ? value.key.trim().toUpperCase() : "";
     const key = requestedKey || uniqueProjectKey(title, new Set(projects.map((project) => project.key)));
     if (!PROJECT_KEY.test(key) || projects.some((project) => project.key === key)) throw new HttpError(400, "Project key is invalid or already used.");
-    const color = String(value.color || "").toLowerCase();
-    if (!COLOR.test(color)) throw new HttpError(400, "Project color is invalid.");
     const projectStatus = String(value.status || "active") as TaskProject["status"];
     if (!["active", "paused"].includes(projectStatus)) throw new HttpError(400, "New Project status is invalid.");
     projects.push({
@@ -340,7 +357,7 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
       key,
       title,
       description: requiredString(value.description ?? "", "Project description", 600, true),
-      color,
+      color: nextProjectColor(projects),
       status: projectStatus,
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -348,7 +365,7 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
     status = "created";
   } else if (mode === "updateProject") {
     const value = projectInput(payload.project);
-    assertOnlyKeys(value, ["id", "title", "description", "color", "status"], "Project data is invalid.");
+    assertOnlyKeys(value, ["id", "title", "description", "status"], "Project data is invalid.");
     const project = projects.find((candidate) => candidate.id === String(value.id || "") && !candidate.archivedAt);
     if (!project) throw new HttpError(404, "Project was not found.");
     const projectStatus = String(value.status || "") as TaskProject["status"];
@@ -356,11 +373,8 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
     if (projectStatus === "completed" && tasks.some((task) => task.projectId === project.id && !task.archivedAt && !task.completedAt)) {
       throw new HttpError(400, "Complete or archive every open Task first.");
     }
-    const color = String(value.color || "").toLowerCase();
-    if (!COLOR.test(color)) throw new HttpError(400, "Project color is invalid.");
     project.title = requiredString(value.title, "Project title", 120);
     project.description = requiredString(value.description ?? "", "Project description", 600, true);
-    project.color = color;
     project.status = projectStatus;
     project.completedAt = projectStatus === "completed" ? (project.completedAt || timestamp) : undefined;
     project.updatedAt = timestamp;

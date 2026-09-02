@@ -31,7 +31,7 @@ function storedTaskState(taskTitle = "Canonical Task title") {
       key: "SPEC",
       title: "Spectra",
       description: "",
-      color: "#22c55e",
+      color: "#059669",
       status: "active",
       createdAt: "2026-08-01T10:00:00+08:00",
       updatedAt: "2026-08-01T10:00:00+08:00",
@@ -194,7 +194,7 @@ test("Journal Related Task snapshots come from canonical Task storage", async ()
       id: relatedTaskId,
       code: "SPEC-2026-0001",
       title: "Canonical Task title",
-      project: { id: taskProjectId, key: "SPEC", title: "Spectra", color: "#22c55e" },
+      project: { id: taskProjectId, key: "SPEC", title: "Spectra", color: "#059669" },
     });
   } finally {
     restore();

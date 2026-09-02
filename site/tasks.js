@@ -3,7 +3,8 @@ const PROJECT_KEY = /^[A-Z][A-Z0-9]{1,7}$/;
 const TASK_CODE = /^([A-Z][A-Z0-9]{1,7})-(\d{4})-(\d{4})$/;
 const SESSION_STATES = new Set(["scheduled", "done", "partial", "no_progress"]);
 const PROJECT_STATUSES = new Set(["active", "paused", "completed"]);
-const HOUR_HEIGHT = 56;
+const PROJECT_COLORS = new Set(["#7c3aed", "#059669", "#ea580c", "#0284c7", "#e11d48", "#65a30d", "#c026d3", "#ca8a04"]);
+const HOUR_HEIGHT = 46;
 const SNAP_MINUTES = 15;
 
 function singaporeDate() {
@@ -32,7 +33,7 @@ function validateData(value) {
   for (const project of projects) {
     if (!project || typeof project.id !== "string" || projectIds.has(project.id)
       || !PROJECT_KEY.test(project.key || "") || typeof project.title !== "string"
-      || !/^#[0-9a-f]{6}$/i.test(project.color || "") || !PROJECT_STATUSES.has(project.status)) {
+      || !PROJECT_COLORS.has(String(project.color || "").toLowerCase()) || !PROJECT_STATUSES.has(project.status)) {
       throw new TypeError("Task data contains an invalid Project.");
     }
     projectIds.add(project.id);
@@ -90,13 +91,32 @@ function dateShift(value, amount) {
   return date.toISOString().slice(0, 10);
 }
 
-function formatDate(value, options = {}) {
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC", ...options }).format(new Date(`${value}T00:00:00Z`));
+export function weekStart(value) {
+  const day = new Date(`${value}T00:00:00Z`).getUTCDay();
+  return dateShift(value, -((day + 6) % 7));
 }
 
-function dateHeading(value, today) {
-  if (value === today) return { title: "Today", date: formatDate(value, { weekday: "long", month: "long", day: "numeric" }) };
-  return { title: formatDate(value, { weekday: "long" }), date: formatDate(value, { month: "long", day: "numeric", year: "numeric" }) };
+export function weekDates(value) {
+  const start = weekStart(value);
+  return Array.from({ length: 7 }, (_, index) => dateShift(start, index));
+}
+
+export function weekRangeLabel(value) {
+  const [start, end] = [weekStart(value), dateShift(weekStart(value), 6)];
+  const startDate = new Date(`${start}T00:00:00Z`);
+  const endDate = new Date(`${end}T00:00:00Z`);
+  const month = (date) => new Intl.DateTimeFormat("en", { month: "short", timeZone: "UTC" }).format(date);
+  if (startDate.getUTCFullYear() === endDate.getUTCFullYear() && startDate.getUTCMonth() === endDate.getUTCMonth()) {
+    return `${month(startDate)} ${startDate.getUTCDate()}–${endDate.getUTCDate()}, ${endDate.getUTCFullYear()}`;
+  }
+  if (startDate.getUTCFullYear() === endDate.getUTCFullYear()) {
+    return `${month(startDate)} ${startDate.getUTCDate()} – ${month(endDate)} ${endDate.getUTCDate()}, ${endDate.getUTCFullYear()}`;
+  }
+  return `${month(startDate)} ${startDate.getUTCDate()}, ${startDate.getUTCFullYear()} – ${month(endDate)} ${endDate.getUTCDate()}, ${endDate.getUTCFullYear()}`;
+}
+
+function formatDate(value, options = {}) {
+  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC", ...options }).format(new Date(`${value}T00:00:00Z`));
 }
 
 function formatMinute(value) {
@@ -198,6 +218,8 @@ function sessionBlock(session, task, project, editable) {
   block.dataset.sessionId = session.id;
   block.dataset.taskAction = "open-session";
   block.dataset.state = session.state;
+  const duration = session.endMinute - session.startMinute;
+  block.dataset.density = duration < 45 ? "compact" : (duration < 90 ? "regular" : "roomy");
   block.tabIndex = 0;
   block.setAttribute("role", "button");
   block.setAttribute("aria-label", `${formatMinute(session.startMinute)} to ${formatMinute(session.endMinute)}, ${task.title}`);
@@ -224,19 +246,20 @@ function currentMinuteInSingapore() {
   return part("hour") * 60 + part("minute");
 }
 
-function calendarSection(data, ui, selectedDate, calendar) {
+function calendarSection(data, ui, selectedWeekStart, calendar) {
   const section = node("section", "task-section task-calendar-section");
   const header = node("header", "task-panel-header task-calendar-header");
-  const heading = dateHeading(selectedDate, data.today);
   const copy = node("div", "task-section-heading");
-  copy.append(node("h2", "task-panel-title", heading.title), node("span", "task-section-date", heading.date));
+  copy.append(node("h2", "task-panel-title task-week-range", weekRangeLabel(selectedWeekStart)));
   const tools = node("div", "task-panel-tools");
-  const previous = button("‹", "previous-day", "task-icon-button task-date-button");
-  previous.setAttribute("aria-label", "Previous day");
-  const today = button("Today", "today", "task-text-button");
-  const next = button("›", "next-day", "task-icon-button task-date-button");
-  next.setAttribute("aria-label", "Next day");
-  tools.append(previous, today, next);
+  const navigation = node("div", "task-week-navigation");
+  const previous = button("‹", "previous-week", "task-icon-button task-date-button");
+  previous.setAttribute("aria-label", "Previous week");
+  const current = button("This week", "this-week", "task-text-button");
+  const next = button("›", "next-week", "task-icon-button task-date-button");
+  next.setAttribute("aria-label", "Next week");
+  navigation.append(previous, current, next);
+  tools.append(navigation);
   if (ui.enabled) {
     const calendarButton = button(calendar?.connected ? "Calendar synced" : (calendar?.configured === false ? "Calendar setup" : "Google Calendar"), "calendar-settings", "control-button task-section-action");
     if (calendar?.connected) calendarButton.dataset.connected = "true";
@@ -244,38 +267,50 @@ function calendarSection(data, ui, selectedDate, calendar) {
     if (availableTasks(data).length) tools.append(button("Add Session", "new-session", "control-button control-button-primary task-section-action"));
   }
   header.append(copy, tools);
-  const daySessions = data.sessions.filter((session) => session.date === selectedDate).sort((left, right) => left.startMinute - right.startMinute);
+  const dates = weekDates(selectedWeekStart);
+  const dateSet = new Set(dates);
+  const weekSessions = data.sessions.filter((session) => dateSet.has(session.date)).sort((left, right) => left.date.localeCompare(right.date) || left.startMinute - right.startMinute);
   const tasks = new Map(data.tasks.map((task) => [task.id, task]));
   const projects = new Map(data.projects.map((project) => [project.id, project]));
-  const scroll = node("div", "task-calendar-scroll");
-  scroll.dataset.calendarDate = selectedDate;
+  const scroll = node("div", "task-week-scroll");
+  scroll.dataset.weekStart = selectedWeekStart;
+  const layout = node("div", "task-week-layout");
+  const corner = node("div", "task-week-corner");
+  const days = node("div", "task-week-days");
+  const weekdayFormatter = new Intl.DateTimeFormat("en", { weekday: "short", timeZone: "UTC" });
+  for (const date of dates) {
+    const day = node("div", "task-week-day-header");
+    if (date === data.today) day.dataset.current = "true";
+    const parsed = new Date(`${date}T00:00:00Z`);
+    day.append(node("span", "task-week-weekday", weekdayFormatter.format(parsed)), node("span", "task-week-date", String(parsed.getUTCDate())));
+    days.append(day);
+  }
   const labels = node("div", "task-calendar-hours");
-  const canvas = node("div", "task-calendar-canvas");
-  canvas.dataset.taskAction = "quick-session";
   for (let hour = 0; hour <= 24; hour += 1) {
     const label = node("time", "task-calendar-hour", `${String(hour).padStart(2, "0")}:00`);
     label.style.top = `${hour * HOUR_HEIGHT}px`;
     labels.append(label);
-    const line = node("span", "task-calendar-line");
-    line.style.top = `${hour * HOUR_HEIGHT}px`;
-    canvas.append(line);
   }
-  for (const session of daySessions) {
-    const task = tasks.get(session.taskId);
-    const project = task && projects.get(task.projectId);
-    if (task && project) canvas.append(sessionBlock(session, task, project, ui.enabled && !task.completedAt && !task.archivedAt));
+  const grid = node("div", "task-week-grid");
+  for (const date of dates) {
+    const day = node("div", "task-week-day");
+    day.dataset.calendarDate = date;
+    day.dataset.taskAction = "quick-session";
+    if (date === data.today) day.dataset.current = "true";
+    for (const session of weekSessions.filter((candidate) => candidate.date === date)) {
+      const task = tasks.get(session.taskId);
+      const project = task && projects.get(task.projectId);
+      if (task && project) day.append(sessionBlock(session, task, project, ui.enabled && !task.completedAt && !task.archivedAt));
+    }
+    if (date === data.today) {
+      const now = node("span", "task-calendar-now");
+      now.style.top = `${currentMinuteInSingapore() / 60 * HOUR_HEIGHT}px`;
+      day.append(now);
+    }
+    grid.append(day);
   }
-  if (selectedDate === data.today) {
-    const now = node("span", "task-calendar-now");
-    now.style.top = `${currentMinuteInSingapore() / 60 * HOUR_HEIGHT}px`;
-    canvas.append(now);
-  }
-  if (!daySessions.length) {
-    const empty = node("div", "task-calendar-empty");
-    empty.append(node("strong", "", "No Sessions planned"), node("span", "", ui.enabled && availableTasks(data).length ? "Click the timeline or add a Session." : "This day is open."));
-    canvas.append(empty);
-  }
-  scroll.append(labels, canvas);
+  layout.append(corner, days, labels, grid);
+  scroll.append(layout);
   section.append(header, scroll);
   return section;
 }
@@ -308,6 +343,7 @@ function taskRow(task, project, data, ui, focusedCode) {
 function projectCard(project, data, ui, focusedCode) {
   const card = node("article", "task-project-card");
   card.dataset.projectId = project.id;
+  card.style.setProperty("--project-color", project.color);
   const header = node("header", "task-project-head");
   const identity = node("div", "task-project-identity");
   const dot = node("span", "task-project-dot");
@@ -365,9 +401,9 @@ function projectsSection(data, ui, focusedCode) {
   return section;
 }
 
-function page(data, ui, focusedCode, selectedDate, calendar) {
+function page(data, ui, focusedCode, selectedWeekStart, calendar) {
   const main = node("div", "task-page");
-  main.append(heatmap(data), calendarSection(data, ui, selectedDate, calendar), projectsSection(data, ui, focusedCode));
+  main.append(heatmap(data), calendarSection(data, ui, selectedWeekStart, calendar), projectsSection(data, ui, focusedCode));
   if (ui.message) {
     const feedback = node("p", "task-feedback", ui.message);
     feedback.dataset.kind = ui.messageKind;
@@ -390,7 +426,7 @@ function projectDialog() {
       <label class="field-group"><span class="field-label">Title</span><input class="field-input" name="title" maxlength="120" required></label>
       <label class="field-group"><span class="field-label">Project key</span><input class="field-input" name="key" maxlength="8" pattern="[A-Z][A-Z0-9]{1,7}" autocapitalize="characters"><span class="field-hint">Generated from the title and fixed after creation.</span></label>
       <label class="field-group"><span class="field-label">Description</span><textarea class="field-input field-textarea task-small-textarea" name="description" maxlength="600"></textarea></label>
-      <div class="task-dialog-grid"><label class="field-group"><span class="field-label">Color</span><input class="field-input" name="color" type="color" value="#2f855a"></label><label class="field-group"><span class="field-label">Status</span><select class="field-input" name="status"><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed</option></select><span class="field-hint" data-project-status-hint></span></label></div>
+      <label class="field-group"><span class="field-label">Status</span><select class="field-input" name="status"><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed</option></select><span class="field-hint" data-project-status-hint></span></label>
       <p class="editor-message" role="status"></p>
     </div>
     <footer class="dialog-actions"><button class="control-button control-button-danger" type="button" data-project-archive hidden>Archive</button><span class="dialog-action-spacer"></span><button class="control-button" type="button" data-dialog-close>Cancel</button><button class="control-button control-button-primary" type="submit">Save</button></footer>
@@ -434,30 +470,49 @@ export function createTasksController({ canAuthor = () => false, request, confir
   let loaded = false;
   let focusedCode = "";
   let suppressDetailRoute = false;
-  let selectedDate = singaporeDate();
+  let selectedWeekStart = weekStart(singaporeDate());
   let calendar = null;
   let calendarLoading = false;
   let drag = null;
   let suppressClickUntil = 0;
+  let calendarScroll = { weekStart: "", top: null, left: 0 };
   const ui = { enabled: false, busy: false, message: "", messageKind: "status" };
   const editor = { projectDialog: null, projectForm: null, projectId: "", projectKeyManual: false, taskDialog: null, taskForm: null, taskId: "", sessionDialog: null, sessionForm: null, sessionId: "", detailDialog: null, calendarDialog: null };
 
   function render() {
     if (!root?.isConnected) return;
+    const previousScroll = root.querySelector(".task-week-scroll");
+    if (previousScroll?.dataset.initialized === "true") {
+      calendarScroll = { weekStart: previousScroll.dataset.weekStart || "", top: previousScroll.scrollTop, left: previousScroll.scrollLeft };
+    }
     ui.enabled = Boolean(canAuthor());
-    root.replaceChildren(page(data, ui, focusedCode, selectedDate, calendar));
+    root.replaceChildren(page(data, ui, focusedCode, selectedWeekStart, calendar));
     syncDetail();
     if (ui.enabled && !calendar && !calendarLoading) void loadCalendarStatus();
     requestAnimationFrame(scrollCalendar);
   }
 
   function scrollCalendar() {
-    const scroll = root?.querySelector(".task-calendar-scroll");
-    if (!scroll || scroll.dataset.scrolled === "true") return;
-    scroll.dataset.scrolled = "true";
-    const first = data.sessions.filter((session) => session.date === selectedDate).sort((left, right) => left.startMinute - right.startMinute)[0];
-    const targetMinute = first ? Math.max(0, first.startMinute - 90) : (selectedDate === data.today ? Math.max(0, currentMinuteInSingapore() - 120) : 8 * 60);
+    const scroll = root?.querySelector(".task-week-scroll");
+    if (!scroll) return;
+    if (calendarScroll.weekStart === selectedWeekStart && calendarScroll.top !== null) {
+      scroll.scrollTop = calendarScroll.top;
+      scroll.scrollLeft = calendarScroll.left;
+      scroll.dataset.initialized = "true";
+      return;
+    }
+    const dates = new Set(weekDates(selectedWeekStart));
+    const first = data.sessions.filter((session) => dates.has(session.date)).sort((left, right) => left.startMinute - right.startMinute)[0];
+    const currentWeek = dates.has(data.today);
+    const targetMinute = first ? Math.max(0, first.startMinute - 60) : (currentWeek ? Math.max(0, currentMinuteInSingapore() - 90) : 8 * 60);
     scroll.scrollTop = targetMinute / 60 * HOUR_HEIGHT;
+    if (currentWeek && scroll.scrollWidth > scroll.clientWidth) {
+      const index = weekDates(selectedWeekStart).indexOf(data.today);
+      const grid = scroll.querySelector(".task-week-grid");
+      const dayWidth = grid ? grid.getBoundingClientRect().width / 7 : 0;
+      scroll.scrollLeft = Math.max(0, index * dayWidth - (scroll.clientWidth - dayWidth) / 2);
+    }
+    scroll.dataset.initialized = "true";
   }
 
   async function load(force = false) {
@@ -467,7 +522,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.error || "Tasks could not be loaded.");
       return validateData(result);
-    }).then((value) => { data = value; loaded = true; if (!selectedDate) selectedDate = value.today; return value; }).finally(() => { loading = null; });
+    }).then((value) => { data = value; loaded = true; return value; }).finally(() => { loading = null; });
     return loading;
   }
 
@@ -588,7 +643,6 @@ export function createTasksController({ canAuthor = () => false, request, confir
     editor.projectForm.elements.key.value = project?.key || "";
     editor.projectForm.elements.key.disabled = Boolean(project);
     editor.projectForm.elements.description.value = project?.description || "";
-    editor.projectForm.elements.color.value = project?.color || "#2f855a";
     editor.projectForm.elements.status.value = project?.status || "active";
     const openCount = project ? data.tasks.filter((task) => task.projectId === project.id && !task.archivedAt && !task.completedAt).length : 0;
     editor.projectForm.elements.status.querySelector('option[value="completed"]').disabled = openCount > 0;
@@ -652,13 +706,14 @@ export function createTasksController({ canAuthor = () => false, request, confir
     return [23 * 60, 1440];
   }
 
-  function openSession(session = null, taskId = "", startMinute = null) {
+  function openSession(session = null, taskId = "", startMinute = null, requestedDate = "") {
     if (!ui.enabled) return;
     ensureEditors();
     editor.sessionId = session?.id || "";
     editor.sessionForm.reset();
     fillTaskOptions(editor.sessionForm.elements.taskId);
-    const date = session?.date || selectedDate;
+    const dates = new Set(weekDates(selectedWeekStart));
+    const date = session?.date || requestedDate || (dates.has(data.today) ? data.today : selectedWeekStart);
     const slot = startMinute === null ? nextSlot(date) : [Math.max(0, Math.min(1425, startMinute)), Math.min(1440, Math.max(0, startMinute) + 60)];
     editor.sessionForm.elements.taskId.value = session?.taskId || taskId || editor.sessionForm.elements.taskId.options[0]?.value || "";
     editor.sessionForm.elements.taskId.disabled = Boolean(session);
@@ -680,7 +735,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
     event.preventDefault();
     const form = event.currentTarget;
     if (!form.reportValidity()) return;
-    const result = await send({ mode: editor.projectId ? "updateProject" : "createProject", baseRevision: data.revision, project: { ...(editor.projectId ? { id: editor.projectId } : { key: form.elements.key.value }), title: form.elements.title.value, description: form.elements.description.value, color: form.elements.color.value, status: form.elements.status.value } }, form);
+    const result = await send({ mode: editor.projectId ? "updateProject" : "createProject", baseRevision: data.revision, project: { ...(editor.projectId ? { id: editor.projectId } : { key: form.elements.key.value }), title: form.elements.title.value, description: form.elements.description.value, status: form.elements.status.value } }, form);
     if (result) editor.projectDialog.close();
   }
 
@@ -709,7 +764,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
     }
     const session = { ...(editor.sessionId ? { id: editor.sessionId } : { taskId: form.elements.taskId.value }), date: form.elements.date.value, startMinute, endMinute, plan: form.elements.plan.value, ...(editor.sessionId ? { state, outcome: form.elements.outcome.value } : {}) };
     const result = await send({ mode: editor.sessionId ? "updateSession" : "createSession", baseRevision: data.revision, session }, form);
-    if (result) { selectedDate = session.date; editor.sessionDialog.close(); }
+    if (result) { selectedWeekStart = weekStart(session.date); editor.sessionDialog.close(); render(); }
   }
 
   async function archiveProject() {
@@ -916,12 +971,12 @@ export function createTasksController({ canAuthor = () => false, request, confir
       if (session && ui.enabled) openSession(session);
       return;
     }
+    if (action === "previous-week") { selectedWeekStart = dateShift(selectedWeekStart, -7); render(); return; }
+    if (action === "next-week") { selectedWeekStart = dateShift(selectedWeekStart, 7); render(); return; }
+    if (action === "this-week") { selectedWeekStart = weekStart(data.today); render(); return; }
     if (!ui.enabled) return;
     const projectId = control.closest("[data-project-id]")?.dataset.projectId || "";
     const taskId = control.closest("[data-task-id]")?.dataset.taskId || "";
-    if (action === "previous-day") { selectedDate = dateShift(selectedDate, -1); render(); }
-    if (action === "next-day") { selectedDate = dateShift(selectedDate, 1); render(); }
-    if (action === "today") { selectedDate = data.today; render(); }
     if (action === "new-project") openProject();
     if (action === "edit-project") openProject(data.projects.find((project) => project.id === projectId));
     if (action === "new-project-task") openTask(null, projectId);
@@ -930,7 +985,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
     if (action === "calendar-settings") openCalendarSettings();
     if (action === "quick-session" && event.target === control && availableTasks(data).length) {
       const minute = Math.max(0, Math.min(1380, Math.round((event.clientY - control.getBoundingClientRect().top) / HOUR_HEIGHT * 60 / SNAP_MINUTES) * SNAP_MINUTES));
-      openSession(null, "", minute);
+      openSession(null, "", minute, control.dataset.calendarDate);
     }
   }
 
@@ -954,7 +1009,8 @@ export function createTasksController({ canAuthor = () => false, request, confir
     if (!block || !ui.enabled || matchMedia("(pointer: coarse)").matches) return;
     const session = data.sessions.find((candidate) => candidate.id === block.dataset.sessionId);
     if (!session || session.state !== "scheduled") return;
-    drag = { pointerId: event.pointerId, block, session, mode: event.target.closest("[data-session-resize]") ? "resize" : "move", originY: event.clientY, start: session.startMinute, end: session.endMinute, nextStart: session.startMinute, nextEnd: session.endMinute };
+    const day = block.closest(".task-week-day");
+    drag = { pointerId: event.pointerId, block, session, mode: event.target.closest("[data-session-resize]") ? "resize" : "move", originX: event.clientX, originY: event.clientY, dayWidth: day?.getBoundingClientRect().width || 1, originDay: weekDates(selectedWeekStart).indexOf(session.date), start: session.startMinute, end: session.endMinute, nextDate: session.date, nextStart: session.startMinute, nextEnd: session.endMinute };
     block.setPointerCapture(event.pointerId);
     block.dataset.dragging = "true";
     event.preventDefault();
@@ -967,6 +1023,10 @@ export function createTasksController({ canAuthor = () => false, request, confir
       const duration = drag.end - drag.start;
       drag.nextStart = Math.max(0, Math.min(1440 - duration, drag.start + delta));
       drag.nextEnd = drag.nextStart + duration;
+      const dayIndex = Math.max(0, Math.min(6, drag.originDay + Math.round((event.clientX - drag.originX) / drag.dayWidth)));
+      drag.nextDate = dateShift(selectedWeekStart, dayIndex);
+      const target = root.querySelector(`.task-week-day[data-calendar-date="${drag.nextDate}"]`);
+      if (target && drag.block.parentElement !== target) target.append(drag.block);
     } else {
       drag.nextStart = drag.start;
       drag.nextEnd = Math.max(drag.start + SNAP_MINUTES, Math.min(1440, drag.end + delta));
@@ -980,11 +1040,11 @@ export function createTasksController({ canAuthor = () => false, request, confir
     if (!drag || event.pointerId !== drag.pointerId) return;
     const current = drag;
     drag = null;
-    current.block.releasePointerCapture(event.pointerId);
+    if (current.block.hasPointerCapture(event.pointerId)) current.block.releasePointerCapture(event.pointerId);
     delete current.block.dataset.dragging;
-    if (current.nextStart === current.start && current.nextEnd === current.end) return;
+    if (current.nextDate === current.session.date && current.nextStart === current.start && current.nextEnd === current.end) return;
     suppressClickUntil = Date.now() + 400;
-    await send({ mode: "updateSession", baseRevision: data.revision, session: { id: current.session.id, date: current.session.date, startMinute: current.nextStart, endMinute: current.nextEnd, plan: current.session.plan, outcome: current.session.outcome, state: current.session.state } });
+    await send({ mode: "updateSession", baseRevision: data.revision, session: { id: current.session.id, date: current.nextDate, startMinute: current.nextStart, endMinute: current.nextEnd, plan: current.session.plan, outcome: current.session.outcome, state: current.session.state } });
   }
 
   function handleDialogClick(event) {
@@ -1028,7 +1088,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
       history.replaceState(history.state, "", `${clean.pathname}${clean.search}${clean.hash}`);
     }
     render();
-    void load().then(() => { if (selectedDate === singaporeDate()) selectedDate = data.today; render(); }).catch(() => { if (root?.isConnected) root.replaceChildren(node("p", "empty-state", "Task data could not be loaded.")); });
+    void load().then(render).catch(() => { if (root?.isConnected) root.replaceChildren(node("p", "empty-state", "Task data could not be loaded.")); });
     if (Boolean(canAuthor())) {
       ensureEditors();
       editor.calendarDialog.removeEventListener("click", handleDialogClick);

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { saveTasks, tasksResponse } from "../src/tasks.ts";
+import { PROJECT_COLORS, saveTasks, tasksResponse } from "../src/tasks.ts";
 import { HttpError, singaporeTimestamp } from "../src/utils.ts";
 
 function environment(initial?: unknown) {
@@ -33,7 +33,7 @@ async function createWorkspace(env: never) {
   const project = await saveTasks(env, {
     mode: "createProject",
     baseRevision: "0",
-    project: { title: "Differentiable Solver", description: "Research and implementation", color: "#2f855a", status: "active" },
+    project: { title: "Differentiable Solver", description: "Research and implementation", status: "active" },
   });
   const task = await saveTasks(env, {
     mode: "createTask",
@@ -138,11 +138,24 @@ test("Task API publishes only the Session model", async () => {
 
 });
 
+test("Project colors are automatic, distinct, and immutable", async () => {
+  const { env } = environment();
+  const first = await saveTasks(env, { mode: "createProject", baseRevision: "0", project: { title: "First", description: "", status: "active" } });
+  const second = await saveTasks(env, { mode: "createProject", baseRevision: first.revision, project: { title: "Second", description: "", status: "active" } });
+  const third = await saveTasks(env, { mode: "createProject", baseRevision: second.revision, project: { title: "Third", description: "", status: "paused" } });
+  assert.deepEqual(third.projects.map((project) => project.color), PROJECT_COLORS.slice(0, 3));
+
+  const updated = await saveTasks(env, { mode: "updateProject", baseRevision: third.revision, project: { id: third.projects[0]!.id, title: "First renamed", description: "", status: "active" } });
+  assert.equal(updated.projects[0]!.color, PROJECT_COLORS[0]);
+  await assert.rejects(saveTasks(env, { mode: "createProject", baseRevision: updated.revision, project: { title: "Manual", description: "", color: "#ffffff", status: "active" } }), (error: unknown) => error instanceof HttpError && error.status === 400);
+  await assert.rejects(saveTasks(env, { mode: "updateProject", baseRevision: updated.revision, project: { id: updated.projects[0]!.id, title: "Manual", description: "", color: PROJECT_COLORS[1], status: "active" } }), (error: unknown) => error instanceof HttpError && error.status === 400);
+});
+
 test("Task codes remain stable when moving between Projects", async () => {
   const { env } = environment();
   const year = singaporeTimestamp().slice(0, 4);
-  const site = await saveTasks(env, { mode: "createProject", baseRevision: "0", project: { key: "SITE", title: "Personal Website", description: "", color: "#2563eb", status: "active" } });
-  const notes = await saveTasks(env, { mode: "createProject", baseRevision: site.revision, project: { key: "NOTES", title: "Notes", description: "", color: "#a855f7", status: "active" } });
+  const site = await saveTasks(env, { mode: "createProject", baseRevision: "0", project: { key: "SITE", title: "Personal Website", description: "", status: "active" } });
+  const notes = await saveTasks(env, { mode: "createProject", baseRevision: site.revision, project: { key: "NOTES", title: "Notes", description: "", status: "active" } });
   const first = await saveTasks(env, { mode: "createTask", baseRevision: notes.revision, task: { projectId: site.projects[0]!.id, title: "First", objective: "" } });
   const second = await saveTasks(env, { mode: "createTask", baseRevision: first.revision, task: { projectId: site.projects[0]!.id, title: "Second", objective: "" } });
   assert.equal(first.tasks[0]!.code, `SITE-${year}-0001`);

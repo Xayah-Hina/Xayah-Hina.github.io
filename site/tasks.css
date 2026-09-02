@@ -4,7 +4,7 @@
   --task-green-3: #55ad78;
   --task-green-4: #277a4b;
   --task-accent: #2f855a;
-  --task-hour-height: 56px;
+  --task-hour-height: 46px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -315,7 +315,7 @@ button.task-heatmap-cell:focus-visible {
   gap: 0.4rem;
 }
 
-/* One-day calendar */
+/* Weekly calendar */
 .task-calendar-section {
   padding-bottom: 1.75rem;
 }
@@ -324,13 +324,17 @@ button.task-heatmap-cell:focus-visible {
   margin-bottom: 0.85rem;
 }
 
-.task-calendar-scroll {
+.task-week-navigation {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.task-week-scroll {
   position: relative;
-  display: grid;
-  grid-template-columns: 3.5rem minmax(0, 1fr);
-  height: min(40rem, calc(100dvh - 12rem));
-  min-height: 27rem;
-  overflow-y: auto;
+  height: min(36rem, calc(100dvh - 12rem));
+  min-height: 25rem;
+  overflow: auto;
   overscroll-behavior: contain;
   background: color-mix(in srgb, var(--card) 40%, var(--page));
   border: 1px solid var(--line);
@@ -338,14 +342,87 @@ button.task-heatmap-cell:focus-visible {
   scrollbar-width: thin;
 }
 
+.task-week-layout {
+  display: grid;
+  grid-template: 3rem calc(var(--task-hour-height) * 24) / 3.25rem minmax(0, 1fr);
+  width: 100%;
+  min-width: 52rem;
+}
+
+.task-week-corner {
+  position: sticky;
+  z-index: 10;
+  top: 0;
+  left: 0;
+  grid-area: 1 / 1;
+  background: color-mix(in srgb, var(--card) 96%, var(--page));
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.task-week-days {
+  position: sticky;
+  z-index: 8;
+  top: 0;
+  display: grid;
+  grid-area: 1 / 2;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  background: color-mix(in srgb, var(--card) 96%, var(--page));
+  border-bottom: 1px solid var(--line);
+}
+
+.task-week-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.38rem;
+  color: var(--subtle);
+  border-left: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  font-size: 0.6875rem;
+}
+
+.task-week-day-header:first-child {
+  border-left: 0;
+}
+
+.task-week-weekday {
+  font: 0.625rem/1 var(--font-mono);
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+
+.task-week-date {
+  display: grid;
+  width: 1.55rem;
+  height: 1.55rem;
+  place-items: center;
+  color: var(--muted);
+  border-radius: 50%;
+  font-variant-numeric: tabular-nums;
+}
+
+.task-week-day-header[data-current="true"] .task-week-weekday {
+  color: var(--link);
+}
+
+.task-week-day-header[data-current="true"] .task-week-date {
+  color: var(--page);
+  background: var(--link);
+}
+
 .task-calendar-hours,
-.task-calendar-canvas {
+.task-week-grid {
   position: relative;
   height: calc(var(--task-hour-height) * 24);
 }
 
 .task-calendar-hours {
+  position: sticky;
+  z-index: 6;
+  left: 0;
+  grid-area: 2 / 1;
   color: var(--subtle);
+  background: color-mix(in srgb, var(--card) 96%, var(--page));
   border-right: 1px solid var(--line);
   font: 0.625rem/1 var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -365,52 +442,42 @@ button.task-heatmap-cell:focus-visible {
   transform: translateY(-100%);
 }
 
-.task-calendar-canvas {
+.task-week-grid {
+  display: grid;
+  grid-area: 2 / 2;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.task-week-day {
+  position: relative;
   min-width: 0;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent calc(var(--task-hour-height) / 2 - 1px),
-    color-mix(in srgb, var(--line) 45%, transparent) calc(var(--task-hour-height) / 2),
-    transparent calc(var(--task-hour-height) / 2 + 1px),
-    transparent var(--task-hour-height)
-  );
+  background-color: transparent;
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(var(--task-hour-height) / 2 - 1px),
+      color-mix(in srgb, var(--line) 34%, transparent) calc(var(--task-hour-height) / 2),
+      transparent calc(var(--task-hour-height) / 2 + 1px),
+      transparent var(--task-hour-height)
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      var(--line) 0,
+      var(--line) 1px,
+      transparent 1px,
+      transparent var(--task-hour-height)
+    );
+  border-left: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
   cursor: crosshair;
 }
 
-.task-calendar-line {
-  position: absolute;
-  right: 0;
-  left: 0;
-  height: 1px;
-  background: var(--line);
-  pointer-events: none;
+.task-week-day:first-child {
+  border-left: 0;
 }
 
-.task-calendar-empty {
-  position: sticky;
-  z-index: 0;
-  top: 2rem;
-  display: grid;
-  width: fit-content;
-  margin: 2rem auto 0;
-  padding: 0.75rem 0.9rem;
-  gap: 0.2rem;
-  color: var(--subtle);
-  background: color-mix(in srgb, var(--page) 88%, transparent);
-  border: 1px solid var(--line);
-  border-radius: 0.55rem;
-  text-align: center;
-  pointer-events: none;
-}
-
-.task-calendar-empty strong {
-  color: var(--muted);
-  font-size: 0.8125rem;
-}
-
-.task-calendar-empty span {
-  font-size: 0.6875rem;
+.task-week-day[data-current="true"] {
+  background-color: color-mix(in srgb, var(--link) 3%, transparent);
 }
 
 .task-calendar-now {
@@ -438,18 +505,18 @@ button.task-heatmap-cell:focus-visible {
   position: absolute;
   z-index: 2;
   top: var(--session-top);
-  right: 0.45rem;
-  left: 0.45rem;
+  right: 0.18rem;
+  left: 0.18rem;
   display: grid;
   height: var(--session-height);
   min-height: 1.5rem;
-  padding: 0.38rem 0.55rem 0.42rem 0.7rem;
+  padding: 0.3rem 0.4rem 0.34rem 0.52rem;
   gap: 0.06rem;
   overflow: hidden;
   color: var(--text);
   background: color-mix(in srgb, var(--project-color) 12%, var(--card-hover));
   border: 1px solid color-mix(in srgb, var(--project-color) 34%, var(--line));
-  border-left: 3px solid var(--project-color);
+  border-left: 4px solid var(--project-color);
   border-radius: 0.38rem;
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
   cursor: pointer;
@@ -514,6 +581,23 @@ button.task-heatmap-cell:focus-visible {
   -webkit-line-clamp: 2;
 }
 
+.task-session-block[data-density="regular"] .task-session-plan,
+.task-session-block[data-density="compact"] .task-session-heading,
+.task-session-block[data-density="compact"] .task-session-plan,
+.task-session-block[data-density="compact"] .task-session-state {
+  display: none;
+}
+
+.task-session-block[data-density="compact"] {
+  align-content: center;
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
+}
+
+.task-session-block[data-density="compact"] .task-session-title {
+  font-size: 0.6875rem;
+}
+
 .task-session-state {
   width: fit-content;
   padding: 0.08rem 0.3rem;
@@ -556,8 +640,9 @@ button.task-heatmap-cell:focus-visible {
 
 .task-project-card {
   min-width: 0;
-  padding: 1.1rem 0 1.35rem;
+  padding: 1.1rem 0 1.35rem 0.9rem;
   border-top: 1px solid var(--line);
+  border-left: 3px solid color-mix(in srgb, var(--project-color) 78%, transparent);
 }
 
 .task-project-head {
@@ -571,8 +656,8 @@ button.task-heatmap-cell:focus-visible {
 }
 
 .task-project-dot {
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 0.62rem;
+  height: 0.62rem;
   flex: 0 0 auto;
   background: var(--project-color);
   border-radius: 50%;
@@ -756,12 +841,6 @@ button.task-heatmap-cell:focus-visible {
 
 .task-calendar-dialog {
   width: min(31rem, calc(100% - 2rem));
-}
-
-.task-dialog-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
 }
 
 .task-session-fields {
@@ -960,9 +1039,13 @@ button.task-heatmap-cell:focus-visible {
     flex-wrap: wrap;
   }
 
-  .task-calendar-scroll {
-    grid-template-columns: 3rem minmax(0, 1fr);
+  .task-week-scroll {
     height: min(36rem, calc(100dvh - 11rem));
+  }
+
+  .task-week-layout {
+    grid-template-columns: 3rem minmax(0, 1fr);
+    min-width: 66rem;
   }
 
   .task-session-fields {
@@ -1020,7 +1103,6 @@ button.task-heatmap-cell:focus-visible {
     white-space: normal;
   }
 
-  .task-dialog-grid,
   .task-session-fields {
     grid-template-columns: 1fr;
   }
@@ -1030,8 +1112,8 @@ button.task-heatmap-cell:focus-visible {
   }
 
   .task-session-block {
-    right: 0.3rem;
-    left: 0.3rem;
+    right: 0.18rem;
+    left: 0.18rem;
   }
 
   .task-session-block[data-draggable="true"] {
