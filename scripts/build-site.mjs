@@ -353,6 +353,7 @@ const authoringJsSource = authoringJsBundle.outputFiles[0]?.contents;
 const authoringCssSource = authoringCssBundle.outputFiles[0]?.contents;
 const tasksJsSource = tasksJsBundle.outputFiles[0]?.contents;
 const tasksCssSource = tasksCssBundle.outputFiles[0]?.contents;
+const legalCssSource = await fs.readFile(path.join(root, "site", "legal.css"));
 if (!authoringJsSource || !authoringCssSource || !tasksJsSource || !tasksCssSource) {
   throw new Error("Site interactive assets could not be bundled.");
 }
@@ -366,6 +367,7 @@ const assetsManifest = {
   authoringCss: `writing-authoring.${hash(authoringCssSource)}.css`,
   tasksJs: `tasks.${hash(tasksJsSource)}.js`,
   tasksCss: `tasks.${hash(tasksCssSource)}.css`,
+  legalCss: `legal.${hash(legalCssSource)}.css`,
   katexCss: `katex.${hash(katexCssSource)}.css`,
 };
 await Promise.all([
@@ -378,6 +380,7 @@ await Promise.all([
   fs.writeFile(path.join(generatedAssets, assetsManifest.authoringCss), authoringCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.tasksJs), tasksJsSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.tasksCss), tasksCssSource),
+  fs.writeFile(path.join(generatedAssets, assetsManifest.legalCss), legalCssSource),
   fs.writeFile(path.join(generatedAssets, assetsManifest.katexCss), katexCssSource),
 ]);
 const shellPlaceholder = "__SITE_SHELL_CSS__";
@@ -387,6 +390,7 @@ const authoringCssPlaceholder = "__WRITING_AUTHORING_CSS__";
 const authoringJsPlaceholder = "__WRITING_AUTHORING_JS__";
 const tasksJsPlaceholder = "__TASKS_JS__";
 const tasksCssPlaceholder = "__TASKS_CSS__";
+const legalCssPlaceholder = "__LEGAL_CSS__";
 const htmlReplacements = new Map([
   ["index.html", [
     [typographyPlaceholder, assetsManifest.typographyCss],
@@ -396,6 +400,16 @@ const htmlReplacements = new Map([
     [authoringJsPlaceholder, assetsManifest.authoringJs],
     [tasksJsPlaceholder, assetsManifest.tasksJs],
     [tasksCssPlaceholder, assetsManifest.tasksCss],
+  ]],
+  ["privacy.html", [
+    [typographyPlaceholder, assetsManifest.typographyCss],
+    [shellPlaceholder, assetsManifest.shellCss],
+    [legalCssPlaceholder, assetsManifest.legalCss],
+  ]],
+  ["terms.html", [
+    [typographyPlaceholder, assetsManifest.typographyCss],
+    [shellPlaceholder, assetsManifest.shellCss],
+    [legalCssPlaceholder, assetsManifest.legalCss],
   ]],
 ]);
 for (const [relative, replacements] of htmlReplacements) {
