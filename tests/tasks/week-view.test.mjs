@@ -32,6 +32,15 @@ test("default scheduling rounds forward to the next Singapore quarter hour", () 
   assert.deepEqual(roundedCurrentSlot(now), { date: "2026-09-02", minute: 19 * 60 + 15 });
 });
 
+test("Session editor offers hour-scale presets and keeps its body scrollable", async () => {
+  const source = await readFile(new URL("../../site/tasks.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../../site/tasks.css", import.meta.url), "utf8");
+  const presets = [...source.matchAll(/data-session-duration="([^"]+)">([^<]+)</g)].map((match) => [match[1], match[2]]);
+  assert.deepEqual(presets, [["60", "1h"], ["120", "2h"], ["180", "3h"], ["240", "4h"], ["300", "5h"], ["custom", "Custom"]]);
+  assert.match(styles, /\.task-session-dialog \.journal-editor-form[\s\S]*?overflow:\s*hidden/);
+  assert.match(styles, /\.task-session-dialog \.dialog-body[\s\S]*?min-height:\s*0/);
+});
+
 test("Tasks ships one weekly calendar path with no legacy day controls or Project color input", async () => {
   const source = await readFile(new URL("../../site/tasks.js", import.meta.url), "utf8");
   for (const legacy of ["selectedDate", "dateHeading", '"previous-day"', '"next-day"', "task-calendar-canvas", 'name="color"']) {

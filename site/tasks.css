@@ -854,6 +854,18 @@ button.task-heatmap-cell:focus-visible {
   width: min(40rem, calc(100% - 2rem));
 }
 
+.task-session-dialog .journal-editor-form {
+  max-height: min(46rem, calc(100dvh - 2rem));
+  min-height: 0;
+  overflow: hidden;
+}
+
+.task-session-dialog .dialog-body {
+  min-height: 0;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
 .task-calendar-dialog {
   width: min(31rem, calc(100% - 2rem));
 }

@@ -513,7 +513,7 @@ function sessionDialog() {
     <div class="dialog-body">
       <label class="field-group"><span class="field-label">Task</span><select class="field-input" name="taskId" required></select></label>
       <div class="task-session-start-fields"><label class="field-group"><span class="field-label">Starts</span><input class="field-input" name="startDate" type="date" required></label><label class="field-group"><span class="field-label">Time</span><input class="field-input" name="startTime" type="time" step="900" required></label><button class="task-now-button" type="button" data-session-now>Now</button></div>
-      <fieldset class="task-duration-field"><legend class="field-label">Duration</legend><div class="task-duration-options"><button type="button" data-session-duration="30">30m</button><button type="button" data-session-duration="45">45m</button><button type="button" data-session-duration="60">1h</button><button type="button" data-session-duration="90">1.5h</button><button type="button" data-session-duration="120">2h</button><button type="button" data-session-duration="custom">Custom</button></div></fieldset>
+      <fieldset class="task-duration-field"><legend class="field-label">Duration</legend><div class="task-duration-options"><button type="button" data-session-duration="60">1h</button><button type="button" data-session-duration="120">2h</button><button type="button" data-session-duration="180">3h</button><button type="button" data-session-duration="240">4h</button><button type="button" data-session-duration="300">5h</button><button type="button" data-session-duration="custom">Custom</button></div></fieldset>
       <div class="task-session-end"><span class="field-label">Ends</span><strong data-session-ends></strong><span class="task-next-day-badge" data-session-day-offset hidden></span></div>
       <div class="task-session-custom-end" data-session-custom-end hidden><label class="field-group"><span class="field-label">End date</span><input class="field-input" name="endDate" type="date"></label><label class="field-group"><span class="field-label">End time</span><input class="field-input" name="endTime" type="time" step="900"></label></div>
       <label class="field-group"><span class="field-label">Plan</span><textarea class="field-input field-textarea task-plan-input" name="plan" maxlength="600" placeholder="What specific move will this Session complete?" required></textarea></label>
@@ -898,7 +898,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
     editor.sessionDialog.querySelector("[data-session-review]").hidden = !session;
     editor.sessionDialog.querySelector("[data-session-remove]").hidden = !session || session.state !== "scheduled";
     editor.sessionDialog.querySelector(".dialog-title").textContent = session ? "Session" : "Plan Session";
-    const preset = [30, 45, 60, 90, 120].includes(duration) ? String(duration) : "custom";
+    const preset = [60, 120, 180, 240, 300].includes(duration) ? String(duration) : "custom";
     editor.sessionDuration = duration;
     editor.sessionCustom = false;
     const end = singaporeParts(session?.endsAt || new Date(Date.parse(initialStart) + duration * 60 * 1000).toISOString());
