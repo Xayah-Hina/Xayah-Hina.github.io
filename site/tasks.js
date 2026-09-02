@@ -1,37 +1,19 @@
 const DATE = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
 const PROJECT_KEY = /^[A-Z][A-Z0-9]{1,7}$/;
 const TASK_CODE = /^([A-Z][A-Z0-9]{1,7})-(\d{4})-(\d{4})$/;
+const SESSION_STATES = new Set(["scheduled", "done", "partial", "no_progress"]);
 const PROJECT_STATUSES = new Set(["active", "paused", "completed"]);
-const TASK_DAY_STATES = new Set(["planned", "completed", "partial", "no_progress"]);
-
-function dateShift(value, amount) {
-  const date = new Date(`${value}T00:00:00Z`);
-  date.setUTCDate(date.getUTCDate() + amount);
-  return date.toISOString().slice(0, 10);
-}
+const HOUR_HEIGHT = 56;
+const SNAP_MINUTES = 15;
 
 function singaporeDate() {
-  const parts = new Intl.DateTimeFormat("en", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: "Asia/Singapore"
-  }).formatToParts(new Date());
+  const parts = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Asia/Singapore" }).formatToParts(new Date());
   const part = (type) => parts.find((candidate) => candidate.type === type)?.value || "";
   return `${part("year")}-${part("month")}-${part("day")}`;
 }
 
 function emptyData() {
-  return {
-    schemaVersion: 4,
-    revision: "0",
-    today: singaporeDate(),
-    updatedAt: null,
-    projects: [],
-    tasks: [],
-    taskDays: [],
-    contributions: []
-  };
+  return { schemaVersion: 5, revision: "0", today: singaporeDate(), updatedAt: null, projects: [], tasks: [], sessions: [], contributions: [] };
 }
 
 function validTimestamp(value) {
@@ -39,19 +21,18 @@ function validTimestamp(value) {
 }
 
 function validateData(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)
-    || value.schemaVersion !== 4 || typeof value.revision !== "string"
-    || !DATE.test(value.today || "") || !Array.isArray(value.projects)
-    || !Array.isArray(value.tasks) || !Array.isArray(value.taskDays)
-    || !Array.isArray(value.contributions)) {
-    throw new TypeError("Task data is invalid.");
+  if (!value || typeof value !== "object" || Array.isArray(value) || value.schemaVersion !== 5
+    || typeof value.revision !== "string" || !DATE.test(value.today || "")
+    || !Array.isArray(value.projects) || !Array.isArray(value.tasks)
+    || !Array.isArray(value.sessions) || !Array.isArray(value.contributions)) {
+    throw new TypeError("Task data is not the current Session model.");
   }
   const projectIds = new Set();
   const projects = value.projects.map((project) => ({ ...project }));
   for (const project of projects) {
     if (!project || typeof project.id !== "string" || projectIds.has(project.id)
-      || typeof project.title !== "string" || !PROJECT_STATUSES.has(project.status)
-      || !PROJECT_KEY.test(project.key || "") || !/^#[0-9a-f]{6}$/i.test(project.color || "")) {
+      || !PROJECT_KEY.test(project.key || "") || typeof project.title !== "string"
+      || !/^#[0-9a-f]{6}$/i.test(project.color || "") || !PROJECT_STATUSES.has(project.status)) {
       throw new TypeError("Task data contains an invalid Project.");
     }
     projectIds.add(project.id);
@@ -59,57 +40,34 @@ function validateData(value) {
   const taskIds = new Set();
   const tasks = value.tasks.map((task) => ({ ...task }));
   for (const task of tasks) {
-    if (!task || typeof task.id !== "string" || taskIds.has(task.id)
-      || !projectIds.has(task.projectId) || typeof task.title !== "string"
-      || typeof task.objective !== "string" || !Number.isInteger(task.position) || task.position < 0
-      || !TASK_CODE.test(task.code || "")
-      || (task.completedAt !== undefined && !validTimestamp(task.completedAt))) {
+    if (!task || typeof task.id !== "string" || taskIds.has(task.id) || !projectIds.has(task.projectId)
+      || !TASK_CODE.test(task.code || "") || typeof task.title !== "string" || typeof task.objective !== "string"
+      || !Number.isInteger(task.position) || task.position < 0) {
       throw new TypeError("Task data contains an invalid Task.");
     }
     taskIds.add(task.id);
   }
-  const taskDayIds = new Set();
-  const taskDatePairs = new Set();
-  const taskDays = value.taskDays.map((taskDay) => ({ ...taskDay }));
-  for (const taskDay of taskDays) {
-    const pair = `${taskDay?.taskId}:${taskDay?.date}`;
-    if (!taskDay || typeof taskDay.id !== "string" || taskDayIds.has(taskDay.id)
-      || !taskIds.has(taskDay.taskId) || taskDatePairs.has(pair) || !DATE.test(taskDay.date || "")
-      || typeof taskDay.plan !== "string" || !taskDay.plan.trim()
-      || typeof taskDay.outcome !== "string" || !TASK_DAY_STATES.has(taskDay.state)
-      || !Number.isInteger(taskDay.position) || taskDay.position < 0) {
-      throw new TypeError("Task data contains an invalid Task Day.");
+  const sessionIds = new Set();
+  const sessions = value.sessions.map((session) => ({ ...session }));
+  for (const session of sessions) {
+    if (!session || typeof session.id !== "string" || sessionIds.has(session.id) || !taskIds.has(session.taskId)
+      || !DATE.test(session.date || "") || !Number.isInteger(session.startMinute) || session.startMinute < 0 || session.startMinute > 1439
+      || !Number.isInteger(session.endMinute) || session.endMinute <= session.startMinute || session.endMinute > 1440
+      || typeof session.plan !== "string" || !session.plan.trim() || typeof session.outcome !== "string"
+      || !SESSION_STATES.has(session.state) || !validTimestamp(session.createdAt) || !validTimestamp(session.updatedAt)) {
+      throw new TypeError("Task data contains an invalid Session.");
     }
-    taskDayIds.add(taskDay.id);
-    taskDatePairs.add(pair);
+    sessionIds.add(session.id);
   }
-  const contributionTaskIds = new Set();
-  const projectsById = new Map(projects.map((project) => [project.id, project]));
-  const tasksById = new Map(tasks.map((task) => [task.id, task]));
   const contributions = value.contributions.map((contribution) => ({ ...contribution }));
   for (const contribution of contributions) {
-    const task = tasksById.get(contribution?.taskId);
-    const project = projectsById.get(contribution?.projectId);
-    if (!contribution || !task || !project || contributionTaskIds.has(contribution.taskId)
+    if (!contribution || !taskIds.has(contribution.taskId) || !projectIds.has(contribution.projectId)
       || !TASK_CODE.test(contribution.taskCode || "") || !PROJECT_KEY.test(contribution.projectKey || "")
-      || typeof contribution.taskTitle !== "string" || typeof contribution.projectTitle !== "string"
-      || !/^#[0-9a-f]{6}$/i.test(contribution.projectColor || "")
-      || !validTimestamp(contribution.completedAt) || contribution.taskCode !== task.code
-      || contribution.projectKey !== project.key) {
-      throw new TypeError("Task data contains an invalid contribution.");
+      || typeof contribution.taskTitle !== "string" || !validTimestamp(contribution.completedAt)) {
+      throw new TypeError("Task data contains an invalid Contribution.");
     }
-    contributionTaskIds.add(contribution.taskId);
   }
-  return {
-    schemaVersion: 4,
-    revision: value.revision,
-    today: value.today,
-    updatedAt: typeof value.updatedAt === "string" ? value.updatedAt : null,
-    projects,
-    tasks,
-    taskDays,
-    contributions
-  };
+  return { schemaVersion: 5, revision: value.revision, today: value.today, updatedAt: value.updatedAt || null, projects, tasks, sessions, contributions };
 }
 
 function node(tag, className, text) {
@@ -126,25 +84,62 @@ function button(label, action, className = "task-text-button") {
   return control;
 }
 
-function formatDay(value) {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC"
-  }).format(new Date(`${value}T00:00:00Z`));
+function dateShift(value, amount) {
+  const date = new Date(`${value}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + amount);
+  return date.toISOString().slice(0, 10);
 }
 
-function dayLabel(value, today) {
-  if (value === today) return "Today";
-  if (value === dateShift(today, -1)) return "Yesterday";
-  return formatDay(value);
+function formatDate(value, options = {}) {
+  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC", ...options }).format(new Date(`${value}T00:00:00Z`));
 }
 
-function contributionMap(data) {
+function dateHeading(value, today) {
+  if (value === today) return { title: "Today", date: formatDate(value, { weekday: "long", month: "long", day: "numeric" }) };
+  return { title: formatDate(value, { weekday: "long" }), date: formatDate(value, { month: "long", day: "numeric", year: "numeric" }) };
+}
+
+function formatMinute(value) {
+  if (value === 1440) return "24:00";
+  return `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
+}
+
+function timeInputValue(value) {
+  return value === 1440 ? "00:00" : formatMinute(value);
+}
+
+function parseTime(value) {
+  const match = /^(\d{2}):(\d{2})$/.exec(value || "");
+  if (!match) return NaN;
+  return Number(match[1]) * 60 + Number(match[2]);
+}
+
+function formatDuration(minutes) {
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest ? `${hours}h ${rest}m` : `${hours}h`;
+}
+
+function orderedProjects(projects) {
+  return [...projects].sort((left, right) => Number(Boolean(left.archivedAt)) - Number(Boolean(right.archivedAt))
+    || ["active", "paused", "completed"].indexOf(left.status) - ["active", "paused", "completed"].indexOf(right.status)
+    || left.createdAt.localeCompare(right.createdAt));
+}
+
+function tasksForProject(data, projectId) {
+  return data.tasks.filter((task) => task.projectId === projectId).sort((left, right) => left.position - right.position || left.createdAt.localeCompare(right.createdAt));
+}
+
+function availableTasks(data) {
+  const activeProjects = new Set(data.projects.filter((project) => !project.archivedAt && project.status === "active").map((project) => project.id));
+  return data.tasks.filter((task) => activeProjects.has(task.projectId) && !task.completedAt && !task.archivedAt);
+}
+
+function completionDays(data) {
   const days = new Map();
   for (const contribution of data.contributions) {
-    const date = contribution.completedAt.slice(0, 10);
+    const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(contribution.completedAt));
     const entries = days.get(date) || [];
     entries.push(contribution);
     days.set(date, entries);
@@ -152,386 +147,181 @@ function contributionMap(data) {
   return days;
 }
 
-function contributionLevel(contributions) {
-  return Math.min(4, contributions?.length || 0);
-}
-
-function currentStreak(data) {
-  const days = contributionMap(data);
-  let cursor = data.today;
-  if (!days.get(cursor)?.length) cursor = dateShift(cursor, -1);
-  let count = 0;
-  while (days.get(cursor)?.length) {
-    count += 1;
-    cursor = dateShift(cursor, -1);
-  }
-  return count;
-}
-
-function formatCompletionTime(value) {
-  return new Intl.DateTimeFormat("en", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone: "Asia/Singapore"
-  }).format(new Date(value));
-}
-
-function contributionPopoverContent(date, contributions) {
-  const fragment = document.createDocumentFragment();
-  const header = node("header", "task-contribution-popover-header");
-  const day = node("time", "task-contribution-popover-date", formatDay(date));
-  day.dateTime = date;
-  header.append(day, node("span", "task-contribution-popover-count", `${contributions.length} completed`));
-  const list = node("ul", "task-contribution-list");
-  for (const contribution of contributions) {
-    const item = node("li", "task-contribution-item");
-    const heading = node("div", "task-contribution-heading");
-    heading.append(
-      node("span", "task-contribution-check", "✓"),
-      node("span", "task-contribution-code", contribution.taskCode),
-      node("time", "task-contribution-time", formatCompletionTime(contribution.completedAt))
-    );
-    const title = node("strong", "task-contribution-title", contribution.taskTitle);
-    const meta = node("span", "task-contribution-project");
-    const dot = node("span", "task-contribution-project-dot");
-    dot.style.setProperty("--project-color", contribution.projectColor);
-    meta.append(dot, document.createTextNode(`${contribution.projectKey} · ${contribution.projectTitle}`));
-    item.append(heading, title, meta);
-    list.append(item);
-  }
-  fragment.append(header, list);
-  return fragment;
-}
-
 function heatmap(data) {
-  const today = new Date(`${data.today}T00:00:00Z`);
-  const daysUntilSaturday = (6 - today.getUTCDay() + 7) % 7;
-  const end = dateShift(data.today, daysUntilSaturday);
-  const start = dateShift(end, -(53 * 7 - 1));
-  const section = node("section", "task-section task-contributions");
+  const section = node("section", "task-section task-activity");
   const header = node("header", "task-panel-header");
   const copy = node("div", "task-panel-copy");
-  copy.append(node("h3", "task-panel-title", "Contributions"));
-  const days = contributionMap(data);
-  const displayed = data.contributions.filter((contribution) => {
-    const date = contribution.completedAt.slice(0, 10);
-    return date >= start && date <= data.today;
-  });
-  const streak = currentStreak(data);
-  header.append(copy, node("span", "task-panel-meta", `${displayed.length} completed · ${streak} day streak`));
-
+  copy.append(node("h2", "task-panel-title", "Task completions"), node("p", "task-panel-caption", "One completed Task makes one contribution."));
+  header.append(copy, node("span", "task-panel-meta", `${data.contributions.length} total`));
   const viewport = node("div", "task-heatmap-viewport");
-  const graph = node("div", "task-heatmap");
-  graph.setAttribute("role", "group");
-  graph.setAttribute("aria-label", `Task contributions during the past year, ${displayed.length} completed`);
-  const labels = node("div", "task-heatmap-weekdays");
-  labels.setAttribute("aria-hidden", "true");
-  labels.append(node("span", "", "Mon"), node("span", "", "Wed"), node("span", "", "Fri"));
-
-  const popover = node("div", "task-contribution-popover");
-  popover.id = "task-contribution-popover";
-  popover.setAttribute("popover", "auto");
-  popover.setAttribute("role", "tooltip");
-  const supportsPopover = typeof popover.showPopover === "function";
-  let activeCell = null;
-  let pinned = false;
-  let fallbackOpen = false;
-  let hideTimer = 0;
-  const isOpen = () => supportsPopover ? popover.matches(":popover-open") : fallbackOpen;
-  const clearHide = () => window.clearTimeout(hideTimer);
-  const closePopover = () => {
-    clearHide();
-    activeCell?.setAttribute("aria-expanded", "false");
-    activeCell = null;
-    pinned = false;
-    if (supportsPopover && isOpen()) popover.hidePopover();
-    if (!supportsPopover) {
-      fallbackOpen = false;
-      popover.removeAttribute("data-open");
-    }
-  };
-  const positionPopover = (cell) => {
-    const anchor = cell.getBoundingClientRect();
-    const panel = popover.getBoundingClientRect();
-    const edge = 8;
-    const left = Math.min(window.innerWidth - panel.width - edge,
-      Math.max(edge, anchor.left + anchor.width / 2 - panel.width / 2));
-    const above = anchor.top - panel.height - 10;
-    const top = above >= edge ? above : Math.min(window.innerHeight - panel.height - edge, anchor.bottom + 10);
-    popover.style.left = `${left}px`;
-    popover.style.top = `${Math.max(edge, top)}px`;
-  };
-  const showPopover = (cell, date, contributions, shouldPin = false) => {
-    clearHide();
-    if (activeCell && activeCell !== cell) activeCell.setAttribute("aria-expanded", "false");
-    activeCell = cell;
-    pinned = shouldPin;
-    popover.replaceChildren(contributionPopoverContent(date, contributions));
-    popover.style.visibility = "hidden";
-    if (supportsPopover && !isOpen()) popover.showPopover();
-    if (!supportsPopover) {
-      fallbackOpen = true;
-      popover.dataset.open = "true";
-    }
-    cell.setAttribute("aria-expanded", "true");
-    positionPopover(cell);
-    popover.style.visibility = "";
-  };
-  const scheduleHide = () => {
-    clearHide();
-    if (!pinned) hideTimer = window.setTimeout(closePopover, 140);
-  };
-
+  const map = node("div", "task-heatmap");
+  const weekdays = node("div", "task-heatmap-weekdays");
+  weekdays.append(node("span", "", "Mon"), node("span", "", "Wed"), node("span", "", "Fri"));
   const weeks = node("div", "task-heatmap-weeks");
-  for (let week = 0; week < 53; week += 1) {
-    const column = node("div", "task-heatmap-week");
-    for (let weekday = 0; weekday < 7; weekday += 1) {
-      const date = dateShift(start, week * 7 + weekday);
-      const contributions = days.get(date) || [];
-      const future = date > data.today;
-      const active = !future && contributions.length > 0;
-      const cell = node(active ? "button" : "span", "task-heatmap-cell");
-      cell.dataset.level = future ? "future" : String(contributionLevel(contributions));
-      if (active) {
+  const today = new Date(`${data.today}T00:00:00Z`);
+  const end = dateShift(data.today, (6 - today.getUTCDay() + 7) % 7);
+  const start = dateShift(end, -(53 * 7 - 1));
+  const days = completionDays(data);
+  for (let weekIndex = 0; weekIndex < 53; weekIndex += 1) {
+    const week = node("div", "task-heatmap-week");
+    for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
+      const date = dateShift(start, weekIndex * 7 + dayIndex);
+      const entries = days.get(date) || [];
+      const cell = node(entries.length ? "button" : "span", "task-heatmap-cell");
+      if (entries.length) {
         cell.type = "button";
-        cell.setAttribute("aria-label", `${formatDay(date)}, ${contributions.length} completed`);
-        cell.setAttribute("aria-controls", popover.id);
-        cell.setAttribute("aria-expanded", "false");
-        cell.addEventListener("mouseenter", () => { if (!pinned) showPopover(cell, date, contributions); });
-        cell.addEventListener("mouseleave", scheduleHide);
-        cell.addEventListener("focus", () => { if (!pinned) showPopover(cell, date, contributions); });
-        cell.addEventListener("blur", scheduleHide);
-        cell.addEventListener("click", () => {
-          if (pinned && activeCell === cell) closePopover();
-          else showPopover(cell, date, contributions, true);
-        });
-        cell.addEventListener("keydown", (event) => { if (event.key === "Escape") closePopover(); });
-      } else if (!future) {
-        cell.title = `${formatDay(date)} · No Task completed`;
+        cell.dataset.taskAction = "show-contribution";
+        cell.dataset.contributionDate = date;
+        cell.setAttribute("aria-label", `${entries.length} Task${entries.length === 1 ? "" : "s"} completed on ${formatDate(date)}`);
       }
-      column.append(cell);
+      cell.dataset.level = date > data.today ? "future" : String(Math.min(4, entries.length));
+      week.append(cell);
     }
-    weeks.append(column);
+    weeks.append(week);
   }
-  graph.append(labels, weeks);
-  viewport.append(graph);
+  map.append(weekdays, weeks);
+  viewport.append(map);
   const legend = node("div", "task-heatmap-legend");
-  legend.append(node("span", "", "Less"));
+  legend.append(document.createTextNode("Less"));
   for (let level = 0; level <= 4; level += 1) {
     const swatch = node("span", "task-heatmap-cell");
     swatch.dataset.level = String(level);
-    swatch.setAttribute("aria-hidden", "true");
     legend.append(swatch);
   }
-  legend.append(node("span", "", "More"));
-  popover.addEventListener("mouseenter", clearHide);
-  popover.addEventListener("mouseleave", scheduleHide);
-  popover.addEventListener("keydown", (event) => { if (event.key === "Escape") closePopover(); });
-  popover.addEventListener("toggle", (event) => {
-    if (event.newState === "closed") {
-      activeCell?.setAttribute("aria-expanded", "false");
-      activeCell = null;
-      pinned = false;
-    }
-  });
-  viewport.addEventListener("scroll", closePopover, { passive: true });
-  section.append(header, viewport, legend, popover);
+  legend.append(document.createTextNode("More"));
+  section.append(header, viewport, legend);
   return section;
 }
 
-function stateLabel(state, past = false) {
-  if (state === "completed") return "Done today";
-  if (state === "partial") return "Partial";
-  if (state === "no_progress") return "No progress";
-  return past ? "Needs review" : "Planned";
-}
-
-function taskStats(task, data) {
-  const days = data.taskDays.filter((taskDay) => taskDay.taskId === task.id);
-  const worked = days.filter((taskDay) => taskDay.state === "completed" || taskDay.state === "partial");
-  const completed = days.filter((taskDay) => taskDay.state === "completed");
-  const partial = days.filter((taskDay) => taskDay.state === "partial");
-  const lastWorked = [...worked].sort((left, right) => right.date.localeCompare(left.date))[0]?.date || null;
-  return { days, worked, completed, partial, lastWorked };
-}
-
-function taskMeta(task, data) {
-  const stats = taskStats(task, data);
-  if (task.completedAt) return `Completed ${formatDay(task.completedAt.slice(0, 10))}`;
-  const today = stats.days.find((taskDay) => taskDay.date === data.today);
-  if (today?.state === "planned") return "Planned today";
-  if (today?.state === "no_progress") return "No progress today";
-  if (stats.worked.length) {
-    return `${stats.worked.length} work ${stats.worked.length === 1 ? "day" : "days"} · Last worked ${dayLabel(stats.lastWorked, data.today).toLocaleLowerCase()}`;
+function sessionBlock(session, task, project, editable) {
+  const block = node("article", "task-session-block");
+  block.dataset.sessionId = session.id;
+  block.dataset.taskAction = "open-session";
+  block.dataset.state = session.state;
+  block.tabIndex = 0;
+  block.setAttribute("role", "button");
+  block.setAttribute("aria-label", `${formatMinute(session.startMinute)} to ${formatMinute(session.endMinute)}, ${task.title}`);
+  block.style.setProperty("--session-top", `${session.startMinute / 60 * HOUR_HEIGHT}px`);
+  block.style.setProperty("--session-height", `${Math.max(24, (session.endMinute - session.startMinute) / 60 * HOUR_HEIGHT)}px`);
+  block.style.setProperty("--project-color", project.color);
+  const top = node("div", "task-session-heading");
+  top.append(node("time", "task-session-time", `${formatMinute(session.startMinute)}–${formatMinute(session.endMinute)}`), node("span", "task-session-code", task.code));
+  block.append(top, node("strong", "task-session-title", task.title), node("p", "task-session-plan", session.plan));
+  if (session.state !== "scheduled") block.append(node("span", `task-session-state task-session-state-${session.state}`, session.state.replace("no_progress", "no progress")));
+  if (editable && session.state === "scheduled") {
+    block.dataset.draggable = "true";
+    const handle = node("span", "task-session-resize");
+    handle.dataset.sessionResize = "true";
+    handle.setAttribute("aria-hidden", "true");
+    block.append(handle);
   }
-  const pendingReviews = stats.days.filter((taskDay) => taskDay.date < data.today && taskDay.state === "planned").length;
-  if (pendingReviews) return `${pendingReviews} ${pendingReviews === 1 ? "plan needs" : "plans need"} review`;
-  if (stats.days.length) return "No progress recorded";
-  return "Not started";
+  return block;
 }
 
-const PROJECT_STATUS_ORDER = { active: 0, paused: 1, completed: 2 };
-
-function orderedProjects(projects) {
-  return [...projects].sort((left, right) => PROJECT_STATUS_ORDER[left.status] - PROJECT_STATUS_ORDER[right.status]
-    || String(right.updatedAt).localeCompare(String(left.updatedAt)));
+function currentMinuteInSingapore() {
+  const parts = new Intl.DateTimeFormat("en", { timeZone: "Asia/Singapore", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date());
+  const part = (type) => Number(parts.find((candidate) => candidate.type === type)?.value || 0);
+  return part("hour") * 60 + part("minute");
 }
 
-function availableTasks(data) {
-  const todayIds = new Set(data.taskDays.filter((taskDay) => taskDay.date === data.today).map((taskDay) => taskDay.taskId));
-  const projects = orderedProjects(data.projects.filter((project) => !project.archivedAt && project.status === "active"));
-  const projectOrder = new Map(projects.map((project, index) => [project.id, index]));
-  return data.tasks.filter((task) => !task.archivedAt && !task.completedAt && !todayIds.has(task.id)
-    && projectOrder.has(task.projectId))
-    .sort((left, right) => projectOrder.get(left.projectId) - projectOrder.get(right.projectId)
-      || left.position - right.position || left.createdAt.localeCompare(right.createdAt));
-}
-
-function todayTaskDayRow(taskDay, task, project, data, editable, index, total) {
-  const item = node("li", "task-today-row");
-  item.dataset.taskDayId = taskDay.id;
-  item.dataset.taskId = task.id;
-  const marker = editable ? button("", "review-day", "task-day-marker") : node("span", "task-day-marker");
-  marker.dataset.state = taskDay.state;
-  marker.setAttribute("aria-label", editable ? `Review ${task.title} for today` : `${task.title}: ${stateLabel(taskDay.state)}`);
-  const copy = node("div", "task-today-copy");
-  const heading = node("div", "task-row-heading");
-  const title = button(task.title, "open-task", "task-row-title");
-  title.dataset.taskCode = task.code;
-  heading.append(node("span", "task-row-code", task.code), title);
-  const plan = node("p", "task-day-plan", taskDay.plan);
-  const meta = node("span", "task-row-meta");
-  const dot = node("span", "task-project-dot");
-  dot.style.setProperty("--project-color", project.color);
-  meta.append(dot, document.createTextNode(`${project.title} · ${stateLabel(taskDay.state)}`));
-  copy.append(heading, plan, meta);
-  item.append(marker, copy);
-  if (editable && total > 1) {
-    const actions = node("div", "task-row-actions");
-    if (index > 0) actions.append(button("↑", "move-day-up", "task-icon-button"));
-    if (index < total - 1) actions.append(button("↓", "move-day-down", "task-icon-button"));
-    item.append(actions);
-  }
-  return item;
-}
-
-function reviewPanel(data, editable) {
-  const pending = data.taskDays
-    .filter((taskDay) => taskDay.date < data.today && taskDay.state === "planned")
-    .sort((left, right) => right.date.localeCompare(left.date) || left.position - right.position);
-  if (!pending.length) return null;
-  const section = node("section", "task-review-panel");
-  const header = node("header", "task-review-header");
-  header.append(
-    node("strong", "task-review-title", `${pending.length} previous ${pending.length === 1 ? "plan needs" : "plans need"} review`),
-    node("span", "task-review-note", "Past plans stay on their original day.")
-  );
-  const tasksById = new Map(data.tasks.map((task) => [task.id, task]));
-  const list = node("div", "task-review-list");
-  for (const taskDay of pending) {
-    const task = tasksById.get(taskDay.taskId);
-    if (!task) continue;
-    const row = node("div", "task-review-row");
-    row.dataset.taskDayId = taskDay.id;
-    const copy = node("span", "task-review-copy");
-    copy.append(node("span", "task-review-date", dayLabel(taskDay.date, data.today)), document.createTextNode(task.title));
-    row.append(copy);
-    if (editable) row.append(button("Review", "review-day", "task-text-button"));
-    list.append(row);
-  }
-  section.append(header, list);
-  return section;
-}
-
-function todayPanel(data, editable) {
-  const section = node("section", "task-section task-today");
-  const header = node("header", "task-panel-header");
-  const copy = node("div", "task-panel-copy task-section-heading");
-  const date = node("time", "task-section-date", formatDay(data.today));
-  date.dateTime = data.today;
-  copy.append(node("h3", "task-panel-title", "Today"), date);
-  const days = data.taskDays.filter((taskDay) => taskDay.date === data.today)
-    .sort((left, right) => left.position - right.position || left.createdAt.localeCompare(right.createdAt));
-  const completed = days.filter((taskDay) => taskDay.state === "completed").length;
-  const partial = days.filter((taskDay) => taskDay.state === "partial").length;
-  const availableCount = editable ? availableTasks(data).length : 0;
+function calendarSection(data, ui, selectedDate, calendar) {
+  const section = node("section", "task-section task-calendar-section");
+  const header = node("header", "task-panel-header task-calendar-header");
+  const heading = dateHeading(selectedDate, data.today);
+  const copy = node("div", "task-section-heading");
+  copy.append(node("h2", "task-panel-title", heading.title), node("span", "task-section-date", heading.date));
   const tools = node("div", "task-panel-tools");
-  tools.append(node("span", "task-panel-meta", `${days.length} ${days.length === 1 ? "task" : "tasks"} · ${completed} done${partial ? ` · ${partial} partial` : ""}`));
-  if (editable) {
-    const add = button("Add Task", "add-from-tasks", "control-button task-section-action");
-    if (!availableCount) {
-      add.disabled = true;
-      add.title = "No open Tasks are available from active Projects.";
-    }
-    tools.append(add);
+  const previous = button("‹", "previous-day", "task-icon-button task-date-button");
+  previous.setAttribute("aria-label", "Previous day");
+  const today = button("Today", "today", "task-text-button");
+  const next = button("›", "next-day", "task-icon-button task-date-button");
+  next.setAttribute("aria-label", "Next day");
+  tools.append(previous, today, next);
+  if (ui.enabled) {
+    const calendarButton = button(calendar?.connected ? "Calendar synced" : (calendar?.configured === false ? "Calendar setup" : "Google Calendar"), "calendar-settings", "control-button task-section-action");
+    if (calendar?.connected) calendarButton.dataset.connected = "true";
+    tools.append(calendarButton);
+    if (availableTasks(data).length) tools.append(button("Add Session", "new-session", "control-button control-button-primary task-section-action"));
   }
   header.append(copy, tools);
-  section.append(header);
-  const review = reviewPanel(data, editable);
-  if (review) section.append(review);
-  if (!days.length) {
-    const empty = node("div", "task-empty-compact");
-    empty.append(node("strong", "", editable && !availableCount
-      ? "Create a Task in an active Project first."
-      : "Choose what deserves your attention today."));
-    if (!editable) empty.append(node("span", "", "Nothing has been planned yet."));
-    section.append(empty);
-    return section;
+  const daySessions = data.sessions.filter((session) => session.date === selectedDate).sort((left, right) => left.startMinute - right.startMinute);
+  const tasks = new Map(data.tasks.map((task) => [task.id, task]));
+  const projects = new Map(data.projects.map((project) => [project.id, project]));
+  const scroll = node("div", "task-calendar-scroll");
+  scroll.dataset.calendarDate = selectedDate;
+  const labels = node("div", "task-calendar-hours");
+  const canvas = node("div", "task-calendar-canvas");
+  canvas.dataset.taskAction = "quick-session";
+  for (let hour = 0; hour <= 24; hour += 1) {
+    const label = node("time", "task-calendar-hour", `${String(hour).padStart(2, "0")}:00`);
+    label.style.top = `${hour * HOUR_HEIGHT}px`;
+    labels.append(label);
+    const line = node("span", "task-calendar-line");
+    line.style.top = `${hour * HOUR_HEIGHT}px`;
+    canvas.append(line);
   }
-  const tasksById = new Map(data.tasks.map((task) => [task.id, task]));
-  const projectsById = new Map(data.projects.map((project) => [project.id, project]));
-  const list = node("ul", "task-today-list");
-  days.forEach((taskDay, index) => {
-    const task = tasksById.get(taskDay.taskId);
-    const project = task && projectsById.get(task.projectId);
-    if (task && project) list.append(todayTaskDayRow(taskDay, task, project, data, editable, index, days.length));
-  });
-  section.append(list);
+  for (const session of daySessions) {
+    const task = tasks.get(session.taskId);
+    const project = task && projects.get(task.projectId);
+    if (task && project) canvas.append(sessionBlock(session, task, project, ui.enabled && !task.completedAt && !task.archivedAt));
+  }
+  if (selectedDate === data.today) {
+    const now = node("span", "task-calendar-now");
+    now.style.top = `${currentMinuteInSingapore() / 60 * HOUR_HEIGHT}px`;
+    canvas.append(now);
+  }
+  if (!daySessions.length) {
+    const empty = node("div", "task-calendar-empty");
+    empty.append(node("strong", "", "No Sessions planned"), node("span", "", ui.enabled && availableTasks(data).length ? "Click the timeline or add a Session." : "This day is open."));
+    canvas.append(empty);
+  }
+  scroll.append(labels, canvas);
+  section.append(header, scroll);
   return section;
 }
 
-function projectTaskRow(task, data, focused = false) {
-  const item = node("li", "task-row");
+function taskRow(task, project, data, ui, focusedCode) {
+  const item = node("li", `task-row${task.completedAt ? " task-row-completed" : ""}`);
   item.dataset.taskId = task.id;
-  item.dataset.taskCode = task.code;
-  if (focused) {
-    item.classList.add("task-row-focused");
-    item.dataset.taskFocusTarget = "true";
-    item.tabIndex = -1;
-    item.setAttribute("aria-current", "true");
-  }
+  if (task.code === focusedCode) { item.dataset.taskFocusTarget = "true"; item.classList.add("task-row-focused"); }
   const copy = node("div", "task-row-copy");
   const heading = node("div", "task-row-heading");
+  heading.append(node("span", "task-row-code", task.code));
   const title = button(task.title, "open-task", "task-row-title");
   title.dataset.taskCode = task.code;
-  heading.append(node("span", "task-row-code", task.code), title);
-  copy.append(heading, node("span", "task-row-meta", taskMeta(task, data)));
+  heading.append(title);
+  const sessions = data.sessions.filter((session) => session.taskId === task.id);
+  const reviewed = sessions.filter((session) => session.state !== "scheduled");
+  const minutes = reviewed.reduce((total, session) => total + session.endMinute - session.startMinute, 0);
+  const metaText = task.completedAt
+    ? `Completed ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "Asia/Singapore" }).format(new Date(task.completedAt))}`
+    : (sessions.length ? `${sessions.length} session${sessions.length === 1 ? "" : "s"}${minutes ? ` · ${formatDuration(minutes)} logged` : ""}` : "No sessions yet");
+  copy.append(heading, node("span", "task-row-meta", metaText));
   item.append(copy);
+  if (ui.enabled && !task.completedAt && !task.archivedAt && !project.archivedAt && project.status === "active") {
+    const schedule = button("Schedule", "schedule-task", "task-text-button");
+    item.append(schedule);
+  }
   return item;
 }
 
-function projectCard(project, data, editable, focusedCode = "") {
+function projectCard(project, data, ui, focusedCode) {
   const card = node("article", "task-project-card");
   card.dataset.projectId = project.id;
-  const head = node("div", "task-project-head");
+  const header = node("header", "task-project-head");
   const identity = node("div", "task-project-identity");
   const dot = node("span", "task-project-dot");
-  dot.style.setProperty("--project-color", project.color || "#2f855a");
-  identity.append(dot, node("span", "task-project-key", project.key), node("h4", "task-project-title", project.title));
-  head.append(identity);
-  if (project.archivedAt || project.status !== "active") {
-    head.append(node("span", "task-project-status", project.archivedAt ? "Archived" : project.status));
-  }
-  card.append(head);
+  dot.style.setProperty("--project-color", project.color);
+  identity.append(dot, node("span", "task-project-key", project.key), node("h3", "task-project-title", project.title));
+  header.append(identity, node("span", "task-project-status", project.status));
+  card.append(header);
   if (project.description) card.append(node("p", "task-project-description", project.description));
-  const open = data.tasks.filter((task) => task.projectId === project.id && !task.archivedAt && !task.completedAt)
-    .sort((left, right) => left.position - right.position || left.createdAt.localeCompare(right.createdAt));
-  const completed = data.tasks.filter((task) => task.projectId === project.id && !task.archivedAt && task.completedAt)
-    .sort((left, right) => right.completedAt.localeCompare(left.completedAt));
+  const tasks = tasksForProject(data, project.id).filter((task) => !task.archivedAt);
+  const open = tasks.filter((task) => !task.completedAt);
+  const completed = tasks.filter((task) => task.completedAt);
   if (open.length) {
     const list = node("ul", "task-project-task-list");
-    for (const task of open) list.append(projectTaskRow(task, data, task.code === focusedCode));
+    for (const task of open) list.append(taskRow(task, project, data, ui, focusedCode));
     card.append(list);
   } else {
     card.append(node("p", "task-project-empty", "No open Tasks."));
@@ -540,12 +330,12 @@ function projectCard(project, data, editable, focusedCode = "") {
     const details = node("details", "task-completed-group");
     const summary = node("summary", "task-completed-summary", `${completed.length} completed`);
     const list = node("ul", "task-project-task-list task-completed-list");
-    for (const task of completed) list.append(projectTaskRow(task, data, task.code === focusedCode));
+    for (const task of completed) list.append(taskRow(task, project, data, ui, focusedCode));
     details.append(summary, list);
     card.append(details);
   }
-  if (editable && !project.archivedAt) {
-    const actions = node("div", "task-project-actions");
+  if (ui.enabled && !project.archivedAt) {
+    const actions = node("footer", "task-project-actions");
     if (project.status === "active") actions.append(button("New Task", "new-project-task"));
     actions.append(button("Edit Project", "edit-project"));
     card.append(actions);
@@ -553,51 +343,41 @@ function projectCard(project, data, editable, focusedCode = "") {
   return card;
 }
 
-function projectsPanel(data, editable, focusedCode = "") {
+function projectsSection(data, ui, focusedCode) {
   const section = node("section", "task-section task-projects");
+  const projects = orderedProjects(data.projects.filter((project) => !project.archivedAt));
   const header = node("header", "task-panel-header");
-  const copy = node("div", "task-panel-copy");
-  copy.append(node("h3", "task-panel-title", "Projects"));
-  const focusedTask = data.tasks.find((task) => task.code === focusedCode);
-  const projects = data.projects.filter((project) => !project.archivedAt || project.id === focusedTask?.projectId);
+  const copy = node("div", "task-section-heading");
+  copy.append(node("h2", "task-panel-title", "Projects"), node("span", "task-panel-meta", `${projects.filter((project) => project.status === "active").length} active`));
   header.append(copy);
-  if (editable) {
-    const tools = node("div", "task-panel-tools");
-    tools.append(button("New Project", "new-project", "control-button task-section-action"));
-    header.append(tools);
-  }
+  if (ui.enabled) header.append(button("New Project", "new-project", "control-button task-section-action"));
   section.append(header);
   if (!projects.length) {
-    section.append(node("p", "task-empty-compact", "Create a Project to build a durable Task pool."));
+    const empty = node("div", "task-workspace-empty");
+    empty.append(node("strong", "", "Start with a Project"), node("p", "", "Projects hold the Tasks you can schedule into focused Sessions."));
+    if (ui.enabled) empty.append(button("Create Project", "new-project", "control-button control-button-primary"));
+    section.append(empty);
     return section;
   }
   const grid = node("div", "task-project-grid");
-  for (const project of orderedProjects(projects)) grid.append(projectCard(project, data, editable, focusedCode));
+  for (const project of projects) grid.append(projectCard(project, data, ui, focusedCode));
   section.append(grid);
   return section;
 }
 
-function page(data, authoring, focusedCode = "") {
-  const root = node("div", "task-page");
-  root.append(node("h2", "visually-hidden", "Tasks"), heatmap(data));
-  if (authoring.message) {
-    const feedback = node("p", "task-feedback", authoring.message);
-    feedback.dataset.kind = authoring.messageKind;
-    feedback.setAttribute("role", authoring.messageKind === "error" ? "alert" : "status");
-    root.append(feedback);
+function page(data, ui, focusedCode, selectedDate, calendar) {
+  const main = node("div", "task-page");
+  main.append(heatmap(data), calendarSection(data, ui, selectedDate, calendar), projectsSection(data, ui, focusedCode));
+  if (ui.message) {
+    const feedback = node("p", "task-feedback", ui.message);
+    feedback.dataset.kind = ui.messageKind;
+    main.prepend(feedback);
   }
-  if (focusedCode && !data.tasks.some((task) => task.code === focusedCode)) {
-    const notice = node("p", "task-feedback", `Task ${focusedCode} could not be found.`);
-    notice.dataset.kind = "error";
-    notice.setAttribute("role", "status");
-    root.append(notice);
-  }
-  root.append(todayPanel(data, authoring.enabled), projectsPanel(data, authoring.enabled, focusedCode));
-  return root;
+  return main;
 }
 
 function staticDialog(className, content) {
-  const dialog = node("dialog", `editor-dialog ${className}`);
+  const dialog = node("dialog", className);
   dialog.innerHTML = content;
   document.body.append(dialog);
   return dialog;
@@ -608,12 +388,9 @@ function projectDialog() {
     <header class="dialog-header"><h2 class="dialog-title">Project</h2><button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button></header>
     <div class="dialog-body">
       <label class="field-group"><span class="field-label">Title</span><input class="field-input" name="title" maxlength="120" required></label>
-      <label class="field-group"><span class="field-label">Project key</span><input class="field-input task-key-input" name="key" maxlength="8" pattern="[A-Z][A-Z0-9]{1,7}" autocapitalize="characters"><span class="field-hint">Generated from the title. Fixed after creation.</span></label>
+      <label class="field-group"><span class="field-label">Project key</span><input class="field-input" name="key" maxlength="8" pattern="[A-Z][A-Z0-9]{1,7}" autocapitalize="characters"><span class="field-hint">Generated from the title and fixed after creation.</span></label>
       <label class="field-group"><span class="field-label">Description</span><textarea class="field-input field-textarea task-small-textarea" name="description" maxlength="600"></textarea></label>
-      <div class="task-dialog-grid">
-        <label class="field-group"><span class="field-label">Color</span><input class="field-input task-color-input" name="color" type="color" value="#2f855a"></label>
-        <label class="field-group"><span class="field-label">Status</span><select class="field-input" name="status"><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed</option></select><span class="field-hint" data-project-status-hint></span></label>
-      </div>
+      <div class="task-dialog-grid"><label class="field-group"><span class="field-label">Color</span><input class="field-input" name="color" type="color" value="#2f855a"></label><label class="field-group"><span class="field-label">Status</span><select class="field-input" name="status"><option value="active">Active</option><option value="paused">Paused</option><option value="completed">Completed</option></select><span class="field-hint" data-project-status-hint></span></label></div>
       <p class="editor-message" role="status"></p>
     </div>
     <footer class="dialog-actions"><button class="control-button control-button-danger" type="button" data-project-archive hidden>Archive</button><span class="dialog-action-spacer"></span><button class="control-button" type="button" data-dialog-close>Cancel</button><button class="control-button control-button-primary" type="submit">Save</button></footer>
@@ -623,44 +400,27 @@ function projectDialog() {
 function taskDialog() {
   return staticDialog("task-dialog", `<form class="journal-editor-form" method="dialog">
     <header class="dialog-header"><h2 class="dialog-title">Task</h2><button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button></header>
-    <div class="dialog-body">
-      <label class="field-group"><span class="field-label">Project</span><select class="field-input" name="projectId" required></select></label>
-      <label class="field-group"><span class="field-label">Title</span><input class="field-input" name="title" maxlength="180" required></label>
-      <label class="field-group"><span class="field-label">Objective</span><textarea class="field-input field-textarea task-objective-input" name="objective" maxlength="2000" placeholder="What will be true when this Task is complete?"></textarea></label>
-      <span class="field-hint" data-task-code-preview></span>
-      <p class="editor-message" role="status"></p>
-    </div>
+    <div class="dialog-body"><label class="field-group"><span class="field-label">Project</span><select class="field-input" name="projectId" required></select></label><label class="field-group"><span class="field-label">Title</span><input class="field-input" name="title" maxlength="160" required></label><label class="field-group"><span class="field-label">Objective</span><textarea class="field-input field-textarea task-objective-input" name="objective" maxlength="1200" placeholder="What will be true when this Task is complete?"></textarea></label><span class="field-hint" data-task-code-preview></span><p class="editor-message" role="status"></p></div>
     <footer class="dialog-actions"><span class="dialog-action-spacer"></span><button class="control-button" type="button" data-dialog-close>Cancel</button><button class="control-button control-button-primary" type="submit">Save</button></footer>
   </form>`);
 }
 
-function pickerDialog() {
-  return staticDialog("task-picker-dialog", `<form class="journal-editor-form" method="dialog">
-    <header class="dialog-header"><div><h2 class="dialog-title">Add to Today</h2><p class="task-dialog-subtitle">Choose a Task, then define today's concrete move.</p></div><button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button></header>
+function sessionDialog() {
+  return staticDialog("task-session-dialog", `<form class="journal-editor-form" method="dialog">
+    <header class="dialog-header"><div><h2 class="dialog-title">Plan Session</h2><p class="task-dialog-subtitle">Reserve a concrete time block for one Task.</p></div><button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button></header>
     <div class="dialog-body">
-      <div class="task-picker-options" aria-label="Available Tasks"></div>
-      <div class="task-picker-plan" hidden>
-        <label class="field-group"><span class="field-label">Today's plan</span><textarea class="field-input field-textarea task-plan-input" name="plan" maxlength="600" placeholder="What will move this Task forward today?" required></textarea></label>
-      </div>
+      <label class="field-group"><span class="field-label">Task</span><select class="field-input" name="taskId" required></select></label>
+      <div class="task-session-fields"><label class="field-group"><span class="field-label">Date</span><input class="field-input" name="date" type="date" required></label><label class="field-group"><span class="field-label">Start</span><input class="field-input" name="start" type="time" step="900" required></label><label class="field-group"><span class="field-label">End</span><input class="field-input" name="end" type="time" step="900" required></label></div>
+      <label class="field-group"><span class="field-label">Plan</span><textarea class="field-input field-textarea task-plan-input" name="plan" maxlength="600" placeholder="What specific move will this Session complete?" required></textarea></label>
+      <div data-session-review hidden><label class="field-group"><span class="field-label">Result</span><select class="field-input" name="state"><option value="scheduled">Scheduled</option><option value="done">Done</option><option value="partial">Partial</option><option value="no_progress">No progress</option></select></label><label class="field-group"><span class="field-label">Outcome</span><textarea class="field-input field-textarea task-outcome-input" name="outcome" maxlength="2000" placeholder="What actually happened?"></textarea><span class="field-hint">Required for Partial and No progress.</span></label></div>
       <p class="editor-message" role="status"></p>
     </div>
-    <footer class="dialog-actions"><span class="dialog-action-spacer"></span><button class="control-button" type="button" data-dialog-close>Cancel</button><button class="control-button control-button-primary" type="submit" disabled>Add to Today</button></footer>
+    <footer class="dialog-actions"><button class="control-button control-button-danger" type="button" data-session-remove hidden>Remove</button><span class="dialog-action-spacer"></span><button class="control-button" type="button" data-dialog-close>Cancel</button><button class="control-button control-button-primary" type="submit">Save Session</button></footer>
   </form>`);
 }
 
-function reviewDialog() {
-  return staticDialog("task-review-dialog", `<form class="journal-editor-form" method="dialog">
-    <header class="dialog-header"><div><h2 class="dialog-title">Review Task Day</h2><p class="task-dialog-subtitle" data-day-context></p></div><button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button></header>
-    <div class="dialog-body">
-      <label class="field-group"><span class="field-label">Plan</span><textarea class="field-input field-textarea task-plan-input" name="plan" maxlength="600" required></textarea></label>
-      <label class="field-group"><span class="field-label">Result</span><select class="field-input" name="state"><option value="planned">Planned</option><option value="completed">Done today</option><option value="partial">Partial</option><option value="no_progress">No progress</option></select></label>
-      <label class="field-group"><span class="field-label">Outcome</span><textarea class="field-input field-textarea task-outcome-input" name="outcome" maxlength="2000" placeholder="What actually moved forward?"></textarea><span class="field-hint">Required for Partial.</span></label>
-      <label class="task-continue-control" hidden><input name="continueToday" type="checkbox"> <span>Continue this Task today</span></label>
-      <label class="field-group task-next-plan" hidden><span class="field-label">Today's new plan</span><textarea class="field-input field-textarea task-plan-input" name="nextPlan" maxlength="600"></textarea></label>
-      <p class="editor-message" role="status"></p>
-    </div>
-    <footer class="dialog-actions"><button class="control-button control-button-danger" type="button" data-day-remove hidden>Remove from Today</button><span class="dialog-action-spacer"></span><button class="control-button" type="button" data-dialog-close>Cancel</button><button class="control-button control-button-primary" type="submit">Save review</button></footer>
-  </form>`);
+function calendarDialog() {
+  return staticDialog("task-calendar-dialog", `<div><header class="dialog-header"><div><h2 class="dialog-title">Google Calendar</h2><p class="task-dialog-subtitle">A dedicated calendar mirrors Task Sessions without embedding Google UI.</p></div><button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button></header><div class="dialog-body" data-calendar-body></div><footer class="dialog-actions" data-calendar-actions></footer></div>`);
 }
 
 function detailDialog() {
@@ -669,65 +429,69 @@ function detailDialog() {
 
 export function createTasksController({ canAuthor = () => false, request, confirmAction } = {}) {
   let data = emptyData();
+  let root = null;
   let loading = null;
   let loaded = false;
-  let root = null;
   let focusedCode = "";
-  let revealedCode = "";
   let suppressDetailRoute = false;
-  const authoring = { enabled: false, busy: false, message: "", messageKind: "status" };
-  const editor = {
-    projectDialog: null,
-    projectForm: null,
-    projectId: "",
-    projectKeyManual: false,
-    taskDialog: null,
-    taskForm: null,
-    taskId: "",
-    pickerDialog: null,
-    pickerForm: null,
-    pickerTaskId: "",
-    reviewDialog: null,
-    reviewForm: null,
-    reviewDayId: "",
-    detailDialog: null
-  };
+  let selectedDate = singaporeDate();
+  let calendar = null;
+  let calendarLoading = false;
+  let drag = null;
+  let suppressClickUntil = 0;
+  const ui = { enabled: false, busy: false, message: "", messageKind: "status" };
+  const editor = { projectDialog: null, projectForm: null, projectId: "", projectKeyManual: false, taskDialog: null, taskForm: null, taskId: "", sessionDialog: null, sessionForm: null, sessionId: "", detailDialog: null, calendarDialog: null };
 
   function render() {
     if (!root?.isConnected) return;
-    authoring.enabled = Boolean(canAuthor());
-    root.replaceChildren(page(data, authoring, focusedCode));
+    ui.enabled = Boolean(canAuthor());
+    root.replaceChildren(page(data, ui, focusedCode, selectedDate, calendar));
     syncDetail();
-    if (!focusedCode || revealedCode === focusedCode) return;
-    requestAnimationFrame(() => {
-      const target = root?.querySelector("[data-task-focus-target]");
-      if (!target) return;
-      revealedCode = focusedCode;
-      target.scrollIntoView({
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-        block: "center"
-      });
-      target.focus({ preventScroll: true });
-    });
+    if (ui.enabled && !calendar && !calendarLoading) void loadCalendarStatus();
+    requestAnimationFrame(scrollCalendar);
+  }
+
+  function scrollCalendar() {
+    const scroll = root?.querySelector(".task-calendar-scroll");
+    if (!scroll || scroll.dataset.scrolled === "true") return;
+    scroll.dataset.scrolled = "true";
+    const first = data.sessions.filter((session) => session.date === selectedDate).sort((left, right) => left.startMinute - right.startMinute)[0];
+    const targetMinute = first ? Math.max(0, first.startMinute - 90) : (selectedDate === data.today ? Math.max(0, currentMinuteInSingapore() - 120) : 8 * 60);
+    scroll.scrollTop = targetMinute / 60 * HOUR_HEIGHT;
   }
 
   async function load(force = false) {
     if (loaded && !force) return data;
     if (loading) return loading;
-    loading = fetch("/data/tasks", { cache: "no-store" })
-      .then(async (response) => {
-        if (response.status === 404) return emptyData();
-        const result = await response.json().catch(() => null);
-        if (!response.ok) throw new Error(result?.error || "Tasks could not be loaded.");
-        return validateData(result);
-      })
-      .then((value) => {
-        data = value;
-        loaded = true;
-        return value;
-      })
-      .finally(() => { loading = null; });
+    loading = fetch("/data/tasks", { cache: "no-store" }).then(async (response) => {
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.error || "Tasks could not be loaded.");
+      return validateData(result);
+    }).then((value) => { data = value; loaded = true; if (!selectedDate) selectedDate = value.today; return value; }).finally(() => { loading = null; });
     return loading;
+  }
+
+  async function post(path, payload = {}) {
+    const response = await fetch(path, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    const value = await response.json().catch(() => null);
+    if (!response.ok) throw new Error(value?.error || "The request could not be completed.");
+    return value;
+  }
+
+  async function loadCalendarStatus(force = false) {
+    if ((!ui.enabled || calendarLoading) && !force) return;
+    calendarLoading = true;
+    try {
+      const response = await fetch("/api/tasks/google/status", { cache: "no-store", credentials: "same-origin" });
+      const value = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(value?.error || "Calendar status could not be loaded.");
+      calendar = value;
+    } catch (error) {
+      calendar = { configured: false, connected: false, lastError: error?.message || "Calendar status unavailable." };
+    } finally {
+      calendarLoading = false;
+      render();
+    }
   }
 
   function dialogMessage(form, message, kind = "error") {
@@ -736,27 +500,36 @@ export function createTasksController({ canAuthor = () => false, request, confir
     target.dataset.kind = kind;
   }
 
-  function setDialogBusy(form, busy) {
+  function setBusy(form, busy) {
     for (const control of form.elements) control.disabled = busy;
   }
 
-  function closeDialog(dialog) {
-    if (dialog?.open && !authoring.busy) dialog.close();
+  async function send(payload, form = null) {
+    if (ui.busy) return null;
+    ui.busy = true;
+    if (form) setBusy(form, true);
+    try {
+      const result = request ? await request(payload) : await post("/api/tasks/save", payload);
+      data = validateData(result);
+      loaded = true;
+      ui.message = "Saved.";
+      ui.messageKind = "status";
+      return result;
+    } catch (error) {
+      ui.message = error?.message || "Task changes could not be saved.";
+      ui.messageKind = "error";
+      if (form) dialogMessage(form, ui.message);
+      if (/changed|revision/i.test(ui.message)) { loaded = false; await load(true).catch(() => {}); }
+      return null;
+    } finally {
+      ui.busy = false;
+      if (form) setBusy(form, false);
+      render();
+    }
   }
 
-  function ensureDetail() {
-    if (editor.detailDialog) return;
-    editor.detailDialog = detailDialog();
-    editor.detailDialog.querySelector("[data-detail-close]").addEventListener("click", () => editor.detailDialog.close());
-    editor.detailDialog.addEventListener("cancel", (event) => {
-      event.preventDefault();
-      editor.detailDialog.close();
-    });
-    editor.detailDialog.addEventListener("close", () => {
-      if (suppressDetailRoute) return;
-      if (location.hash.startsWith("#task/")) location.hash = "task";
-    });
-    editor.detailDialog.addEventListener("click", handleDetailClick);
+  function closeDialog(dialog) {
+    if (dialog?.open && !ui.busy) dialog.close();
   }
 
   function ensureEditors() {
@@ -765,45 +538,28 @@ export function createTasksController({ canAuthor = () => false, request, confir
     editor.projectForm = editor.projectDialog.querySelector("form");
     editor.taskDialog = taskDialog();
     editor.taskForm = editor.taskDialog.querySelector("form");
-    editor.pickerDialog = pickerDialog();
-    editor.pickerForm = editor.pickerDialog.querySelector("form");
-    editor.reviewDialog = reviewDialog();
-    editor.reviewForm = editor.reviewDialog.querySelector("form");
-    for (const dialog of [editor.projectDialog, editor.taskDialog, editor.pickerDialog, editor.reviewDialog]) {
-      for (const control of dialog.querySelectorAll("[data-dialog-close]")) {
-        control.addEventListener("click", () => closeDialog(dialog));
-      }
-      dialog.addEventListener("cancel", (event) => {
-        event.preventDefault();
-        closeDialog(dialog);
-      });
+    editor.sessionDialog = sessionDialog();
+    editor.sessionForm = editor.sessionDialog.querySelector("form");
+    editor.calendarDialog = calendarDialog();
+    for (const dialog of [editor.projectDialog, editor.taskDialog, editor.sessionDialog, editor.calendarDialog]) {
+      dialog.querySelectorAll("[data-dialog-close]").forEach((control) => control.addEventListener("click", () => closeDialog(dialog)));
+      dialog.addEventListener("cancel", (event) => { event.preventDefault(); closeDialog(dialog); });
     }
     editor.projectForm.addEventListener("submit", saveProject);
     editor.taskForm.addEventListener("submit", saveTask);
-    editor.pickerForm.addEventListener("submit", savePickedTaskDay);
-    editor.reviewForm.addEventListener("submit", saveDayReview);
-    editor.projectForm.elements.title.addEventListener("input", updateProjectKeySuggestion);
+    editor.sessionForm.addEventListener("submit", saveSession);
+    editor.projectForm.elements.title.addEventListener("input", updateProjectKey);
     editor.projectForm.elements.key.addEventListener("input", () => {
       editor.projectKeyManual = Boolean(editor.projectForm.elements.key.value.trim());
       editor.projectForm.elements.key.value = editor.projectForm.elements.key.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
     });
     editor.projectDialog.querySelector("[data-project-archive]").addEventListener("click", archiveProject);
-    editor.pickerDialog.querySelector(".task-picker-options").addEventListener("click", (event) => {
-      const option = event.target.closest("[data-picker-task-id]");
-      if (option) selectPickerTask(option.dataset.pickerTaskId);
-    });
-    editor.reviewForm.elements.continueToday.addEventListener("change", updateContinueFields);
-    editor.reviewDialog.querySelector("[data-day-remove]").addEventListener("click", removeReviewedDay);
-  }
-
-  function updateProjectKeySuggestion() {
-    if (editor.projectId || editor.projectKeyManual) return;
-    editor.projectForm.elements.key.value = suggestProjectKey(editor.projectForm.elements.title.value, data.projects);
+    editor.sessionDialog.querySelector("[data-session-remove]").addEventListener("click", removeSession);
   }
 
   function projectKeyBase(title) {
     const words = String(title || "").normalize("NFKD").match(/[A-Za-z0-9]+/g) || [];
-    if (!words.length) return null;
+    if (!words.length) return "";
     let base = words.length > 1 ? words.map((word) => word[0]).join("") : words[0].slice(0, 4);
     base = base.toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (!/^[A-Z]/.test(base)) base = `P${base}`;
@@ -811,21 +567,19 @@ export function createTasksController({ canAuthor = () => false, request, confir
     return base.slice(0, 8);
   }
 
-  function suggestProjectKey(title, projects) {
-    const used = new Set(projects.map((project) => project.key));
-    const base = projectKeyBase(title);
-    if (!base) return "";
-    if (!used.has(base)) return base;
-    for (let suffix = 2; suffix <= 9999; suffix += 1) {
-      const digits = String(suffix);
-      const candidate = `${base.slice(0, 8 - digits.length)}${digits}`;
-      if (!used.has(candidate)) return candidate;
+  function updateProjectKey() {
+    if (editor.projectId || editor.projectKeyManual) return;
+    const used = new Set(data.projects.map((project) => project.key));
+    const base = projectKeyBase(editor.projectForm.elements.title.value);
+    if (!base || !used.has(base)) { editor.projectForm.elements.key.value = base; return; }
+    for (let suffix = 2; suffix < 1000; suffix += 1) {
+      const candidate = `${base.slice(0, 8 - String(suffix).length)}${suffix}`;
+      if (!used.has(candidate)) { editor.projectForm.elements.key.value = candidate; return; }
     }
-    return "";
   }
 
   function openProject(project = null) {
-    if (!canAuthor()) return;
+    if (!ui.enabled) return;
     ensureEditors();
     editor.projectId = project?.id || "";
     editor.projectKeyManual = false;
@@ -836,196 +590,97 @@ export function createTasksController({ canAuthor = () => false, request, confir
     editor.projectForm.elements.description.value = project?.description || "";
     editor.projectForm.elements.color.value = project?.color || "#2f855a";
     editor.projectForm.elements.status.value = project?.status || "active";
-    const openTasks = project
-      ? data.tasks.filter((task) => task.projectId === project.id && !task.archivedAt && !task.completedAt).length
-      : 0;
-    const completedOption = editor.projectForm.elements.status.querySelector('option[value="completed"]');
-    completedOption.disabled = openTasks > 0;
-    editor.projectDialog.querySelector("[data-project-status-hint]").textContent = openTasks > 0
-      ? "Complete every open Task before completing this Project."
-      : "";
+    const openCount = project ? data.tasks.filter((task) => task.projectId === project.id && !task.archivedAt && !task.completedAt).length : 0;
+    editor.projectForm.elements.status.querySelector('option[value="completed"]').disabled = openCount > 0;
+    editor.projectDialog.querySelector("[data-project-status-hint]").textContent = openCount ? "Complete or archive every open Task first." : "";
     editor.projectDialog.querySelector(".dialog-title").textContent = project ? "Edit Project" : "New Project";
     editor.projectDialog.querySelector("[data-project-archive]").hidden = !project;
     dialogMessage(editor.projectForm, "", "status");
-    updateProjectKeySuggestion();
+    updateProjectKey();
     editor.projectDialog.showModal();
     editor.projectForm.elements.title.focus();
   }
 
-  function openTask(task = null, projectId = "") {
-    if (!canAuthor()) return;
-    ensureEditors();
-    editor.taskId = task?.id || "";
-    editor.taskForm.reset();
-    const select = editor.taskForm.elements.projectId;
+  function fillProjectOptions(select) {
     select.replaceChildren();
     for (const project of orderedProjects(data.projects.filter((candidate) => !candidate.archivedAt && candidate.status === "active"))) {
       const option = node("option", "", `${project.key} · ${project.title}`);
       option.value = project.id;
       select.append(option);
     }
-    select.value = task?.projectId || projectId || select.options[0]?.value || "";
+  }
+
+  function openTask(task = null, projectId = "") {
+    if (!ui.enabled) return;
+    ensureEditors();
+    editor.taskId = task?.id || "";
+    editor.taskForm.reset();
+    fillProjectOptions(editor.taskForm.elements.projectId);
+    editor.taskForm.elements.projectId.value = task?.projectId || projectId || editor.taskForm.elements.projectId.options[0]?.value || "";
     editor.taskForm.elements.title.value = task?.title || "";
     editor.taskForm.elements.objective.value = task?.objective || "";
     editor.taskDialog.querySelector(".dialog-title").textContent = task ? "Edit Task" : "New Task";
-    editor.taskDialog.querySelector("[data-task-code-preview]").textContent = task
-      ? `Code ${task.code} · Fixed after creation`
-      : "A permanent Task code will be created automatically.";
+    editor.taskDialog.querySelector("[data-task-code-preview]").textContent = task ? `${task.code} · permanent code` : "A permanent Project–year–sequence code is generated automatically.";
     dialogMessage(editor.taskForm, "", "status");
     editor.taskDialog.showModal();
     editor.taskForm.elements.title.focus();
   }
 
-  function openPicker(taskId = "") {
-    if (!canAuthor()) return;
-    const tasks = availableTasks(data);
-    if (!tasks.length) return;
-    ensureEditors();
-    editor.pickerTaskId = "";
-    editor.pickerForm.reset();
-    editor.pickerDialog.querySelector(".task-picker-plan").hidden = true;
-    editor.pickerForm.querySelector('[type="submit"]').disabled = true;
-    dialogMessage(editor.pickerForm, "", "status");
-    renderPickerOptions();
-    editor.pickerDialog.showModal();
-    const selectedId = tasks.some((task) => task.id === taskId) ? taskId : (tasks.length === 1 ? tasks[0].id : "");
-    if (selectedId) selectPickerTask(selectedId);
-    else editor.pickerDialog.querySelector("[data-picker-task-id]")?.focus();
-  }
-
-  function renderPickerOptions() {
-    if (!editor.pickerDialog) return;
-    const tasks = availableTasks(data);
-    const projects = orderedProjects(data.projects.filter((project) => !project.archivedAt && project.status === "active"));
-    const list = editor.pickerDialog.querySelector(".task-picker-options");
-    list.replaceChildren();
-    for (const project of projects) {
-      const projectTasks = tasks.filter((task) => task.projectId === project.id);
+  function fillTaskOptions(select) {
+    select.replaceChildren();
+    const choices = availableTasks(data);
+    for (const project of orderedProjects(data.projects.filter((candidate) => !candidate.archivedAt && candidate.status === "active"))) {
+      const projectTasks = choices.filter((task) => task.projectId === project.id);
       if (!projectTasks.length) continue;
-      const group = node("section", "task-picker-group");
-      const groupHeading = node("div", "task-picker-group-heading");
-      const dot = node("span", "task-project-dot");
-      dot.style.setProperty("--project-color", project.color);
-      groupHeading.append(dot, node("span", "task-project-key", project.key), node("strong", "", project.title));
-      group.append(groupHeading);
+      const group = document.createElement("optgroup");
+      group.label = `${project.key} · ${project.title}`;
       for (const task of projectTasks) {
-        const option = node("button", "task-picker-option");
-        option.type = "button";
-        option.dataset.pickerTaskId = task.id;
-        option.setAttribute("aria-pressed", "false");
-        const heading = node("span", "task-picker-option-heading");
-        heading.append(node("span", "task-row-code", task.code), node("strong", "", task.title));
-        const check = node("span", "task-picker-check", "✓");
-        check.setAttribute("aria-hidden", "true");
-        option.append(heading, node("span", "task-picker-option-meta", taskMeta(task, data)), check);
+        const option = node("option", "", `${task.code} · ${task.title}`);
+        option.value = task.id;
         group.append(option);
       }
-      list.append(group);
+      select.append(group);
     }
   }
 
-  function selectPickerTask(id) {
-    const task = availableTasks(data).find((candidate) => candidate.id === id);
-    if (!task) return;
-    if (editor.pickerTaskId === id) return;
-    editor.pickerTaskId = id;
-    for (const option of editor.pickerDialog.querySelectorAll("[data-picker-task-id]")) {
-      option.setAttribute("aria-pressed", String(option.dataset.pickerTaskId === id));
+  function nextSlot(date) {
+    const occupied = data.sessions.filter((session) => session.date === date).sort((left, right) => left.startMinute - right.startMinute);
+    for (let start = 8 * 60; start <= 23 * 60; start += SNAP_MINUTES) {
+      const end = start + 60;
+      if (end <= 1440 && !occupied.some((session) => start < session.endMinute && end > session.startMinute)) return [start, end];
     }
-    editor.pickerDialog.querySelector(".task-picker-plan").hidden = false;
-    editor.pickerForm.querySelector('[type="submit"]').disabled = false;
-    editor.pickerForm.elements.plan.value = "";
-    editor.pickerForm.elements.plan.focus();
+    return [23 * 60, 1440];
   }
 
-  function openDay(taskDay) {
-    if (!canAuthor()) return;
+  function openSession(session = null, taskId = "", startMinute = null) {
+    if (!ui.enabled) return;
     ensureEditors();
-    const task = data.tasks.find((candidate) => candidate.id === taskDay.taskId);
-    const project = task && data.projects.find((candidate) => candidate.id === task.projectId);
-    if (!task || !project) return;
-    editor.reviewDayId = taskDay.id;
-    editor.reviewForm.reset();
-    editor.reviewForm.elements.plan.value = taskDay.plan;
-    editor.reviewForm.elements.state.value = taskDay.state;
-    editor.reviewForm.elements.outcome.value = taskDay.outcome;
-    editor.reviewDialog.querySelector("[data-day-context]").textContent = `${dayLabel(taskDay.date, data.today)} · ${task.code} · ${task.title}`;
-    const canContinue = taskDay.date < data.today && !task.completedAt && !task.archivedAt
-      && !project.archivedAt && project.status === "active"
-      && !data.taskDays.some((candidate) => candidate.taskId === task.id && candidate.date === data.today);
-    editor.reviewDialog.querySelector(".task-continue-control").hidden = !canContinue;
-    editor.reviewDialog.querySelector("[data-day-remove]").hidden = !(taskDay.date === data.today && taskDay.state === "planned" && !taskDay.outcome);
-    updateContinueFields();
-    dialogMessage(editor.reviewForm, "", "status");
-    editor.reviewDialog.showModal();
-    editor.reviewForm.elements.plan.focus();
-  }
-
-  function updateContinueFields() {
-    if (!editor.reviewDialog) return;
-    const enabled = editor.reviewForm.elements.continueToday.checked;
-    const group = editor.reviewDialog.querySelector(".task-next-plan");
-    group.hidden = !enabled;
-    editor.reviewForm.elements.nextPlan.required = enabled;
-    if (enabled && !editor.reviewForm.elements.nextPlan.value) {
-      editor.reviewForm.elements.nextPlan.value = editor.reviewForm.elements.plan.value;
-    }
-  }
-
-  async function send(payload, form = null) {
-    if (authoring.busy) return null;
-    authoring.busy = true;
-    if (form) setDialogBusy(form, true);
-    try {
-      const result = request
-        ? await request(payload)
-        : await fetch("/api/tasks/save", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          }).then(async (response) => {
-            const value = await response.json().catch(() => null);
-            if (!response.ok) throw new Error(value?.error || "Task changes could not be saved.");
-            return value;
-          });
-      data = validateData(result);
-      loaded = true;
-      authoring.message = result.status === "unchanged" ? "Nothing changed." : "Task workspace updated.";
-      authoring.messageKind = "status";
-      return result;
-    } catch (error) {
-      const message = error?.message || "Task changes could not be saved.";
-      authoring.message = message;
-      authoring.messageKind = "error";
-      if (form) dialogMessage(form, message);
-      if (/changed|revision/i.test(message)) {
-        loaded = false;
-        await load(true).catch(() => {});
-      }
-      return null;
-    } finally {
-      authoring.busy = false;
-      if (form) setDialogBusy(form, false);
-      render();
-    }
+    editor.sessionId = session?.id || "";
+    editor.sessionForm.reset();
+    fillTaskOptions(editor.sessionForm.elements.taskId);
+    const date = session?.date || selectedDate;
+    const slot = startMinute === null ? nextSlot(date) : [Math.max(0, Math.min(1425, startMinute)), Math.min(1440, Math.max(0, startMinute) + 60)];
+    editor.sessionForm.elements.taskId.value = session?.taskId || taskId || editor.sessionForm.elements.taskId.options[0]?.value || "";
+    editor.sessionForm.elements.taskId.disabled = Boolean(session);
+    editor.sessionForm.elements.date.value = date;
+    editor.sessionForm.elements.start.value = timeInputValue(session?.startMinute ?? slot[0]);
+    editor.sessionForm.elements.end.value = timeInputValue(session?.endMinute ?? slot[1]);
+    editor.sessionForm.elements.plan.value = session?.plan || "";
+    editor.sessionForm.elements.state.value = session?.state || "scheduled";
+    editor.sessionForm.elements.outcome.value = session?.outcome || "";
+    editor.sessionDialog.querySelector("[data-session-review]").hidden = !session;
+    editor.sessionDialog.querySelector("[data-session-remove]").hidden = !session || session.state !== "scheduled";
+    editor.sessionDialog.querySelector(".dialog-title").textContent = session ? "Session" : "Plan Session";
+    dialogMessage(editor.sessionForm, "", "status");
+    editor.sessionDialog.showModal();
+    (session ? editor.sessionForm.elements.plan : editor.sessionForm.elements.taskId).focus();
   }
 
   async function saveProject(event) {
     event.preventDefault();
     const form = event.currentTarget;
     if (!form.reportValidity()) return;
-    const result = await send({
-      mode: editor.projectId ? "updateProject" : "createProject",
-      baseRevision: data.revision,
-      project: {
-        ...(editor.projectId ? { id: editor.projectId } : { key: form.elements.key.value }),
-        title: form.elements.title.value,
-        description: form.elements.description.value,
-        color: form.elements.color.value,
-        status: form.elements.status.value
-      }
-    }, form);
+    const result = await send({ mode: editor.projectId ? "updateProject" : "createProject", baseRevision: data.revision, project: { ...(editor.projectId ? { id: editor.projectId } : { key: form.elements.key.value }), title: form.elements.title.value, description: form.elements.description.value, color: form.elements.color.value, status: form.elements.status.value } }, form);
     if (result) editor.projectDialog.close();
   }
 
@@ -1033,90 +688,135 @@ export function createTasksController({ canAuthor = () => false, request, confir
     event.preventDefault();
     const form = event.currentTarget;
     if (!form.reportValidity()) return;
-    const result = await send({
-      mode: editor.taskId ? "updateTask" : "createTask",
-      baseRevision: data.revision,
-      task: {
-        ...(editor.taskId ? { id: editor.taskId } : {}),
-        projectId: form.elements.projectId.value,
-        title: form.elements.title.value,
-        objective: form.elements.objective.value
-      }
-    }, form);
+    const result = await send({ mode: editor.taskId ? "updateTask" : "createTask", baseRevision: data.revision, task: { ...(editor.taskId ? { id: editor.taskId } : {}), projectId: form.elements.projectId.value, title: form.elements.title.value, objective: form.elements.objective.value } }, form);
     if (result) editor.taskDialog.close();
   }
 
-  async function savePickedTaskDay(event) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    if (!form.reportValidity() || !editor.pickerTaskId) return;
-    const result = await send({
-      mode: "createTaskDay",
-      baseRevision: data.revision,
-      taskDay: { taskId: editor.pickerTaskId, plan: form.elements.plan.value }
-    }, form);
-    if (result) editor.pickerDialog.close();
-  }
-
-  async function saveDayReview(event) {
+  async function saveSession(event) {
     event.preventDefault();
     const form = event.currentTarget;
     if (!form.reportValidity()) return;
-    if (form.elements.state.value === "partial" && !form.elements.outcome.value.trim()) {
-      dialogMessage(form, "Partial work needs a short outcome.");
-      form.elements.outcome.focus();
+    const startMinute = parseTime(form.elements.start.value);
+    const endMinute = form.elements.end.value === "00:00" && startMinute > 0 ? 1440 : parseTime(form.elements.end.value);
+    if (!Number.isFinite(startMinute) || !Number.isFinite(endMinute) || endMinute <= startMinute) {
+      dialogMessage(form, "End time must be after start time.");
       return;
     }
-    const result = await send({
-      mode: "updateTaskDay",
-      baseRevision: data.revision,
-      taskDay: {
-        id: editor.reviewDayId,
-        plan: form.elements.plan.value,
-        outcome: form.elements.outcome.value,
-        state: form.elements.state.value,
-        continueToday: form.elements.continueToday.checked,
-        nextPlan: form.elements.nextPlan.value
-      }
-    }, form);
-    if (result) editor.reviewDialog.close();
+    const state = editor.sessionId ? form.elements.state.value : "scheduled";
+    if ((state === "partial" || state === "no_progress") && !form.elements.outcome.value.trim()) {
+      dialogMessage(form, "Partial and No progress reviews need a short outcome.");
+      return;
+    }
+    const session = { ...(editor.sessionId ? { id: editor.sessionId } : { taskId: form.elements.taskId.value }), date: form.elements.date.value, startMinute, endMinute, plan: form.elements.plan.value, ...(editor.sessionId ? { state, outcome: form.elements.outcome.value } : {}) };
+    const result = await send({ mode: editor.sessionId ? "updateSession" : "createSession", baseRevision: data.revision, session }, form);
+    if (result) { selectedDate = session.date; editor.sessionDialog.close(); }
   }
 
   async function archiveProject() {
     const project = data.projects.find((candidate) => candidate.id === editor.projectId);
     if (!project) return;
-    const approved = confirmAction
-      ? await confirmAction("Archive Project", `Archive “${project.title}” and its open Tasks? History will remain available.`, "Archive")
-      : window.confirm(`Archive “${project.title}”?`);
+    const approved = confirmAction ? await confirmAction("Archive Project", `Archive “${project.title}”, its open Tasks, and their scheduled Sessions?`, "Archive") : window.confirm(`Archive “${project.title}”?`);
     if (!approved) return;
     const result = await send({ mode: "archiveProject", baseRevision: data.revision, project: { id: project.id } }, editor.projectForm);
     if (result) editor.projectDialog.close();
   }
 
-  async function removeReviewedDay() {
-    const day = data.taskDays.find((candidate) => candidate.id === editor.reviewDayId);
-    if (!day) return;
-    const result = await send({ mode: "removeTaskDay", baseRevision: data.revision, taskDay: { id: day.id } }, editor.reviewForm);
-    if (result) editor.reviewDialog.close();
+  async function removeSession() {
+    const session = data.sessions.find((candidate) => candidate.id === editor.sessionId);
+    if (!session) return;
+    const result = await send({ mode: "removeSession", baseRevision: data.revision, session: { id: session.id } }, editor.sessionForm);
+    if (result) editor.sessionDialog.close();
   }
 
-  async function moveDay(day, direction) {
-    const ordered = data.taskDays.filter((candidate) => candidate.date === data.today)
-      .sort((left, right) => left.position - right.position || left.createdAt.localeCompare(right.createdAt));
-    const index = ordered.findIndex((candidate) => candidate.id === day.id);
-    const target = index + direction;
-    if (index < 0 || target < 0 || target >= ordered.length) return;
-    [ordered[index], ordered[target]] = [ordered[target], ordered[index]];
-    await send({
-      mode: "reorderTaskDays",
-      baseRevision: data.revision,
-      taskDay: { ids: ordered.map((candidate) => candidate.id) }
-    });
+  function showContribution(control) {
+    const date = control.dataset.contributionDate;
+    const entries = completionDays(data).get(date) || [];
+    let tooltip = document.querySelector(".task-contribution-tooltip");
+    if (!tooltip) { tooltip = node("div", "task-contribution-tooltip"); tooltip.setAttribute("role", "tooltip"); document.body.append(tooltip); }
+    tooltip.replaceChildren();
+    const header = node("header", "task-contribution-tooltip-header");
+    header.append(node("strong", "", formatDate(date)), node("span", "", `${entries.length} completed`));
+    const list = node("ul", "task-contribution-list");
+    for (const contribution of entries) {
+      const item = node("li", "task-contribution-item");
+      const top = node("div", "task-contribution-heading");
+      const dot = node("span", "task-project-dot");
+      dot.style.setProperty("--project-color", contribution.projectColor);
+      top.append(dot, node("span", "task-row-code", contribution.taskCode));
+      item.append(top, node("strong", "", contribution.taskTitle), node("span", "task-row-meta", `${contribution.projectKey} · ${contribution.projectTitle}`));
+      list.append(item);
+    }
+    tooltip.append(header, list);
+    const rect = control.getBoundingClientRect();
+    tooltip.hidden = false;
+    const width = tooltip.offsetWidth;
+    const height = tooltip.offsetHeight;
+    tooltip.style.left = `${Math.max(8, Math.min(innerWidth - width - 8, rect.left + rect.width / 2 - width / 2))}px`;
+    tooltip.style.top = `${Math.max(8, rect.top - height - 8)}px`;
   }
 
-  function openTaskRoute(task) {
-    if (!task) return;
-    location.hash = `task/${task.code}`;
+  function hideContribution() {
+    const tooltip = document.querySelector(".task-contribution-tooltip");
+    if (tooltip) tooltip.hidden = true;
+  }
+
+  function openCalendarSettings() {
+    ensureEditors();
+    const body = editor.calendarDialog.querySelector("[data-calendar-body]");
+    const actions = editor.calendarDialog.querySelector("[data-calendar-actions]");
+    body.replaceChildren();
+    actions.replaceChildren();
+    if (!calendar?.configured) {
+      body.append(node("p", "task-calendar-status", "Google OAuth has not been configured for this site yet."), node("p", "task-calendar-note", calendar?.lastError || "Add the Worker OAuth secrets, then reload this page."));
+      actions.append(button("Close", "close-calendar", "control-button"));
+    } else if (!calendar.connected) {
+      body.append(node("p", "task-calendar-status", "Connect Google Calendar"), node("p", "task-calendar-note", "This creates one dedicated “Xayah Tasks” calendar. Other calendars remain private and untouched."));
+      actions.append(button("Cancel", "close-calendar", "control-button"), button("Connect", "connect-calendar", "control-button control-button-primary"));
+    } else {
+      body.append(node("p", "task-calendar-status", "Connected to Xayah Tasks"), node("p", "task-calendar-note", calendar.lastSyncedAt ? `Last synced ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Singapore" }).format(new Date(calendar.lastSyncedAt))}` : "Waiting for the first sync."));
+      if (calendar.lastError) { const error = node("p", "task-calendar-warning", calendar.lastError); body.append(error); }
+      actions.append(button("Disconnect", "disconnect-calendar", "control-button control-button-danger"), node("span", "dialog-action-spacer"), button("Close", "close-calendar", "control-button"), button("Sync now", "sync-calendar", "control-button control-button-primary"));
+    }
+    editor.calendarDialog.showModal();
+  }
+
+  async function calendarAction(action) {
+    if (action === "close-calendar") { editor.calendarDialog.close(); return; }
+    if (action === "connect-calendar") { location.assign("/api/tasks/google/connect"); return; }
+    if (action === "disconnect-calendar") {
+      const approved = confirmAction ? await confirmAction("Disconnect Google Calendar", "Delete the dedicated Xayah Tasks calendar and remove its authorization?", "Disconnect") : window.confirm("Disconnect Google Calendar?");
+      if (!approved) return;
+    }
+    const buttonTarget = editor.calendarDialog.querySelector(`[data-task-action="${action}"]`);
+    if (buttonTarget) buttonTarget.disabled = true;
+    try {
+      if (action === "sync-calendar") {
+        await post("/api/tasks/google/sync");
+        await load(true);
+        ui.message = "Google Calendar synced.";
+      }
+      if (action === "disconnect-calendar") {
+        await post("/api/tasks/google/disconnect");
+        ui.message = "Google Calendar disconnected.";
+      }
+      editor.calendarDialog.close();
+      calendar = null;
+      await loadCalendarStatus(true);
+    } catch (error) {
+      ui.message = error?.message || "Google Calendar action failed.";
+      ui.messageKind = "error";
+      if (buttonTarget) buttonTarget.disabled = false;
+      render();
+    }
+  }
+
+  function ensureDetail() {
+    if (editor.detailDialog) return;
+    editor.detailDialog = detailDialog();
+    editor.detailDialog.querySelector("[data-detail-close]").addEventListener("click", () => editor.detailDialog.close());
+    editor.detailDialog.addEventListener("cancel", (event) => { event.preventDefault(); editor.detailDialog.close(); });
+    editor.detailDialog.addEventListener("close", () => { if (!suppressDetailRoute && location.hash.startsWith("#task/")) location.hash = "task"; });
+    editor.detailDialog.addEventListener("click", handleDetailClick);
   }
 
   function detailStat(label, value) {
@@ -1126,18 +826,14 @@ export function createTasksController({ canAuthor = () => false, request, confir
   }
 
   function syncDetail() {
-    ensureDetail();
     const task = data.tasks.find((candidate) => candidate.code === focusedCode);
     if (!task) {
-      if (editor.detailDialog.open) {
-        suppressDetailRoute = true;
-        editor.detailDialog.close();
-        suppressDetailRoute = false;
-      }
+      if (editor.detailDialog?.open) { suppressDetailRoute = true; editor.detailDialog.close(); suppressDetailRoute = false; }
       return;
     }
+    ensureDetail();
     const project = data.projects.find((candidate) => candidate.id === task.projectId);
-    const stats = taskStats(task, data);
+    if (!project) return;
     const heading = editor.detailDialog.querySelector("[data-detail-heading]");
     const body = editor.detailDialog.querySelector(".task-detail-body");
     heading.replaceChildren();
@@ -1149,45 +845,35 @@ export function createTasksController({ canAuthor = () => false, request, confir
     body.replaceChildren();
     if (task.objective) body.append(node("p", "task-detail-objective", task.objective));
     const actions = node("div", "task-detail-actions");
-    const editable = authoring.enabled && !task.archivedAt && !project.archivedAt && project.status === "active";
+    const editable = ui.enabled && !task.archivedAt && !project.archivedAt && project.status === "active";
     if (editable) {
-      const todayEntry = data.taskDays.find((taskDay) => taskDay.taskId === task.id && taskDay.date === data.today);
-      if (!task.completedAt && !todayEntry) {
-        const add = button("Add to Today", "detail-add-today", "control-button control-button-primary");
-        add.dataset.taskId = task.id;
-        actions.append(add);
-      }
-      actions.append(button("Edit", "detail-edit-task", "control-button"));
-      actions.append(button(task.completedAt ? "Reopen" : "Complete Task", task.completedAt ? "detail-reopen-task" : "detail-complete-task", "control-button"));
-      actions.append(button("Archive", "detail-archive-task", "task-text-button task-danger-button"));
+      if (!task.completedAt) actions.append(button("Schedule Session", "detail-schedule", "control-button control-button-primary"));
+      actions.append(button("Edit", "detail-edit", "control-button"), button(task.completedAt ? "Reopen" : "Complete Task", task.completedAt ? "detail-reopen" : "detail-complete", "control-button"), button("Archive", "detail-archive", "task-text-button task-danger-button"));
     }
     if (actions.childElementCount) body.append(actions);
-    const statsGrid = node("div", "task-detail-stats");
-    statsGrid.append(
-      detailStat("Plans", String(stats.days.length)),
-      detailStat("Done", String(stats.completed.length)),
-      detailStat("Partial", String(stats.partial.length))
-    );
-    body.append(statsGrid);
-    const activity = node("section", "task-detail-history");
-    activity.append(node("h3", "task-detail-section-title", "Work history"));
-    if (!stats.days.length) {
-      activity.append(node("p", "task-detail-empty", "No daily plans yet."));
-    } else {
+    const sessions = data.sessions.filter((session) => session.taskId === task.id).sort((left, right) => right.date.localeCompare(left.date) || right.startMinute - left.startMinute);
+    const logged = sessions.filter((session) => session.state !== "scheduled").reduce((total, session) => total + session.endMinute - session.startMinute, 0);
+    const stats = node("div", "task-detail-stats");
+    stats.append(detailStat("Sessions", String(sessions.length)), detailStat("Time logged", formatDuration(logged)), detailStat("Done", String(sessions.filter((session) => session.state === "done").length)));
+    body.append(stats);
+    const history = node("section", "task-detail-history");
+    history.append(node("h3", "task-detail-section-title", "Session history"));
+    if (!sessions.length) history.append(node("p", "task-detail-empty", "No Sessions yet."));
+    else {
       const list = node("ol", "task-history-list");
-      for (const taskDay of [...stats.days].sort((left, right) => right.date.localeCompare(left.date))) {
+      for (const session of sessions) {
         const item = node("li", "task-history-item");
-        item.dataset.taskDayId = taskDay.id;
+        item.dataset.sessionId = session.id;
         const top = node("div", "task-history-heading");
-        top.append(node("time", "", dayLabel(taskDay.date, data.today)), node("span", `task-day-state task-day-state-${taskDay.state}`, stateLabel(taskDay.state, taskDay.date < data.today)));
-        item.append(top, node("p", "task-history-plan", taskDay.plan));
-        if (taskDay.outcome) item.append(node("p", "task-history-outcome", taskDay.outcome));
-        if (editable && !task.completedAt) item.append(button("Review", "detail-review-day", "task-text-button"));
+        top.append(node("time", "", `${formatDate(session.date)} · ${formatMinute(session.startMinute)}–${formatMinute(session.endMinute)}`), node("span", `task-session-state task-session-state-${session.state}`, session.state.replace("no_progress", "no progress")));
+        item.append(top, node("p", "task-history-plan", session.plan));
+        if (session.outcome) item.append(node("p", "task-history-outcome", session.outcome));
+        if (ui.enabled) item.append(button("Open", "detail-open-session", "task-text-button"));
         list.append(item);
       }
-      activity.append(list);
+      history.append(list);
     }
-    body.append(activity);
+    body.append(history);
     if (!editor.detailDialog.open) editor.detailDialog.showModal();
   }
 
@@ -1197,29 +883,20 @@ export function createTasksController({ canAuthor = () => false, request, confir
     const task = data.tasks.find((candidate) => candidate.code === focusedCode);
     if (!task) return;
     const action = control.dataset.taskAction;
-    if (action === "detail-add-today") openPicker(task.id);
-    if (action === "detail-edit-task") openTask(task);
-    if (action === "detail-review-day") {
-      const day = data.taskDays.find((candidate) => candidate.id === control.closest("[data-task-day-id]")?.dataset.taskDayId);
-      if (day) openDay(day);
+    if (action === "detail-schedule") openSession(null, task.id);
+    if (action === "detail-edit") openTask(task);
+    if (action === "detail-open-session") {
+      const session = data.sessions.find((candidate) => candidate.id === control.closest("[data-session-id]")?.dataset.sessionId);
+      if (session) openSession(session);
     }
-    if (action === "detail-reopen-task") {
-      await send({ mode: "reopenTask", baseRevision: data.revision, task: { id: task.id } });
-    }
-    if (action === "detail-complete-task") {
-      const approved = confirmAction
-        ? await confirmAction("Complete Task", `Complete “${task.title}” and add it to Contributions?`, "Complete")
-        : window.confirm(`Complete “${task.title}”?`);
+    if (action === "detail-reopen") await send({ mode: "reopenTask", baseRevision: data.revision, task: { id: task.id } });
+    if (action === "detail-complete") {
+      const approved = confirmAction ? await confirmAction("Complete Task", `Complete “${task.title}”? Scheduled Sessions will be removed and one contribution will be recorded.`, "Complete") : window.confirm(`Complete “${task.title}”?`);
       if (approved) await send({ mode: "completeTask", baseRevision: data.revision, task: { id: task.id } });
     }
-    if (action === "detail-archive-task") {
-      const approved = confirmAction
-        ? await confirmAction("Archive Task", `Archive “${task.title}”? Its work history will remain available.`, "Archive")
-        : window.confirm(`Archive “${task.title}”?`);
-      if (approved) {
-        const result = await send({ mode: "archiveTask", baseRevision: data.revision, task: { id: task.id } });
-        if (result) location.hash = "task";
-      }
+    if (action === "detail-archive") {
+      const approved = confirmAction ? await confirmAction("Archive Task", `Archive “${task.title}” and remove its scheduled Sessions?`, "Archive") : window.confirm(`Archive “${task.title}”?`);
+      if (approved && await send({ mode: "archiveTask", baseRevision: data.revision, task: { id: task.id } })) location.hash = "task";
     }
   }
 
@@ -1227,37 +904,136 @@ export function createTasksController({ canAuthor = () => false, request, confir
     const control = event.target.closest("[data-task-action]");
     if (!control) return;
     const action = control.dataset.taskAction;
+    if (action === "show-contribution") { showContribution(control); return; }
+    if (action === "open-task") {
+      const task = data.tasks.find((candidate) => candidate.code === control.dataset.taskCode);
+      if (task) location.hash = `task/${task.code}`;
+      return;
+    }
+    if (action === "open-session") {
+      if (Date.now() < suppressClickUntil) return;
+      const session = data.sessions.find((candidate) => candidate.id === control.dataset.sessionId);
+      if (session && ui.enabled) openSession(session);
+      return;
+    }
+    if (!ui.enabled) return;
     const projectId = control.closest("[data-project-id]")?.dataset.projectId || "";
     const taskId = control.closest("[data-task-id]")?.dataset.taskId || "";
-    const taskDayId = control.closest("[data-task-day-id]")?.dataset.taskDayId || "";
-    const project = data.projects.find((candidate) => candidate.id === projectId);
-    const task = data.tasks.find((candidate) => candidate.id === taskId || candidate.code === control.dataset.taskCode);
-    const taskDay = data.taskDays.find((candidate) => candidate.id === taskDayId);
-    if (action === "open-task") openTaskRoute(task);
-    if (!canAuthor()) return;
+    if (action === "previous-day") { selectedDate = dateShift(selectedDate, -1); render(); }
+    if (action === "next-day") { selectedDate = dateShift(selectedDate, 1); render(); }
+    if (action === "today") { selectedDate = data.today; render(); }
     if (action === "new-project") openProject();
+    if (action === "edit-project") openProject(data.projects.find((project) => project.id === projectId));
     if (action === "new-project-task") openTask(null, projectId);
-    if (action === "edit-project" && project) openProject(project);
-    if (action === "add-from-tasks") openPicker();
-    if (action === "review-day" && taskDay) openDay(taskDay);
-    if (action === "move-day-up" && taskDay) void moveDay(taskDay, -1);
-    if (action === "move-day-down" && taskDay) void moveDay(taskDay, 1);
+    if (action === "schedule-task") openSession(null, taskId);
+    if (action === "new-session") openSession();
+    if (action === "calendar-settings") openCalendarSettings();
+    if (action === "quick-session" && event.target === control && availableTasks(data).length) {
+      const minute = Math.max(0, Math.min(1380, Math.round((event.clientY - control.getBoundingClientRect().top) / HOUR_HEIGHT * 60 / SNAP_MINUTES) * SNAP_MINUTES));
+      openSession(null, "", minute);
+    }
+  }
+
+  function handleKeydown(event) {
+    const session = event.target.closest?.(".task-session-block");
+    if (session && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); session.click(); }
+  }
+
+  function handleHover(event) {
+    const cell = event.target.closest?.('[data-task-action="show-contribution"]');
+    if (cell) showContribution(cell);
+  }
+
+  function handleHoverEnd(event) {
+    const cell = event.target.closest?.('[data-task-action="show-contribution"]');
+    if (cell && !cell.contains(event.relatedTarget)) hideContribution();
+  }
+
+  function handlePointerDown(event) {
+    const block = event.target.closest?.(".task-session-block[data-draggable]");
+    if (!block || !ui.enabled || matchMedia("(pointer: coarse)").matches) return;
+    const session = data.sessions.find((candidate) => candidate.id === block.dataset.sessionId);
+    if (!session || session.state !== "scheduled") return;
+    drag = { pointerId: event.pointerId, block, session, mode: event.target.closest("[data-session-resize]") ? "resize" : "move", originY: event.clientY, start: session.startMinute, end: session.endMinute, nextStart: session.startMinute, nextEnd: session.endMinute };
+    block.setPointerCapture(event.pointerId);
+    block.dataset.dragging = "true";
+    event.preventDefault();
+  }
+
+  function handlePointerMove(event) {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const delta = Math.round((event.clientY - drag.originY) / HOUR_HEIGHT * 60 / SNAP_MINUTES) * SNAP_MINUTES;
+    if (drag.mode === "move") {
+      const duration = drag.end - drag.start;
+      drag.nextStart = Math.max(0, Math.min(1440 - duration, drag.start + delta));
+      drag.nextEnd = drag.nextStart + duration;
+    } else {
+      drag.nextStart = drag.start;
+      drag.nextEnd = Math.max(drag.start + SNAP_MINUTES, Math.min(1440, drag.end + delta));
+    }
+    drag.block.style.setProperty("--session-top", `${drag.nextStart / 60 * HOUR_HEIGHT}px`);
+    drag.block.style.setProperty("--session-height", `${Math.max(24, (drag.nextEnd - drag.nextStart) / 60 * HOUR_HEIGHT)}px`);
+    drag.block.querySelector(".task-session-time").textContent = `${formatMinute(drag.nextStart)}–${formatMinute(drag.nextEnd)}`;
+  }
+
+  async function handlePointerUp(event) {
+    if (!drag || event.pointerId !== drag.pointerId) return;
+    const current = drag;
+    drag = null;
+    current.block.releasePointerCapture(event.pointerId);
+    delete current.block.dataset.dragging;
+    if (current.nextStart === current.start && current.nextEnd === current.end) return;
+    suppressClickUntil = Date.now() + 400;
+    await send({ mode: "updateSession", baseRevision: data.revision, session: { id: current.session.id, date: current.session.date, startMinute: current.nextStart, endMinute: current.nextEnd, plan: current.session.plan, outcome: current.session.outcome, state: current.session.state } });
+  }
+
+  function handleDialogClick(event) {
+    const action = event.target.closest("[data-task-action]")?.dataset.taskAction;
+    if (action) void calendarAction(action);
   }
 
   function mount(element, taskCode = "") {
     if (root !== element) {
-      root?.removeEventListener("click", handleClick);
+      if (root) {
+        root.removeEventListener("click", handleClick);
+        root.removeEventListener("keydown", handleKeydown);
+        root.removeEventListener("pointerdown", handlePointerDown);
+        root.removeEventListener("pointermove", handlePointerMove);
+        root.removeEventListener("pointerup", handlePointerUp);
+        root.removeEventListener("pointercancel", handlePointerUp);
+        root.removeEventListener("pointerover", handleHover);
+        root.removeEventListener("pointerout", handleHoverEnd);
+        root.removeEventListener("focusin", handleHover);
+        root.removeEventListener("focusout", handleHoverEnd);
+      }
       root = element;
       root.addEventListener("click", handleClick);
+      root.addEventListener("keydown", handleKeydown);
+      root.addEventListener("pointerdown", handlePointerDown);
+      root.addEventListener("pointermove", handlePointerMove);
+      root.addEventListener("pointerup", handlePointerUp);
+      root.addEventListener("pointercancel", handlePointerUp);
+      root.addEventListener("pointerover", handleHover);
+      root.addEventListener("pointerout", handleHoverEnd);
+      root.addEventListener("focusin", handleHover);
+      root.addEventListener("focusout", handleHoverEnd);
     }
-    const nextFocusedCode = TASK_CODE.test(taskCode) ? taskCode : "";
-    if (nextFocusedCode !== focusedCode) revealedCode = "";
-    focusedCode = nextFocusedCode;
+    focusedCode = TASK_CODE.test(taskCode) ? taskCode : "";
+    const query = new URL(location.href).searchParams.get("calendar");
+    if (query) {
+      ui.message = query === "connected" ? "Google Calendar connected." : "Google Calendar connection was not completed.";
+      ui.messageKind = query === "connected" ? "status" : "error";
+      const clean = new URL(location.href);
+      clean.searchParams.delete("calendar");
+      history.replaceState(history.state, "", `${clean.pathname}${clean.search}${clean.hash}`);
+    }
     render();
-    void load().then(render).catch(() => {
-      if (!root?.isConnected) return;
-      root.replaceChildren(node("p", "empty-state", "Task data could not be loaded."));
-    });
+    void load().then(() => { if (selectedDate === singaporeDate()) selectedDate = data.today; render(); }).catch(() => { if (root?.isConnected) root.replaceChildren(node("p", "empty-state", "Task data could not be loaded.")); });
+    if (Boolean(canAuthor())) {
+      ensureEditors();
+      editor.calendarDialog.removeEventListener("click", handleDialogClick);
+      editor.calendarDialog.addEventListener("click", handleDialogClick);
+    }
   }
 
   async function relatedChoices() {
@@ -1265,15 +1041,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
     const projects = new Map(data.projects.map((project) => [project.id, project]));
     return data.tasks.flatMap((task) => {
       const project = projects.get(task.projectId);
-      if (!project) return [];
-      return [{
-        id: task.id,
-        code: task.code,
-        title: task.title,
-        completed: Boolean(task.completedAt),
-        archived: Boolean(task.archivedAt || project.archivedAt),
-        project: { id: project.id, key: project.key, title: project.title, color: project.color }
-      }];
+      return project ? [{ id: task.id, code: task.code, title: task.title, completed: Boolean(task.completedAt), archived: Boolean(task.archivedAt || project.archivedAt), project: { id: project.id, key: project.key, title: project.title, color: project.color } }] : [];
     });
   }
 

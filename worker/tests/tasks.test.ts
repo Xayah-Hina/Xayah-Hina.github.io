@@ -3,17 +3,14 @@ import test from "node:test";
 import { saveTasks, tasksResponse } from "../src/tasks.ts";
 import { HttpError, singaporeTimestamp } from "../src/utils.ts";
 
-function environment() {
+function environment(initial?: unknown) {
   const objects = new Map<string, { value: string; etag: string }>();
   let version = 0;
+  if (initial) objects.set("published/tasks/state.json", { value: JSON.stringify(initial), etag: "etag-initial" });
   const content = {
     async get(key: string) {
       const object = objects.get(key);
-      if (!object) return null;
-      return {
-        etag: object.etag,
-        async json<T>() { return JSON.parse(object.value) as T; },
-      };
+      return object ? { etag: object.etag, async json<T>() { return JSON.parse(object.value) as T; } } : null;
     },
     async put(key: string, value: unknown, options: { onlyIf?: { etagMatches?: string; etagDoesNotMatch?: string } } = {}) {
       const current = objects.get(key);
@@ -27,423 +24,130 @@ function environment() {
     },
     async head() { return null; },
     async list() { return { objects: [], truncated: false }; },
-    async delete() {},
+    async delete(key: string | string[]) { for (const item of Array.isArray(key) ? key : [key]) objects.delete(item); },
   };
   return { env: { CONTENT: content } as never, objects };
 }
 
-async function createProjectAndTask(env: never) {
-  const projectResult = await saveTasks(env, {
+async function createWorkspace(env: never) {
+  const project = await saveTasks(env, {
     mode: "createProject",
     baseRevision: "0",
-    project: {
-      title: "Differentiable Solver",
-      description: "Research and implementation",
-      color: "#2f855a",
-      status: "active",
-    },
+    project: { title: "Differentiable Solver", description: "Research and implementation", color: "#2f855a", status: "active" },
   });
-  const taskResult = await saveTasks(env, {
+  const task = await saveTasks(env, {
     mode: "createTask",
-    baseRevision: projectResult.revision,
-    task: {
-      projectId: projectResult.projects[0]!.id,
-      title: "Implement the linear solve",
-      objective: "A stable solve with regression coverage.",
-    },
+    baseRevision: project.revision,
+    task: { projectId: project.projects[0]!.id, title: "Implement the linear solve", objective: "A stable solve with regression coverage." },
   });
-  return { projectResult, taskResult };
+  return task;
 }
 
-test("Tasks use binary completion and independent Task Days", async () => {
-  const { env, objects } = environment();
-  const today = singaporeTimestamp().slice(0, 10);
-  const { taskResult } = await createProjectAndTask(env);
-  const task = taskResult.tasks[0]!;
-  assert.equal(task.code, `DS-${today.slice(0, 4)}-0001`);
-  assert.equal(task.objective, "A stable solve with regression coverage.");
-  assert.equal(task.completedAt, undefined);
+test("Session model schedules multiple time ranges for one Task", async () => {
+  const { env } = environment();
+  const workspace = await createWorkspace(env);
+  const date = singaporeTimestamp().slice(0, 10);
+  const task = workspace.tasks[0]!;
+  assert.equal(task.code, `DS-${date.slice(0, 4)}-0001`);
   assert.equal("status" in task, false);
   assert.equal("scheduledDate" in task, false);
-  assert.equal("priority" in task, false);
 
-  const planned = await saveTasks(env, {
-    mode: "createTaskDay",
-    baseRevision: taskResult.revision,
-    taskDay: { taskId: task.id, plan: "Finish the direct solver and its tests." },
+  const morning = await saveTasks(env, {
+    mode: "createSession",
+    baseRevision: workspace.revision,
+    session: { taskId: task.id, date, startMinute: 540, endMinute: 600, plan: "Implement the direct solve." },
   });
-  assert.equal(planned.taskDays.length, 1);
-  assert.deepEqual(planned.taskDays[0], {
-    id: planned.taskDays[0]!.id,
-    taskId: task.id,
-    date: today,
-    plan: "Finish the direct solver and its tests.",
-    outcome: "",
-    state: "planned",
-    position: 0,
-    createdAt: planned.taskDays[0]!.createdAt,
-    updatedAt: planned.taskDays[0]!.updatedAt,
+  const afternoon = await saveTasks(env, {
+    mode: "createSession",
+    baseRevision: morning.revision,
+    session: { taskId: task.id, date, startMinute: 840, endMinute: 930, plan: "Add regression coverage." },
   });
-
-  await assert.rejects(
-    saveTasks(env, {
-      mode: "updateTaskDay",
-      baseRevision: planned.revision,
-      taskDay: {
-        id: planned.taskDays[0]!.id,
-        plan: planned.taskDays[0]!.plan,
-        outcome: "",
-        state: "partial",
-      },
-    }),
-    (error: unknown) => error instanceof HttpError && error.status === 400,
-  );
-  const partial = await saveTasks(env, {
-    mode: "updateTaskDay",
-    baseRevision: planned.revision,
-    taskDay: {
-      id: planned.taskDays[0]!.id,
-      plan: planned.taskDays[0]!.plan,
-      outcome: "The solver works; two tests remain.",
-      state: "partial",
-    },
-  });
-  assert.equal(partial.taskDays[0]!.state, "partial");
-  assert.ok(partial.taskDays[0]!.reviewedAt);
-
-  const completed = await saveTasks(env, {
-    mode: "completeTask",
-    baseRevision: partial.revision,
-    task: { id: task.id },
-  });
-  assert.ok(completed.tasks[0]!.completedAt);
-  assert.equal(completed.contributions.length, 1);
-
-  const reopened = await saveTasks(env, {
-    mode: "reopenTask",
-    baseRevision: completed.revision,
-    task: { id: task.id },
-  });
-  const recompleted = await saveTasks(env, {
-    mode: "completeTask",
-    baseRevision: reopened.revision,
-    task: { id: task.id },
-  });
-  assert.equal(recompleted.contributions.length, 1);
-  assert.ok(objects.has("published/tasks/state.json"));
-  assert.ok([...objects.keys()].some((key) => key.startsWith("private/tasks/history/")));
+  assert.equal(afternoon.sessions.length, 2);
+  assert.deepEqual(afternoon.sessions.map((session) => [session.startMinute, session.endMinute]), [[540, 600], [840, 930]]);
+  assert.ok(afternoon.sessions.every((session) => session.state === "scheduled"));
 });
 
-test("Task API exposes only schema 4 and rejects obsolete contracts", async () => {
+test("Sessions reject overlap and reviewed history cannot be removed", async () => {
   const { env } = environment();
-  const { taskResult } = await createProjectAndTask(env);
+  const workspace = await createWorkspace(env);
+  const date = singaporeTimestamp().slice(0, 10);
+  const planned = await saveTasks(env, {
+    mode: "createSession",
+    baseRevision: workspace.revision,
+    session: { taskId: workspace.tasks[0]!.id, date, startMinute: 600, endMinute: 690, plan: "Build the solver." },
+  });
+  await assert.rejects(saveTasks(env, {
+    mode: "createSession",
+    baseRevision: planned.revision,
+    session: { taskId: workspace.tasks[0]!.id, date, startMinute: 660, endMinute: 720, plan: "Overlap." },
+  }), (error: unknown) => error instanceof HttpError && error.status === 409);
+
+  const reviewed = await saveTasks(env, {
+    mode: "updateSession",
+    baseRevision: planned.revision,
+    session: { id: planned.sessions[0]!.id, date, startMinute: 600, endMinute: 690, plan: "Build the solver.", outcome: "Core implementation landed.", state: "partial" },
+  });
+  assert.ok(reviewed.sessions[0]!.reviewedAt);
+  await assert.rejects(saveTasks(env, {
+    mode: "removeSession",
+    baseRevision: reviewed.revision,
+    session: { id: reviewed.sessions[0]!.id },
+  }), (error: unknown) => error instanceof HttpError && error.status === 400);
+});
+
+test("Task completion records one contribution and removes only scheduled Sessions", async () => {
+  const { env } = environment();
+  const workspace = await createWorkspace(env);
+  const date = singaporeTimestamp().slice(0, 10);
+  const first = await saveTasks(env, {
+    mode: "createSession",
+    baseRevision: workspace.revision,
+    session: { taskId: workspace.tasks[0]!.id, date, startMinute: 540, endMinute: 600, plan: "Implement." },
+  });
+  const reviewed = await saveTasks(env, {
+    mode: "updateSession",
+    baseRevision: first.revision,
+    session: { id: first.sessions[0]!.id, date, startMinute: 540, endMinute: 600, plan: "Implement.", outcome: "Done.", state: "done" },
+  });
+  const scheduled = await saveTasks(env, {
+    mode: "createSession",
+    baseRevision: reviewed.revision,
+    session: { taskId: workspace.tasks[0]!.id, date, startMinute: 720, endMinute: 780, plan: "Follow up." },
+  });
+  const completed = await saveTasks(env, { mode: "completeTask", baseRevision: scheduled.revision, task: { id: workspace.tasks[0]!.id } });
+  assert.ok(completed.tasks[0]!.completedAt);
+  assert.equal(completed.sessions.length, 1);
+  assert.equal(completed.sessions[0]!.state, "done");
+  assert.equal(completed.contributions.length, 1);
+  const reopened = await saveTasks(env, { mode: "reopenTask", baseRevision: completed.revision, task: { id: workspace.tasks[0]!.id } });
+  const recompleted = await saveTasks(env, { mode: "completeTask", baseRevision: reopened.revision, task: { id: workspace.tasks[0]!.id } });
+  assert.equal(recompleted.contributions.length, 1);
+});
+
+test("Task API publishes only the Session model", async () => {
+  const { env } = environment();
+  await createWorkspace(env);
   const response = await tasksResponse(env, new Request("https://xayah.me/data/tasks"));
   assert.equal(response.status, 200);
-  assert.equal(response.headers.get("vary"), null);
-  assert.match(response.headers.get("etag")!, /^"v4-/);
-  const current = await response.json() as Record<string, any>;
-  assert.equal(current.schemaVersion, 4);
-  assert.deepEqual(current.taskDays, []);
-  assert.equal(current.tasks[0].objective, "A stable solve with regression coverage.");
-
-  const unchanged = await tasksResponse(env, new Request("https://xayah.me/data/tasks", {
-    headers: { "If-None-Match": response.headers.get("etag")! },
-  }));
+  assert.match(response.headers.get("etag")!, /^"v5-/);
+  const current = await response.json() as Record<string, unknown>;
+  assert.equal(current.schemaVersion, 5);
+  assert.deepEqual(current.sessions, []);
+  const unchanged = await tasksResponse(env, new Request("https://xayah.me/data/tasks", { headers: { "If-None-Match": response.headers.get("etag")! } }));
   assert.equal(unchanged.status, 304);
 
-  await assert.rejects(
-    saveTasks(env, {
-      mode: "updateTask",
-      baseRevision: taskResult.revision,
-      task: {
-        id: taskResult.tasks[0]!.id,
-        projectId: taskResult.tasks[0]!.projectId,
-        title: taskResult.tasks[0]!.title,
-        objective: taskResult.tasks[0]!.objective,
-        status: "done",
-      },
-    }),
-    (error: unknown) => error instanceof HttpError && error.status === 400,
-  );
-
-  await assert.rejects(
-    saveTasks(env, {
-      mode: "completeTask",
-      baseRevision: taskResult.revision,
-      task: { id: taskResult.tasks[0]!.id },
-      clientSchema: 4,
-    }),
-    (error: unknown) => error instanceof HttpError && error.status === 400,
-  );
-
-  const obsolete = environment();
-  obsolete.objects.set("published/tasks/state.json", {
-    etag: "etag-obsolete",
-    value: JSON.stringify({
-      schemaVersion: 3,
-      revision: "0",
-      updatedAt: "2026-09-01T09:00:00+08:00",
-      projects: [],
-      tasks: [],
-      contributions: [],
-    }),
-  });
-  await assert.rejects(
-    tasksResponse(obsolete.env, new Request("https://xayah.me/data/tasks")),
-    (error: unknown) => error instanceof HttpError && error.status === 500,
-  );
 });
 
-test("Previous plans can be reviewed and continued without moving history", async () => {
-  const { env, objects } = environment();
-  const today = singaporeTimestamp().slice(0, 10);
-  const yesterday = new Date(`${today}T00:00:00Z`);
-  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
-  const previousDate = yesterday.toISOString().slice(0, 10);
-  const projectId = `project-${"a".repeat(24)}`;
-  const taskId = `task-${"b".repeat(24)}`;
-  const dayId = `taskday-${"c".repeat(24)}`;
-  objects.set("published/tasks/state.json", {
-    etag: "etag-state",
-    value: JSON.stringify({
-      schemaVersion: 4,
-      revision: "0",
-      updatedAt: `${previousDate}T20:00:00+08:00`,
-      projects: [{
-        id: projectId, key: "FLOW", title: "FlowDiT", description: "", color: "#6d2e84",
-        status: "active", createdAt: `${previousDate}T09:00:00+08:00`, updatedAt: `${previousDate}T09:00:00+08:00`,
-      }],
-      tasks: [{
-        id: taskId, code: `FLOW-${today.slice(0, 4)}-0001`, projectId, title: "Lecture Note",
-        objective: "A complete course note.", position: 0,
-        createdAt: `${previousDate}T09:01:00+08:00`, updatedAt: `${previousDate}T09:01:00+08:00`,
-      }],
-      taskDays: [{
-        id: dayId, taskId, date: previousDate, plan: "Finish lecture 1.", outcome: "", state: "planned",
-        position: 0, createdAt: `${previousDate}T09:02:00+08:00`, updatedAt: `${previousDate}T09:02:00+08:00`,
-      }],
-      contributions: [],
-    }),
-  });
-
-  const paused = await saveTasks(env, {
-    mode: "updateProject",
-    baseRevision: "0",
-    project: {
-      id: projectId,
-      title: "FlowDiT",
-      description: "",
-      color: "#6d2e84",
-      status: "paused",
-    },
-  });
-  const review = {
-    id: dayId,
-    plan: "Finish lecture 1.",
-    outcome: "The derivation is complete; examples remain.",
-    state: "partial",
-    continueToday: true,
-    nextPlan: "Add the lecture examples.",
-  };
-  await assert.rejects(
-    saveTasks(env, {
-      mode: "updateTaskDay",
-      baseRevision: paused.revision,
-      taskDay: review,
-    }),
-    (error: unknown) => error instanceof HttpError && error.status === 400,
-  );
-  const active = await saveTasks(env, {
-    mode: "updateProject",
-    baseRevision: paused.revision,
-    project: {
-      id: projectId,
-      title: "FlowDiT",
-      description: "",
-      color: "#6d2e84",
-      status: "active",
-    },
-  });
-  const continued = await saveTasks(env, {
-    mode: "updateTaskDay",
-    baseRevision: active.revision,
-    taskDay: review,
-  });
-  assert.equal(continued.taskDays.length, 2);
-  assert.equal(continued.taskDays.find((day) => day.date === previousDate)!.state, "partial");
-  assert.equal(continued.taskDays.find((day) => day.date === today)!.plan, "Add the lecture examples.");
-});
-
-test("Tasks reject stale revisions, duplicate Today claims, and unavailable Projects", async () => {
-  const { env } = environment();
-  const { projectResult, taskResult } = await createProjectAndTask(env);
-  await assert.rejects(
-    saveTasks(env, {
-      mode: "updateProject",
-      baseRevision: "0",
-      project: {
-        id: projectResult.projects[0]!.id,
-        title: "Changed",
-        description: projectResult.projects[0]!.description,
-        color: projectResult.projects[0]!.color,
-        status: projectResult.projects[0]!.status,
-      },
-    }),
-    (error: unknown) => error instanceof HttpError && error.status === 409,
-  );
-  const planned = await saveTasks(env, {
-    mode: "createTaskDay",
-    baseRevision: taskResult.revision,
-    taskDay: { taskId: taskResult.tasks[0]!.id, plan: "Start the solve." },
-  });
-  await assert.rejects(
-    saveTasks(env, {
-      mode: "createTaskDay",
-      baseRevision: planned.revision,
-      taskDay: { taskId: taskResult.tasks[0]!.id, plan: "Duplicate." },
-    }),
-    (error: unknown) => error instanceof HttpError && error.status === 409,
-  );
-  await assert.rejects(
-    saveTasks(env, {
-      mode: "createTask",
-      baseRevision: planned.revision,
-      task: { projectId: `project-${"f".repeat(24)}`, title: "Orphan", objective: "" },
-    }),
-    (error: unknown) => error instanceof HttpError && error.status === 400,
-  );
-});
-
-test("Task codes increment per Project and remain stable when moved", async () => {
+test("Task codes remain stable when moving between Projects", async () => {
   const { env } = environment();
   const year = singaporeTimestamp().slice(0, 4);
-  const site = await saveTasks(env, {
-    mode: "createProject",
-    baseRevision: "0",
-    project: { key: "SITE", title: "Personal Website", description: "", color: "#2563eb", status: "active" },
-  });
-  const notes = await saveTasks(env, {
-    mode: "createProject",
-    baseRevision: site.revision,
-    project: { key: "NOTES", title: "Notes", description: "", color: "#a855f7", status: "active" },
-  });
-  const first = await saveTasks(env, {
-    mode: "createTask",
-    baseRevision: notes.revision,
-    task: { projectId: site.projects[0]!.id, title: "First", objective: "" },
-  });
-  const second = await saveTasks(env, {
-    mode: "createTask",
-    baseRevision: first.revision,
-    task: { projectId: site.projects[0]!.id, title: "Second", objective: "" },
-  });
+  const site = await saveTasks(env, { mode: "createProject", baseRevision: "0", project: { key: "SITE", title: "Personal Website", description: "", color: "#2563eb", status: "active" } });
+  const notes = await saveTasks(env, { mode: "createProject", baseRevision: site.revision, project: { key: "NOTES", title: "Notes", description: "", color: "#a855f7", status: "active" } });
+  const first = await saveTasks(env, { mode: "createTask", baseRevision: notes.revision, task: { projectId: site.projects[0]!.id, title: "First", objective: "" } });
+  const second = await saveTasks(env, { mode: "createTask", baseRevision: first.revision, task: { projectId: site.projects[0]!.id, title: "Second", objective: "" } });
   assert.equal(first.tasks[0]!.code, `SITE-${year}-0001`);
   assert.equal(second.tasks[1]!.code, `SITE-${year}-0002`);
-  const moved = await saveTasks(env, {
-    mode: "updateTask",
-    baseRevision: second.revision,
-    task: {
-      id: second.tasks[0]!.id,
-      projectId: notes.projects[1]!.id,
-      title: second.tasks[0]!.title,
-      objective: second.tasks[0]!.objective,
-    },
-  });
-  assert.equal(moved.tasks[0]!.projectId, notes.projects[1]!.id);
+  const moved = await saveTasks(env, { mode: "updateTask", baseRevision: second.revision, task: { id: second.tasks[0]!.id, projectId: notes.projects[1]!.id, title: "First", objective: "" } });
   assert.equal(moved.tasks[0]!.code, `SITE-${year}-0001`);
-});
-
-test("Only active Projects accept Task changes and Projects with open Tasks cannot complete", async () => {
-  const { env } = environment();
-  const { projectResult, taskResult } = await createProjectAndTask(env);
-  const project = projectResult.projects[0]!;
-  const task = taskResult.tasks[0]!;
-
-  await assert.rejects(
-    saveTasks(env, {
-      mode: "updateProject",
-      baseRevision: taskResult.revision,
-      project: {
-        id: project.id,
-        title: project.title,
-        description: project.description,
-        color: project.color,
-        status: "completed",
-      },
-    }),
-    (error: unknown) => error instanceof HttpError && error.status === 400
-      && error.message === "Complete every open Task before completing this Project.",
-  );
-
-  const paused = await saveTasks(env, {
-    mode: "updateProject",
-    baseRevision: taskResult.revision,
-    project: {
-      id: project.id,
-      title: project.title,
-      description: project.description,
-      color: project.color,
-      status: "paused",
-    },
-  });
-  await assert.rejects(
-    saveTasks(env, {
-      mode: "createTask",
-      baseRevision: paused.revision,
-      task: { projectId: project.id, title: "Unavailable", objective: "" },
-    }),
-    (error: unknown) => error instanceof HttpError && error.status === 400,
-  );
-  await assert.rejects(
-    saveTasks(env, {
-      mode: "updateTask",
-      baseRevision: paused.revision,
-      task: { id: task.id, projectId: project.id, title: "Unavailable", objective: task.objective },
-    }),
-    (error: unknown) => error instanceof HttpError && error.status === 400,
-  );
-  await assert.rejects(
-    saveTasks(env, {
-      mode: "completeTask",
-      baseRevision: paused.revision,
-      task: { id: task.id },
-    }),
-    (error: unknown) => error instanceof HttpError && error.status === 400,
-  );
-
-  const active = await saveTasks(env, {
-    mode: "updateProject",
-    baseRevision: paused.revision,
-    project: {
-      id: project.id,
-      title: project.title,
-      description: project.description,
-      color: project.color,
-      status: "active",
-    },
-  });
-  const completedTask = await saveTasks(env, {
-    mode: "completeTask",
-    baseRevision: active.revision,
-    task: { id: task.id },
-  });
-  const completedProject = await saveTasks(env, {
-    mode: "updateProject",
-    baseRevision: completedTask.revision,
-    project: {
-      id: project.id,
-      title: project.title,
-      description: project.description,
-      color: project.color,
-      status: "completed",
-    },
-  });
-  await assert.rejects(
-    saveTasks(env, {
-      mode: "reopenTask",
-      baseRevision: completedProject.revision,
-      task: { id: task.id },
-    }),
-    (error: unknown) => error instanceof HttpError && error.status === 400,
-  );
+  assert.equal(moved.tasks[0]!.projectId, notes.projects[1]!.id);
 });

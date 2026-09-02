@@ -3,6 +3,9 @@ export interface Env {
   GITHUB_TOKEN?: string;
   ACCESS_TEAM_DOMAIN?: string;
   ACCESS_AUD?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  GOOGLE_TOKEN_KEY?: string;
   GITHUB_OWNER: string;
   GITHUB_REPO: string;
   GITHUB_BRANCH: string;
@@ -95,14 +98,15 @@ export interface TaskItem {
   archivedAt?: string;
 }
 
-export interface TaskDay {
+export interface TaskSession {
   id: string;
   taskId: string;
   date: string;
+  startMinute: number;
+  endMinute: number;
   plan: string;
   outcome: string;
-  state: "planned" | "completed" | "partial" | "no_progress";
-  position: number;
+  state: "scheduled" | "done" | "partial" | "no_progress";
   createdAt: string;
   updatedAt: string;
   reviewedAt?: string;
@@ -120,13 +124,36 @@ export interface TaskContribution {
 }
 
 export interface TaskState {
-  schemaVersion: 4;
+  schemaVersion: 5;
   revision: string;
   updatedAt: string;
   projects: TaskProject[];
   tasks: TaskItem[];
-  taskDays: TaskDay[];
+  sessions: TaskSession[];
   contributions: TaskContribution[];
+}
+
+export interface GoogleCalendarEventLink {
+  googleUpdatedAt: string;
+  taskUpdatedAt: string;
+}
+
+export interface GoogleCalendarConnection {
+  schemaVersion: 1;
+  calendarId: string;
+  refreshTokenCiphertext: string;
+  refreshTokenIv: string;
+  syncToken?: string;
+  links: Record<string, GoogleCalendarEventLink>;
+  connectedAt: string;
+  lastSyncedAt?: string;
+  lastError?: string;
+}
+
+export interface GoogleOAuthState {
+  schemaVersion: 1;
+  value: string;
+  expiresAt: string;
 }
 
 export interface FileChange {

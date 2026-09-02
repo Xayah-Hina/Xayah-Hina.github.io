@@ -7,6 +7,13 @@ import {
   journalYears,
   saveJournal,
 } from "./journal";
+import {
+  beginGoogleCalendarConnection,
+  disconnectGoogleCalendar,
+  finishGoogleCalendarConnection,
+  googleCalendarStatus,
+  syncGoogleCalendar,
+} from "./google-calendar";
 import { saveTasks, tasksResponse } from "./tasks";
 import type { Env } from "./types";
 import { HttpError, jsonResponse, readJsonObject } from "./utils";
@@ -105,10 +112,13 @@ export function sessionResponse(url: URL): Response {
   return jsonResponse({ authenticated: true, canEdit: true });
 }
 
-async function authoringApi(request: Request, env: Env, url: URL, scope: ApiScope): Promise<Response> {
+async function authoringApi(request: Request, env: Env, url: URL, scope: ApiScope, context: ExecutionContext): Promise<Response> {
   if (!endpointAllowed(scope, url.pathname)) throw new HttpError(404, "Unknown authoring endpoint.");
   if (request.method === "GET" && url.pathname === "/api/session") return sessionResponse(url);
   if (request.method === "GET" && url.pathname === "/api/authoring/status") return authoringStatus(env, scope);
+  if (request.method === "GET" && url.pathname === "/api/tasks/google/status") return jsonResponse(await googleCalendarStatus(env));
+  if (request.method === "GET" && url.pathname === "/api/tasks/google/connect") return beginGoogleCalendarConnection(env);
+  if (request.method === "GET" && url.pathname === "/api/tasks/google/callback") return finishGoogleCalendarConnection(env, url);
   if (request.method === "GET" && url.pathname === "/api/writing/catalog") {
     return jsonResponse(await authoringWritingCatalogData(env));
   }
@@ -132,10 +142,16 @@ async function authoringApi(request: Request, env: Env, url: URL, scope: ApiScop
     return jsonResponse(await uploadWritingAsset(env, request));
   }
   const payload = await readJsonObject(request);
+  if (url.pathname === "/api/tasks/google/sync") return jsonResponse(await syncGoogleCalendar(env));
+  if (url.pathname === "/api/tasks/google/disconnect") return jsonResponse(await disconnectGoogleCalendar(env));
   const actions: Record<string, (env: Env, payload: Record<string, unknown>) => Promise<unknown>> = {
     "/api/journal/save": saveJournal,
     "/api/journal/delete": deleteJournal,
-    "/api/tasks/save": saveTasks,
+    "/api/tasks/save": async (targetEnv, value) => {
+      const result = await saveTasks(targetEnv, value);
+      context.waitUntil(syncGoogleCalendar(targetEnv).catch((error) => console.warn("Task save succeeded; Google Calendar sync was deferred.", error)));
+      return result;
+    },
     "/api/writing/open": openWriting,
     "/api/writing/create": createWriting,
     "/api/writing/save": saveWriting,
@@ -151,9 +167,9 @@ async function authoringApi(request: Request, env: Env, url: URL, scope: ApiScop
   return jsonResponse(await action(env, payload));
 }
 
-async function handlePublicApi(request: Request, env: Env, url: URL, scope: ApiScope): Promise<Response> {
+async function handlePublicApi(request: Request, env: Env, url: URL, scope: ApiScope, context: ExecutionContext): Promise<Response> {
   await verifyAccess(request, env);
-  return authoringApi(request, env, url, scope);
+  return authoringApi(request, env, url, scope, context);
 }
 
 async function publicMedia(request: Request, env: Env, url: URL): Promise<Response> {
@@ -176,7 +192,7 @@ async function publicMedia(request: Request, env: Env, url: URL): Promise<Respon
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, context: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (url.protocol === "http:") {
       url.protocol = "https:";
@@ -188,10 +204,10 @@ export default {
         return secureResponse(await tasksResponse(env, request));
       }
       if (url.hostname === new URL(env.PUBLIC_SITE_ORIGIN).hostname && url.pathname.startsWith("/api/")) {
-        return secureResponse(await handlePublicApi(request, env, url, "main"));
+        return secureResponse(await handlePublicApi(request, env, url, "main", context));
       }
       if (url.hostname === new URL(env.DICTIONARY_ORIGIN).hostname && url.pathname.startsWith("/api/")) {
-        return secureResponse(await handlePublicApi(request, env, url, "dictionary"));
+        return secureResponse(await handlePublicApi(request, env, url, "dictionary", context));
       }
       throw new HttpError(404, "Unknown hostname.");
     } catch (error) {
@@ -204,5 +220,8 @@ export default {
       if (jsonPath) return secureResponse(jsonResponse({ error: "The authoring backend encountered an unexpected error." }, 500));
       return secureResponse(new Response("The authoring backend encountered an unexpected error.", { status: 500 }));
     }
+  },
+  async scheduled(_controller: ScheduledController, env: Env, context: ExecutionContext): Promise<void> {
+    context.waitUntil(syncGoogleCalendar(env).catch((error) => console.warn("Scheduled Google Calendar sync failed.", error)));
   },
 } satisfies ExportedHandler<Env>;

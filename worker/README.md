@@ -8,7 +8,7 @@ This Worker serves the authenticated same-origin authoring APIs used by
 
 - `Xayah-Hina.github.io` on GitHub `master`: published Journal and Front matter Markdown Writing sources.
 - `dictionary` on GitHub `master`: the standalone Dictionary source and published Personal Knowledge.
-- Private R2 bucket: unpublished Writing and Dictionary drafts, private Writing image uploads, and mutable Task state/history.
+- Private R2 bucket: unpublished Writing and Dictionary drafts, private Writing image uploads, and encrypted Google Calendar authorization.
 - Public R2 objects: immutable, content-addressed Journal and Writing media.
 - GitHub Pages: independently builds allowlisted main-site and Dictionary artifacts.
 
@@ -26,6 +26,8 @@ No D1 database is used.
 Set these Worker secrets with `wrangler secret put`:
 
 - `GITHUB_TOKEN`: fine-grained token with Contents read/write and Actions read access to both `Xayah-Hina.github.io` and `dictionary`. It must be able to commit Writing Markdown, publish Dictionary Personal Knowledge, and read Pages workflow status.
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`: Web OAuth client for the enabled Google Calendar API. Its redirect URI is `https://xayah.me/api/tasks/google/callback`.
+- `GOOGLE_TOKEN_KEY`: base64 encoding of exactly 32 random bytes, used to encrypt the Google refresh token stored in R2.
 
 Set these Worker variables in the Cloudflare dashboard:
 
@@ -54,8 +56,10 @@ Unreferenced public Writing images are removed only after the new page revision 
 
 ## Tasks lifecycle
 
-Projects, their child tasks, and immutable completion records are operational state rather than published Journal source. The current document lives at `published/tasks/state.json` in R2, while every successfully written version also gets a recovery snapshot under `private/tasks/history/`. Conditional ETag writes reject stale tabs with HTTP 409.
+Projects, their child Tasks, scheduled Sessions, and immutable completion records are operational state rather than published Journal source. The single schema-5 document lives at `published/tasks/state.json` in R2. Conditional ETag writes reject stale tabs with HTTP 409; no previous Task schema is read or migrated.
 
-`GET /data/tasks` is public. Creating, editing, archiving, and completing Projects or Tasks uses the authenticated `/api/tasks/save` endpoint. Only a Task's first transition to Done creates a contribution. Editing, moving, or reopening a Task does not add activity, and completing it again does not duplicate the contribution. Each contribution snapshots the Task and Project identity, title, color, and completion time so the historical wall does not change when current data is edited. These changes stay in R2 and do not create GitHub commits or trigger Pages deployments.
+`GET /data/tasks` is public. Authenticated changes use `/api/tasks/save`. A Session owns one date, start and end minute, plan, optional outcome, and review state. The same Task may have multiple Sessions on one day, while overlapping blocks are rejected. Completing or archiving a Task removes its unreviewed scheduled Sessions but preserves reviewed work history. Only completing the whole Task creates a contribution; reopening removes it, and completing again produces one canonical contribution rather than a duplicate.
 
-Projects receive an immutable 2–8 character key when created. Tasks receive an immutable human-facing code in the form `PROJECT-YYYY-NNNN`, where the year is the Singapore creation year and the sequence is scoped to that Project and year. The random internal ids remain the relationship keys. Schema version 1 and 2 Task documents are deterministically upgraded to version 3 in memory and are persisted as version 3 on the next mutation.
+Projects receive an immutable 2–8 character key. Tasks receive an immutable code in the form `PROJECT-YYYY-NNNN`, where the year is the Singapore creation year and the sequence belongs to that Project and year.
+
+Google Calendar synchronization creates a dedicated `Xayah Tasks` calendar using only the `calendar.app.created` OAuth scope. Task and Project content, Session review state, and contributions remain site-owned. Google may move or resize a Session; invalid cross-midnight or overlapping edits are restored from the site. Incremental synchronization runs after Task saves, on demand, and every two minutes through the Worker cron. The encrypted connection lives at `private/tasks/google-calendar.json`.

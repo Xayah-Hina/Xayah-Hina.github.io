@@ -1,8 +1,16 @@
-import type { Env, TaskState, WritingDraft } from "./types";
+import type {
+  Env,
+  GoogleCalendarConnection,
+  GoogleOAuthState,
+  TaskState,
+  WritingDraft,
+} from "./types";
 import { HttpError } from "./utils";
 
 const draftKey = (id: string) => `private/writing/drafts/${id}.json`;
 const taskStateKey = "published/tasks/state.json";
+const googleCalendarKey = "private/tasks/google-calendar.json";
+const googleOAuthStateKey = "private/tasks/google-oauth-state.json";
 export const privateWritingAssetKey = (id: string, name: string) => `private/writing/assets/${id}/${name}`;
 export const publishedWritingAssetKey = (id: string, name: string) => `published/writing/${id}/${name}`;
 
@@ -218,18 +226,35 @@ export async function putTaskStateConditional(
     httpMetadata: { contentType: "application/json; charset=utf-8" },
     onlyIf: etag ? { etagMatches: etag } : { etagDoesNotMatch: "*" },
   });
-  if (!result) return false;
-  const timestamp = state.updatedAt.replace(/[^0-9A-Za-z.-]/g, "-");
-  const historyKey = `private/tasks/history/${timestamp}-${state.revision}.json`;
-  try {
-    await env.CONTENT.put(historyKey, value, {
-      httpMetadata: { contentType: "application/json; charset=utf-8" },
-      onlyIf: { etagDoesNotMatch: "*" },
-    });
-  } catch (error) {
-    console.warn("Task state was saved, but its recovery snapshot was deferred", error);
-  }
-  return true;
+  return result !== null;
+}
+
+export async function getGoogleCalendarConnection(env: Env): Promise<GoogleCalendarConnection | null> {
+  return readJson<GoogleCalendarConnection>(env, googleCalendarKey);
+}
+
+export async function putGoogleCalendarConnection(env: Env, value: GoogleCalendarConnection): Promise<void> {
+  await env.CONTENT.put(googleCalendarKey, JSON.stringify(value), {
+    httpMetadata: { contentType: "application/json; charset=utf-8" },
+  });
+}
+
+export async function deleteGoogleCalendarConnection(env: Env): Promise<void> {
+  await env.CONTENT.delete(googleCalendarKey);
+}
+
+export async function getGoogleOAuthState(env: Env): Promise<GoogleOAuthState | null> {
+  return readJson<GoogleOAuthState>(env, googleOAuthStateKey);
+}
+
+export async function putGoogleOAuthState(env: Env, value: GoogleOAuthState): Promise<void> {
+  await env.CONTENT.put(googleOAuthStateKey, JSON.stringify(value), {
+    httpMetadata: { contentType: "application/json; charset=utf-8" },
+  });
+}
+
+export async function deleteGoogleOAuthState(env: Env): Promise<void> {
+  await env.CONTENT.delete(googleOAuthStateKey);
 }
 
 async function deletePrefix(env: Env, prefix: string): Promise<void> {

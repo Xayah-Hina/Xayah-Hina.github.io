@@ -9,6 +9,7 @@ test("public API scopes expose only their own authoring endpoints", () => {
   assert.equal(endpointAllowed("main", "/api/writing/open"), true);
   assert.equal(endpointAllowed("main", "/api/journal/save"), true);
   assert.equal(endpointAllowed("main", "/api/tasks/save"), true);
+  assert.equal(endpointAllowed("main", "/api/tasks/google/connect"), true);
   assert.equal(endpointAllowed("main", "/api/dictionary/open"), false);
 
   assert.equal(endpointAllowed("dictionary", "/api/session"), true);
