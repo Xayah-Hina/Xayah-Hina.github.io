@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260902-204903-fd72",
+    "publishedAt": "2026-09-02T20:49:03+08:00",
+    "content": "每一天都是新的挑战！",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260902-034114-cc50",
     "publishedAt": "2026-09-02T03:41:14+08:00",
     "content": "阶段方向 https://chatgpt.com/s/t_6a972a081b148191943a1525d530f1ca",
