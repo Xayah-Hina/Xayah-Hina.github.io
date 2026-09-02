@@ -85,14 +85,14 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.match(tasksJs, /task-contribution-tooltip/);
   assert.doesNotMatch(tasksJs, /Daily activity|Keep the big picture visible|Every update counts|Direction above/);
   assert.match(tasksJs, /data\/tasks/);
-  assert.match(tasksJs, /schemaVersion:5/);
+  assert.match(tasksJs, /schemaVersion:6/);
   assert.match(tasksJs, /Add Session/);
   assert.match(tasksJs, /Google Calendar/);
   assert.match(tasksJs, /Done/);
   assert.match(tasksJs, /Objective/);
   assert.match(tasksJs, /Session history/);
-  assert.match(tasksJs, /startMinute/);
-  assert.match(tasksJs, /endMinute/);
+  assert.match(tasksJs, /startsAt/);
+  assert.match(tasksJs, /endsAt/);
   assert.doesNotMatch(tasksJs, /Add from Tasks|Find a Task|Search code, Task, or Project|Today ✓|Days worked|Goals completed|quick-complete/);
   assert.doesNotMatch(tasksCss, /task-picker-selected|task-today-button/);
   assert.doesNotMatch(tasksJs, />Priority<|>In progress|clientSchema|scheduledDate|in_progress|application\/vnd\.xayah\.tasks/);

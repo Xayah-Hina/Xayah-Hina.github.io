@@ -10,7 +10,6 @@ import type {
 } from "./types";
 import { asRecord, HttpError, randomHex, requiredString, singaporeTimestamp } from "./utils";
 
-const DATE = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
 const PROJECT_ID = /^project-[a-f0-9]{24}$/;
 const TASK_ID = /^task-[a-f0-9]{24}$/;
 const SESSION_ID = /^session-[a-f0-9]{24}$/;
@@ -32,6 +31,8 @@ const SESSION_STATES = new Set<TaskSession["state"]>(["scheduled", "done", "part
 const MAX_PROJECTS = 100;
 const MAX_TASKS = 2000;
 const MAX_SESSIONS = 20_000;
+const MIN_SESSION_MS = 15 * 60 * 1000;
+const MAX_SESSION_MS = 24 * 60 * 60 * 1000;
 
 type TaskMode =
   | "createProject"
@@ -57,7 +58,7 @@ export interface PublicTaskData extends TaskState {
 
 export function emptyTaskState(): TaskState {
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     revision: "0",
     updatedAt: "1970-01-01T00:00:00.000Z",
     projects: [],
@@ -69,15 +70,6 @@ export function emptyTaskState(): TaskState {
 
 export function todayInSingapore(date = new Date()): string {
   return singaporeTimestamp(date).slice(0, 10);
-}
-
-function parseDate(value: unknown, label: string): string {
-  if (typeof value !== "string" || !DATE.test(value)) throw new HttpError(400, `${label} is invalid.`);
-  const date = new Date(`${value}T00:00:00Z`);
-  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
-    throw new HttpError(400, `${label} is invalid.`);
-  }
-  return value;
 }
 
 function storedTimestamp(value: unknown, label: string): string {
@@ -94,12 +86,21 @@ function storedPosition(value: unknown, label: string): number {
   return Number(value);
 }
 
-function sessionMinute(value: unknown, label: string, allowEnd = false): number {
-  const maximum = allowEnd ? 1440 : 1439;
-  if (!Number.isInteger(value) || Number(value) < 0 || Number(value) > maximum) {
-    throw new HttpError(400, `${label} is invalid.`);
+function sessionTimestamp(value: unknown, label: string, stored = false): string {
+  if (typeof value !== "string" || value.length > 40 || Number.isNaN(Date.parse(value))) {
+    throw new HttpError(stored ? 500 : 400, `${label} is invalid.`);
   }
-  return Number(value);
+  return new Date(value).toISOString();
+}
+
+function sessionRange(startsAtValue: unknown, endsAtValue: unknown, stored = false): Pick<TaskSession, "startsAt" | "endsAt"> {
+  const startsAt = sessionTimestamp(startsAtValue, stored ? "Stored Session start" : "Session start", stored);
+  const endsAt = sessionTimestamp(endsAtValue, stored ? "Stored Session end" : "Session end", stored);
+  const duration = Date.parse(endsAt) - Date.parse(startsAt);
+  if (duration < MIN_SESSION_MS || duration > MAX_SESSION_MS) {
+    throw new HttpError(stored ? 500 : 400, "Session duration must be between 15 minutes and 24 hours.");
+  }
+  return { startsAt, endsAt };
 }
 
 function singaporeYear(value: string): string {
@@ -203,20 +204,16 @@ function storedTask(value: unknown): TaskItem {
 
 function storedSession(value: unknown): TaskSession {
   const record = asRecord(value, "Stored Task data contains an invalid Session.");
-  assertOnlyKeys(record, ["id", "taskId", "date", "startMinute", "endMinute", "plan", "outcome", "state", "createdAt", "updatedAt", "reviewedAt"], "Stored Task data contains an invalid Session.");
+  assertOnlyKeys(record, ["id", "taskId", "startsAt", "endsAt", "plan", "outcome", "state", "createdAt", "updatedAt", "reviewedAt"], "Stored Task data contains an invalid Session.");
   if (!SESSION_ID.test(String(record.id || "")) || !TASK_ID.test(String(record.taskId || ""))
     || !SESSION_STATES.has(String(record.state || "") as TaskSession["state"])) {
     throw new HttpError(500, "Stored Task data contains an invalid Session.");
   }
-  const startMinute = sessionMinute(record.startMinute, "Stored Session start");
-  const endMinute = sessionMinute(record.endMinute, "Stored Session end", true);
-  if (endMinute <= startMinute) throw new HttpError(500, "Stored Task data contains an invalid Session range.");
+  const range = sessionRange(record.startsAt, record.endsAt, true);
   const session: TaskSession = {
     id: String(record.id),
     taskId: String(record.taskId),
-    date: parseDate(record.date, "Stored Session date"),
-    startMinute,
-    endMinute,
+    ...range,
     plan: requiredString(record.plan, "Stored Session plan", 600),
     outcome: requiredString(record.outcome ?? "", "Stored Session outcome", 2000, true),
     state: record.state as TaskSession["state"],
@@ -250,7 +247,7 @@ function storedContribution(value: unknown): TaskContribution {
 export function parseTaskState(value: unknown): TaskState {
   const record = asRecord(value, "Stored Task data is invalid.");
   assertOnlyKeys(record, ["schemaVersion", "revision", "updatedAt", "projects", "tasks", "sessions", "contributions"], "Stored Task data is invalid.");
-  if (record.schemaVersion !== 5 || !REVISION.test(String(record.revision || ""))
+  if (record.schemaVersion !== 6 || !REVISION.test(String(record.revision || ""))
     || !Array.isArray(record.projects) || record.projects.length > MAX_PROJECTS
     || !Array.isArray(record.tasks) || record.tasks.length > MAX_TASKS
     || !Array.isArray(record.sessions) || record.sessions.length > MAX_SESSIONS
@@ -275,7 +272,7 @@ export function parseTaskState(value: unknown): TaskState {
     throw new HttpError(500, "Stored Task relationships are invalid.");
   }
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     revision: String(record.revision),
     updatedAt: storedTimestamp(record.updatedAt, "Stored Task update time"),
     projects,
@@ -298,9 +295,11 @@ export async function saveSyncedTaskState(env: Env, state: TaskState, etag: stri
   return putTaskStateConditional(env, state, etag);
 }
 
-export function sessionsOverlap(candidate: Pick<TaskSession, "id" | "date" | "startMinute" | "endMinute">, sessions: TaskSession[]): boolean {
-  return sessions.some((session) => session.id !== candidate.id && session.date === candidate.date
-    && candidate.startMinute < session.endMinute && candidate.endMinute > session.startMinute);
+export function sessionsOverlap(candidate: Pick<TaskSession, "id" | "startsAt" | "endsAt">, sessions: TaskSession[]): boolean {
+  const start = Date.parse(candidate.startsAt);
+  const end = Date.parse(candidate.endsAt);
+  return sessions.some((session) => session.id !== candidate.id
+    && start < Date.parse(session.endsAt) && end > Date.parse(session.startsAt));
 }
 
 function nextPosition(tasks: TaskItem[], projectId: string): number {
@@ -461,44 +460,38 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
   } else if (mode === "createSession") {
     if (sessions.length >= MAX_SESSIONS) throw new HttpError(400, "The Session limit has been reached.");
     const value = sessionInput(payload.session);
-    assertOnlyKeys(value, ["taskId", "date", "startMinute", "endMinute", "plan"], "Session data is invalid.");
+    assertOnlyKeys(value, ["taskId", "startsAt", "endsAt", "plan"], "Session data is invalid.");
     activeTask(String(value.taskId || ""), tasks, projects);
+    const range = sessionRange(value.startsAt, value.endsAt);
     const candidate: TaskSession = {
       id: `session-${randomHex(12)}`,
       taskId: String(value.taskId),
-      date: parseDate(value.date, "Session date"),
-      startMinute: sessionMinute(value.startMinute, "Session start"),
-      endMinute: sessionMinute(value.endMinute, "Session end", true),
+      ...range,
       plan: requiredString(value.plan, "Session plan", 600),
       outcome: "",
       state: "scheduled",
       createdAt: timestamp,
       updatedAt: timestamp,
     };
-    if (candidate.endMinute <= candidate.startMinute) throw new HttpError(400, "Session end must be after its start.");
     if (sessionsOverlap(candidate, sessions)) throw new HttpError(409, "This Session overlaps another calendar block.");
     sessions.push(candidate);
     status = "created";
   } else if (mode === "updateSession") {
     const value = sessionInput(payload.session);
-    assertOnlyKeys(value, ["id", "date", "startMinute", "endMinute", "plan", "outcome", "state"], "Session data is invalid.");
+    assertOnlyKeys(value, ["id", "startsAt", "endsAt", "plan", "outcome", "state"], "Session data is invalid.");
     const session = sessions.find((candidate) => candidate.id === String(value.id || ""));
     if (!session) throw new HttpError(404, "Session was not found.");
     const state = String(value.state || "") as TaskSession["state"];
     if (!SESSION_STATES.has(state)) throw new HttpError(400, "Session state is invalid.");
     const candidate = {
       id: session.id,
-      date: parseDate(value.date, "Session date"),
-      startMinute: sessionMinute(value.startMinute, "Session start"),
-      endMinute: sessionMinute(value.endMinute, "Session end", true),
+      ...sessionRange(value.startsAt, value.endsAt),
     };
-    if (candidate.endMinute <= candidate.startMinute) throw new HttpError(400, "Session end must be after its start.");
     if (sessionsOverlap(candidate, sessions)) throw new HttpError(409, "This Session overlaps another calendar block.");
     const outcome = requiredString(value.outcome ?? "", "Session outcome", 2000, true);
     if ((state === "partial" || state === "no_progress") && !outcome) throw new HttpError(400, "This review needs a short outcome.");
-    session.date = candidate.date;
-    session.startMinute = candidate.startMinute;
-    session.endMinute = candidate.endMinute;
+    session.startsAt = candidate.startsAt;
+    session.endsAt = candidate.endsAt;
     session.plan = requiredString(value.plan, "Session plan", 600);
     session.outcome = outcome;
     session.state = state;
@@ -515,12 +508,12 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
   }
 
   const next: TaskState = {
-    schemaVersion: 5,
+    schemaVersion: 6,
     revision: randomHex(16),
     updatedAt: timestamp,
     projects,
     tasks,
-    sessions: sessions.sort((left, right) => left.date.localeCompare(right.date) || left.startMinute - right.startMinute || left.id.localeCompare(right.id)),
+    sessions: sessions.sort((left, right) => left.startsAt.localeCompare(right.startsAt) || left.id.localeCompare(right.id)),
     contributions: contributions.sort((left, right) => left.completedAt.localeCompare(right.completedAt) || left.taskId.localeCompare(right.taskId)),
   };
   if (!await putTaskStateConditional(env, next, current.etag)) throw new HttpError(409, "Tasks changed while saving. Reload and try again.");
@@ -545,7 +538,7 @@ export async function relatedTaskSnapshot(env: Env, id: string): Promise<Journal
 export async function tasksResponse(env: Env, request: Request): Promise<Response> {
   if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "Published Tasks are read-only.");
   const data = publicTaskData((await loadTaskStateVersioned(env)).state);
-  const etag = `"v5-${data.revision}-${data.today}"`;
+  const etag = `"v6-${data.revision}-${data.today}"`;
   const requestEtags = (request.headers.get("if-none-match") || "").split(",").map((value) => value.trim().replace(/^W\//, ""));
   const headers = { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "public, max-age=0, must-revalidate", ETag: etag };
   if (requestEtags.includes(etag)) return new Response(null, { status: 304, headers });

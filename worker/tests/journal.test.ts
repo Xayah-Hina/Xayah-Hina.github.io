@@ -23,7 +23,7 @@ const entry = {
 
 function storedTaskState(taskTitle = "Canonical Task title") {
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     revision: "0",
     updatedAt: "2026-08-08T10:00:00+08:00",
     projects: [{

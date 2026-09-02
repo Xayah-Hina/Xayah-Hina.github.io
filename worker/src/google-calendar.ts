@@ -196,60 +196,30 @@ export async function finishGoogleCalendarConnection(env: Env, url: URL): Promis
   return Response.redirect(taskPageUrl(env, "connected"), 302);
 }
 
-function addDay(date: string): string {
-  const value = new Date(`${date}T00:00:00Z`);
-  value.setUTCDate(value.getUTCDate() + 1);
-  return value.toISOString().slice(0, 10);
-}
-
-function dateTime(date: string, minute: number): string {
-  if (minute === 1440) return `${addDay(date)}T00:00:00+08:00`;
-  const hour = Math.floor(minute / 60);
-  const minutes = minute % 60;
-  return `${date}T${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00+08:00`;
-}
-
-function eventId(sessionId: string): string {
-  return `xayah${sessionId.replace("session-", "")}`;
+export function googleEventId(sessionId: string): string {
+  return `task${sessionId.replace("session-", "")}`;
 }
 
 function eventBody(session: TaskSession, task: TaskItem, project: TaskProject): Record<string, unknown> {
   const description = [session.plan, session.outcome ? `Outcome: ${session.outcome}` : "", `Project: ${project.key} · ${project.title}`, "Managed by xayah.me Tasks."].filter(Boolean).join("\n\n");
   return {
-    id: eventId(session.id),
+    id: googleEventId(session.id),
     summary: `${task.code} · ${task.title}`,
     description,
-    start: { dateTime: dateTime(session.date, session.startMinute), timeZone: TIME_ZONE },
-    end: { dateTime: dateTime(session.date, session.endMinute), timeZone: TIME_ZONE },
+    start: { dateTime: session.startsAt, timeZone: TIME_ZONE },
+    end: { dateTime: session.endsAt, timeZone: TIME_ZONE },
     transparency: "opaque",
     extendedProperties: { private: { xayahManaged: "true", xayahSessionId: session.id, xayahTaskId: task.id } },
   };
 }
 
-function localParts(value: string): { date: string; minute: number } | null {
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return null;
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(parsed);
-  const part = (type: string) => parts.find((candidate) => candidate.type === type)?.value || "";
-  return { date: `${part("year")}-${part("month")}-${part("day")}`, minute: Number(part("hour")) * 60 + Number(part("minute")) };
-}
-
-function eventRange(event: GoogleEvent): Pick<TaskSession, "date" | "startMinute" | "endMinute"> | null {
+function eventRange(event: GoogleEvent): Pick<TaskSession, "startsAt" | "endsAt"> | null {
   if (!event.start?.dateTime || !event.end?.dateTime) return null;
-  const start = localParts(event.start.dateTime);
-  const end = localParts(event.end.dateTime);
-  if (!start || !end) return null;
-  if (end.date === start.date && end.minute > start.minute) return { date: start.date, startMinute: start.minute, endMinute: end.minute };
-  if (end.date === addDay(start.date) && end.minute === 0) return { date: start.date, startMinute: start.minute, endMinute: 1440 };
-  return null;
+  const start = Date.parse(event.start.dateTime);
+  const end = Date.parse(event.end.dateTime);
+  const duration = end - start;
+  if (!Number.isFinite(start) || !Number.isFinite(end) || duration < 15 * 60 * 1000 || duration > 24 * 60 * 60 * 1000) return null;
+  return { startsAt: new Date(start).toISOString(), endsAt: new Date(end).toISOString() };
 }
 
 async function changedEvents(token: string, connection: GoogleCalendarConnection): Promise<{ events: GoogleEvent[]; syncToken: string }> {
@@ -294,7 +264,7 @@ async function deleteEvent(token: string, calendarId: string, id: string): Promi
 
 async function putEvent(token: string, connection: GoogleCalendarConnection, session: TaskSession, task: TaskItem, project: TaskProject, exists: boolean): Promise<GoogleEvent> {
   const body = eventBody(session, task, project);
-  const id = eventId(session.id);
+  const id = googleEventId(session.id);
   if (exists) {
     try {
       return await googleRequest<GoogleEvent>(token, `/calendars/${encodeURIComponent(connection.calendarId)}/events/${id}`, { method: "PUT", body: JSON.stringify(body) });
@@ -356,10 +326,9 @@ export async function syncGoogleCalendar(env: Env): Promise<Record<string, unkno
       if (!event.updated || connection.links[sessionId]?.googleUpdatedAt === event.updated) continue;
       const range = eventRange(event);
       if (range && !sessionsOverlap({ id: session.id, ...range }, state.sessions)) {
-        if (session.date !== range.date || session.startMinute !== range.startMinute || session.endMinute !== range.endMinute) {
-          session.date = range.date;
-          session.startMinute = range.startMinute;
-          session.endMinute = range.endMinute;
+        if (session.startsAt !== range.startsAt || session.endsAt !== range.endsAt) {
+          session.startsAt = range.startsAt;
+          session.endsAt = range.endsAt;
           session.updatedAt = now;
           taskDataChanged = true;
         }
@@ -367,7 +336,7 @@ export async function syncGoogleCalendar(env: Env): Promise<Record<string, unkno
       } else {
         connection.lastError = range
           ? "A Google Calendar edit overlapped another Task Session and was restored."
-          : "A Google Calendar edit crossed midnight or lost its time range and was restored.";
+          : "A Google Calendar edit lost its time range or exceeded 24 hours and was restored.";
         connection.links[sessionId] = { googleUpdatedAt: event.updated, taskUpdatedAt: "" };
       }
     }
@@ -382,7 +351,7 @@ export async function syncGoogleCalendar(env: Env): Promise<Record<string, unkno
     const sessionsById = new Map(state.sessions.map((session) => [session.id, session]));
     for (const sessionId of Object.keys(connection.links)) {
       if (sessionsById.has(sessionId)) continue;
-      await deleteEvent(token, connection.calendarId, eventId(sessionId));
+      await deleteEvent(token, connection.calendarId, googleEventId(sessionId));
       delete connection.links[sessionId];
     }
     const tasksById = new Map(state.tasks.map((task) => [task.id, task]));

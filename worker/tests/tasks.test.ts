@@ -29,6 +29,11 @@ function environment(initial?: unknown) {
   return { env: { CONTENT: content } as never, objects };
 }
 
+function at(date: string, minute: number): string {
+  const day = new Date(`${date}T00:00:00+08:00`);
+  return new Date(day.getTime() + minute * 60 * 1000).toISOString();
+}
+
 async function createWorkspace(env: never) {
   const project = await saveTasks(env, {
     mode: "createProject",
@@ -55,15 +60,15 @@ test("Session model schedules multiple time ranges for one Task", async () => {
   const morning = await saveTasks(env, {
     mode: "createSession",
     baseRevision: workspace.revision,
-    session: { taskId: task.id, date, startMinute: 540, endMinute: 600, plan: "Implement the direct solve." },
+    session: { taskId: task.id, startsAt: at(date, 540), endsAt: at(date, 600), plan: "Implement the direct solve." },
   });
   const afternoon = await saveTasks(env, {
     mode: "createSession",
     baseRevision: morning.revision,
-    session: { taskId: task.id, date, startMinute: 840, endMinute: 930, plan: "Add regression coverage." },
+    session: { taskId: task.id, startsAt: at(date, 840), endsAt: at(date, 930), plan: "Add regression coverage." },
   });
   assert.equal(afternoon.sessions.length, 2);
-  assert.deepEqual(afternoon.sessions.map((session) => [session.startMinute, session.endMinute]), [[540, 600], [840, 930]]);
+  assert.deepEqual(afternoon.sessions.map((session) => [session.startsAt, session.endsAt]), [[at(date, 540), at(date, 600)], [at(date, 840), at(date, 930)]]);
   assert.ok(afternoon.sessions.every((session) => session.state === "scheduled"));
 });
 
@@ -74,18 +79,18 @@ test("Sessions reject overlap and reviewed history cannot be removed", async () 
   const planned = await saveTasks(env, {
     mode: "createSession",
     baseRevision: workspace.revision,
-    session: { taskId: workspace.tasks[0]!.id, date, startMinute: 600, endMinute: 690, plan: "Build the solver." },
+    session: { taskId: workspace.tasks[0]!.id, startsAt: at(date, 600), endsAt: at(date, 690), plan: "Build the solver." },
   });
   await assert.rejects(saveTasks(env, {
     mode: "createSession",
     baseRevision: planned.revision,
-    session: { taskId: workspace.tasks[0]!.id, date, startMinute: 660, endMinute: 720, plan: "Overlap." },
+    session: { taskId: workspace.tasks[0]!.id, startsAt: at(date, 660), endsAt: at(date, 720), plan: "Overlap." },
   }), (error: unknown) => error instanceof HttpError && error.status === 409);
 
   const reviewed = await saveTasks(env, {
     mode: "updateSession",
     baseRevision: planned.revision,
-    session: { id: planned.sessions[0]!.id, date, startMinute: 600, endMinute: 690, plan: "Build the solver.", outcome: "Core implementation landed.", state: "partial" },
+    session: { id: planned.sessions[0]!.id, startsAt: at(date, 600), endsAt: at(date, 690), plan: "Build the solver.", outcome: "Core implementation landed.", state: "partial" },
   });
   assert.ok(reviewed.sessions[0]!.reviewedAt);
   await assert.rejects(saveTasks(env, {
@@ -102,17 +107,17 @@ test("Task completion records one contribution and removes only scheduled Sessio
   const first = await saveTasks(env, {
     mode: "createSession",
     baseRevision: workspace.revision,
-    session: { taskId: workspace.tasks[0]!.id, date, startMinute: 540, endMinute: 600, plan: "Implement." },
+    session: { taskId: workspace.tasks[0]!.id, startsAt: at(date, 540), endsAt: at(date, 600), plan: "Implement." },
   });
   const reviewed = await saveTasks(env, {
     mode: "updateSession",
     baseRevision: first.revision,
-    session: { id: first.sessions[0]!.id, date, startMinute: 540, endMinute: 600, plan: "Implement.", outcome: "Done.", state: "done" },
+    session: { id: first.sessions[0]!.id, startsAt: at(date, 540), endsAt: at(date, 600), plan: "Implement.", outcome: "Done.", state: "done" },
   });
   const scheduled = await saveTasks(env, {
     mode: "createSession",
     baseRevision: reviewed.revision,
-    session: { taskId: workspace.tasks[0]!.id, date, startMinute: 720, endMinute: 780, plan: "Follow up." },
+    session: { taskId: workspace.tasks[0]!.id, startsAt: at(date, 720), endsAt: at(date, 780), plan: "Follow up." },
   });
   const completed = await saveTasks(env, { mode: "completeTask", baseRevision: scheduled.revision, task: { id: workspace.tasks[0]!.id } });
   assert.ok(completed.tasks[0]!.completedAt);
@@ -129,13 +134,36 @@ test("Task API publishes only the Session model", async () => {
   await createWorkspace(env);
   const response = await tasksResponse(env, new Request("https://xayah.me/data/tasks"));
   assert.equal(response.status, 200);
-  assert.match(response.headers.get("etag")!, /^"v5-/);
+  assert.match(response.headers.get("etag")!, /^"v6-/);
   const current = await response.json() as Record<string, unknown>;
-  assert.equal(current.schemaVersion, 5);
+  assert.equal(current.schemaVersion, 6);
   assert.deepEqual(current.sessions, []);
   const unchanged = await tasksResponse(env, new Request("https://xayah.me/data/tasks", { headers: { "If-None-Match": response.headers.get("etag")! } }));
   assert.equal(unchanged.status, 304);
 
+});
+
+test("Sessions cross midnight while overlap checks span calendar dates", async () => {
+  const { env } = environment();
+  const workspace = await createWorkspace(env);
+  const date = singaporeTimestamp().slice(0, 10);
+  const overnight = await saveTasks(env, {
+    mode: "createSession",
+    baseRevision: workspace.revision,
+    session: { taskId: workspace.tasks[0]!.id, startsAt: at(date, 1410), endsAt: at(date, 1500), plan: "Finish across midnight." },
+  });
+  assert.equal(overnight.sessions[0]!.startsAt, at(date, 1410));
+  assert.equal(overnight.sessions[0]!.endsAt, at(date, 1500));
+  await assert.rejects(saveTasks(env, {
+    mode: "createSession",
+    baseRevision: overnight.revision,
+    session: { taskId: workspace.tasks[0]!.id, startsAt: at(date, 1470), endsAt: at(date, 1530), plan: "Overlap after midnight." },
+  }), (error: unknown) => error instanceof HttpError && error.status === 409);
+  await assert.rejects(saveTasks(env, {
+    mode: "createSession",
+    baseRevision: overnight.revision,
+    session: { taskId: workspace.tasks[0]!.id, startsAt: at(date, 1800), endsAt: at(date, 1800 + 24 * 60 + 15), plan: "Too long." },
+  }), (error: unknown) => error instanceof HttpError && error.status === 400);
 });
 
 test("Project colors are automatic, distinct, and immutable", async () => {

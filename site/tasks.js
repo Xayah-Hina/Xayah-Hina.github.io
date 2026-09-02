@@ -6,6 +6,10 @@ const PROJECT_STATUSES = new Set(["active", "paused", "completed"]);
 const PROJECT_COLORS = new Set(["#7c3aed", "#059669", "#ea580c", "#0284c7", "#e11d48", "#65a30d", "#c026d3", "#ca8a04"]);
 const HOUR_HEIGHT = 46;
 const SNAP_MINUTES = 15;
+const SNAP_MS = SNAP_MINUTES * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const MIN_SESSION_MS = SNAP_MS;
+const MAX_SESSION_MS = DAY_MS;
 
 function singaporeDate() {
   const parts = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: "Asia/Singapore" }).formatToParts(new Date());
@@ -14,7 +18,7 @@ function singaporeDate() {
 }
 
 function emptyData() {
-  return { schemaVersion: 5, revision: "0", today: singaporeDate(), updatedAt: null, projects: [], tasks: [], sessions: [], contributions: [] };
+  return { schemaVersion: 6, revision: "0", today: singaporeDate(), updatedAt: null, projects: [], tasks: [], sessions: [], contributions: [] };
 }
 
 function validTimestamp(value) {
@@ -22,7 +26,7 @@ function validTimestamp(value) {
 }
 
 function validateData(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value) || value.schemaVersion !== 5
+  if (!value || typeof value !== "object" || Array.isArray(value) || value.schemaVersion !== 6
     || typeof value.revision !== "string" || !DATE.test(value.today || "")
     || !Array.isArray(value.projects) || !Array.isArray(value.tasks)
     || !Array.isArray(value.sessions) || !Array.isArray(value.contributions)) {
@@ -51,9 +55,9 @@ function validateData(value) {
   const sessionIds = new Set();
   const sessions = value.sessions.map((session) => ({ ...session }));
   for (const session of sessions) {
+    const duration = Date.parse(session?.endsAt) - Date.parse(session?.startsAt);
     if (!session || typeof session.id !== "string" || sessionIds.has(session.id) || !taskIds.has(session.taskId)
-      || !DATE.test(session.date || "") || !Number.isInteger(session.startMinute) || session.startMinute < 0 || session.startMinute > 1439
-      || !Number.isInteger(session.endMinute) || session.endMinute <= session.startMinute || session.endMinute > 1440
+      || !validTimestamp(session.startsAt) || !validTimestamp(session.endsAt) || duration < MIN_SESSION_MS || duration > MAX_SESSION_MS
       || typeof session.plan !== "string" || !session.plan.trim() || typeof session.outcome !== "string"
       || !SESSION_STATES.has(session.state) || !validTimestamp(session.createdAt) || !validTimestamp(session.updatedAt)) {
       throw new TypeError("Task data contains an invalid Session.");
@@ -68,7 +72,7 @@ function validateData(value) {
       throw new TypeError("Task data contains an invalid Contribution.");
     }
   }
-  return { schemaVersion: 5, revision: value.revision, today: value.today, updatedAt: value.updatedAt || null, projects, tasks, sessions, contributions };
+  return { schemaVersion: 6, revision: value.revision, today: value.today, updatedAt: value.updatedAt || null, projects, tasks, sessions, contributions };
 }
 
 function node(tag, className, text) {
@@ -113,6 +117,51 @@ export function weekRangeLabel(value) {
     return `${month(startDate)} ${startDate.getUTCDate()} – ${month(endDate)} ${endDate.getUTCDate()}, ${endDate.getUTCFullYear()}`;
   }
   return `${month(startDate)} ${startDate.getUTCDate()}, ${startDate.getUTCFullYear()} – ${month(endDate)} ${endDate.getUTCDate()}, ${endDate.getUTCFullYear()}`;
+}
+
+export function localDateTime(date, minute) {
+  const day = minute >= 1440 ? dateShift(date, Math.floor(minute / 1440)) : date;
+  const normalized = minute % 1440;
+  return new Date(`${day}T${String(Math.floor(normalized / 60)).padStart(2, "0")}:${String(normalized % 60).padStart(2, "0")}:00+08:00`).toISOString();
+}
+
+export function singaporeParts(value) {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(value));
+  const part = (type) => parts.find((candidate) => candidate.type === type)?.value || "";
+  return { date: `${part("year")}-${part("month")}-${part("day")}`, minute: Number(part("hour")) * 60 + Number(part("minute")) };
+}
+
+function sessionDuration(session) {
+  return Math.round((Date.parse(session.endsAt) - Date.parse(session.startsAt)) / 60000);
+}
+
+function dayBounds(date) {
+  const start = Date.parse(localDateTime(date, 0));
+  return { start, end: start + DAY_MS };
+}
+
+export function sessionFragment(session, date) {
+  const bounds = dayBounds(date);
+  const start = Date.parse(session.startsAt);
+  const end = Date.parse(session.endsAt);
+  if (start >= bounds.end || end <= bounds.start) return null;
+  return {
+    date,
+    startMinute: Math.round((Math.max(start, bounds.start) - bounds.start) / 60000),
+    endMinute: Math.round((Math.min(end, bounds.end) - bounds.start) / 60000),
+    continuesFromPrevious: start < bounds.start,
+    continuesNext: end > bounds.end,
+  };
+}
+
+function sessionOverlapsRange(session, startDate, endDate) {
+  return Date.parse(session.startsAt) < Date.parse(localDateTime(endDate, 0))
+    && Date.parse(session.endsAt) > Date.parse(localDateTime(startDate, 0));
+}
+
+export function roundedCurrentSlot(now = Date.now()) {
+  const rounded = new Date(Math.ceil(now / SNAP_MS) * SNAP_MS).toISOString();
+  return singaporeParts(rounded);
 }
 
 function formatDate(value, options = {}) {
@@ -213,29 +262,43 @@ function heatmap(data) {
   return section;
 }
 
-function sessionBlock(session, task, project, editable) {
+function sessionBlock(session, task, project, editable, fragment) {
   const block = node("article", "task-session-block");
   block.dataset.sessionId = session.id;
+  block.dataset.fragmentDate = fragment.date;
   block.dataset.taskAction = "open-session";
   block.dataset.state = session.state;
-  const duration = session.endMinute - session.startMinute;
+  const duration = fragment.endMinute - fragment.startMinute;
   block.dataset.density = duration < 45 ? "compact" : (duration < 90 ? "regular" : "roomy");
   block.tabIndex = 0;
   block.setAttribute("role", "button");
-  block.setAttribute("aria-label", `${formatMinute(session.startMinute)} to ${formatMinute(session.endMinute)}, ${task.title}`);
-  block.style.setProperty("--session-top", `${session.startMinute / 60 * HOUR_HEIGHT}px`);
-  block.style.setProperty("--session-height", `${Math.max(24, (session.endMinute - session.startMinute) / 60 * HOUR_HEIGHT)}px`);
+  const start = singaporeParts(session.startsAt);
+  const end = singaporeParts(session.endsAt);
+  block.setAttribute("aria-label", `${formatDate(start.date)} ${formatMinute(start.minute)} to ${formatDate(end.date)} ${formatMinute(end.minute)}, ${task.title}`);
+  block.style.setProperty("--session-top", `${fragment.startMinute / 60 * HOUR_HEIGHT}px`);
+  block.style.setProperty("--session-height", `${Math.max(24, duration / 60 * HOUR_HEIGHT)}px`);
   block.style.setProperty("--project-color", project.color);
   const top = node("div", "task-session-heading");
-  top.append(node("time", "task-session-time", `${formatMinute(session.startMinute)}–${formatMinute(session.endMinute)}`), node("span", "task-session-code", task.code));
+  const time = fragment.continuesFromPrevious
+    ? `→ ${formatMinute(fragment.endMinute)}`
+    : (fragment.continuesNext ? `${formatMinute(fragment.startMinute)} →` : `${formatMinute(fragment.startMinute)}–${formatMinute(fragment.endMinute)}`);
+  top.append(node("time", "task-session-time", time), node("span", "task-session-code", task.code));
   block.append(top, node("strong", "task-session-title", task.title), node("p", "task-session-plan", session.plan));
   if (session.state !== "scheduled") block.append(node("span", `task-session-state task-session-state-${session.state}`, session.state.replace("no_progress", "no progress")));
   if (editable && session.state === "scheduled") {
     block.dataset.draggable = "true";
-    const handle = node("span", "task-session-resize");
-    handle.dataset.sessionResize = "true";
-    handle.setAttribute("aria-hidden", "true");
-    block.append(handle);
+    if (!fragment.continuesFromPrevious) {
+      const handle = node("span", "task-session-resize task-session-resize-start");
+      handle.dataset.sessionResize = "start";
+      handle.setAttribute("aria-hidden", "true");
+      block.append(handle);
+    }
+    if (!fragment.continuesNext) {
+      const handle = node("span", "task-session-resize task-session-resize-end");
+      handle.dataset.sessionResize = "end";
+      handle.setAttribute("aria-hidden", "true");
+      block.append(handle);
+    }
   }
   return block;
 }
@@ -261,15 +324,16 @@ function calendarSection(data, ui, selectedWeekStart, calendar) {
   navigation.append(previous, current, next);
   tools.append(navigation);
   if (ui.enabled) {
-    const calendarButton = button(calendar?.connected ? "Calendar synced" : (calendar?.configured === false ? "Calendar setup" : "Google Calendar"), "calendar-settings", "control-button task-section-action");
+    const calendarLabel = calendar?.syncing ? "Syncing…" : (calendar?.lastError ? "Calendar issue" : (calendar?.connected ? "Calendar synced" : (calendar?.configured === false ? "Calendar setup" : "Google Calendar")));
+    const calendarButton = button(calendarLabel, "calendar-settings", "control-button task-section-action");
     if (calendar?.connected) calendarButton.dataset.connected = "true";
+    if (calendar?.lastError) calendarButton.dataset.error = "true";
     tools.append(calendarButton);
     if (availableTasks(data).length) tools.append(button("Add Session", "new-session", "control-button control-button-primary task-section-action"));
   }
   header.append(copy, tools);
   const dates = weekDates(selectedWeekStart);
-  const dateSet = new Set(dates);
-  const weekSessions = data.sessions.filter((session) => dateSet.has(session.date)).sort((left, right) => left.date.localeCompare(right.date) || left.startMinute - right.startMinute);
+  const weekSessions = data.sessions.filter((session) => sessionOverlapsRange(session, dates[0], dateShift(dates[6], 1))).sort((left, right) => left.startsAt.localeCompare(right.startsAt));
   const tasks = new Map(data.tasks.map((task) => [task.id, task]));
   const projects = new Map(data.projects.map((project) => [project.id, project]));
   const scroll = node("div", "task-week-scroll");
@@ -297,10 +361,12 @@ function calendarSection(data, ui, selectedWeekStart, calendar) {
     day.dataset.calendarDate = date;
     day.dataset.taskAction = "quick-session";
     if (date === data.today) day.dataset.current = "true";
-    for (const session of weekSessions.filter((candidate) => candidate.date === date)) {
+    for (const session of weekSessions) {
+      const fragment = sessionFragment(session, date);
+      if (!fragment) continue;
       const task = tasks.get(session.taskId);
       const project = task && projects.get(task.projectId);
-      if (task && project) day.append(sessionBlock(session, task, project, ui.enabled && !task.completedAt && !task.archivedAt));
+      if (task && project) day.append(sessionBlock(session, task, project, ui.enabled && !task.completedAt && !task.archivedAt, fragment));
     }
     if (date === data.today) {
       const now = node("span", "task-calendar-now");
@@ -327,7 +393,7 @@ function taskRow(task, project, data, ui, focusedCode) {
   heading.append(title);
   const sessions = data.sessions.filter((session) => session.taskId === task.id);
   const reviewed = sessions.filter((session) => session.state !== "scheduled");
-  const minutes = reviewed.reduce((total, session) => total + session.endMinute - session.startMinute, 0);
+  const minutes = reviewed.reduce((total, session) => total + sessionDuration(session), 0);
   const metaText = task.completedAt
     ? `Completed ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric", timeZone: "Asia/Singapore" }).format(new Date(task.completedAt))}`
     : (sessions.length ? `${sessions.length} session${sessions.length === 1 ? "" : "s"}${minutes ? ` · ${formatDuration(minutes)} logged` : ""}` : "No sessions yet");
@@ -446,7 +512,10 @@ function sessionDialog() {
     <header class="dialog-header"><div><h2 class="dialog-title">Plan Session</h2><p class="task-dialog-subtitle">Reserve a concrete time block for one Task.</p></div><button class="dialog-close" type="button" data-dialog-close aria-label="Close">×</button></header>
     <div class="dialog-body">
       <label class="field-group"><span class="field-label">Task</span><select class="field-input" name="taskId" required></select></label>
-      <div class="task-session-fields"><label class="field-group"><span class="field-label">Date</span><input class="field-input" name="date" type="date" required></label><label class="field-group"><span class="field-label">Start</span><input class="field-input" name="start" type="time" step="900" required></label><label class="field-group"><span class="field-label">End</span><input class="field-input" name="end" type="time" step="900" required></label></div>
+      <div class="task-session-start-fields"><label class="field-group"><span class="field-label">Starts</span><input class="field-input" name="startDate" type="date" required></label><label class="field-group"><span class="field-label">Time</span><input class="field-input" name="startTime" type="time" step="900" required></label><button class="task-now-button" type="button" data-session-now>Now</button></div>
+      <fieldset class="task-duration-field"><legend class="field-label">Duration</legend><div class="task-duration-options"><button type="button" data-session-duration="30">30m</button><button type="button" data-session-duration="45">45m</button><button type="button" data-session-duration="60">1h</button><button type="button" data-session-duration="90">1.5h</button><button type="button" data-session-duration="120">2h</button><button type="button" data-session-duration="custom">Custom</button></div></fieldset>
+      <div class="task-session-end"><span class="field-label">Ends</span><strong data-session-ends></strong><span class="task-next-day-badge" data-session-day-offset hidden></span></div>
+      <div class="task-session-custom-end" data-session-custom-end hidden><label class="field-group"><span class="field-label">End date</span><input class="field-input" name="endDate" type="date"></label><label class="field-group"><span class="field-label">End time</span><input class="field-input" name="endTime" type="time" step="900"></label></div>
       <label class="field-group"><span class="field-label">Plan</span><textarea class="field-input field-textarea task-plan-input" name="plan" maxlength="600" placeholder="What specific move will this Session complete?" required></textarea></label>
       <div data-session-review hidden><label class="field-group"><span class="field-label">Result</span><select class="field-input" name="state"><option value="scheduled">Scheduled</option><option value="done">Done</option><option value="partial">Partial</option><option value="no_progress">No progress</option></select></label><label class="field-group"><span class="field-label">Outcome</span><textarea class="field-input field-textarea task-outcome-input" name="outcome" maxlength="2000" placeholder="What actually happened?"></textarea><span class="field-hint">Required for Partial and No progress.</span></label></div>
       <p class="editor-message" role="status"></p>
@@ -473,11 +542,12 @@ export function createTasksController({ canAuthor = () => false, request, confir
   let selectedWeekStart = weekStart(singaporeDate());
   let calendar = null;
   let calendarLoading = false;
+  let calendarRefreshTimer = null;
   let drag = null;
   let suppressClickUntil = 0;
   let calendarScroll = { weekStart: "", top: null, left: 0 };
   const ui = { enabled: false, busy: false, message: "", messageKind: "status" };
-  const editor = { projectDialog: null, projectForm: null, projectId: "", projectKeyManual: false, taskDialog: null, taskForm: null, taskId: "", sessionDialog: null, sessionForm: null, sessionId: "", detailDialog: null, calendarDialog: null };
+  const editor = { projectDialog: null, projectForm: null, projectId: "", projectKeyManual: false, taskDialog: null, taskForm: null, taskId: "", sessionDialog: null, sessionForm: null, sessionId: "", sessionDuration: 60, sessionCustom: false, detailDialog: null, calendarDialog: null };
 
   function render() {
     if (!root?.isConnected) return;
@@ -501,13 +571,14 @@ export function createTasksController({ canAuthor = () => false, request, confir
       scroll.dataset.initialized = "true";
       return;
     }
-    const dates = new Set(weekDates(selectedWeekStart));
-    const first = data.sessions.filter((session) => dates.has(session.date)).sort((left, right) => left.startMinute - right.startMinute)[0];
-    const currentWeek = dates.has(data.today);
+    const dates = weekDates(selectedWeekStart);
+    const fragments = data.sessions.flatMap((session) => dates.map((date) => sessionFragment(session, date)).filter(Boolean));
+    const first = fragments.sort((left, right) => left.startMinute - right.startMinute)[0];
+    const currentWeek = dates.includes(data.today);
     const targetMinute = first ? Math.max(0, first.startMinute - 60) : (currentWeek ? Math.max(0, currentMinuteInSingapore() - 90) : 8 * 60);
     scroll.scrollTop = targetMinute / 60 * HOUR_HEIGHT;
     if (currentWeek && scroll.scrollWidth > scroll.clientWidth) {
-      const index = weekDates(selectedWeekStart).indexOf(data.today);
+      const index = dates.indexOf(data.today);
       const grid = scroll.querySelector(".task-week-grid");
       const dayWidth = grid ? grid.getBoundingClientRect().width / 7 : 0;
       scroll.scrollLeft = Math.max(0, index * dayWidth - (scroll.clientWidth - dayWidth) / 2);
@@ -533,8 +604,8 @@ export function createTasksController({ canAuthor = () => false, request, confir
     return value;
   }
 
-  async function loadCalendarStatus(force = false) {
-    if ((!ui.enabled || calendarLoading) && !force) return;
+  async function loadCalendarStatus() {
+    if (!ui.enabled || calendarLoading) return;
     calendarLoading = true;
     try {
       const response = await fetch("/api/tasks/google/status", { cache: "no-store", credentials: "same-origin" });
@@ -547,6 +618,19 @@ export function createTasksController({ canAuthor = () => false, request, confir
       calendarLoading = false;
       render();
     }
+  }
+
+  function refreshCalendarAfterSave(previousSync, attempt = 0) {
+    if (calendarRefreshTimer) clearTimeout(calendarRefreshTimer);
+    calendarRefreshTimer = setTimeout(async () => {
+      calendarRefreshTimer = null;
+      await loadCalendarStatus();
+      if (calendar?.connected && !calendar.lastError && calendar.lastSyncedAt === previousSync && attempt < 4) {
+        calendar = { ...calendar, syncing: true };
+        render();
+        refreshCalendarAfterSave(previousSync, attempt + 1);
+      }
+    }, 700 + attempt * 450);
   }
 
   function dialogMessage(form, message, kind = "error") {
@@ -567,6 +651,11 @@ export function createTasksController({ canAuthor = () => false, request, confir
       const result = request ? await request(payload) : await post("/api/tasks/save", payload);
       data = validateData(result);
       loaded = true;
+      if (calendar?.connected) {
+        const previousSync = calendar.lastSyncedAt || null;
+        calendar = { ...calendar, syncing: true, lastError: null };
+        refreshCalendarAfterSave(previousSync);
+      }
       ui.message = "Saved.";
       ui.messageKind = "status";
       return result;
@@ -603,6 +692,12 @@ export function createTasksController({ canAuthor = () => false, request, confir
     editor.projectForm.addEventListener("submit", saveProject);
     editor.taskForm.addEventListener("submit", saveTask);
     editor.sessionForm.addEventListener("submit", saveSession);
+    editor.sessionForm.elements.startDate.addEventListener("input", updateSessionTiming);
+    editor.sessionForm.elements.startTime.addEventListener("input", updateSessionTiming);
+    editor.sessionForm.elements.endDate.addEventListener("input", updateSessionTiming);
+    editor.sessionForm.elements.endTime.addEventListener("input", updateSessionTiming);
+    editor.sessionDialog.querySelector("[data-session-now]").addEventListener("click", useCurrentSessionTime);
+    editor.sessionDialog.querySelectorAll("[data-session-duration]").forEach((control) => control.addEventListener("click", () => setSessionDuration(control.dataset.sessionDuration)));
     editor.projectForm.elements.title.addEventListener("input", updateProjectKey);
     editor.projectForm.elements.key.addEventListener("input", () => {
       editor.projectKeyManual = Boolean(editor.projectForm.elements.key.value.trim());
@@ -697,13 +792,86 @@ export function createTasksController({ canAuthor = () => false, request, confir
     }
   }
 
-  function nextSlot(date) {
-    const occupied = data.sessions.filter((session) => session.date === date).sort((left, right) => left.startMinute - right.startMinute);
-    for (let start = 8 * 60; start <= 23 * 60; start += SNAP_MINUTES) {
-      const end = start + 60;
-      if (end <= 1440 && !occupied.some((session) => start < session.endMinute && end > session.startMinute)) return [start, end];
+  function nextSlot(startsAt, duration = 60, ignoredId = "") {
+    let start = Math.ceil(Date.parse(startsAt) / SNAP_MS) * SNAP_MS;
+    const durationMs = duration * 60 * 1000;
+    for (let attempt = 0; attempt < 7 * 24 * 4; attempt += 1) {
+      const end = start + durationMs;
+      const collision = data.sessions.filter((session) => session.id !== ignoredId && start < Date.parse(session.endsAt) && end > Date.parse(session.startsAt))
+        .sort((left, right) => Date.parse(left.endsAt) - Date.parse(right.endsAt))[0];
+      if (!collision) return new Date(start).toISOString();
+      start = Math.ceil(Date.parse(collision.endsAt) / SNAP_MS) * SNAP_MS;
     }
-    return [23 * 60, 1440];
+    return new Date(start).toISOString();
+  }
+
+  function sessionStartAt(form = editor.sessionForm) {
+    const minute = parseTime(form.elements.startTime.value);
+    return DATE.test(form.elements.startDate.value || "") && Number.isFinite(minute) ? localDateTime(form.elements.startDate.value, minute) : "";
+  }
+
+  function sessionEndAt(form = editor.sessionForm) {
+    const startsAt = sessionStartAt(form);
+    if (!startsAt) return "";
+    if (!editor.sessionCustom) return new Date(Date.parse(startsAt) + editor.sessionDuration * 60 * 1000).toISOString();
+    const minute = parseTime(form.elements.endTime.value);
+    return DATE.test(form.elements.endDate.value || "") && Number.isFinite(minute) ? localDateTime(form.elements.endDate.value, minute) : "";
+  }
+
+  function updateSessionTiming() {
+    if (!editor.sessionForm) return;
+    const startsAt = sessionStartAt();
+    const endsAt = sessionEndAt();
+    const summary = editor.sessionDialog.querySelector("[data-session-ends]");
+    const badge = editor.sessionDialog.querySelector("[data-session-day-offset]");
+    if (!startsAt || !endsAt || Date.parse(endsAt) <= Date.parse(startsAt)) {
+      summary.textContent = "Choose a valid end time";
+      badge.hidden = true;
+      return;
+    }
+    if (editor.sessionCustom) editor.sessionDuration = Math.round((Date.parse(endsAt) - Date.parse(startsAt)) / 60000);
+    const start = singaporeParts(startsAt);
+    const end = singaporeParts(endsAt);
+    summary.textContent = `${new Intl.DateTimeFormat("en", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" }).format(new Date(`${end.date}T00:00:00Z`))} · ${formatMinute(end.minute)}`;
+    const dayOffset = Math.round((Date.parse(`${end.date}T00:00:00Z`) - Date.parse(`${start.date}T00:00:00Z`)) / DAY_MS);
+    badge.textContent = dayOffset ? `+${dayOffset} day${dayOffset === 1 ? "" : "s"}` : "";
+    badge.hidden = !dayOffset;
+    if (!editor.sessionCustom) {
+      editor.sessionForm.elements.endDate.value = end.date;
+      editor.sessionForm.elements.endTime.value = timeInputValue(end.minute);
+    }
+  }
+
+  function setSessionDuration(value) {
+    const custom = value === "custom";
+    const previousEnd = sessionEndAt();
+    editor.sessionCustom = custom;
+    if (!custom) editor.sessionDuration = Number(value);
+    const customFields = editor.sessionDialog.querySelector("[data-session-custom-end]");
+    customFields.hidden = !custom;
+    editor.sessionForm.elements.endDate.disabled = !custom;
+    editor.sessionForm.elements.endTime.disabled = !custom;
+    editor.sessionDialog.querySelectorAll("[data-session-duration]").forEach((control) => control.setAttribute("aria-pressed", String(control.dataset.sessionDuration === value)));
+    if (custom && previousEnd) {
+      const end = singaporeParts(previousEnd);
+      editor.sessionForm.elements.endDate.value = end.date;
+      editor.sessionForm.elements.endTime.value = timeInputValue(end.minute);
+    }
+    updateSessionTiming();
+  }
+
+  function useCurrentSessionTime() {
+    const current = roundedCurrentSlot();
+    const startsAt = nextSlot(localDateTime(current.date, current.minute), editor.sessionDuration, editor.sessionId);
+    const start = singaporeParts(startsAt);
+    editor.sessionForm.elements.startDate.value = start.date;
+    editor.sessionForm.elements.startTime.value = timeInputValue(start.minute);
+    if (editor.sessionCustom) {
+      const end = singaporeParts(new Date(Date.parse(startsAt) + editor.sessionDuration * 60 * 1000).toISOString());
+      editor.sessionForm.elements.endDate.value = end.date;
+      editor.sessionForm.elements.endTime.value = timeInputValue(end.minute);
+    }
+    updateSessionTiming();
   }
 
   function openSession(session = null, taskId = "", startMinute = null, requestedDate = "") {
@@ -713,19 +881,30 @@ export function createTasksController({ canAuthor = () => false, request, confir
     editor.sessionForm.reset();
     fillTaskOptions(editor.sessionForm.elements.taskId);
     const dates = new Set(weekDates(selectedWeekStart));
-    const date = session?.date || requestedDate || (dates.has(data.today) ? data.today : selectedWeekStart);
-    const slot = startMinute === null ? nextSlot(date) : [Math.max(0, Math.min(1425, startMinute)), Math.min(1440, Math.max(0, startMinute) + 60)];
+    const now = roundedCurrentSlot();
+    const preferredDate = requestedDate || (taskId ? data.today : (dates.has(data.today) ? data.today : selectedWeekStart));
+    const initialStart = session?.startsAt || (startMinute === null
+      ? nextSlot(localDateTime(preferredDate, now.minute), 60)
+      : localDateTime(preferredDate, Math.max(0, Math.min(1425, startMinute))));
+    const start = singaporeParts(initialStart);
+    const duration = session ? sessionDuration(session) : 60;
     editor.sessionForm.elements.taskId.value = session?.taskId || taskId || editor.sessionForm.elements.taskId.options[0]?.value || "";
     editor.sessionForm.elements.taskId.disabled = Boolean(session);
-    editor.sessionForm.elements.date.value = date;
-    editor.sessionForm.elements.start.value = timeInputValue(session?.startMinute ?? slot[0]);
-    editor.sessionForm.elements.end.value = timeInputValue(session?.endMinute ?? slot[1]);
+    editor.sessionForm.elements.startDate.value = start.date;
+    editor.sessionForm.elements.startTime.value = timeInputValue(start.minute);
     editor.sessionForm.elements.plan.value = session?.plan || "";
     editor.sessionForm.elements.state.value = session?.state || "scheduled";
     editor.sessionForm.elements.outcome.value = session?.outcome || "";
     editor.sessionDialog.querySelector("[data-session-review]").hidden = !session;
     editor.sessionDialog.querySelector("[data-session-remove]").hidden = !session || session.state !== "scheduled";
     editor.sessionDialog.querySelector(".dialog-title").textContent = session ? "Session" : "Plan Session";
+    const preset = [30, 45, 60, 90, 120].includes(duration) ? String(duration) : "custom";
+    editor.sessionDuration = duration;
+    editor.sessionCustom = false;
+    const end = singaporeParts(session?.endsAt || new Date(Date.parse(initialStart) + duration * 60 * 1000).toISOString());
+    editor.sessionForm.elements.endDate.value = end.date;
+    editor.sessionForm.elements.endTime.value = timeInputValue(end.minute);
+    setSessionDuration(preset);
     dialogMessage(editor.sessionForm, "", "status");
     editor.sessionDialog.showModal();
     (session ? editor.sessionForm.elements.plan : editor.sessionForm.elements.taskId).focus();
@@ -751,10 +930,11 @@ export function createTasksController({ canAuthor = () => false, request, confir
     event.preventDefault();
     const form = event.currentTarget;
     if (!form.reportValidity()) return;
-    const startMinute = parseTime(form.elements.start.value);
-    const endMinute = form.elements.end.value === "00:00" && startMinute > 0 ? 1440 : parseTime(form.elements.end.value);
-    if (!Number.isFinite(startMinute) || !Number.isFinite(endMinute) || endMinute <= startMinute) {
-      dialogMessage(form, "End time must be after start time.");
+    const startsAt = sessionStartAt(form);
+    const endsAt = sessionEndAt(form);
+    const duration = Date.parse(endsAt) - Date.parse(startsAt);
+    if (!startsAt || !endsAt || duration < MIN_SESSION_MS || duration > MAX_SESSION_MS) {
+      dialogMessage(form, "Session duration must be between 15 minutes and 24 hours.");
       return;
     }
     const state = editor.sessionId ? form.elements.state.value : "scheduled";
@@ -762,9 +942,9 @@ export function createTasksController({ canAuthor = () => false, request, confir
       dialogMessage(form, "Partial and No progress reviews need a short outcome.");
       return;
     }
-    const session = { ...(editor.sessionId ? { id: editor.sessionId } : { taskId: form.elements.taskId.value }), date: form.elements.date.value, startMinute, endMinute, plan: form.elements.plan.value, ...(editor.sessionId ? { state, outcome: form.elements.outcome.value } : {}) };
+    const session = { ...(editor.sessionId ? { id: editor.sessionId } : { taskId: form.elements.taskId.value }), startsAt, endsAt, plan: form.elements.plan.value, ...(editor.sessionId ? { state, outcome: form.elements.outcome.value } : {}) };
     const result = await send({ mode: editor.sessionId ? "updateSession" : "createSession", baseRevision: data.revision, session }, form);
-    if (result) { selectedWeekStart = weekStart(session.date); editor.sessionDialog.close(); render(); }
+    if (result) { selectedWeekStart = weekStart(singaporeParts(session.startsAt).date); editor.sessionDialog.close(); render(); }
   }
 
   async function archiveProject() {
@@ -828,7 +1008,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
       body.append(node("p", "task-calendar-status", "Connect Google Calendar"), node("p", "task-calendar-note", "This creates one dedicated “Xayah Tasks” calendar. Other calendars remain private and untouched."));
       actions.append(button("Cancel", "close-calendar", "control-button"), button("Connect", "connect-calendar", "control-button control-button-primary"));
     } else {
-      body.append(node("p", "task-calendar-status", "Connected to Xayah Tasks"), node("p", "task-calendar-note", calendar.lastSyncedAt ? `Last synced ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Singapore" }).format(new Date(calendar.lastSyncedAt))}` : "Waiting for the first sync."));
+      body.append(node("p", "task-calendar-status", calendar.syncing ? "Syncing changes…" : "Connected to Xayah Tasks"), node("p", "task-calendar-note", calendar.lastSyncedAt ? `Last synced ${new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Singapore" }).format(new Date(calendar.lastSyncedAt))}` : "Waiting for the first sync."));
       if (calendar.lastError) { const error = node("p", "task-calendar-warning", calendar.lastError); body.append(error); }
       actions.append(button("Disconnect", "disconnect-calendar", "control-button control-button-danger"), node("span", "dialog-action-spacer"), button("Close", "close-calendar", "control-button"), button("Sync now", "sync-calendar", "control-button control-button-primary"));
     }
@@ -856,7 +1036,7 @@ export function createTasksController({ canAuthor = () => false, request, confir
       }
       editor.calendarDialog.close();
       calendar = null;
-      await loadCalendarStatus(true);
+      await loadCalendarStatus();
     } catch (error) {
       ui.message = error?.message || "Google Calendar action failed.";
       ui.messageKind = "error";
@@ -906,8 +1086,8 @@ export function createTasksController({ canAuthor = () => false, request, confir
       actions.append(button("Edit", "detail-edit", "control-button"), button(task.completedAt ? "Reopen" : "Complete Task", task.completedAt ? "detail-reopen" : "detail-complete", "control-button"), button("Archive", "detail-archive", "task-text-button task-danger-button"));
     }
     if (actions.childElementCount) body.append(actions);
-    const sessions = data.sessions.filter((session) => session.taskId === task.id).sort((left, right) => right.date.localeCompare(left.date) || right.startMinute - left.startMinute);
-    const logged = sessions.filter((session) => session.state !== "scheduled").reduce((total, session) => total + session.endMinute - session.startMinute, 0);
+    const sessions = data.sessions.filter((session) => session.taskId === task.id).sort((left, right) => right.startsAt.localeCompare(left.startsAt));
+    const logged = sessions.filter((session) => session.state !== "scheduled").reduce((total, session) => total + sessionDuration(session), 0);
     const stats = node("div", "task-detail-stats");
     stats.append(detailStat("Sessions", String(sessions.length)), detailStat("Time logged", formatDuration(logged)), detailStat("Done", String(sessions.filter((session) => session.state === "done").length)));
     body.append(stats);
@@ -920,7 +1100,12 @@ export function createTasksController({ canAuthor = () => false, request, confir
         const item = node("li", "task-history-item");
         item.dataset.sessionId = session.id;
         const top = node("div", "task-history-heading");
-        top.append(node("time", "", `${formatDate(session.date)} · ${formatMinute(session.startMinute)}–${formatMinute(session.endMinute)}`), node("span", `task-session-state task-session-state-${session.state}`, session.state.replace("no_progress", "no progress")));
+        const start = singaporeParts(session.startsAt);
+        const end = singaporeParts(session.endsAt);
+        const range = start.date === end.date
+          ? `${formatDate(start.date)} · ${formatMinute(start.minute)}–${formatMinute(end.minute)}`
+          : `${formatDate(start.date)} ${formatMinute(start.minute)} → ${formatDate(end.date)} ${formatMinute(end.minute)}`;
+        top.append(node("time", "", range), node("span", `task-session-state task-session-state-${session.state}`, session.state.replace("no_progress", "no progress")));
         item.append(top, node("p", "task-history-plan", session.plan));
         if (session.outcome) item.append(node("p", "task-history-outcome", session.outcome));
         if (ui.enabled) item.append(button("Open", "detail-open-session", "task-text-button"));
@@ -1004,13 +1189,43 @@ export function createTasksController({ canAuthor = () => false, request, confir
     if (cell && !cell.contains(event.relatedTarget)) hideContribution();
   }
 
+  function clearDragGhosts() {
+    root?.querySelectorAll(".task-session-drag-ghost").forEach((ghost) => ghost.remove());
+    root?.querySelectorAll(".task-session-block[data-drag-source]").forEach((block) => delete block.dataset.dragSource);
+  }
+
+  function renderDragGhosts() {
+    root.querySelectorAll(".task-session-drag-ghost").forEach((ghost) => ghost.remove());
+    const task = data.tasks.find((candidate) => candidate.id === drag.session.taskId);
+    const project = task && data.projects.find((candidate) => candidate.id === task.projectId);
+    if (!task || !project) return;
+    const preview = { ...drag.session, startsAt: new Date(drag.nextStart).toISOString(), endsAt: new Date(drag.nextEnd).toISOString() };
+    for (const date of weekDates(selectedWeekStart)) {
+      const fragment = sessionFragment(preview, date);
+      const day = fragment && root.querySelector(`.task-week-day[data-calendar-date="${date}"]`);
+      if (!fragment || !day) continue;
+      const ghost = sessionBlock(preview, task, project, false, fragment);
+      ghost.classList.add("task-session-drag-ghost");
+      ghost.removeAttribute("data-task-action");
+      ghost.removeAttribute("data-session-id");
+      ghost.removeAttribute("role");
+      ghost.removeAttribute("tabindex");
+      ghost.setAttribute("aria-hidden", "true");
+      day.append(ghost);
+    }
+  }
+
   function handlePointerDown(event) {
     const block = event.target.closest?.(".task-session-block[data-draggable]");
     if (!block || !ui.enabled || matchMedia("(pointer: coarse)").matches) return;
     const session = data.sessions.find((candidate) => candidate.id === block.dataset.sessionId);
     if (!session || session.state !== "scheduled") return;
     const day = block.closest(".task-week-day");
-    drag = { pointerId: event.pointerId, block, session, mode: event.target.closest("[data-session-resize]") ? "resize" : "move", originX: event.clientX, originY: event.clientY, dayWidth: day?.getBoundingClientRect().width || 1, originDay: weekDates(selectedWeekStart).indexOf(session.date), start: session.startMinute, end: session.endMinute, nextDate: session.date, nextStart: session.startMinute, nextEnd: session.endMinute };
+    const resize = event.target.closest("[data-session-resize]")?.dataset.sessionResize;
+    const start = Date.parse(session.startsAt);
+    const end = Date.parse(session.endsAt);
+    drag = { pointerId: event.pointerId, block, session, mode: resize || "move", originX: event.clientX, originY: event.clientY, dayWidth: day?.getBoundingClientRect().width || 1, originDay: weekDates(selectedWeekStart).indexOf(block.dataset.fragmentDate), start, end, nextStart: start, nextEnd: end };
+    root.querySelectorAll(`.task-session-block[data-session-id="${session.id}"]`).forEach((source) => { source.dataset.dragSource = "true"; });
     block.setPointerCapture(event.pointerId);
     block.dataset.dragging = "true";
     event.preventDefault();
@@ -1018,22 +1233,20 @@ export function createTasksController({ canAuthor = () => false, request, confir
 
   function handlePointerMove(event) {
     if (!drag || event.pointerId !== drag.pointerId) return;
-    const delta = Math.round((event.clientY - drag.originY) / HOUR_HEIGHT * 60 / SNAP_MINUTES) * SNAP_MINUTES;
+    const delta = Math.round((event.clientY - drag.originY) / HOUR_HEIGHT * 60 / SNAP_MINUTES) * SNAP_MS;
     if (drag.mode === "move") {
-      const duration = drag.end - drag.start;
-      drag.nextStart = Math.max(0, Math.min(1440 - duration, drag.start + delta));
-      drag.nextEnd = drag.nextStart + duration;
       const dayIndex = Math.max(0, Math.min(6, drag.originDay + Math.round((event.clientX - drag.originX) / drag.dayWidth)));
-      drag.nextDate = dateShift(selectedWeekStart, dayIndex);
-      const target = root.querySelector(`.task-week-day[data-calendar-date="${drag.nextDate}"]`);
-      if (target && drag.block.parentElement !== target) target.append(drag.block);
-    } else {
+      const dayDelta = dayIndex - drag.originDay;
+      drag.nextStart = drag.start + dayDelta * DAY_MS + delta;
+      drag.nextEnd = drag.end + dayDelta * DAY_MS + delta;
+    } else if (drag.mode === "start") {
+      drag.nextStart = Math.max(drag.end - MAX_SESSION_MS, Math.min(drag.end - MIN_SESSION_MS, drag.start + delta));
+      drag.nextEnd = drag.end;
+    } else if (drag.mode === "end") {
       drag.nextStart = drag.start;
-      drag.nextEnd = Math.max(drag.start + SNAP_MINUTES, Math.min(1440, drag.end + delta));
+      drag.nextEnd = Math.max(drag.start + MIN_SESSION_MS, Math.min(drag.start + MAX_SESSION_MS, drag.end + delta));
     }
-    drag.block.style.setProperty("--session-top", `${drag.nextStart / 60 * HOUR_HEIGHT}px`);
-    drag.block.style.setProperty("--session-height", `${Math.max(24, (drag.nextEnd - drag.nextStart) / 60 * HOUR_HEIGHT)}px`);
-    drag.block.querySelector(".task-session-time").textContent = `${formatMinute(drag.nextStart)}–${formatMinute(drag.nextEnd)}`;
+    renderDragGhosts();
   }
 
   async function handlePointerUp(event) {
@@ -1042,9 +1255,11 @@ export function createTasksController({ canAuthor = () => false, request, confir
     drag = null;
     if (current.block.hasPointerCapture(event.pointerId)) current.block.releasePointerCapture(event.pointerId);
     delete current.block.dataset.dragging;
-    if (current.nextDate === current.session.date && current.nextStart === current.start && current.nextEnd === current.end) return;
+    clearDragGhosts();
+    if (event.type === "pointercancel") { render(); return; }
+    if (current.nextStart === current.start && current.nextEnd === current.end) return;
     suppressClickUntil = Date.now() + 400;
-    await send({ mode: "updateSession", baseRevision: data.revision, session: { id: current.session.id, date: current.nextDate, startMinute: current.nextStart, endMinute: current.nextEnd, plan: current.session.plan, outcome: current.session.outcome, state: current.session.state } });
+    await send({ mode: "updateSession", baseRevision: data.revision, session: { id: current.session.id, startsAt: new Date(current.nextStart).toISOString(), endsAt: new Date(current.nextEnd).toISOString(), plan: current.session.plan, outcome: current.session.outcome, state: current.session.state } });
   }
 
   function handleDialogClick(event) {

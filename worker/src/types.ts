@@ -101,9 +101,8 @@ export interface TaskItem {
 export interface TaskSession {
   id: string;
   taskId: string;
-  date: string;
-  startMinute: number;
-  endMinute: number;
+  startsAt: string;
+  endsAt: string;
   plan: string;
   outcome: string;
   state: "scheduled" | "done" | "partial" | "no_progress";
@@ -124,7 +123,7 @@ export interface TaskContribution {
 }
 
 export interface TaskState {
-  schemaVersion: 5;
+  schemaVersion: 6;
   revision: string;
   updatedAt: string;
   projects: TaskProject[];
