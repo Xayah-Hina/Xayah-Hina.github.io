@@ -1,13 +1,5 @@
 export default [
   {
-    "id": "20260903-194207-5b0d",
-    "publishedAt": "2026-09-03T19:42:07+08:00",
-    "content": "ChatGPT Voice已经近乎可以完成私人助理的工作了……",
-    "images": [],
-    "relatedWriting": null,
-    "relatedTask": null
-  },
-  {
     "id": "20260903-170156-af12",
     "publishedAt": "2026-09-03T17:01:56+08:00",
     "content": "9月2日日报\n\n重构了Task页面，休息一天。",
