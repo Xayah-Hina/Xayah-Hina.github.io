@@ -2,10 +2,11 @@ export default [
   {
     "id": "20260903-170156-af12",
     "publishedAt": "2026-09-03T17:01:56+08:00",
-    "content": "9月1日日报\n\n重构了Task页面，休息一天。",
+    "content": "9月2日日报\n\n重构了Task页面，休息一天。",
     "images": [],
     "relatedWriting": null,
-    "relatedTask": null
+    "relatedTask": null,
+    "updatedAt": "2026-09-03T17:02:09+08:00"
   },
   {
     "id": "20260902-204903-fd72",
