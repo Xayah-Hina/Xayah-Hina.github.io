@@ -41,6 +41,18 @@ test("Session editor offers hour-scale presets and keeps its body scrollable", a
   assert.match(styles, /\.task-session-dialog \.dialog-body[\s\S]*?min-height:\s*0/);
 });
 
+test("weekly calendar renders a full-day page canvas without vertical scroll state", async () => {
+  const source = await readFile(new URL("../../site/tasks.js", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../../site/tasks.css", import.meta.url), "utf8");
+  assert.match(source, /const HOUR_HEIGHT = 34;/);
+  assert.match(styles, /--task-hour-height:\s*34px/);
+  assert.match(styles, /\.task-week-viewport\s*\{[\s\S]*?background:/);
+  for (const legacy of ["task-week-scroll", "calendarScroll", "scrollTop", "targetMinute"]) {
+    assert.equal(source.includes(legacy), false, `vertical calendar state remains: ${legacy}`);
+  }
+  assert.doesNotMatch(styles, /\.task-week-viewport\s*\{[^}]*height:/);
+});
+
 test("Tasks ships one weekly calendar path with no legacy day controls or Project color input", async () => {
   const source = await readFile(new URL("../../site/tasks.js", import.meta.url), "utf8");
   for (const legacy of ["selectedDate", "dateHeading", '"previous-day"', '"next-day"', "task-calendar-canvas", 'name="color"']) {

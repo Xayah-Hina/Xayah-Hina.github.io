@@ -4,7 +4,7 @@ const TASK_CODE = /^([A-Z][A-Z0-9]{1,7})-(\d{4})-(\d{4})$/;
 const SESSION_STATES = new Set(["scheduled", "done", "partial", "no_progress"]);
 const PROJECT_STATUSES = new Set(["active", "paused", "completed"]);
 const PROJECT_COLORS = new Set(["#7c3aed", "#059669", "#ea580c", "#0284c7", "#e11d48", "#65a30d", "#c026d3", "#ca8a04"]);
-const HOUR_HEIGHT = 46;
+const HOUR_HEIGHT = 34;
 const SNAP_MINUTES = 15;
 const SNAP_MS = SNAP_MINUTES * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -269,7 +269,7 @@ function sessionBlock(session, task, project, editable, fragment) {
   block.dataset.taskAction = "open-session";
   block.dataset.state = session.state;
   const duration = fragment.endMinute - fragment.startMinute;
-  block.dataset.density = duration < 45 ? "compact" : (duration < 90 ? "regular" : "roomy");
+  block.dataset.density = duration < 45 ? "compact" : (duration < 120 ? "regular" : "roomy");
   block.tabIndex = 0;
   block.setAttribute("role", "button");
   const start = singaporeParts(session.startsAt);
@@ -336,8 +336,8 @@ function calendarSection(data, ui, selectedWeekStart, calendar) {
   const weekSessions = data.sessions.filter((session) => sessionOverlapsRange(session, dates[0], dateShift(dates[6], 1))).sort((left, right) => left.startsAt.localeCompare(right.startsAt));
   const tasks = new Map(data.tasks.map((task) => [task.id, task]));
   const projects = new Map(data.projects.map((project) => [project.id, project]));
-  const scroll = node("div", "task-week-scroll");
-  scroll.dataset.weekStart = selectedWeekStart;
+  const viewport = node("div", "task-week-viewport");
+  viewport.dataset.weekStart = selectedWeekStart;
   const layout = node("div", "task-week-layout");
   const corner = node("div", "task-week-corner");
   const days = node("div", "task-week-days");
@@ -376,8 +376,8 @@ function calendarSection(data, ui, selectedWeekStart, calendar) {
     grid.append(day);
   }
   layout.append(corner, days, labels, grid);
-  scroll.append(layout);
-  section.append(header, scroll);
+  viewport.append(layout);
+  section.append(header, viewport);
   return section;
 }
 
@@ -545,45 +545,40 @@ export function createTasksController({ canAuthor = () => false, request, confir
   let calendarRefreshTimer = null;
   let drag = null;
   let suppressClickUntil = 0;
-  let calendarScroll = { weekStart: "", top: null, left: 0 };
+  let calendarViewport = { weekStart: "", left: null };
   const ui = { enabled: false, busy: false, message: "", messageKind: "status" };
   const editor = { projectDialog: null, projectForm: null, projectId: "", projectKeyManual: false, taskDialog: null, taskForm: null, taskId: "", sessionDialog: null, sessionForm: null, sessionId: "", sessionDuration: 60, sessionCustom: false, detailDialog: null, calendarDialog: null };
 
   function render() {
     if (!root?.isConnected) return;
-    const previousScroll = root.querySelector(".task-week-scroll");
-    if (previousScroll?.dataset.initialized === "true") {
-      calendarScroll = { weekStart: previousScroll.dataset.weekStart || "", top: previousScroll.scrollTop, left: previousScroll.scrollLeft };
+    const previousViewport = root.querySelector(".task-week-viewport");
+    if (previousViewport?.dataset.initialized === "true") {
+      calendarViewport = { weekStart: previousViewport.dataset.weekStart || "", left: previousViewport.scrollLeft };
     }
     ui.enabled = Boolean(canAuthor());
     root.replaceChildren(page(data, ui, focusedCode, selectedWeekStart, calendar));
     syncDetail();
     if (ui.enabled && !calendar && !calendarLoading) void loadCalendarStatus();
-    requestAnimationFrame(scrollCalendar);
+    requestAnimationFrame(alignWeekViewport);
   }
 
-  function scrollCalendar() {
-    const scroll = root?.querySelector(".task-week-scroll");
-    if (!scroll) return;
-    if (calendarScroll.weekStart === selectedWeekStart && calendarScroll.top !== null) {
-      scroll.scrollTop = calendarScroll.top;
-      scroll.scrollLeft = calendarScroll.left;
-      scroll.dataset.initialized = "true";
+  function alignWeekViewport() {
+    const viewport = root?.querySelector(".task-week-viewport");
+    if (!viewport) return;
+    if (calendarViewport.weekStart === selectedWeekStart && calendarViewport.left !== null) {
+      viewport.scrollLeft = calendarViewport.left;
+      viewport.dataset.initialized = "true";
       return;
     }
     const dates = weekDates(selectedWeekStart);
-    const fragments = data.sessions.flatMap((session) => dates.map((date) => sessionFragment(session, date)).filter(Boolean));
-    const first = fragments.sort((left, right) => left.startMinute - right.startMinute)[0];
     const currentWeek = dates.includes(data.today);
-    const targetMinute = first ? Math.max(0, first.startMinute - 60) : (currentWeek ? Math.max(0, currentMinuteInSingapore() - 90) : 8 * 60);
-    scroll.scrollTop = targetMinute / 60 * HOUR_HEIGHT;
-    if (currentWeek && scroll.scrollWidth > scroll.clientWidth) {
+    if (currentWeek && viewport.scrollWidth > viewport.clientWidth) {
       const index = dates.indexOf(data.today);
-      const grid = scroll.querySelector(".task-week-grid");
+      const grid = viewport.querySelector(".task-week-grid");
       const dayWidth = grid ? grid.getBoundingClientRect().width / 7 : 0;
-      scroll.scrollLeft = Math.max(0, index * dayWidth - (scroll.clientWidth - dayWidth) / 2);
+      viewport.scrollLeft = Math.max(0, index * dayWidth - (viewport.clientWidth - dayWidth) / 2);
     }
-    scroll.dataset.initialized = "true";
+    viewport.dataset.initialized = "true";
   }
 
   async function load(force = false) {
