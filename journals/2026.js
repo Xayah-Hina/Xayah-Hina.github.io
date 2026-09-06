@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260906-211255-c021",
+    "publishedAt": "2026-09-06T21:12:55+08:00",
+    "content": "继续刻苦学习工作！",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260906-183218-953b",
     "publishedAt": "2026-09-06T18:32:18+08:00",
     "content": "今天总感觉有点困乏…… 睡了好久QAQ。打起精神来开始恢复工作吧！",
