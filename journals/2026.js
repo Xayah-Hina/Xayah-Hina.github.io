@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260907-032337-5c4b",
+    "publishedAt": "2026-09-07T03:23:37+08:00",
+    "content": "换一下脑子了，先做点有趣的东西。考虑下以后不用comfyui了，写一套我自己的生成模型。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260906-211255-c021",
     "publishedAt": "2026-09-06T21:12:55+08:00",
     "content": "继续刻苦学习工作！",
