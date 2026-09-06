@@ -2,10 +2,11 @@ export default [
   {
     "id": "20260905-021323-6b55",
     "publishedAt": "2026-09-05T02:13:23+08:00",
-    "content": "9月3日/4日日报\n\n这两天状态属实不对，感觉有点过载了，要换一下注意力清理一下大脑的cache了……",
+    "content": "9月3日/4日/5日日报\n\n这三天状态属实不对，感觉有点过载了，要换一下注意力清理一下大脑的cache了……",
     "images": [],
     "relatedWriting": null,
-    "relatedTask": null
+    "relatedTask": null,
+    "updatedAt": "2026-09-06T14:04:28+08:00"
   },
   {
     "id": "20260903-170156-af12",
