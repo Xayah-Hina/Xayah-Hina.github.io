@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260907-062313-99e6",
+    "publishedAt": "2026-09-07T06:23:13+08:00",
+    "content": "这么快就做完了SDXL的原型。感觉从代码上来看AI相比CG而言真是简单啊（x。看来可以完全脱离ComfyUI这个难用的前端单干了。\n\n接下来想想怎么写一个好用的Vulkan前端。打算接下来先做一个好的推理前端，然后逐步把整个Lora/Fine tuning/Training的部分全部集成进去，然后做一下整套数据集准备的自动化工作流，包含自动错误检测以及自动masking之类的。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260907-032337-5c4b",
     "publishedAt": "2026-09-07T03:23:37+08:00",
     "content": "换一下脑子了，先做点有趣的东西。考虑下以后不用comfyui了，写一套我自己的生成模型框架。",
