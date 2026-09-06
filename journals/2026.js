@@ -2,10 +2,11 @@ export default [
   {
     "id": "20260907-032337-5c4b",
     "publishedAt": "2026-09-07T03:23:37+08:00",
-    "content": "换一下脑子了，先做点有趣的东西。考虑下以后不用comfyui了，写一套我自己的生成模型。",
+    "content": "换一下脑子了，先做点有趣的东西。考虑下以后不用comfyui了，写一套我自己的生成模型框架。",
     "images": [],
     "relatedWriting": null,
-    "relatedTask": null
+    "relatedTask": null,
+    "updatedAt": "2026-09-07T03:24:18+08:00"
   },
   {
     "id": "20260906-211255-c021",
