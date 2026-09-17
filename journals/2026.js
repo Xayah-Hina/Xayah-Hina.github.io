@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260918-052503-a114",
+    "publishedAt": "2026-09-18T05:25:03+08:00",
+    "content": "接下来短期计划推进一下两个项目：一个是手写体英文文章生成，另一个是AFHQ-512 latent DiT。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260918-041103-e5f6",
     "publishedAt": "2026-09-18T04:11:03+08:00",
     "content": "9月17日日报\n\n今天开始开发FlowDiT项目。整理了一下之前做CIFAR的代码，然后支持了MNIST，然后完成了整个Editor UI界面。下一步计划上完整分辨率的新数据集，从零开始彻底开始跑一个narrow scape的生图模型。",
