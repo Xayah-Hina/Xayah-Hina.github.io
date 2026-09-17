@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260918-041103-e5f6",
+    "publishedAt": "2026-09-18T04:11:03+08:00",
+    "content": "9月17日日报\n\n今天开始开发FlowDiT项目。整理了一下之前做CIFAR的代码，然后支持了MNIST，然后完成了整个Editor UI界面。下一步计划上完整分辨率的新数据集，从零开始彻底开始跑一个narrow scape的生图模型。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260917-083325-6bc0",
     "publishedAt": "2026-09-17T08:33:25+08:00",
     "content": "阶段做完之后的空隙也不要无所事事地刷信息了，尝试一下进一步提高时间利用效率。每天的精力真的是最宝贵的东西，一定要好好利用。",
