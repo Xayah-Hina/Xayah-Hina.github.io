@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260919-010237-fe11",
+    "publishedAt": "2026-09-19T01:02:37+08:00",
+    "content": "9月18日日报\n\n做完了跑了一下AFHQ数据集的autoencoder和FlowDiT训练。AE部分跑完20,000步高频还是有些糊，FlowDiT跑完300,000步整个训练出来也有点糊。感觉工程化还有很长的一段路要走。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260919-005858-6707",
     "publishedAt": "2026-09-19T00:58:58+08:00",
     "content": "训练了30w步效果也不是很理想啊…… FlowDiT的工程化感觉还是有很多巨坑得踩",
