@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260919-082857-65af",
+    "publishedAt": "2026-09-19T08:28:57+08:00",
+    "content": "用自己训练的AE效果不好。试试更新的DCAE + USiT",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260919-010237-fe11",
     "publishedAt": "2026-09-19T01:02:37+08:00",
     "content": "9月18日日报\n\n做完了跑了一下AFHQ数据集的autoencoder和FlowDiT训练。AE部分跑完20,000步高频还是有些糊，FlowDiT跑完300,000步整个训练出来也有点糊。感觉工程化还有很长的一段路要走。",
