@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260919-231842-94cc",
+    "publishedAt": "2026-09-19T23:18:42+08:00",
+    "content": "9月18日日报\n\n升级到了预训练DCAE + USiT，效果还不错。下一步要干什么呢？",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260919-095921-04d1",
     "publishedAt": "2026-09-19T09:59:21+08:00",
     "content": "DCAE + USiT感觉真的可以诶。才训练了10,000步就有模有样了。就是速度慢了一半还要多……",
