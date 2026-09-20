@@ -2,10 +2,11 @@ export default [
   {
     "id": "20260919-231842-94cc",
     "publishedAt": "2026-09-19T23:18:42+08:00",
-    "content": "9月18日日报\n\n升级到了预训练DCAE + USiT，效果还不错。下一步要干什么呢？",
+    "content": "9月19日日报\n\n升级到了预训练DCAE + USiT，效果还不错。下一步要干什么呢？",
     "images": [],
     "relatedWriting": null,
-    "relatedTask": null
+    "relatedTask": null,
+    "updatedAt": "2026-09-20T11:18:47+08:00"
   },
   {
     "id": "20260919-095921-04d1",
