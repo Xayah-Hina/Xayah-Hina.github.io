@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  verify:
+  verify-site:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -25,9 +25,7 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-          cache-dependency-path: |
-            package-lock.json
-            worker/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install site dependencies
         run: npm ci
@@ -40,6 +38,28 @@ jobs:
 
       - name: Audit site dependencies
         run: npm audit --audit-level=moderate
+
+      - name: Upload site
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: _site
+
+  verify-worker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: worker/package-lock.json
 
       - name: Install worker dependencies
         working-directory: worker
@@ -57,15 +77,9 @@ jobs:
         working-directory: worker
         run: npm audit --audit-level=moderate
 
-      - name: Upload site
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
-        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
-        with:
-          path: _site
-
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
-    needs: verify
+    needs: verify-site
     concurrency:
       group: pages
       cancel-in-progress: false
