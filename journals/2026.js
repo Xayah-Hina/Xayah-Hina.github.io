@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260920-174627-c32a",
+    "publishedAt": "2026-09-20T17:46:27+08:00",
+    "content": "之前有个隐性bug导致更新一直只在本地登录后才显示，公网版本居然都不显示更新。今天修复了站点bug，应该都正常显示了。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260919-231842-94cc",
     "publishedAt": "2026-09-19T23:18:42+08:00",
     "content": "9月19日日报\n\n升级到了预训练DCAE + USiT，效果还不错。下一步要干什么呢？",
