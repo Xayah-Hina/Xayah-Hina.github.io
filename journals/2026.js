@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260920-192022-7762",
+    "publishedAt": "2026-09-20T19:20:22+08:00",
+    "content": "Suno这网页做成这种鬼样子还是早点倒闭吧，完全一个草台班子。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260920-190714-2b5a",
     "publishedAt": "2026-09-20T19:07:14+08:00",
     "content": "深入探索了一下Stable Audio 3 / Ace Step 1.5 / Suno Studio。只能说，AI音乐还是任重而道远啊，和AI编程差距不是一点点。做音乐的感觉还是不行哈哈。\n\n不过Suno Free Plan感觉还行，适合当灵感开发的地方。",
