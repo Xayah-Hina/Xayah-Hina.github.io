@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260920-192408-3e1c",
+    "publishedAt": "2026-09-20T19:24:08+08:00",
+    "content": "9月20日日报\n\n集中探索了一下AI音乐创作的几个SOTA，很失望。还是再等等吧…… AI还没有为音乐制作行业准备好。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260920-192022-7762",
     "publishedAt": "2026-09-20T19:20:22+08:00",
     "content": "Suno这网页做成这种鬼样子还是早点倒闭吧，完全一个草台班子。",
