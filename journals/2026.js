@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260920-190714-2b5a",
+    "publishedAt": "2026-09-20T19:07:14+08:00",
+    "content": "深入探索了一下Stable Audio 3 / Ace Step 1.5 / Suno Studio。只能说，AI音乐还是任重而道远啊，和AI编程差距不是一点点。做音乐的感觉还是不行哈哈。\n\n不过Suno Free Plan感觉还行，适合当灵感开发的地方。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260920-174627-c32a",
     "publishedAt": "2026-09-20T17:46:27+08:00",
     "content": "之前有个隐性bug导致更新一直只在本地登录后才显示，公网版本居然都不显示更新。今天修复了站点bug，应该都正常显示了。",
