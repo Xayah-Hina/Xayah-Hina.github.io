@@ -9,11 +9,11 @@
     "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
-    "jose": "^6.2.8"
+    "jose": "^6.2.12"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260813.1",
-    "tsx": "^4.23.12",
+    "tsx": "^4.23.13",
     "typescript": "^7.0.2",
     "wrangler": "^4.135.0"
   }
