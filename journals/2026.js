@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260923-044612-1005",
+    "publishedAt": "2026-09-23T04:46:12+08:00",
+    "content": "还剩四个半小时重置，还没想好重置后干什么…… 这次小十天没reset，随着GPT 6 Sol的release，并且下一个注册用户milestone应该也快到了，接下来一周直接reset的概率很高，所以要好好计划一下这个周期要干什么。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260923-023403-20cf",
     "publishedAt": "2026-09-23T02:34:03+08:00",
     "content": "开心~是个banked reset。正好我的week limit六小时后就要重置了~",
