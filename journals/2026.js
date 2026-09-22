@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260923-020243-e479",
+    "publishedAt": "2026-09-23T02:02:43+08:00",
+    "content": "Qwen Image 2.1在多视角生成领域进步很大，感觉又往前推了一大步。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260923-012231-f184",
     "publishedAt": "2026-09-23T01:22:31+08:00",
     "content": "9月20日日报\n\n休息一天。",
