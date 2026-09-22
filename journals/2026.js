@@ -18,10 +18,11 @@ export default [
   {
     "id": "20260923-012231-f184",
     "publishedAt": "2026-09-23T01:22:31+08:00",
-    "content": "9月20日日报\n\n休息一天。",
+    "content": "9月21日日报\n\n休息一天。",
     "images": [],
     "relatedWriting": null,
-    "relatedTask": null
+    "relatedTask": null,
+    "updatedAt": "2026-09-23T02:34:18+08:00"
   },
   {
     "id": "20260920-192408-3e1c",
