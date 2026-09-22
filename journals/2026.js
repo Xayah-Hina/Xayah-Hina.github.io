@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260923-012231-f184",
+    "publishedAt": "2026-09-23T01:22:31+08:00",
+    "content": "9月20日日报\n\n休息一天。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260920-192408-3e1c",
     "publishedAt": "2026-09-20T19:24:08+08:00",
     "content": "9月20日日报\n\n集中探索了一下AI音乐创作的几个SOTA，很失望。还是再等等吧…… AI还没有为音乐制作行业准备好。",
