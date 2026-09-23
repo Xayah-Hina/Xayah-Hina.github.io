@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260924-001544-03fe",
+    "publishedAt": "2026-09-24T00:15:44+08:00",
+    "content": "9月22日日报\n\n低效率的一天…… 怎么回事！",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260923-123447-2e6c",
     "publishedAt": "2026-09-23T12:34:47+08:00",
     "content": "综合测试下来，Qwen Image 2.1适合做多视角生成/常规图片编辑。不适合生成图片，不适合画风转换。Qwen Image 2.1无论是生成还是编辑出来的AI脸非常严重，所以面部优化还是维持之前的pipeline吧。",
