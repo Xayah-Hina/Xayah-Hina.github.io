@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260924-110932-8ed9",
+    "publishedAt": "2026-09-24T11:09:32+08:00",
+    "content": "想到下一个开发目标了。之前一直嫌弃markdown格式不好用，现在我要开发一个基于图形化界面的综合文字/图片管理的App。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260924-001544-03fe",
     "publishedAt": "2026-09-24T00:15:44+08:00",
     "content": "9月22日日报\n\n低效率的一天…… 怎么回事！",
