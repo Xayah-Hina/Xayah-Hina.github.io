@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260927-013740-f779",
+    "publishedAt": "2026-09-27T01:37:40+08:00",
+    "content": "9月22日~25日日报\n\n集中探索了一下Qwen Image 2.1，Edit功能真是强大啊，感觉LoRA的必要性都很低了……",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260924-110932-8ed9",
     "publishedAt": "2026-09-24T11:09:32+08:00",
     "content": "想到下一个开发目标了。之前一直嫌弃markdown格式不好用，现在我要开发一个基于图形化界面的综合文字/图片管理的App。",
