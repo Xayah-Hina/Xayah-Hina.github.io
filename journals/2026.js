@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260928-172429-10a9",
+    "publishedAt": "2026-09-28T17:24:29+08:00",
+    "content": "不知道为什么社区对GPT 6 Sol的评价不是很好，似乎官方的benchmark都不是很好。可是根据最近的使用体验我感觉和Astra和之前的Sol 5.6没什么差距啊？而且显著比Astra快，而且消耗token感觉少了很多…… 高强度用了一天半才耗费了10%……",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260927-033854-b0f0",
     "publishedAt": "2026-09-27T03:38:54+08:00",
     "content": "认真学习了一下平平在白宫的演讲，在翻译中学到了原来还有peoples的用法。有趣，记录一下。\n\n这里的 peoples 用得是对的。关键在于 people 有两种不同的用法。\n1. people = 人们 / 多个人\n   这时它本身就是 person 的常用复数：\n   - one person\n   - two people\n   - Many people attended the meeting.\n   在这个意义下通常不会说 peoples。\n2. people = 一个民族、一个国家的人民整体\n   这时候 a people 是可数名词，意思接近“一个民族 / 一个国民共同体”。因此多个不同民族、国家的人民，就可以说 peoples：\n   - the Chinese people = 中国人民，作为一个整体\n   - the American people = 美国人民，作为一个整体\n   - the peoples of China and the United States = 中美两国人民\n   - the peoples of the world = 世界各国人民 / 世界各民族\n所以类似：\n中国人民和美国人民都是伟大的人民。\n\n翻成：\nThe Chinese people and the American people are both great peoples.\n\n语法上完全成立。这里最后的 peoples 不是“很多个人”，而是：\n中国人民这个 people + 美国人民这个 people\n→ 两个 peoples\n\n可以类比：\nChina and the United States are two countries.\n\n这里也是把两个分别独立的整体放在一起。\n不过 peoples 在日常口语里比较少见，带有明显的正式、外交、政治或历史文体色彩。比如联合国文件里很常见：\nfriendship between the peoples of the two countries\n\n也就是“两国人民之间的友谊”。\n所以你觉得奇怪非常正常，因为英语学习最先教的是：\nperson → people\n\n但实际上英语还有另一套：\na people → peoples\n一个民族/国民共同体 → 多个民族/国民共同体\n\n这次翻译里用到的正是第二种。",
