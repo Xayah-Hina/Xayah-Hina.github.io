@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260929-102057-2b45",
+    "publishedAt": "2026-09-29T10:20:57+08:00",
+    "content": "科技改变世界啊。沉迷于在Suno roll曲子听了……\n\nAI真是学习的沃土。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260928-172429-10a9",
     "publishedAt": "2026-09-28T17:24:29+08:00",
     "content": "不知道为什么社区对GPT 6 Sol的评价不是很好，似乎官方的benchmark都不是很好。可是根据最近的使用体验我感觉和Astra和之前的Sol 5.6没什么差距啊？而且显著比Astra快，而且消耗token感觉少了很多…… 高强度用了一天半才耗费了10%……",
