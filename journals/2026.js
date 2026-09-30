@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20260930-161321-60a0",
+    "publishedAt": "2026-09-30T16:13:21+08:00",
+    "content": "发现一个好玩的网站 https://intheweights.com",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20260929-162507-ae10",
     "publishedAt": "2026-09-29T16:25:07+08:00",
     "content": "有点神奇，之前感觉有底噪的声卡放了吃灰了两个月今天再试试似乎好了？也许是驱动的问题？刚连上的时候更新了一下驱动。\n\n不管怎么样，趁着suno这波红利可以考虑把做曲子的老手艺捡起来好好练习练习了。",
