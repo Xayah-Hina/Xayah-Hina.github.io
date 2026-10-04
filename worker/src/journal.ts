@@ -150,11 +150,11 @@ async function journalEntries(env: Env, year: string, required = true): Promise<
   return raw === null ? [] : validateJournalEntries(raw, year);
 }
 
-export async function authoringJournalCatalogData(env: Env) {
+export async function journalCatalogData(env: Env) {
   return { years: await journalYears(env) };
 }
 
-export async function authoringJournalYearData(env: Env, year: string) {
+export async function journalYearData(env: Env, year: string) {
   if (!/^\d{4}$/.test(year)) throw new HttpError(400, "Journal year is invalid.");
   const years = await journalYears(env);
   if (!years.includes(year)) throw new HttpError(404, "The Journal year is no longer available.");

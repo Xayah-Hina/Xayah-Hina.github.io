@@ -19,7 +19,7 @@ No D1 database is used.
 - Worker: `xayah-site-editor`
 - R2 bucket: `xayah-site-editor-content`
 - Custom domain: `media.xayah.me`
-- Worker routes: `xayah.me/api/*`, `xayah.me/data/tasks`, and `dictionary.xayah.me/api/*`
+- Worker routes: `xayah.me/api/*`, `xayah.me/data/*`, and `dictionary.xayah.me/api/*`
 - One Cloudflare Access self-hosted application covering `xayah.me/api/*` and
   `dictionary.xayah.me/api/*`
 
@@ -44,7 +44,7 @@ confirms a valid Access session. Dictionary reads and publishes use `DICTIONARY_
 `DICTIONARY_GITHUB_REPO`, and `DICTIONARY_GITHUB_BRANCH`, independently of the
 main site repository variables.
 
-Authenticated Journal catalog and year reads come directly from the current GitHub branch. This keeps the author view consistent immediately after a save, even while the public GitHub Pages deployment is still propagating.
+Public and authenticated Journal views both read the current GitHub branch through `GET /data/journal/catalog` and `GET /data/journal/year/:year`. Static Journal modules remain a shared fallback if that public endpoint is temporarily unavailable, so authentication can never select a different published dataset.
 
 ## Writing API lifecycle
 

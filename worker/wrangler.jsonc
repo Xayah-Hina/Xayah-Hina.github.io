@@ -19,7 +19,7 @@
       "zone_name": "xayah.me"
     },
     {
-      "pattern": "xayah.me/data/tasks",
+      "pattern": "xayah.me/data/*",
       "zone_name": "xayah.me"
     },
     {

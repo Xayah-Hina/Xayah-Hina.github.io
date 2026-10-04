@@ -1448,8 +1448,8 @@
       }
 
       try {
-        const catalog = await importDataModule("journals/catalog.js");
-        journalYears = normalizeYears(catalog.default?.years);
+        const catalog = await loadPublicJournalCatalog();
+        journalYears = normalizeYears(catalog?.years);
       } catch (error) {
         journalCatalogError = error;
       }
@@ -1533,6 +1533,36 @@
         const url = new URL(path, location.href);
         url.searchParams.set("v", version);
         return import(url.href);
+      }
+
+      async function loadPublicJournalCatalog() {
+        try {
+          const response = await fetch("/data/journal/catalog", { cache: "no-store" });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Journal catalog could not be loaded.");
+          return result;
+        } catch (publicError) {
+          try {
+            return (await importDataModule("journals/catalog.js")).default;
+          } catch {
+            throw publicError;
+          }
+        }
+      }
+
+      async function loadPublicJournalYear(year) {
+        try {
+          const response = await fetch(`/data/journal/year/${year}`, { cache: "no-store" });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || `Journal ${year} could not be loaded.`);
+          return result.entries;
+        } catch (publicError) {
+          try {
+            return (await importDataModule(`journals/${year}.js`)).default;
+          } catch {
+            throw publicError;
+          }
+        }
       }
 
       async function fetchAuthoringJson(path, options = {}) {
@@ -1705,14 +1735,7 @@
 
         journalLoadErrors.delete(year);
         const generation = journalDataGeneration;
-        const source = authoringSession
-          ? fetch(`/api/journal/year/${year}`, { cache: "no-store" }).then(async (response) => {
-              const result = await response.json();
-              if (!response.ok) throw new Error(result.error || `Journal ${year} could not be loaded.`);
-              return result.entries;
-            })
-          : importDataModule(`journals/${year}.js`).then((module) => module.default);
-        const promise = source
+        const promise = loadPublicJournalYear(year)
           .then((entryData) => {
             if (generation !== journalDataGeneration) return loadJournalYear(year);
             const entries = validateJournalEntries(entryData, year);
@@ -2244,21 +2267,6 @@
           if (!writingYears.includes(state.years.writing)) state.years.writing = latestYear("writing");
         } catch (error) {
           writingCatalogError = error;
-        }
-
-        try {
-          const { response, result } = await fetchAuthoringJson("/api/journal/catalog", { cache: "no-store" });
-          if (!response.ok) throw new Error(result.error || "Journal catalog could not be loaded.");
-          journalYears = normalizeYears(result.years);
-          yearsBySection.set("journal", journalYears);
-          journalDataGeneration += 1;
-          journalEntriesByYear.clear();
-          journalLoadPromises.clear();
-          journalLoadErrors.clear();
-          journalCatalogError = null;
-          if (!journalYears.includes(state.years.journal)) state.years.journal = latestYear("journal");
-        } catch (error) {
-          journalCatalogError = error;
         }
 
         const journalSlot = byId("journal-editor-slot");
@@ -3418,6 +3426,8 @@
       }
 
       function applyJournalData(year, entries, years, historyMode = "replace") {
+        journalDataGeneration += 1;
+        journalLoadPromises.clear();
         journalYears = normalizeYears(years);
         yearsBySection.set("journal", journalYears);
         journalCatalogError = null;

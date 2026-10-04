@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import test from "node:test";
 import {
-  authoringJournalCatalogData,
-  authoringJournalYearData,
+  journalCatalogData,
+  journalYearData,
   saveJournal,
 } from "../src/journal.ts";
 import { HttpError } from "../src/utils.ts";
@@ -157,12 +157,12 @@ test("an unchanged Journal edit never sends an empty R2 delete request", async (
   }
 });
 
-test("authoring Journal reads come from the latest GitHub source", async () => {
+test("public Journal reads come from the latest GitHub source", async () => {
   const restore = installJournalFetch();
   const { env } = environment();
   try {
-    assert.deepEqual(await authoringJournalCatalogData(env), { years: ["2026"] });
-    const result = await authoringJournalYearData(env, year);
+    assert.deepEqual(await journalCatalogData(env), { years: ["2026"] });
+    const result = await journalYearData(env, year);
     assert.equal(result.entries[0].content, entry.content);
   } finally {
     restore();

@@ -39,8 +39,9 @@ test("allowlisted build produces every static article and no source artifacts", 
   assert.match(homepage, /fetchAuthoringJson\("\/api\/authoring\/status"/);
   assert.match(homepage, /fetchAuthoringJson\("\/api\/session"/);
   assert.match(homepage, /fetchAuthoringJson\("\/api\/writing\/catalog"/);
-  assert.match(homepage, /fetchAuthoringJson\("\/api\/journal\/catalog"/);
-  assert.match(homepage, /fetch\(`\/api\/journal\/year\/\$\{year\}`/);
+  assert.match(homepage, /fetch\("\/data\/journal\/catalog", \{ cache: "no-store" \}\)/);
+  assert.match(homepage, /fetch\(`\/data\/journal\/year\/\$\{year\}`, \{ cache: "no-store" \}\)/);
+  assert.doesNotMatch(homepage, /\/api\/journal\/(?:catalog|year)/);
   assert.doesNotMatch(homepage, /\/api\/editor\/status|editor\.xayah\.me/);
   assert.doesNotMatch(homepage, /class="section-switch-button"[^>]*href="\/api\/session"/);
   assert.match(homepage, /<footer class="site-footer">[\s\S]*id="auth-link" class="footer-auth-link" href="\/api\/session">Log in<\/a>/);
@@ -182,6 +183,14 @@ test("homepage renders static content before bounded cloud authoring initializat
   assert.match(html, /window\.addEventListener\("popstate", scheduleRouteApply\);[\s\S]*window\.addEventListener\("hashchange", scheduleRouteApply\);[\s\S]*renderSection\(\);\s*\n\s*void \(async \(\) => \{\s*\n\s*await setupCloudAuthoring\(\);/);
   assert.match(html, /if \(generation !== writingDataGeneration\) return loadWritingYear\(year\);[\s\S]*if \(writingLoadPromises\.get\(year\) === promise\) writingLoadPromises\.delete\(year\);/);
   assert.match(html, /if \(generation !== journalDataGeneration\) return loadJournalYear\(year\);[\s\S]*if \(journalLoadPromises\.get\(year\) === promise\) journalLoadPromises\.delete\(year\);/);
+});
+
+test("Journal display data never changes with authentication state", () => {
+  const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  assert.match(html, /fetch\("\/data\/journal\/catalog", \{ cache: "no-store" \}\)/);
+  assert.match(html, /fetch\(`\/data\/journal\/year\/\$\{year\}`, \{ cache: "no-store" \}\)/);
+  assert.doesNotMatch(html, /fetchAuthoringJson\("\/api\/journal\/catalog"/);
+  assert.doesNotMatch(html, /fetch\(`\/api\/journal\/year\/\$\{year\}`/);
 });
 
 test("Writing composer destruction awaits Crepe and cancels pending change timers", () => {

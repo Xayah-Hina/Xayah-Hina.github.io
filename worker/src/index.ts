@@ -1,9 +1,9 @@
 import { verifyAccess } from "./auth";
 import { dictionaryStatus, openDictionary, publishDictionary, saveDictionary } from "./dictionary";
 import {
-  authoringJournalCatalogData,
-  authoringJournalYearData,
   deleteJournal,
+  journalCatalogData,
+  journalYearData,
   journalYears,
   saveJournal,
 } from "./journal";
@@ -96,8 +96,10 @@ export function endpointAllowed(scope: ApiScope, pathname: string): boolean {
   return pathname.startsWith("/api/dictionary/");
 }
 
-export function isPublicTasksPath(pathname: string): boolean {
-  return pathname === "/data/tasks";
+export function isPublicDataPath(pathname: string): boolean {
+  return pathname === "/data/tasks"
+    || pathname === "/data/journal/catalog"
+    || /^\/data\/journal\/year\/\d{4}$/.test(pathname);
 }
 
 export function sessionResponse(url: URL): Response {
@@ -121,13 +123,6 @@ async function authoringApi(request: Request, env: Env, url: URL, scope: ApiScop
   if (request.method === "GET" && url.pathname === "/api/tasks/google/callback") return finishGoogleCalendarConnection(env, url);
   if (request.method === "GET" && url.pathname === "/api/writing/catalog") {
     return jsonResponse(await authoringWritingCatalogData(env));
-  }
-  if (request.method === "GET" && url.pathname === "/api/journal/catalog") {
-    return jsonResponse(await authoringJournalCatalogData(env));
-  }
-  const journalYear = url.pathname.match(/^\/api\/journal\/year\/(\d{4})$/);
-  if (request.method === "GET" && journalYear) {
-    return jsonResponse(await authoringJournalYearData(env, journalYear[1]));
   }
   const writingYear = url.pathname.match(/^\/api\/writing\/year\/(\d{4})$/);
   if (request.method === "GET" && writingYear) {
@@ -172,6 +167,15 @@ async function handlePublicApi(request: Request, env: Env, url: URL, scope: ApiS
   return authoringApi(request, env, url, scope, context);
 }
 
+async function publicData(request: Request, env: Env, url: URL): Promise<Response> {
+  if (request.method !== "GET") throw new HttpError(405, "Public data is read-only.");
+  if (url.pathname === "/data/tasks") return tasksResponse(env, request);
+  if (url.pathname === "/data/journal/catalog") return jsonResponse(await journalCatalogData(env));
+  const journalYear = url.pathname.match(/^\/data\/journal\/year\/(\d{4})$/);
+  if (journalYear) return jsonResponse(await journalYearData(env, journalYear[1]));
+  throw new HttpError(404, "Published data was not found.");
+}
+
 async function publicMedia(request: Request, env: Env, url: URL): Promise<Response> {
   if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "Published media is read-only.");
   const journalPath = /^\/journals\/\d{4}\/[A-Za-z0-9._-]+$/;
@@ -200,8 +204,8 @@ export default {
     }
     try {
       if (url.hostname === new URL(env.MEDIA_ORIGIN).hostname) return secureResponse(await publicMedia(request, env, url));
-      if (url.hostname === new URL(env.PUBLIC_SITE_ORIGIN).hostname && isPublicTasksPath(url.pathname)) {
-        return secureResponse(await tasksResponse(env, request));
+      if (url.hostname === new URL(env.PUBLIC_SITE_ORIGIN).hostname && isPublicDataPath(url.pathname)) {
+        return secureResponse(await publicData(request, env, url));
       }
       if (url.hostname === new URL(env.PUBLIC_SITE_ORIGIN).hostname && url.pathname.startsWith("/api/")) {
         return secureResponse(await handlePublicApi(request, env, url, "main", context));
@@ -211,7 +215,7 @@ export default {
       }
       throw new HttpError(404, "Unknown hostname.");
     } catch (error) {
-      const jsonPath = url.pathname.startsWith("/api/") || isPublicTasksPath(url.pathname);
+      const jsonPath = url.pathname.startsWith("/api/") || isPublicDataPath(url.pathname);
       if (error instanceof HttpError) {
         if (jsonPath) return secureResponse(jsonResponse({ error: error.message }, error.status));
         return secureResponse(new Response(error.message, { status: error.status, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } }));
