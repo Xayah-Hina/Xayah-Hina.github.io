@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261004-082554-2d6a",
+    "publishedAt": "2026-10-04T08:25:54+08:00",
+    "content": "Sol 6.1感觉真的还是太慢了，好处是额度消耗确实慢。必须得想想办法追求并行工作了。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261002-154711-057a",
     "publishedAt": "2026-10-02T15:47:11+08:00",
     "content": "学无止境啊，FNO（Fourier Neural Operator）之前完全不懂。准备花一到两天深入学习一下。",
