@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261004-173831-8914",
+    "publishedAt": "2026-10-04T17:38:31+08:00",
+    "content": "token用不完，做了个好玩的：chess.xayah.me\n\n做了个mini版本的Alpha Zero，训练了五小时的版本感觉还是很笨，但是有小概率已经可以击败我了哈哈。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261004-082554-2d6a",
     "publishedAt": "2026-10-04T08:25:54+08:00",
     "content": "Sol 6.1感觉真的还是太慢了，好处是额度消耗确实慢。必须得想想办法追求并行工作了。",
