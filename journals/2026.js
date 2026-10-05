@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261006-062928-5d6b",
+    "publishedAt": "2026-10-06T06:29:28+08:00",
+    "content": "FNO有点太局限了，接下来计划花两天时间精读一下PBDL。读master之前一直想要精读一遍可惜实在是难以看懂，现在AI时代有了AI辅助应该会顺利不少~ 加油吧！",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261004-173831-8914",
     "publishedAt": "2026-10-04T17:38:31+08:00",
     "content": "token用不完，做了个好玩的：chess.xayah.me\n\n做了个mini版本的Alpha Zero，训练了五小时的版本感觉还是很笨，但是有小概率已经可以击败我了哈哈。",
