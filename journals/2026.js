@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261008-121334-604e",
+    "publishedAt": "2026-10-08T12:13:34+08:00",
+    "content": "就是一种苦苦寻觅了很久，结果发现答案早在最开始就写就的感觉。PBDL本来就是我一直在找的路径。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261006-062928-5d6b",
     "publishedAt": "2026-10-06T06:29:28+08:00",
     "content": "FNO有点太局限了，接下来计划花两天时间精读一下PBDL。读master之前一直想要精读一遍可惜实在是难以看懂，现在AI时代有了AI辅助应该会顺利不少~ 加油吧！",
