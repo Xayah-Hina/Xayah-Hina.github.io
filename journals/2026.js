@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261009-205745-77d0",
+    "publishedAt": "2026-10-09T20:57:45+08:00",
+    "content": "https://github.com/multimodal-art-projection/YuE\n\n真是个好东西，Suno劲敌。之前调研的时候为什么没发现呢。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261009-203533-2473",
     "publishedAt": "2026-10-09T20:35:33+08:00",
     "content": "看了胡渊鸣的新文章，哎……\n\n聪明 + 努力 + 热爱三个维度集齐真的太难了。",
