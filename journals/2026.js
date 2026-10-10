@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261010-111458-9618",
+    "publishedAt": "2026-10-10T11:14:58+08:00",
+    "content": "越看越感觉，迄今为止的我的整个学习路径都是一个Bitter Lesson。\n\n真是苦涩啊。\n\nhttps://bitterlesson.org/",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261009-205745-77d0",
     "publishedAt": "2026-10-09T20:57:45+08:00",
     "content": "https://github.com/multimodal-art-projection/YuE\n\n真是个好东西，Suno劲敌。之前调研的时候为什么没发现呢。",
