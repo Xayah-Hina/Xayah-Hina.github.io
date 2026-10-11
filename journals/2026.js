@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261011-101958-1a12",
+    "publishedAt": "2026-10-11T10:19:58+08:00",
+    "content": "大致过了一遍PBDL v0.3。有了一点思路，但不多。感觉必须得 好好消化一下了。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261010-111458-9618",
     "publishedAt": "2026-10-10T11:14:58+08:00",
     "content": "越看越感觉，迄今为止的我的整个学习路径都是一个Bitter Lesson。\n\n真是苦涩啊。\n\nhttps://bitterlesson.org/",
