@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
+import { writingBodyHeadingError, writingReferencedAssets } from "../worker/src/writing-markdown.mjs";
 
 const WRITING_ID = /^\d{8}-\d{6}$/;
-const WRITING_ASSET = /^\.\/([a-f0-9]{64})\.(jpe?g|png|webp|gif|avif)$/i;
 const FRONT_MATTER_KEYS = [
   "id",
   "title",
@@ -24,26 +24,14 @@ function normalizeText(value) {
   return String(value).replace(/\r\n?/g, "\n");
 }
 
-function comparableHeadingText(value) {
-  return String(value)
-    .replace(/[ \t]+#+[ \t]*$/, "")
-    .normalize("NFKC")
-    .replace(/[ \t]+/g, " ")
-    .trim();
-}
-
-function firstBodyHeadingMatchesTitle(body, title) {
-  const heading = /^#{1,2}[ \t]+(.+)$/m.exec(normalizeText(body));
-  return Boolean(heading && comparableHeadingText(heading[1]) === comparableHeadingText(title));
-}
-
 function normalizeWritingBody(value, title, id) {
   const body = normalizeText(value).trim();
   if (!body || body.length > 2_000_000) throw new Error(`Writing ${id} body is invalid.`);
-  if (firstBodyHeadingMatchesTitle(body, title)) {
+  const headingError = writingBodyHeadingError(body, title);
+  if (headingError === "duplicate-title") {
     throw new Error(`Writing ${id} body must not repeat its title as the first heading.`);
   }
-  if (/^#[ \t]+/m.test(body)) {
+  if (headingError === "h1") {
     throw new Error(`Writing ${id} body must not contain an H1 heading; the title is generated from front matter.`);
   }
   return `${body}\n`;
@@ -148,12 +136,5 @@ export function writingSourceHash(source) {
 }
 
 export function referencedAssets(body) {
-  const assets = new Set();
-  const pattern = /!\[[^\]]*\]\(([^)\s]+)(?:\s+(?:"[^"]*"|'[^']*'))?\)/g;
-  for (const match of body.matchAll(pattern)) {
-    const valid = WRITING_ASSET.exec(match[1]);
-    if (!valid) throw new Error(`Writing image ${match[1]} is not content-addressed.`);
-    assets.add(`${valid[1]}.${valid[2].toLowerCase()}`);
-  }
-  return [...assets].sort();
+  return writingReferencedAssets(body);
 }

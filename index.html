@@ -1426,6 +1426,7 @@
       const moduleVersion = Date.now().toString();
       const authoringRequestTimeout = 8000;
       const taskCodePattern = /^[A-Z][A-Z0-9]{1,7}-\d{4}-\d{4}$/;
+      const requestedJournalYear = /^#journal\/(\d{4})$/.exec(location.hash)?.[1] || "";
       let authoringSession = false;
       const writingEntriesByYear = new Map();
       const writingLoadPromises = new Map();
@@ -1448,7 +1449,7 @@
       }
 
       try {
-        const catalog = await loadPublicJournalCatalog();
+        const catalog = (await importDataModule("journals/catalog.js")).default;
         journalYears = normalizeYears(catalog?.years);
       } catch (error) {
         journalCatalogError = error;
@@ -1513,13 +1514,13 @@
         composer: null,
         composerModule: null,
         composerToken: 0,
-        visualChanged: false,
         view: "visual",
         current: null,
         baseline: null,
         savedAt: null,
         saveTimer: null,
         savePromise: null,
+        saveError: null,
         publishEnabled: false,
         unpublished: false
       };
@@ -1537,8 +1538,7 @@
 
       async function loadPublicJournalCatalog() {
         try {
-          const response = await fetch("/data/journal/catalog", { cache: "no-store" });
-          const result = await response.json();
+          const { response, result } = await fetchAuthoringJson("/data/journal/catalog", { cache: "no-store" });
           if (!response.ok) throw new Error(result.error || "Journal catalog could not be loaded.");
           return result;
         } catch (publicError) {
@@ -1552,8 +1552,7 @@
 
       async function loadPublicJournalYear(year) {
         try {
-          const response = await fetch(`/data/journal/year/${year}`, { cache: "no-store" });
-          const result = await response.json();
+          const { response, result } = await fetchAuthoringJson(`/data/journal/year/${year}`, { cache: "no-store" });
           if (!response.ok) throw new Error(result.error || `Journal ${year} could not be loaded.`);
           return result.entries;
         } catch (publicError) {
@@ -1562,6 +1561,31 @@
           } catch {
             throw publicError;
           }
+        }
+      }
+
+      async function refreshPublicJournalCatalog() {
+        const generation = journalDataGeneration;
+        const initialHash = location.hash;
+        const selectedYear = state.years.journal;
+        try {
+          const catalog = await loadPublicJournalCatalog();
+          if (generation !== journalDataGeneration) return;
+          journalYears = normalizeYears(catalog?.years);
+          yearsBySection.set("journal", journalYears);
+          journalCatalogError = null;
+          if (location.hash === initialHash && state.years.journal === selectedYear) {
+            state.years.journal = journalYears.includes(requestedJournalYear) ? requestedJournalYear : latestYear("journal");
+          } else if (!journalYears.includes(state.years.journal)) {
+            state.years.journal = latestYear("journal");
+          }
+        } catch (error) {
+          if (generation !== journalDataGeneration) return;
+          if (!journalYears.length) journalCatalogError = error;
+        }
+        if (state.section === "journal") {
+          if (state.years.journal !== selectedYear) updateRoute("journal", state.years.journal, true);
+          renderSection();
         }
       }
 
@@ -2430,6 +2454,7 @@
           }
         });
         window.addEventListener("beforeunload", (event) => {
+          flushWritingComposerChanges();
           if (!writingEditorIsDirty()) return;
           event.preventDefault();
           event.returnValue = "";
@@ -2549,19 +2574,6 @@
         return editorRequest(`/api/writing/${action}`, payload);
       }
 
-      function comparableHeadingText(value) {
-        return String(value)
-          .replace(/[ \t]+#+[ \t]*$/, "")
-          .normalize("NFKC")
-          .replace(/[ \t]+/g, " ")
-          .trim();
-      }
-
-      function firstBodyHeadingMatchesTitle(body, title) {
-        const heading = /^#{1,2}[ \t]+(.+)$/m.exec(String(body).replace(/\r\n?/g, "\n"));
-        return Boolean(heading && comparableHeadingText(heading[1]) === comparableHeadingText(title));
-      }
-
       function writingEditorSnapshot() {
         if (!writingAuthoring.current) return "";
         return JSON.stringify({
@@ -2586,6 +2598,10 @@
         const dirty = writingEditorIsDirty();
         const publish = writingAuthoring.editor.querySelector('[data-writing-editor-action="publish"]');
         publish.disabled = dirty || !writingAuthoring.publishEnabled || !writingAuthoring.unpublished || Boolean(writingAuthoring.savePromise);
+        if (writingAuthoring.saveError) {
+          setWritingEditorStatus(writingAuthoring.saveError, "error");
+          return;
+        }
         setWritingEditorStatus(dirty
           ? "Saving draft..."
           : (writingAuthoring.unpublished
@@ -2699,8 +2715,13 @@
         writingAuthoring.composerRoot?.replaceChildren();
       }
 
+      function flushWritingComposerChanges() {
+        if (writingAuthoring.view === "visual") writingAuthoring.composer?.flushChanges();
+      }
+
       async function mountWritingComposer(markdown) {
         const token = ++writingAuthoring.composerToken;
+        const session = writingAuthoring.current;
         const previous = writingAuthoring.composer;
         writingAuthoring.composer = null;
         if (previous) await previous.destroy();
@@ -2715,12 +2736,11 @@
           onChange(value) {
             if (token !== writingAuthoring.composerToken || !writingAuthoring.current) return;
             writingAuthoring.source.value = value;
-            writingAuthoring.visualChanged = true;
             scheduleWritingChanges();
           },
-          onUpload: uploadWritingImage,
+          onUpload: (file) => uploadWritingImage(file, session),
           onUploadState(message) {
-            if (message) setWritingEditorStatus(message);
+            if (message && token === writingAuthoring.composerToken && session === writingAuthoring.current) setWritingEditorStatus(message);
           }
         });
         if (token !== writingAuthoring.composerToken || !writingAuthoring.current) {
@@ -2733,6 +2753,7 @@
 
       function scheduleWritingChanges() {
         if (!writingAuthoring.current) return;
+        writingAuthoring.saveError = null;
         updateWritingMeasure();
         updateWritingEditorStatus();
         window.clearTimeout(writingAuthoring.saveTimer);
@@ -2755,7 +2776,7 @@
         writingAuthoring.summary.value = result.entry.summary || "";
         writingAuthoring.writingStatus.value = result.entry.status || "incomplete";
         writingAuthoring.savedAt = result.savedAt || null;
-        writingAuthoring.visualChanged = false;
+        writingAuthoring.saveError = null;
         writingAuthoring.view = "visual";
         writingAuthoring.baseline = writingEditorSnapshot();
         writingAuthoring.editor.hidden = false;
@@ -2783,6 +2804,7 @@
 
       async function openWritingEditor(year, id) {
         if (!canAuthorWriting() || writingAuthoring.busy) return;
+        flushWritingComposerChanges();
         if (writingEditorIsDirty() && !window.confirm("Discard unsaved Writing changes?")) return;
         const entry = (writingEntriesByYear.get(year) || []).find((candidate) => candidate.id === id);
         if (!entry) return;
@@ -2799,24 +2821,31 @@
 
       async function requestCloseWritingEditor() {
         if (writingAuthoring.busy) return;
-        if (writingEditorIsDirty()) {
-          try {
-            await saveWritingNow();
-          } catch {
-            if (!window.confirm("The private draft could not be saved. Leave and discard these changes?")) return;
+        setWritingEditorBusy(true);
+        try {
+          flushWritingComposerChanges();
+          if (writingEditorIsDirty() || writingAuthoring.savePromise) {
+            try {
+              await saveWritingNow({ allowBusy: true });
+            } catch {
+              if (!window.confirm("The private draft could not be saved. Leave and discard these changes?")) return;
+            }
           }
-        }
-        if (writingAuthoring.unpublished && !window.confirm("Leave these Writing changes saved as a private cloud draft but unpublished?")) return;
-        writingAuthoring.editor.hidden = true;
-        await destroyWritingComposer();
-        writingAuthoring.current = null;
-        writingAuthoring.baseline = null;
-        writingAuthoring.savedAt = null;
-        writingAuthoring.visualChanged = false;
-        writingAuthoring.view = "visual";
-        document.body.classList.remove("writing-editor-open");
-        if (window.parent !== window && new URLSearchParams(location.search).has("edit-writing")) {
-          window.parent.postMessage({ type: "xayah-writing-editor-close" }, location.origin);
+          if (writingAuthoring.unpublished && !window.confirm("Leave these Writing changes saved as a private cloud draft but unpublished?")) return;
+          window.clearTimeout(writingAuthoring.saveTimer);
+          writingAuthoring.editor.hidden = true;
+          await destroyWritingComposer();
+          writingAuthoring.current = null;
+          writingAuthoring.baseline = null;
+          writingAuthoring.savedAt = null;
+          writingAuthoring.saveError = null;
+          writingAuthoring.view = "visual";
+          document.body.classList.remove("writing-editor-open");
+          if (window.parent !== window && new URLSearchParams(location.search).has("edit-writing")) {
+            window.parent.postMessage({ type: "xayah-writing-editor-close" }, location.origin);
+          }
+        } finally {
+          setWritingEditorBusy(false);
         }
       }
 
@@ -2826,12 +2855,9 @@
         const visualPane = writingAuthoring.editor.querySelector(".writing-visual-pane");
         const sourcePane = writingAuthoring.editor.querySelector(".writing-source-pane");
         if (view === "source") {
-          if (writingAuthoring.composer && writingAuthoring.visualChanged) {
-            writingAuthoring.source.value = writingAuthoring.composer.getMarkdown();
-          }
+          flushWritingComposerChanges();
           visualPane.hidden = true;
           sourcePane.hidden = false;
-          writingAuthoring.visualChanged = false;
         } else {
           if (!writingAuthoring.composer) {
             await mountWritingComposer(writingAuthoring.source.value);
@@ -2840,7 +2866,6 @@
           }
           sourcePane.hidden = true;
           visualPane.hidden = false;
-          writingAuthoring.visualChanged = false;
         }
         writingAuthoring.view = view;
         writingAuthoring.editor.querySelector(".writing-workspace").dataset.view = view;
@@ -2865,51 +2890,53 @@
         };
       }
 
-      function saveWritingNow() {
+      function saveWritingNow(options) {
         window.clearTimeout(writingAuthoring.saveTimer);
-        return saveWritingDocument();
+        return saveWritingDocument(options);
       }
 
-      async function saveWritingDocument() {
-        if (!writingAuthoring.current || writingAuthoring.busy) return;
-        if (writingAuthoring.savePromise) {
+      async function saveWritingDocument({ allowBusy = false } = {}) {
+        if (!writingAuthoring.current || (writingAuthoring.busy && !allowBusy)) return;
+        const session = writingAuthoring.current;
+        while (writingAuthoring.savePromise) {
           await writingAuthoring.savePromise;
         }
+        if (session !== writingAuthoring.current) return;
+        flushWritingComposerChanges();
         if (!writingEditorIsDirty()) return;
         const payload = writingSavePayload();
         const snapshot = writingEditorSnapshot();
         if (!payload.title || !payload.summary || !payload.body.trim()) {
-          setWritingEditorStatus("Title, summary, and Markdown body are required.", "error");
+          writingAuthoring.saveError = "Title, summary, and Markdown body are required.";
+          setWritingEditorStatus(writingAuthoring.saveError, "error");
           throw new Error("Writing fields are incomplete.");
         }
-        if (firstBodyHeadingMatchesTitle(payload.body, payload.title)) {
-          setWritingEditorStatus("The first body heading duplicates the article title. Remove it and begin with the introduction or first section.", "error");
-          throw new Error("Writing body repeats the article title.");
-        }
-        if (/^#[ \t]+/m.test(payload.body)) {
-          setWritingEditorStatus("The article title is generated from the Title field. Remove the H1; use H2 only for body sections.", "error");
-          throw new Error("Writing body contains an H1 heading.");
-        }
+        writingAuthoring.saveError = null;
         setWritingEditorStatus("Saving private draft...");
         const request = writingRequest("save", payload);
         writingAuthoring.savePromise = request;
         try {
           const result = await request;
+          if (session !== writingAuthoring.current) return;
           applyWritingServerData(result);
           writingAuthoring.savedAt = result.savedAt;
           writingAuthoring.unpublished = Boolean(result.sync?.writingPending);
           writingAuthoring.baseline = snapshot;
+          flushWritingComposerChanges();
           if (writingEditorSnapshot() === snapshot) {
             setWritingEditorStatus("Private draft saved · Ready to publish.");
           } else {
             scheduleWritingChanges();
           }
         } catch (error) {
-          setWritingEditorStatus(error.message || "Writing could not be saved.", "error");
+          if (session === writingAuthoring.current) {
+            writingAuthoring.saveError = error.message || "Writing could not be saved.";
+            setWritingEditorStatus(writingAuthoring.saveError, "error");
+          }
           throw error;
         } finally {
           if (writingAuthoring.savePromise === request) writingAuthoring.savePromise = null;
-          updateWritingEditorStatus();
+          if (session === writingAuthoring.current) updateWritingEditorStatus();
         }
       }
 
@@ -2930,25 +2957,27 @@
         scheduleWritingChanges();
       }
 
-      async function uploadWritingImage(file) {
-        if (!writingAuthoring.current) throw new Error("Open a Writing before uploading an image.");
+      async function uploadWritingImage(file, session = writingAuthoring.current) {
+        if (!session || session !== writingAuthoring.current || writingAuthoring.busy) throw new Error("Open a Writing before uploading an image.");
         try {
           const form = new FormData();
-          form.append("id", writingAuthoring.current.id);
+          form.append("id", session.id);
           form.append("file", file);
           const response = await fetch("/api/writing/assets/upload", { method: "POST", body: form });
           const result = await response.json();
+          if (session !== writingAuthoring.current || writingAuthoring.busy) throw new Error("The editor changed before the image upload finished. Reopen the original Writing to add the image.");
           if (!response.ok) throw new Error(result.error || "Image upload failed.");
           setWritingEditorStatus("Image uploaded privately · Saving draft…");
           return `./${result.name}`;
         } catch (error) {
-          setWritingEditorStatus(error.message || "Image upload failed.", "error");
+          if (session === writingAuthoring.current && !writingAuthoring.busy) setWritingEditorStatus(error.message || "Image upload failed.", "error");
           throw error;
         }
       }
 
       async function uploadWritingImages(files) {
         if (!writingAuthoring.current || writingAuthoring.busy || !files.length) return;
+        const session = writingAuthoring.current;
         const accepted = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
         const images = files.filter((file) => accepted.has(file.type));
         if (images.length !== files.length) {
@@ -2958,13 +2987,14 @@
         setWritingEditorStatus(`Uploading ${images.length} image${images.length === 1 ? "" : "s"}...`);
         try {
           for (const file of images) {
-            const source = await uploadWritingImage(file);
+            const source = await uploadWritingImage(file, session);
+            if (session !== writingAuthoring.current || writingAuthoring.busy) return;
             const alt = file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim() || "Image";
             insertWritingImage(source.slice(2), alt);
           }
           setWritingEditorStatus("Image uploaded privately · Saving draft...");
         } catch (error) {
-          setWritingEditorStatus(error.message || "Image upload failed.", "error");
+          if (session === writingAuthoring.current && !writingAuthoring.busy) setWritingEditorStatus(error.message || "Image upload failed.", "error");
         }
       }
 
@@ -2988,18 +3018,20 @@
 
       async function publishWritingDocument() {
         if (!writingAuthoring.current || writingAuthoring.busy || !writingAuthoring.publishEnabled) return;
+        setWritingEditorBusy(true);
         window.clearTimeout(writingAuthoring.saveTimer);
         try {
-          await saveWritingDocument();
+          await saveWritingDocument({ allowBusy: true });
         } catch {
+          setWritingEditorBusy(false);
           return;
         }
         if (writingEditorIsDirty()) {
           setWritingEditorStatus("The latest changes are still being saved.", "error");
+          setWritingEditorBusy(false);
           return;
         }
 
-        setWritingEditorBusy(true);
         setWritingEditorStatus("Publishing to GitHub...");
         try {
           const result = await writingRequest("publish", {
@@ -3007,9 +3039,29 @@
             id: writingAuthoring.current.id
           });
           applyWritingServerData(result);
-          writingAuthoring.unpublished = Boolean(result.sync?.writingPending);
-          writingAuthoring.savedAt = result.savedAt || writingAuthoring.savedAt;
-          writingAuthoring.baseline = writingEditorSnapshot();
+          const responseSnapshot = JSON.stringify({
+            title: result.entry.title,
+            summary: result.entry.summary || "",
+            status: result.entry.status || "incomplete",
+            body: result.body
+          });
+          if (result.entry.id === writingAuthoring.current.id
+            && String(result.year) === writingAuthoring.current.year
+            && responseSnapshot === writingEditorSnapshot()) {
+            // A normal publish only advances the saved revision. Keep the
+            // existing composer, undo history, selection, and metadata view.
+            writingAuthoring.savedAt = result.savedAt || null;
+            writingAuthoring.baseline = responseSnapshot;
+            writingAuthoring.saveError = null;
+            if (result.sync) {
+              writingAuthoring.publishEnabled = Boolean(result.sync.enabled);
+              writingAuthoring.unpublished = Boolean(result.sync.writingPending);
+            }
+          } else {
+            const previousView = writingAuthoring.view;
+            await showWritingEditorData(result);
+            if (previousView === "source") await setWritingEditorView("source");
+          }
           const deployment = await waitForWritingDeployment(result.entry.id, result.revision, result.commitSha);
           setWritingEditorStatus(deployment.state === "live"
             ? (writingAuthoring.unpublished
@@ -3498,6 +3550,7 @@
           );
           const result = await journalRequest("save", {
             mode: original ? "edit" : "create",
+            ...(original ? { baseEntry: original } : {}),
             entry: {
               id,
               publishedAt,
@@ -3539,7 +3592,7 @@
         setAuthoringStatus("Deleting Journal...");
 
         try {
-          const result = await journalRequest("delete", { year, id });
+          const result = await journalRequest("delete", { year, id, baseEntry: entry });
           const nextYears = normalizeYears(result.years);
           const nextEntries = result.entries.length > 0
             ? validateJournalEntries(result.entries, year)
@@ -3615,6 +3668,8 @@
         updateRoute(initialRoute.sectionId, initialRoute.year, true, initialRoute.taskCode);
       }
       renderSection();
+
+      void refreshPublicJournalCatalog();
 
       void (async () => {
         await setupCloudAuthoring();

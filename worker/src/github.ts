@@ -167,10 +167,26 @@ export async function commitFiles(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ base_tree: parent.tree.sha, tree: treeEntries }),
   }, [201]);
+  return commitTree(env, message, tree.sha, parent.sha, branch);
+}
+
+// A deletion of an unpublished Writing must still advance the branch. Its
+// unchanged-tree commit fences publishers that already read the private draft
+// against an older head, including requests resumed after a deletion lease.
+export async function commitBranchFence(env: Env, message: string, expectedHead: string): Promise<string> {
+  const head = await branchHead(env);
+  if (head !== expectedHead) {
+    throw new HttpError(409, "The repository changed while this edit was open. Reload and try again.");
+  }
+  const parent = await currentCommit(env, head);
+  return commitTree(env, message, parent.tree.sha, parent.sha, env.GITHUB_BRANCH);
+}
+
+async function commitTree(env: Env, message: string, tree: string, parent: string, branch: string): Promise<string> {
   const commit = await githubRequest<{ sha: string }>(env, `${repoPath(env)}/git/commits`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, tree: tree.sha, parents: [parent.sha] }),
+    body: JSON.stringify({ message, tree, parents: [parent] }),
   }, [201]);
   try {
     await githubRequest(env, `${repoPath(env)}/git/refs/heads/${encodeURIComponent(branch)}`, {

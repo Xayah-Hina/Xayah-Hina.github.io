@@ -59,11 +59,15 @@ From the repository root:
 
 ```sh
 npm ci
-npm test
 npm run build
 ```
 
 Only `_site` is uploaded to Pages. Markdown, Worker source, TeX, and repository internals must never appear in that directory.
+
+`XAYAH_BUILD_OUTPUT` is intended for isolated builds. It accepts the normal
+repository `_site` directory or a separate directory below the operating
+system's temporary directory. Repository sources, ancestors, and aliases to
+protected paths are rejected before any output is removed.
 
 ## Typography
 

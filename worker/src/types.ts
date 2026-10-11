@@ -135,6 +135,14 @@ export interface TaskState {
 export interface GoogleCalendarEventLink {
   googleUpdatedAt: string;
   taskUpdatedAt: string;
+  eventFingerprint?: string;
+  pendingWrite?: {
+    operationId: string;
+    startsAt: string;
+    endsAt: string;
+    eventFingerprint: string;
+    taskUpdatedAt: string;
+  };
 }
 
 export interface GoogleCalendarConnection {
@@ -147,6 +155,8 @@ export interface GoogleCalendarConnection {
   connectedAt: string;
   lastSyncedAt?: string;
   lastError?: string;
+  syncLease?: { owner: string; expiresAt: string };
+  pendingTaskWrite?: { operationId: string; links: Record<string, GoogleCalendarEventLink> };
 }
 
 export interface GoogleOAuthState {

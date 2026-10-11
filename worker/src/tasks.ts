@@ -50,6 +50,7 @@ type TaskMode =
 export interface VersionedTaskState {
   state: TaskState;
   etag: string | null;
+  customMetadata: Record<string, string>;
 }
 
 export interface PublicTaskData extends TaskState {
@@ -284,15 +285,18 @@ export function parseTaskState(value: unknown): TaskState {
 
 export async function loadTaskStateVersioned(env: Env): Promise<VersionedTaskState> {
   const stored = await getTaskStateVersioned(env);
-  return stored ? { state: parseTaskState(stored.state), etag: stored.etag } : { state: emptyTaskState(), etag: null };
+  return stored
+    ? { state: parseTaskState(stored.state), etag: stored.etag, customMetadata: stored.customMetadata }
+    : { state: emptyTaskState(), etag: null, customMetadata: {} };
 }
 
 export function publicTaskData(state: TaskState): PublicTaskData {
   return { ...state, today: todayInSingapore() };
 }
 
-export async function saveSyncedTaskState(env: Env, state: TaskState, etag: string | null): Promise<boolean> {
-  return putTaskStateConditional(env, state, etag);
+export async function saveSyncedTaskState(env: Env, state: TaskState, etag: string | null, customMetadata: Record<string, string>): Promise<boolean> {
+  parseTaskState(state);
+  return putTaskStateConditional(env, state, etag, customMetadata);
 }
 
 export function sessionsOverlap(candidate: Pick<TaskSession, "id" | "startsAt" | "endsAt">, sessions: TaskSession[]): boolean {
@@ -303,7 +307,14 @@ export function sessionsOverlap(candidate: Pick<TaskSession, "id" | "startsAt" |
 }
 
 function nextPosition(tasks: TaskItem[], projectId: string): number {
-  return tasks.filter((task) => task.projectId === projectId).reduce((maximum, task) => Math.max(maximum, task.position), -1) + 1;
+  const siblings = tasks.filter((task) => task.projectId === projectId);
+  const next = siblings.reduce((maximum, task) => Math.max(maximum, task.position), -1) + 1;
+  if (next <= MAX_TASKS) return next;
+  // Moving Tasks can leave gaps; compact only when necessary, preserving the
+  // displayed order, identity, timestamps, Sessions and completion history.
+  siblings.sort((left, right) => left.position - right.position || left.createdAt.localeCompare(right.createdAt));
+  siblings.forEach((task, index) => { task.position = index; });
+  return siblings.length;
 }
 
 function projectInput(value: unknown): Record<string, unknown> {
@@ -413,8 +424,8 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
     const project = projects.find((candidate) => candidate.id === String(value.projectId || "") && !candidate.archivedAt && candidate.status === "active");
     if (!project) throw new HttpError(400, "Choose an active Project.");
     if (task.projectId !== project.id) {
-      task.projectId = project.id;
       task.position = nextPosition(tasks, project.id);
+      task.projectId = project.id;
     }
     task.title = requiredString(value.title, "Task title", 160);
     task.objective = requiredString(value.objective ?? "", "Task objective", 1200, true);
@@ -516,7 +527,8 @@ export async function saveTasks(env: Env, payload: Record<string, unknown>): Pro
     sessions: sessions.sort((left, right) => left.startsAt.localeCompare(right.startsAt) || left.id.localeCompare(right.id)),
     contributions: contributions.sort((left, right) => left.completedAt.localeCompare(right.completedAt) || left.taskId.localeCompare(right.taskId)),
   };
-  if (!await putTaskStateConditional(env, next, current.etag)) throw new HttpError(409, "Tasks changed while saving. Reload and try again.");
+  parseTaskState(next);
+  if (!await putTaskStateConditional(env, next, current.etag, current.customMetadata)) throw new HttpError(409, "Tasks changed while saving. Reload and try again.");
   return { ...publicTaskData(next), status };
 }
 

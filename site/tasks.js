@@ -164,6 +164,16 @@ export function roundedCurrentSlot(now = Date.now()) {
   return singaporeParts(rounded);
 }
 
+export function initialSessionSlot(selectedWeekStart, taskId = "", startMinute = null, requestedDate = "", now = Date.now()) {
+  const rounded = roundedCurrentSlot(now);
+  const today = singaporeParts(new Date(now).toISOString()).date;
+  const useCurrentDate = taskId || weekDates(selectedWeekStart).includes(today);
+  return {
+    date: requestedDate || (useCurrentDate ? rounded.date : selectedWeekStart),
+    minute: startMinute === null ? rounded.minute : Math.max(0, Math.min(1425, startMinute)),
+  };
+}
+
 function formatDate(value, options = {}) {
   return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC", ...options }).format(new Date(`${value}T00:00:00Z`));
 }
@@ -875,12 +885,10 @@ export function createTasksController({ canAuthor = () => false, request, confir
     editor.sessionId = session?.id || "";
     editor.sessionForm.reset();
     fillTaskOptions(editor.sessionForm.elements.taskId);
-    const dates = new Set(weekDates(selectedWeekStart));
-    const now = roundedCurrentSlot();
-    const preferredDate = requestedDate || (taskId ? data.today : (dates.has(data.today) ? data.today : selectedWeekStart));
+    const slot = initialSessionSlot(selectedWeekStart, taskId, startMinute, requestedDate);
     const initialStart = session?.startsAt || (startMinute === null
-      ? nextSlot(localDateTime(preferredDate, now.minute), 60)
-      : localDateTime(preferredDate, Math.max(0, Math.min(1425, startMinute))));
+      ? nextSlot(localDateTime(slot.date, slot.minute), 60)
+      : localDateTime(slot.date, slot.minute));
     const start = singaporeParts(initialStart);
     const duration = session ? sessionDuration(session) : 60;
     editor.sessionForm.elements.taskId.value = session?.taskId || taskId || editor.sessionForm.elements.taskId.options[0]?.value || "";
@@ -1021,9 +1029,10 @@ export function createTasksController({ canAuthor = () => false, request, confir
     if (buttonTarget) buttonTarget.disabled = true;
     try {
       if (action === "sync-calendar") {
-        await post("/api/tasks/google/sync");
+        const result = await post("/api/tasks/google/sync");
         await load(true);
-        ui.message = "Google Calendar synced.";
+        ui.message = result?.status === "busy" ? "Google Calendar sync is already in progress." : "Google Calendar synced.";
+        if (result?.status === "busy") refreshCalendarAfterSave(calendar?.lastSyncedAt || null);
       }
       if (action === "disconnect-calendar") {
         await post("/api/tasks/google/disconnect");

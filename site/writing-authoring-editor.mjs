@@ -3,6 +3,7 @@ import { editorViewCtx } from "@milkdown/kit/core";
 import { uploadConfig } from "@milkdown/kit/plugin/upload";
 import { imageSchema } from "@milkdown/kit/preset/commonmark";
 import { $view, insert, replaceAll } from "@milkdown/kit/utils";
+import { canonicalWritingAssetName } from "../worker/src/writing-assets.mjs";
 
 const IMAGE_TYPES = new Set([
   "image/jpeg",
@@ -17,8 +18,8 @@ function imageLabel(file) {
 }
 
 function displayImageUrl(source, assetBase) {
-  const local = source.match(/^\.\/([a-f0-9]{64}\.(?:jpg|jpeg|png|webp|gif|avif))$/i);
-  return local ? `${assetBase.replace(/\/$/, "")}/${local[1]}` : source;
+  const name = canonicalWritingAssetName(source);
+  return name ? `${assetBase.replace(/\/$/, "")}/${name}` : source;
 }
 
 function imageView(assetBase) {
@@ -70,9 +71,10 @@ export async function createWritingComposer({
   onUpload,
   onUploadState,
 }) {
-  let silent = true;
+  let ready = false;
+  let notifiedDoc = null;
   let destroyed = false;
-  let changeTimer = null;
+  let readonly = false;
   let destroyPromise = null;
   const crepe = new Crepe({
     root,
@@ -102,6 +104,7 @@ export async function createWritingComposer({
         ...previous,
         enableHtmlFileUploader: true,
         uploader: async (files, schema) => {
+          if (destroyed || readonly) throw new Error("The Writing editor is no longer editable.");
           const imageType = schema.nodes.image;
           if (!imageType) throw new Error("The Markdown image node is unavailable.");
           const images = [...files].filter((file) => IMAGE_TYPES.has(file.type));
@@ -113,60 +116,71 @@ export async function createWritingComposer({
             const nodes = [];
             for (const file of images) {
               const source = await onUpload(file);
+              if (destroyed || readonly) throw new Error("The Writing editor changed before the upload finished.");
               const alt = imageLabel(file);
               nodes.push(imageType.createAndFill({ src: source, alt, title: alt }));
             }
             return nodes;
           } finally {
-            onUploadState?.("");
+            if (!destroyed) onUploadState?.("");
           }
         },
       }));
     })
     .use(imageView(assetBase));
 
-  crepe.on((listener) => {
-    listener.markdownUpdated((_ctx, value) => {
-      if (!destroyed && !silent) onChange(value);
-    });
-  });
-
-  const enableChanges = () => {
-    window.clearTimeout(changeTimer);
-    if (destroyed) return;
-    changeTimer = window.setTimeout(() => {
-      changeTimer = null;
-      if (!destroyed) silent = false;
-    }, 0);
+  const currentDoc = () => crepe.editor.action((ctx) => ctx.get(editorViewCtx).state.doc);
+  const flushChanges = () => {
+    if (destroyed || !ready) return false;
+    const doc = currentDoc();
+    if (notifiedDoc?.eq(doc)) return false;
+    // Milkdown's markdownUpdated listener is debounced. Read the current doc
+    // synchronously at save/close boundaries, but never serialize an unchanged
+    // doc: doing so would normalize untouched source Markdown unnecessarily.
+    const value = crepe.getMarkdown();
+    notifiedDoc = doc;
+    onChange(value);
+    return true;
   };
 
+  crepe.on((listener) => {
+    listener.markdownUpdated(() => flushChanges());
+  });
+
   await crepe.create();
-  enableChanges();
+  notifiedDoc = currentDoc();
+  ready = true;
 
   return {
+    flushChanges,
     getMarkdown() {
       return crepe.getMarkdown();
     },
     insertMarkdown(value) {
+      if (destroyed || readonly) return;
       crepe.editor.action(insert(value));
     },
     replaceMarkdown(value) {
       if (destroyed) return;
-      silent = true;
-      crepe.editor.action(replaceAll(value, true));
-      enableChanges();
+      ready = false;
+      try {
+        crepe.editor.action(replaceAll(value, true));
+        notifiedDoc = currentDoc();
+      } finally {
+        ready = true;
+      }
     },
     focus() {
+      if (destroyed) return;
       crepe.editor.action((ctx) => ctx.get(editorViewCtx).focus());
     },
     setReadonly(value) {
+      readonly = value;
       crepe.setReadonly(value);
     },
     async destroy() {
       if (!destroyPromise) {
         destroyed = true;
-        window.clearTimeout(changeTimer);
-        changeTimer = null;
         destroyPromise = (async () => {
           try {
             await crepe.destroy();

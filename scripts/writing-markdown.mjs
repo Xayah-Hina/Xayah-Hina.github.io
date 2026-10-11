@@ -1,8 +1,7 @@
-import MarkdownIt from "markdown-it";
+import { createWritingMarkdownParser } from "../worker/src/writing-markdown.mjs";
+import { canonicalWritingAssetName } from "../worker/src/writing-assets.mjs";
 import anchor from "markdown-it-anchor";
-import footnote from "markdown-it-footnote";
 import taskLists from "markdown-it-task-lists";
-import texmath from "markdown-it-texmath";
 import katex from "katex";
 import hljs from "highlight.js/lib/common";
 import GithubSlugger from "github-slugger";
@@ -23,17 +22,14 @@ function safeUrl(value) {
 
 export function renderMarkdown(source, options = {}) {
   const slugger = new GithubSlugger();
-  const md = new MarkdownIt({
-    html: false,
-    linkify: true,
-    typographer: false,
+  const md = createWritingMarkdownParser({
     highlight(code, language) {
       if (language && hljs.getLanguage(language)) {
         return `<pre class="hljs"><code>${hljs.highlight(code, { language, ignoreIllegals: true }).value}</code></pre>`;
       }
       return `<pre class="hljs"><code>${escapeHtml(code)}</code></pre>`;
     },
-  });
+  }, katex);
   md.use(anchor, {
     level: [2, 3],
     slugify: (value) => slugger.slug(value),
@@ -44,9 +40,7 @@ export function renderMarkdown(source, options = {}) {
       ariaHidden: true,
     }),
   });
-  md.use(footnote);
   md.use(taskLists, { enabled: false, label: true, labelAfter: true });
-  md.use(texmath, { engine: katex, delimiters: "dollars", katexOptions: { throwOnError: false, strict: "warn" } });
 
   const defaultLinkOpen = md.renderer.rules.link_open
     || ((tokens, index, renderOptions, env, self) => self.renderToken(tokens, index, renderOptions));
@@ -69,6 +63,8 @@ export function renderMarkdown(source, options = {}) {
     const srcIndex = token.attrIndex("src");
     if (srcIndex >= 0) {
       let src = token.attrs[srcIndex][1];
+      const assetName = canonicalWritingAssetName(src);
+      if (assetName) src = `./${assetName}`;
       const localAsset = src.startsWith("./");
       if (localAsset && options.assetBase) {
         src = `${String(options.assetBase).replace(/\/$/, "")}/${src.slice(2)}`;

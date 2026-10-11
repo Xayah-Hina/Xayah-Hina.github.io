@@ -5,14 +5,16 @@ import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
 import { parseWritingSource, referencedAssets, writingSourceHash } from "./writing-frontmatter.mjs";
 import { renderMarkdown } from "./writing-markdown.mjs";
+import { safeBuildOutput } from "./build-output.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const output = process.env.XAYAH_BUILD_OUTPUT
+const requestedOutput = process.env.XAYAH_BUILD_OUTPUT
   ? path.resolve(process.env.XAYAH_BUILD_OUTPUT)
   : path.join(root, "_site");
 const journalSourceRoot = process.env.XAYAH_JOURNALS_ROOT
   ? path.resolve(process.env.XAYAH_JOURNALS_ROOT)
   : path.join(root, "journals");
+const output = await safeBuildOutput(root, requestedOutput, journalSourceRoot);
 const mediaOrigin = "https://media.xayah.me";
 const siteOrigin = "https://xayah.me";
 
@@ -121,7 +123,6 @@ function validateRelatedTask(value, entryId) {
     || !exactKeys(value.project, ["id", "key", "title", "color"])
     || typeof value.project.id !== "string" || !/^project-[a-f0-9]{24}$/.test(value.project.id)
     || typeof value.project.key !== "string" || !/^[A-Z][A-Z0-9]{1,7}$/.test(value.project.key)
-    || !value.code.startsWith(`${value.project.key}-`)
     || typeof value.project.title !== "string" || !value.project.title.trim() || value.project.title.length > 120
     || typeof value.project.color !== "string" || !/^#[0-9a-f]{6}$/i.test(value.project.color)) {
     throw new Error(`Journal ${entryId} has invalid related Task data.`);

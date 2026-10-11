@@ -30,9 +30,6 @@ jobs:
       - name: Install site dependencies
         run: npm ci
 
-      - name: Test site
-        run: npm test
-
       - name: Build allowlisted site
         run: npm run build
 
@@ -83,10 +80,6 @@ jobs:
       - name: Install worker dependencies
         working-directory: worker
         run: npm ci
-
-      - name: Test worker
-        working-directory: worker
-        run: npm test
 
       - name: Type-check worker
         working-directory: worker

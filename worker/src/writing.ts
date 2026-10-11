@@ -1,4 +1,4 @@
-import { branchHead, commitFiles, listPaths, readTextFile, workflowRunState } from "./github";
+import { branchHead, commitBranchFence, commitFiles, listPaths, readTextFile, workflowRunState } from "./github";
 import {
   deleteWritingObjects,
   expiredWritingDeletionIds,
@@ -12,6 +12,7 @@ import {
   releaseWritingDeletionLock,
 } from "./storage";
 import type { Env, FileChange, SyncStatus, WritingDraft, WritingEntry } from "./types";
+import { writingBodyHeadingError, writingReferencedAssets } from "./writing-markdown.mjs";
 import {
   asRecord,
   HttpError,
@@ -46,21 +47,12 @@ function normalizeText(value: string): string {
   return value.replace(/\r\n?/g, "\n");
 }
 
-function comparableHeadingText(value: string): string {
-  return value
-    .replace(/[ \t]+#+[ \t]*$/, "")
-    .normalize("NFKC")
-    .replace(/[ \t]+/g, " ")
-    .trim();
-}
-
-function firstBodyHeadingMatchesTitle(body: string, title: string): boolean {
-  const heading = /^#{1,2}[ \t]+(.+)$/m.exec(normalizeText(body));
-  return Boolean(heading && comparableHeadingText(heading[1]) === comparableHeadingText(title));
-}
-
-function savedAtNow(): string {
-  return new Date().toISOString();
+function savedAtNow(previous?: string): string {
+  // savedAt is also the edit revision sent by clients. Two saves in the same
+  // millisecond (or a clock correction) must never reuse that revision.
+  const now = Date.now();
+  const previousTime = previous ? Date.parse(previous) : Number.NaN;
+  return new Date(Number.isFinite(previousTime) ? Math.max(now, previousTime + 1) : now).toISOString();
 }
 
 function validateId(value: unknown, year?: string): string {
@@ -102,14 +94,15 @@ function validateMetadata(value: unknown, expectedId = ""): Omit<WritingEntry, "
   return { id, title, summary, createdAt, updatedAt, status };
 }
 
-function normalizeBody(value: unknown, title: string, id: string): string {
+function normalizeBody(value: unknown, title: string, id: string, validateHeadings = true): string {
   if (typeof value !== "string") throw new HttpError(400, "Writing Markdown body is invalid.");
   const body = normalizeText(value).trim();
   if (!body || body.length > MAX_BODY) throw new HttpError(400, "Writing Markdown body is invalid or too long.");
-  if (firstBodyHeadingMatchesTitle(body, title)) {
+  const headingError = validateHeadings ? writingBodyHeadingError(body, title) : null;
+  if (headingError === "duplicate-title") {
     throw new HttpError(400, `Writing ${id} body must not repeat its title as the first heading.`);
   }
-  if (/^#[ \t]+/m.test(body)) {
+  if (headingError === "h1") {
     throw new HttpError(400, "Writing Markdown body must not contain H1 headings; the title is generated separately.");
   }
   return `${body}\n`;
@@ -166,7 +159,9 @@ function parseWritingSource(source: string, expectedId: string): { metadata: Omi
   }
   let body: string;
   try {
-    body = normalizeBody(match[2], metadata.title, metadata.id);
+    // Published source may predate the stricter Markdown grammar checks.
+    // Keep it readable and available to repair; new writes still validate.
+    body = normalizeBody(match[2], metadata.title, metadata.id, false);
   } catch (error) {
     if (error instanceof HttpError) throw new HttpError(502, error.message);
     throw error;
@@ -186,7 +181,10 @@ function articleUrl(env: Env, id: string): string {
 
 function validateDraft(value: WritingDraft): WritingDraft {
   const metadata = validateMetadata(value, String(value.id || ""));
-  const body = normalizeBody(value.body, metadata.title, metadata.id);
+  // Existing drafts remain readable even if an older validator allowed a
+  // Setext H1. Validate the corrected rules on save/publish, not while opening
+  // the draft or listing other entries, so no historical content is stranded.
+  const body = normalizeBody(value.body, metadata.title, metadata.id, false);
   const sourceHash = validateHash(value.sourceHash, "Stored Writing source hash");
   if (typeof value.savedAt !== "string" || Number.isNaN(Date.parse(value.savedAt))) {
     throw new HttpError(500, `Stored Writing draft ${metadata.id} has an invalid timestamp.`);
@@ -245,7 +243,7 @@ function mergedEntries(published: PublishedWriting[], drafts: WritingDraft[], ye
 }
 
 function isDraftPending(draft: WritingDraft, published?: PublishedWriting): boolean {
-  return !published || serializeWriting(draft, draft.body) !== published.source;
+  return !published || serializeNormalizedWriting(draft, draft.body) !== published.source;
 }
 
 async function collection(
@@ -316,16 +314,11 @@ async function findWriting(
 }
 
 function referencedAssets(body: string): string[] {
-  const names = new Set<string>();
-  const image = /!\[[^\]]*\]\(([^)\s]+)(?:\s+(?:"[^"]*"|'[^']*'))?\)/g;
-  for (const match of body.matchAll(image)) {
-    const destination = match[1];
-    const asset = /^\.\/([a-f0-9]{64}\.(?:jpe?g|png|webp|gif|avif))$/i.exec(destination);
-    if (!asset) throw new HttpError(400, `Writing image ${destination} is not a content-addressed local image.`);
-    const name = asset[1].toLowerCase();
-    names.add(name);
+  try {
+    return writingReferencedAssets(body);
+  } catch (error) {
+    throw new HttpError(400, error instanceof Error ? error.message : "Writing images are invalid.");
   }
-  return [...names].sort();
 }
 
 function imageFormat(bytes: Uint8Array, declaredMime: string): ImageFormat {
@@ -440,7 +433,7 @@ export async function saveWriting(env: Env, payload: Record<string, unknown>) {
   const draft: WritingDraft = {
     ...metadata,
     body,
-    savedAt: savedAtNow(),
+    savedAt: savedAtNow(current?.draft.savedAt),
     sourceHash,
   };
   if (!(await putDraftConditional(env, draft, current?.etag || null))) {
@@ -536,14 +529,9 @@ export async function publishWriting(env: Env, payload: Record<string, unknown>)
   const revision = await sha256(source);
   const assets = referencedAssets(draft.body);
   await copyReferencedAssets(env, id, assets);
-  let commitSha: string;
-  try {
-    commitSha = await commitFiles(env, `Writing: publish ${id}`, [
-      { path: `writing/${id}/${id}.md`, content: source },
-    ], env.GITHUB_BRANCH, expectedHead);
-  } catch (error) {
-    throw error;
-  }
+  const commitSha = await commitFiles(env, `Writing: publish ${id}`, [
+    { path: `writing/${id}/${id}.md`, content: source },
+  ], env.GITHUB_BRANCH, expectedHead);
 
   const publishedEntry: WritingEntry = {
     ...metadata,
@@ -552,7 +540,7 @@ export async function publishWriting(env: Env, payload: Record<string, unknown>)
   const syncedDraft: WritingDraft = {
     ...metadata,
     body: draft.body,
-    savedAt: savedAtNow(),
+    savedAt: savedAtNow(draft.savedAt),
     sourceHash: revision,
   };
   const synchronized = await putDraftConditional(env, syncedDraft, found.draftVersion.etag);
@@ -608,7 +596,10 @@ export async function deleteWriting(env: Env, payload: Record<string, unknown>, 
     expectedHead = await branchHead(env);
     paths = await listPaths({ ...env, GITHUB_BRANCH: expectedHead }, `writing/${id}/`);
   } catch (error) {
-    await releaseWritingDeletionLock(env, id, lock.etag, lock.draft);
+    // Once a lease is resumed, its original request may still be running.
+    // Keep the draft locked until a retry completes the Git fence and cleanup;
+    // restoring it here could let that older request delete new draft media.
+    if (!lock.resumed) await releaseWritingDeletionLock(env, id, lock.etag, lock.draft);
     throw error;
   }
   const tracked = paths.filter((path) => path.startsWith(`writing/${id}/`));
@@ -616,15 +607,18 @@ export async function deleteWriting(env: Env, payload: Record<string, unknown>, 
     await releaseWritingDeletionLock(env, id, lock.etag, null);
     throw new HttpError(404, "The Writing entry is no longer available.");
   }
-  let commitSha: string | null = null;
-  if (tracked.length) {
+  let commitSha: string;
+  try {
     const changes: FileChange[] = tracked.map((path) => ({ path, content: null }));
-    try {
-      commitSha = await commitFiles(env, `Writing: delete ${id}`, changes, env.GITHUB_BRANCH, expectedHead);
-    } catch (error) {
-      await releaseWritingDeletionLock(env, id, lock.etag, lock.draft);
-      throw error;
-    }
+    // Always advance Git, even for a private-only draft. Any publisher that
+    // read the draft before our R2 lock is bound to an older Git head and can
+    // no longer publish after deletion succeeds. A failed fence keeps assets.
+    commitSha = changes.length
+      ? await commitFiles(env, `Writing: delete ${id}`, changes, env.GITHUB_BRANCH, expectedHead)
+      : await commitBranchFence(env, `Writing: delete private draft ${id}`, expectedHead);
+  } catch (error) {
+    if (!lock.resumed) await releaseWritingDeletionLock(env, id, lock.etag, lock.draft);
+    throw error;
   }
   const cleanupDeferred = await deleteWritingObjects(env, id, lock.etag);
   if (background) return { id, cleanupDeferred };

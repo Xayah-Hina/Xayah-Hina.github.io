@@ -206,11 +206,11 @@ export async function expiredWritingDeletionIds(env: Env): Promise<string[]> {
 
 export async function getTaskStateVersioned(
   env: Env,
-): Promise<{ state: unknown; etag: string } | null> {
+): Promise<{ state: unknown; etag: string; customMetadata: Record<string, string> } | null> {
   const object = await env.CONTENT.get(taskStateKey);
   if (!object) return null;
   try {
-    return { state: await object.json<unknown>(), etag: object.etag };
+    return { state: await object.json<unknown>(), etag: object.etag, customMetadata: { ...object.customMetadata } };
   } catch {
     throw new HttpError(500, "Stored Task data is invalid.");
   }
@@ -220,27 +220,48 @@ export async function putTaskStateConditional(
   env: Env,
   state: TaskState,
   etag: string | null,
+  customMetadata: Record<string, string> = {},
 ): Promise<boolean> {
   const value = JSON.stringify(state);
   const result = await env.CONTENT.put(taskStateKey, value, {
     httpMetadata: { contentType: "application/json; charset=utf-8" },
+    customMetadata,
     onlyIf: etag ? { etagMatches: etag } : { etagDoesNotMatch: "*" },
   });
   return result !== null;
 }
 
 export async function getGoogleCalendarConnection(env: Env): Promise<GoogleCalendarConnection | null> {
-  return readJson<GoogleCalendarConnection>(env, googleCalendarKey);
+  return (await getGoogleCalendarConnectionVersioned(env)).connection;
 }
 
-export async function putGoogleCalendarConnection(env: Env, value: GoogleCalendarConnection): Promise<void> {
-  await env.CONTENT.put(googleCalendarKey, JSON.stringify(value), {
+export async function getGoogleCalendarConnectionVersioned(env: Env): Promise<{ connection: GoogleCalendarConnection | null; etag: string | null }> {
+  const object = await env.CONTENT.get(googleCalendarKey);
+  if (!object) return { connection: null, etag: null };
+  try {
+    const value = await object.json<GoogleCalendarConnection | { schemaVersion: 1; disconnectedAt: string }>();
+    return { connection: "disconnectedAt" in value ? null : value, etag: object.etag };
+  } catch {
+    throw new HttpError(500, "Stored Google Calendar connection is invalid.");
+  }
+}
+
+export async function putGoogleCalendarConnection(env: Env, value: GoogleCalendarConnection, etag: string | null): Promise<string | null> {
+  const result = await env.CONTENT.put(googleCalendarKey, JSON.stringify(value), {
     httpMetadata: { contentType: "application/json; charset=utf-8" },
+    onlyIf: etag ? { etagMatches: etag } : { etagDoesNotMatch: "*" },
   });
+  return result?.etag ?? null;
 }
 
-export async function deleteGoogleCalendarConnection(env: Env): Promise<void> {
-  await env.CONTENT.delete(googleCalendarKey);
+export async function deleteGoogleCalendarConnection(env: Env, etag: string): Promise<boolean> {
+  // Keep a credential-free tombstone: R2 delete has no conditional form, and
+  // deleting an old version could otherwise erase a new OAuth connection.
+  const result = await env.CONTENT.put(googleCalendarKey, JSON.stringify({ schemaVersion: 1, disconnectedAt: new Date().toISOString() }), {
+    httpMetadata: { contentType: "application/json; charset=utf-8" },
+    onlyIf: { etagMatches: etag },
+  });
+  return result !== null;
 }
 
 export async function getGoogleOAuthState(env: Env): Promise<GoogleOAuthState | null> {

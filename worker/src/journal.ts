@@ -83,7 +83,7 @@ function validateRelatedTaskSnapshot(value: unknown, entryId: string): JournalRe
   const projectKey = requiredString(project.key, "Related Task Project key", 8);
   const color = requiredString(project.color, "Related Task Project color", 7).toLowerCase();
   if (!TASK_ID.test(id) || !TASK_CODE.test(code) || !PROJECT_ID.test(projectId)
-    || !PROJECT_KEY.test(projectKey) || !code.startsWith(`${projectKey}-`) || !COLOR.test(color)) {
+    || !PROJECT_KEY.test(projectKey) || !COLOR.test(color)) {
     throw new HttpError(502, `Journal ${entryId} has invalid related Task data.`);
   }
   return {
@@ -204,6 +204,20 @@ function withoutUpdatedAt<T extends { updatedAt?: string }>(value: T): Omit<T, "
   return clone;
 }
 
+function assertJournalBaseline(value: unknown, original: JournalEntry, year: string): void {
+  // Compare the complete loaded entry: second-resolution timestamps alone
+  // cannot distinguish multiple saves in the same second.
+  let baseline: JournalEntry;
+  try {
+    baseline = validateJournalEntry(value, year);
+  } catch {
+    throw new HttpError(409, "Reload this Journal before saving or deleting it; its original version is required.");
+  }
+  if (JSON.stringify(baseline) !== JSON.stringify(original)) {
+    throw new HttpError(409, "This Journal changed in another tab. Reload it before saving or deleting it.");
+  }
+}
+
 async function deleteUploadedObjects(env: Env, keys: string[]): Promise<void> {
   if (keys.length) await env.CONTENT.delete(keys);
 }
@@ -242,6 +256,7 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
   const original = previous.find((entry) => entry.id === id) || null;
   if (mode === "create" && original) throw new HttpError(409, "Journal id already exists.");
   if (mode === "edit" && !original) throw new HttpError(404, "The Journal entry is no longer available.");
+  if (original) assertJournalBaseline(payload.baseEntry, original, year);
   if (original && original.publishedAt !== publishedAt) throw new HttpError(400, "The Journal publication time cannot be changed.");
   const relatedTask = rawEntry.relatedTask === undefined
     ? original?.relatedTask || null
@@ -316,12 +331,11 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
     { path: `journals/${year}.js`, content: moduleSource(entries) },
     { path: "journals/catalog.js", content: moduleSource({ years: nextYears.map(Number) }) },
   ];
-  try {
-    await commitFiles(env, `${original ? "Journal: update" : "Journal: publish"} ${id}`, changes, env.GITHUB_BRANCH, expectedHead);
-  } catch (error) {
-    await deleteUploadedObjects(env, newKeys);
-    throw error;
-  }
+  // GitHub may have accepted the ref update before its response was lost.
+  // Retain immutable media on an uncertain commit outcome; deleting it here
+  // can break an already-published entry. Upload failures above remain safe
+  // to clean up because no GitHub commit has been attempted at that point.
+  await commitFiles(env, `${original ? "Journal: update" : "Journal: publish"} ${id}`, changes, env.GITHUB_BRANCH, expectedHead);
   return {
     year,
     years: nextYears,
@@ -341,6 +355,7 @@ export async function deleteJournal(env: Env, payload: Record<string, unknown>) 
   const previous = await journalEntries(snapshotEnv, year);
   const original = previous.find((entry) => entry.id === id);
   if (!original) throw new HttpError(404, "The Journal entry is no longer available.");
+  assertJournalBaseline(payload.baseEntry, original, year);
   const entries = previous.filter((entry) => entry.id !== id);
   const nextYears = entries.length ? years : years.filter((value) => value !== year);
   const changes: FileChange[] = [

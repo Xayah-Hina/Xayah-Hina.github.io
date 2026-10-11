@@ -322,6 +322,18 @@ function samePersonalContent(left: PersonalEntry, right: PersonalEntry): boolean
   return JSON.stringify(personalContent(left)) === JSON.stringify(personalContent(right));
 }
 
+function assertPersonalBaseline(value: unknown, original: PersonalEntry): void {
+  // The browser sends the content it originally loaded, rather than a timestamp
+  // that can repeat within one second or change during publication.
+  try {
+    const baseline = asRecord(value, "The original Personal Knowledge is required.");
+    if (samePersonalContent(baseline as unknown as PersonalEntry, original)) return;
+  } catch {
+    // Old clients must reload instead of silently overwriting a newer draft.
+  }
+  throw new HttpError(409, "This Dictionary entry changed or its original version is missing. Reload it before saving.");
+}
+
 function normalizePersonal(entry: DictionaryEntry, value: unknown, original: PersonalEntry): PersonalEntry {
   const personal = asRecord(value, "Personal Knowledge must be an object.");
   const examplesValue = personal.examples ?? [];
@@ -412,6 +424,7 @@ export async function saveDictionary(env: Env, payload: Record<string, unknown>)
   ]);
   const existingDraft = storedDraft && isPendingDraft(storedDraft.draft) ? storedDraft.draft : null;
   const original = existingDraft?.personal || published;
+  assertPersonalBaseline(payload.basePersonal, original);
   const normalized = normalizePersonal(entry, payload.personal, original);
   let personal = normalized;
   let status: "saved" | "unchanged" | "reverted" = "saved";
