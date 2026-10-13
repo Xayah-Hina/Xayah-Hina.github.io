@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261013-152014-22c1",
+    "publishedAt": "2026-10-13T15:20:14+08:00",
+    "content": "仔细想了想，还是应该按照【高速迭代】＋【简单输入输出小工具】的原则来开发。之前ALL IN ONE的原则感觉太难以维护了。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261012-183032-f866",
     "publishedAt": "2026-10-12T18:30:32+08:00",
     "content": "下一阶段还是决定中长期专注于SBI了。\n\n沉下心来。",
