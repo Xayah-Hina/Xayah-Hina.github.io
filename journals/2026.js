@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261016-222031-cd5e",
+    "publishedAt": "2026-10-16T22:20:31+08:00",
+    "content": "还是要变强大！",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261016-184113-fee6",
     "publishedAt": "2026-10-16T18:41:13+08:00",
     "content": "不知道为什么我感觉Sol 6.1快了很多啊，现在网上OpenAI风评查了好多，但对我来说感觉真和之前风评好的时候区别不大，模型智力也足够，而且用了Sol 6.1之后消耗是体感大幅下降了基本用不完哈哈。",
