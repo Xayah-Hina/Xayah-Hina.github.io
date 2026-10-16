@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261016-111037-c9f6",
+    "publishedAt": "2026-10-16T11:10:37+08:00",
+    "content": "GRABAGE IN GARBAGE OUT原则还在发力……\n\n还是贯彻地不够到底啊。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261014-190142-6317",
     "publishedAt": "2026-10-14T19:01:42+08:00",
     "content": "现在这套Writing / Journal的架构我总感觉Writing处于的位置有点别扭，对于Journal而言主要是定位于即时记录当前的想法，我基本上不会回头去看的。但是Writing原本的用法是充当一个长期的知识沉淀的地方，应该放高质量的文章。可是不管是思想还是技术迭代周期都太快了，如果花长时间打磨一篇writing，花同样的时间可能程序都迭代好几次了整个writing又得推翻重写。所以真的很苦恼到底什么形式比较好。",
