@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261017-205655-a284",
+    "publishedAt": "2026-10-17T20:56:55+08:00",
+    "content": "EmberGen和Houdini的solver源码居然是明文存储的，居然没有加密。\n\n接下来一段时间有的好忙的了嘿嘿。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261016-222031-cd5e",
     "publishedAt": "2026-10-16T22:20:31+08:00",
     "content": "还是要变强大！",
