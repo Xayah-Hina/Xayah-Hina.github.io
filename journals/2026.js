@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261018-085422-acbe",
+    "publishedAt": "2026-10-18T08:54:22+08:00",
+    "content": "人身上的动物性太深刻了。很多时候真不应该把人当人看，就应该当动物看，甚至应该当机器看。\n\n也包括看自己。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261017-205655-a284",
     "publishedAt": "2026-10-17T20:56:55+08:00",
     "content": "EmberGen和Houdini的solver源码居然是明文存储的，居然没有加密。\n\n接下来一段时间有的好忙的了嘿嘿。",
