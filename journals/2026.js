@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261020-144708-d85d",
+    "publishedAt": "2026-10-20T14:47:08+08:00",
+    "content": "血亏啊昨天一天没思路，今天就reset了，又浪费50%。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261020-101033-e0aa",
     "publishedAt": "2026-10-20T10:10:33+08:00",
     "content": "昨天几乎一天没有进展，今后一定要避免这种情况。\n\n感觉还是应该以实践项目为主导，在实践中寻找痛点和创新点。",
