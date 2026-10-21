@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261021-121035-06ad",
+    "publishedAt": "2026-10-21T12:10:35+08:00",
+    "content": "又一天没有思路，真感觉不行啊麻了。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261020-221038-a8f5",
     "publishedAt": "2026-10-20T22:10:38+08:00",
     "content": "研究确实是应该有taste来引导的。我感觉，我的研究taste应该就是：\n\n1. 美丽的\n2. 自然的\n3. 高效的",
