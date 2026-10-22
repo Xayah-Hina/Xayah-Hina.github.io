@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261022-214837-7f81",
+    "publishedAt": "2026-10-22T21:48:37+08:00",
+    "content": "大脑要爆炸了，居然又是一天没有思路。今天又要reset了，这种状态真的太可怕了。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261021-121035-06ad",
     "publishedAt": "2026-10-21T12:10:35+08:00",
     "content": "又一天没有思路，真感觉不行啊麻了。",
