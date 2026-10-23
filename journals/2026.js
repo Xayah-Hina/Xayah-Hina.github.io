@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261023-135658-7c66",
+    "publishedAt": "2026-10-23T13:56:58+08:00",
+    "content": "基于sheetsage2把之前一直想做的music parser给做完了。比想象中的容易一些。\n\n但是这种属于有限的低垂果实，还是得好好想究竟该怎么下一步。今天居然又有reset，真麻了。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261022-214837-7f81",
     "publishedAt": "2026-10-22T21:48:37+08:00",
     "content": "大脑要爆炸了，居然又是一天没有思路。今天又要reset了，这种状态真的太可怕了。",
