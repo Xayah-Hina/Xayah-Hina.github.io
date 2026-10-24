@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261024-235640-8b7a",
+    "publishedAt": "2026-10-24T23:56:40+08:00",
+    "content": "想不到DAW居然是第一个被取代的…… 之前买的Logic Pro X和Studio Pro居然直接被取代了QAQ。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261024-203042-0d2a",
     "publishedAt": "2026-10-24T20:30:42+08:00",
     "content": "五音Sol高音真的好空灵，低音好醇厚。喜欢~",
