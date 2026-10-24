@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261025-022151-f710",
+    "publishedAt": "2026-10-25T02:21:51+08:00",
+    "content": "也许真的还是切换到奇观政策吧？造奇观也许是目前的唯一解了。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261024-235640-8b7a",
     "publishedAt": "2026-10-24T23:56:40+08:00",
     "content": "想不到DAW居然是第一个被取代的…… 之前买的Logic Pro X和Studio Pro居然直接被取代了QAQ。",
