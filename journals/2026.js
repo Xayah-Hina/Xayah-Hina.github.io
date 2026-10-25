@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261025-153437-d1c4",
+    "publishedAt": "2026-10-25T15:34:37+08:00",
+    "content": "第一个奇观打算做什么呢？之前想过sparse / large scale的东西，但是一旦large scale一个是精度就要下降而且性能要求就高，这种情况下很难给我足够的理由不用procedure based methods而一定要使用physics-based methods。真是苦恼啊。\n\n要不做微观的、耦合的？可是微观的话有感觉很容易做成toys。还是很苦恼。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261025-022151-f710",
     "publishedAt": "2026-10-25T02:21:51+08:00",
     "content": "也许真的还是切换到奇观政策吧？造奇观也许是目前的唯一解了。",
