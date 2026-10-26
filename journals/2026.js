@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261026-233242-2dd8",
+    "publishedAt": "2026-10-26T23:32:42+08:00",
+    "content": "好累啊麻了不知道该怎么做了。以前古法编程的时候效率低，也容易产生心流一直干一直干干到深夜也不会疲惫。现在idea一想到就被快速实现，导致枯竭地特别特别快，只能直面自己确实是个平庸的人的现实，就导致非常非常容易疲惫和挫败。\n\n看很多之前很impressive的工作现在也感觉意义不大了，总感觉他们的contribution也不是那么大工作也没什么意义啊。这种状态真的太可怕了……",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261025-153437-d1c4",
     "publishedAt": "2026-10-25T15:34:37+08:00",
     "content": "第一个奇观打算做什么呢？之前想过sparse / large scale的东西，但是一旦large scale一个是精度就要下降而且性能要求就高，这种情况下很难给我足够的理由不用procedure based methods而一定要使用physics-based methods。真是苦恼啊。\n\n要不做微观的、耦合的？可是微观的话有感觉很容易做成toys。还是很苦恼。",
