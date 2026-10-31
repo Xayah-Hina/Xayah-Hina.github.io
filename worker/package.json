@@ -10,13 +10,13 @@
   "dependencies": {
     "jose": "^6.2.8",
     "katex": "0.18.4",
-    "markdown-it": "15.0.2",
+    "markdown-it": "15.0.3",
     "markdown-it-footnote": "4.0.0",
     "markdown-it-texmath": "1.0.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260813.1",
     "typescript": "^7.0.2",
-    "wrangler": "^4.147.0"
+    "wrangler": "^4.156.0"
   }
 }
