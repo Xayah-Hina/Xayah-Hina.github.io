@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261106-214324-4bde",
+    "publishedAt": "2026-11-06T21:43:24+08:00",
+    "content": "决定短期空仓了，风险太大了。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261106-051041-f939",
     "publishedAt": "2026-11-06T05:10:41+08:00",
     "content": "花了几个小时弄了一下Biance，买了些U。现在结论感觉还是不靠谱。\n\n还是专心做白马股和ETF的套利吧，暂时不需要趟Crypto这趟浑水。",
