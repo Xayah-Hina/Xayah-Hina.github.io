@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261106-221554-fbcb",
+    "publishedAt": "2026-11-06T22:15:54+08:00",
+    "content": "保持理智。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261106-214324-4bde",
     "publishedAt": "2026-11-06T21:43:24+08:00",
     "content": "决定短期空仓了，风险太大了。",
