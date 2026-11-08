@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261108-181515-bd2e",
+    "publishedAt": "2026-11-08T18:15:15+08:00",
+    "content": "确实感觉有套利空间。明天决定重新入场持有，目标套利5%不要留恋。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261106-221554-fbcb",
     "publishedAt": "2026-11-06T22:15:54+08:00",
     "content": "保持理智。",
