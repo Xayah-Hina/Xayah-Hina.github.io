@@ -1,5 +1,13 @@
 export default [
   {
+    "id": "20261109-000834-3c9b",
+    "publishedAt": "2026-11-09T00:08:34+08:00",
+    "content": "切换workspace还是很重要的。\n\n流水不腐，户枢不蠹。",
+    "images": [],
+    "relatedWriting": null,
+    "relatedTask": null
+  },
+  {
     "id": "20261108-181515-bd2e",
     "publishedAt": "2026-11-08T18:15:15+08:00",
     "content": "确实感觉有套利空间。明天决定重新入场持有，目标套利5%不要留恋。",
