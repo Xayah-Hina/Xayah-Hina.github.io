@@ -7,29 +7,8 @@ import {
   journalYears,
   saveJournal,
 } from "./journal";
-import {
-  beginGoogleCalendarConnection,
-  disconnectGoogleCalendar,
-  finishGoogleCalendarConnection,
-  googleCalendarStatus,
-  syncGoogleCalendar,
-} from "./google-calendar";
-import { saveTasks, tasksResponse } from "./tasks";
 import type { Env } from "./types";
 import { HttpError, jsonResponse, readJsonObject } from "./utils";
-import {
-  createWriting,
-  deleteWriting,
-  authoringWritingCatalogData,
-  authoringWritingYearData,
-  openWriting,
-  pendingWriting,
-  previewWritingAsset,
-  publishWriting,
-  saveWriting,
-  uploadWritingAsset,
-  writingDeploymentStatus,
-} from "./writing";
 
 type ApiScope = "main" | "dictionary";
 
@@ -48,24 +27,16 @@ function secureResponse(response: Response): Response {
 
 async function authoringStatus(env: Env, scope: ApiScope): Promise<Response> {
   let journalError: string | null = null;
-  let writingError: string | null = null;
   let dictionaryError: string | null = null;
-  let writingPending = false;
   let dictionaryPending = false;
   let dictionaryPendingCount = 0;
-  if (scope !== "dictionary") {
+  if (scope === "main") {
     try {
       await journalYears(env);
     } catch (error) {
       journalError = error instanceof Error ? error.message : "Journal data could not be loaded.";
     }
-    try {
-      writingPending = await pendingWriting(env);
-    } catch (error) {
-      writingError = error instanceof Error ? error.message : "Writing data could not be loaded.";
-    }
-  }
-  if (scope !== "main") {
+  } else {
     try {
       const status = await dictionaryStatus(env);
       dictionaryPending = status.pending;
@@ -76,14 +47,12 @@ async function authoringStatus(env: Env, scope: ApiScope): Promise<Response> {
   }
   return jsonResponse({
     journalError,
-    writingError,
     dictionaryError,
     publishing: {
       enabled: true,
       state: "ready",
       message: "Cloud publishing is ready.",
       branch: env.GITHUB_BRANCH,
-      writingPending,
       dictionaryPending,
       dictionaryPendingCount,
     },
@@ -92,13 +61,13 @@ async function authoringStatus(env: Env, scope: ApiScope): Promise<Response> {
 
 export function endpointAllowed(scope: ApiScope, pathname: string): boolean {
   if (pathname === "/api/session" || pathname === "/api/authoring/status") return true;
-  if (scope === "main") return pathname.startsWith("/api/writing/") || pathname.startsWith("/api/journal/") || pathname.startsWith("/api/tasks/");
-  return pathname.startsWith("/api/dictionary/");
+  return scope === "main"
+    ? pathname.startsWith("/api/journal/")
+    : pathname.startsWith("/api/dictionary/");
 }
 
 export function isPublicDataPath(pathname: string): boolean {
-  return pathname === "/data/tasks"
-    || pathname === "/data/journal/catalog"
+  return pathname === "/data/journal/catalog"
     || /^\/data\/journal\/year\/\d{4}$/.test(pathname);
 }
 
@@ -114,45 +83,17 @@ export function sessionResponse(url: URL): Response {
   return jsonResponse({ authenticated: true, canEdit: true });
 }
 
-async function authoringApi(request: Request, env: Env, url: URL, scope: ApiScope, context: ExecutionContext): Promise<Response> {
+async function authoringApi(request: Request, env: Env, url: URL, scope: ApiScope): Promise<Response> {
   if (!endpointAllowed(scope, url.pathname)) throw new HttpError(404, "Unknown authoring endpoint.");
   if (request.method === "GET" && url.pathname === "/api/session") return sessionResponse(url);
   if (request.method === "GET" && url.pathname === "/api/authoring/status") return authoringStatus(env, scope);
-  if (request.method === "GET" && url.pathname === "/api/tasks/google/status") return jsonResponse(await googleCalendarStatus(env));
-  if (request.method === "GET" && url.pathname === "/api/tasks/google/connect") return beginGoogleCalendarConnection(env);
-  if (request.method === "GET" && url.pathname === "/api/tasks/google/callback") return finishGoogleCalendarConnection(env, url);
-  if (request.method === "GET" && url.pathname === "/api/writing/catalog") {
-    return jsonResponse(await authoringWritingCatalogData(env));
-  }
-  const writingYear = url.pathname.match(/^\/api\/writing\/year\/(\d{4})$/);
-  if (request.method === "GET" && writingYear) {
-    return jsonResponse(await authoringWritingYearData(env, writingYear[1]));
-  }
-  const preview = url.pathname.match(/^\/api\/writing\/assets\/preview\/(\d{8}-\d{6})\/([a-f0-9]{64}\.(?:jpg|jpeg|png|webp|gif|avif))$/);
-  if (request.method === "GET" && preview) return previewWritingAsset(env, preview[1], preview[2]);
   if (request.method !== "POST") throw new HttpError(405, "This authoring endpoint requires POST.");
   const origin = request.headers.get("origin");
   if (origin !== url.origin) throw new HttpError(403, "The authoring request origin was rejected.");
-  if (url.pathname === "/api/writing/assets/upload") {
-    return jsonResponse(await uploadWritingAsset(env, request));
-  }
   const payload = await readJsonObject(request);
-  if (url.pathname === "/api/tasks/google/sync") return jsonResponse(await syncGoogleCalendar(env));
-  if (url.pathname === "/api/tasks/google/disconnect") return jsonResponse(await disconnectGoogleCalendar(env));
-  const actions: Record<string, (env: Env, payload: Record<string, unknown>) => Promise<unknown>> = {
+  const actions: Record<string, (targetEnv: Env, value: Record<string, unknown>) => Promise<unknown>> = {
     "/api/journal/save": saveJournal,
     "/api/journal/delete": deleteJournal,
-    "/api/tasks/save": async (targetEnv, value) => {
-      const result = await saveTasks(targetEnv, value);
-      context.waitUntil(syncGoogleCalendar(targetEnv).catch((error) => console.warn("Task save succeeded; Google Calendar sync was deferred.", error)));
-      return result;
-    },
-    "/api/writing/open": openWriting,
-    "/api/writing/create": createWriting,
-    "/api/writing/save": saveWriting,
-    "/api/writing/publish": publishWriting,
-    "/api/writing/deploy/status": writingDeploymentStatus,
-    "/api/writing/delete": deleteWriting,
     "/api/dictionary/open": openDictionary,
     "/api/dictionary/save": saveDictionary,
     "/api/dictionary/publish": publishDictionary,
@@ -162,14 +103,13 @@ async function authoringApi(request: Request, env: Env, url: URL, scope: ApiScop
   return jsonResponse(await action(env, payload));
 }
 
-async function handlePublicApi(request: Request, env: Env, url: URL, scope: ApiScope, context: ExecutionContext): Promise<Response> {
+async function handlePublicApi(request: Request, env: Env, url: URL, scope: ApiScope): Promise<Response> {
   await verifyAccess(request, env);
-  return authoringApi(request, env, url, scope, context);
+  return authoringApi(request, env, url, scope);
 }
 
 async function publicData(request: Request, env: Env, url: URL): Promise<Response> {
   if (request.method !== "GET") throw new HttpError(405, "Public data is read-only.");
-  if (url.pathname === "/data/tasks") return tasksResponse(env, request);
   if (url.pathname === "/data/journal/catalog") return jsonResponse(await journalCatalogData(env));
   const journalYear = url.pathname.match(/^\/data\/journal\/year\/(\d{4})$/);
   if (journalYear) return jsonResponse(await journalYearData(env, journalYear[1]));
@@ -177,14 +117,15 @@ async function publicData(request: Request, env: Env, url: URL): Promise<Respons
 }
 
 async function publicMedia(request: Request, env: Env, url: URL): Promise<Response> {
-  if (request.method !== "GET" && request.method !== "HEAD") throw new HttpError(405, "Published media is read-only.");
-  const journalPath = /^\/journals\/\d{4}\/[A-Za-z0-9._-]+$/;
-  const writingPath = /^\/writing\/\d{8}-\d{6}\/[a-f0-9]{64}\.(?:jpg|jpeg|png|webp|gif|avif)$/;
-  if (!journalPath.test(url.pathname) && !writingPath.test(url.pathname)) {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    throw new HttpError(405, "Published media is read-only.");
+  }
+  if (!/^\/journals\/\d{4}\/[A-Za-z0-9._-]+$/.test(url.pathname)) {
     throw new HttpError(404, "Published media was not found.");
   }
-  const key = `published${url.pathname}`;
-  const object = request.method === "HEAD" ? await env.CONTENT.head(key) : await env.CONTENT.get(key);
+  const object = request.method === "HEAD"
+    ? await env.CONTENT.head(`published${url.pathname}`)
+    : await env.CONTENT.get(`published${url.pathname}`);
   if (!object) throw new HttpError(404, "Published media was not found.");
   const headers = new Headers();
   object.writeHttpMetadata(headers);
@@ -192,40 +133,44 @@ async function publicMedia(request: Request, env: Env, url: URL): Promise<Respon
   headers.set("Cache-Control", "public, max-age=31536000, immutable");
   headers.set("X-Content-Type-Options", "nosniff");
   const body = request.method === "HEAD" ? null : (object as R2ObjectBody).body;
-  return new Response(request.method === "HEAD" ? null : body, { headers });
+  return new Response(body, { headers });
 }
 
 export default {
-  async fetch(request: Request, env: Env, context: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     if (url.protocol === "http:") {
       url.protocol = "https:";
       return Response.redirect(url.toString(), 308);
     }
     try {
-      if (url.hostname === new URL(env.MEDIA_ORIGIN).hostname) return secureResponse(await publicMedia(request, env, url));
+      if (url.hostname === new URL(env.MEDIA_ORIGIN).hostname) {
+        return secureResponse(await publicMedia(request, env, url));
+      }
       if (url.hostname === new URL(env.PUBLIC_SITE_ORIGIN).hostname && isPublicDataPath(url.pathname)) {
         return secureResponse(await publicData(request, env, url));
       }
       if (url.hostname === new URL(env.PUBLIC_SITE_ORIGIN).hostname && url.pathname.startsWith("/api/")) {
-        return secureResponse(await handlePublicApi(request, env, url, "main", context));
+        return secureResponse(await handlePublicApi(request, env, url, "main"));
       }
       if (url.hostname === new URL(env.DICTIONARY_ORIGIN).hostname && url.pathname.startsWith("/api/")) {
-        return secureResponse(await handlePublicApi(request, env, url, "dictionary", context));
+        return secureResponse(await handlePublicApi(request, env, url, "dictionary"));
       }
       throw new HttpError(404, "Unknown hostname.");
     } catch (error) {
       const jsonPath = url.pathname.startsWith("/api/") || isPublicDataPath(url.pathname);
       if (error instanceof HttpError) {
         if (jsonPath) return secureResponse(jsonResponse({ error: error.message }, error.status));
-        return secureResponse(new Response(error.message, { status: error.status, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } }));
+        return secureResponse(new Response(error.message, {
+          status: error.status,
+          headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+        }));
       }
       console.error(error);
-      if (jsonPath) return secureResponse(jsonResponse({ error: "The authoring backend encountered an unexpected error." }, 500));
+      if (jsonPath) {
+        return secureResponse(jsonResponse({ error: "The authoring backend encountered an unexpected error." }, 500));
+      }
       return secureResponse(new Response("The authoring backend encountered an unexpected error.", { status: 500 }));
     }
-  },
-  async scheduled(_controller: ScheduledController, env: Env, context: ExecutionContext): Promise<void> {
-    context.waitUntil(syncGoogleCalendar(env).catch((error) => console.warn("Scheduled Google Calendar sync failed.", error)));
   },
 } satisfies ExportedHandler<Env>;

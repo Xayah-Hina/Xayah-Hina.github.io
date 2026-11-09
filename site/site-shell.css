@@ -15,8 +15,6 @@
   --shadow: 0 10px 22px rgba(17, 24, 39, 0.09);
   --max-width: 56rem;
   --font-sans: "Geist Variable", "Noto Sans SC Variable", system-ui, sans-serif;
-  --font-serif: "Noto Serif SC Variable", ui-serif, serif;
-  --font-mono: "Geist Mono Variable", "Noto Sans SC Variable", ui-monospace, monospace;
   font-family: var(--font-sans);
   font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   font-synthesis: style;
@@ -138,27 +136,15 @@ textarea {
   text-decoration: none;
 }
 
-.section-switch {
-  display: flex;
-  align-self: stretch;
-  align-items: stretch;
-  justify-self: end;
-  justify-content: flex-end;
-  gap: 1.25rem;
-}
-
 .section-switch-button {
   position: relative;
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0;
   color: var(--muted);
-  background: transparent;
-  border: 0;
   font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
-  cursor: pointer;
   transition: color 150ms ease;
 }
 
@@ -279,10 +265,6 @@ textarea {
 
   .footer-meta-group {
     justify-content: center;
-  }
-
-  .section-switch {
-    gap: 0.75rem;
   }
 
   .section-switch-button {

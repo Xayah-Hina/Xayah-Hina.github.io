@@ -1,7 +1,5 @@
 import { branchHead, commitFiles, readDataModule } from "./github";
-import { relatedTaskSnapshot } from "./tasks";
-import { pendingWriting, publishedWritingById } from "./writing";
-import type { Env, FileChange, JournalEntry, JournalImage, JournalRelatedTask, SyncStatus } from "./types";
+import type { Env, FileChange, JournalEntry, JournalImage, SyncStatus } from "./types";
 import {
   asRecord,
   decodeBase64,
@@ -14,11 +12,6 @@ import {
 } from "./utils";
 
 const JOURNAL_ID = /^(\d{8}-\d{6})-[a-f0-9]{4}$/;
-const PROJECT_ID = /^project-[a-f0-9]{24}$/;
-const PROJECT_KEY = /^[A-Z][A-Z0-9]{1,7}$/;
-const TASK_ID = /^task-[a-f0-9]{24}$/;
-const TASK_CODE = /^[A-Z][A-Z0-9]{1,7}-\d{4}-\d{4}$/;
-const COLOR = /^#[0-9a-f]{6}$/i;
 const SINGAPORE_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\+08:00$/;
 const ALLOWED_TYPES: Record<string, string[]> = {
   "image/jpeg": ["jpg", "jpeg"],
@@ -36,8 +29,14 @@ interface Upload {
   extension: string;
 }
 
-function sync(env: Env, state: SyncStatus["state"], message: string, writingPending: boolean): SyncStatus {
-  return { enabled: true, state, message, branch: env.GITHUB_BRANCH, writingPending };
+function sync(env: Env, state: SyncStatus["state"], message: string): SyncStatus {
+  return { enabled: true, state, message, branch: env.GITHUB_BRANCH };
+}
+
+function exactKeys(value: Record<string, unknown>, required: string[], optional: string[] = []): boolean {
+  const keys = Object.keys(value);
+  return required.every((key) => keys.includes(key))
+    && keys.every((key) => required.includes(key) || optional.includes(key));
 }
 
 function validateId(value: unknown): string {
@@ -69,61 +68,32 @@ function validatePublishedAt(value: unknown, year?: string): string {
 
 function validateImage(value: unknown): JournalImage {
   const record = asRecord(value, "A Journal image is invalid.");
-  const src = requiredString(record.src, "Journal image source", 2000);
-  const alt = requiredString(record.alt ?? "", "Journal image alternative text", 5000, true);
-  return { src, alt };
-}
-
-function validateRelatedTaskSnapshot(value: unknown, entryId: string): JournalRelatedTask {
-  const record = asRecord(value, `Journal ${entryId} has invalid related Task data.`);
-  const project = asRecord(record.project, `Journal ${entryId} has invalid related Task Project data.`);
-  const id = requiredString(record.id, "Related Task id", 64);
-  const code = requiredString(record.code, "Related Task code", 32);
-  const projectId = requiredString(project.id, "Related Task Project id", 64);
-  const projectKey = requiredString(project.key, "Related Task Project key", 8);
-  const color = requiredString(project.color, "Related Task Project color", 7).toLowerCase();
-  if (!TASK_ID.test(id) || !TASK_CODE.test(code) || !PROJECT_ID.test(projectId)
-    || !PROJECT_KEY.test(projectKey) || !COLOR.test(color)) {
-    throw new HttpError(502, `Journal ${entryId} has invalid related Task data.`);
-  }
+  if (!exactKeys(record, ["src", "alt"])) throw new HttpError(400, "A Journal image is invalid.");
   return {
-    id,
-    code,
-    title: requiredString(record.title, "Related Task title", 180),
-    project: {
-      id: projectId,
-      key: projectKey,
-      title: requiredString(project.title, "Related Task Project title", 120),
-      color,
-    },
+    src: requiredString(record.src, "Journal image source", 2000),
+    alt: requiredString(record.alt ?? "", "Journal image alternative text", 5000, true),
   };
 }
 
 function journalIdentityMatches(id: string, publishedAt: string): boolean {
-  const publishedTimestamp = publishedAt.slice(0, 19).replace(/[-:]/g, "").replace("T", "-");
-  return id.slice(0, 15) === publishedTimestamp;
+  const timestamp = publishedAt.slice(0, 19).replace(/[-:]/g, "").replace("T", "-");
+  return id.slice(0, 15) === timestamp;
 }
 
 function validateJournalEntry(value: unknown, year: string): JournalEntry {
   const record = asRecord(value, `Journal ${year} contains an invalid entry.`);
+  if (!exactKeys(record, ["id", "publishedAt", "content", "images"], ["updatedAt"])) {
+    throw new HttpError(502, `Journal ${year} contains an unsupported entry schema.`);
+  }
   const id = validateId(record.id);
   const publishedAt = validatePublishedAt(record.publishedAt, year);
-  if (!journalIdentityMatches(id, publishedAt)) throw new HttpError(502, `Journal ${id} id does not match its publication time.`);
+  if (!journalIdentityMatches(id, publishedAt)) {
+    throw new HttpError(502, `Journal ${id} id does not match its publication time.`);
+  }
   const content = requiredString(record.content ?? "", "Journal content", 100_000, true);
   if (!Array.isArray(record.images)) throw new HttpError(502, `Journal ${id} contains invalid images.`);
-  const images = record.images.map(validateImage);
-  let relatedWriting: JournalEntry["relatedWriting"] = null;
-  if (record.relatedWriting !== null && record.relatedWriting !== undefined) {
-    const related = asRecord(record.relatedWriting, `Journal ${id} has invalid related Writing data.`);
-    relatedWriting = {
-      id: requiredString(related.id, "Related Writing id", 64),
-      title: requiredString(related.title, "Related Writing title", 200),
-    };
-  }
-  const relatedTask = record.relatedTask === null || record.relatedTask === undefined
-    ? null
-    : validateRelatedTaskSnapshot(record.relatedTask, id);
-  const result: JournalEntry = { id, publishedAt, content, images, relatedWriting, relatedTask };
+  const result: JournalEntry = { id, publishedAt, content, images: record.images.map(validateImage) };
+  if (!content && result.images.length === 0) throw new HttpError(502, `Journal ${id} is empty.`);
   if (record.updatedAt !== undefined) result.updatedAt = validatePublishedAt(record.updatedAt);
   return result;
 }
@@ -141,7 +111,9 @@ function validateJournalEntries(value: unknown, year: string): JournalEntry[] {
 
 export async function journalYears(env: Env): Promise<string[]> {
   const catalog = await readDataModule<{ years?: unknown[] }>(env, "journals/catalog.js");
-  if (!catalog || !Array.isArray(catalog.years)) throw new HttpError(502, "journals/catalog.js must contain a years array.");
+  if (!catalog || !Array.isArray(catalog.years)) {
+    throw new HttpError(502, "journals/catalog.js must contain a years array.");
+  }
   return normalizeYears(catalog.years);
 }
 
@@ -161,33 +133,31 @@ export async function journalYearData(env: Env, year: string) {
   return { entries: await journalEntries(env, year) };
 }
 
-async function validateRelatedWriting(env: Env, value: unknown): Promise<JournalEntry["relatedWriting"]> {
-  if (value === null || value === undefined) return null;
-  const record = asRecord(value, "Related Writing is invalid.");
-  const id = requiredString(record.id, "Related Writing id", 64);
-  if (!/^\d{8}-\d{6}$/.test(id)) throw new HttpError(400, "Related Writing is invalid.");
-  const match = await publishedWritingById(env, id);
-  if (!match) throw new HttpError(400, "Related Writing must be published before it can be linked.");
-  return { id, title: match.title };
-}
-
 function parseUploads(value: unknown): Map<string, Upload> {
   if (!Array.isArray(value)) throw new HttpError(400, "Journal image uploads are invalid.");
   const uploads = new Map<string, Upload>();
   for (const raw of value) {
     const record = asRecord(raw, "An uploaded image is invalid.");
+    if (!exactKeys(record, ["key", "name", "type", "data"])) {
+      throw new HttpError(400, "An uploaded image is invalid.");
+    }
     const key = requiredString(record.key, "Image upload key", 200);
     const name = requiredString(record.name, "Image filename", 500);
     const type = requiredString(record.type, "Image content type", 100);
-    if (!ALLOWED_TYPES[type] || typeof record.data !== "string") throw new HttpError(400, "An uploaded image type is unsupported.");
+    if (!ALLOWED_TYPES[type] || typeof record.data !== "string") {
+      throw new HttpError(400, "An uploaded image type is unsupported.");
+    }
     const bytes = decodeBase64(record.data);
-    if (!bytes.length || bytes.length > 32 * 1024 * 1024) throw new HttpError(400, "Each image must be between 1 byte and 32 MiB.");
+    if (!bytes.length || bytes.length > 32 * 1024 * 1024) {
+      throw new HttpError(400, "Each image must be between 1 byte and 32 MiB.");
+    }
+    const decoded = (start: number, end: number) => new TextDecoder().decode(bytes.subarray(start, end));
     const valid = (
       (type === "image/jpeg" && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff)
-      || (type === "image/png" && bytes[0] === 0x89 && new TextDecoder().decode(bytes.subarray(1, 4)) === "PNG")
-      || (type === "image/webp" && new TextDecoder().decode(bytes.subarray(0, 4)) === "RIFF" && new TextDecoder().decode(bytes.subarray(8, 12)) === "WEBP")
-      || (type === "image/gif" && ["GIF87a", "GIF89a"].includes(new TextDecoder().decode(bytes.subarray(0, 6))))
-      || (type === "image/avif" && new TextDecoder().decode(bytes.subarray(4, 8)) === "ftyp" && ["avif", "avis"].includes(new TextDecoder().decode(bytes.subarray(8, 12))))
+      || (type === "image/png" && bytes[0] === 0x89 && decoded(1, 4) === "PNG")
+      || (type === "image/webp" && decoded(0, 4) === "RIFF" && decoded(8, 12) === "WEBP")
+      || (type === "image/gif" && ["GIF87a", "GIF89a"].includes(decoded(0, 6)))
+      || (type === "image/avif" && decoded(4, 8) === "ftyp" && ["avif", "avis"].includes(decoded(8, 12)))
     );
     if (!valid) throw new HttpError(400, "An uploaded file does not match its image format.");
     let extension = name.split(".").pop()?.toLowerCase() || "";
@@ -205,8 +175,6 @@ function withoutUpdatedAt<T extends { updatedAt?: string }>(value: T): Omit<T, "
 }
 
 function assertJournalBaseline(value: unknown, original: JournalEntry, year: string): void {
-  // Compare the complete loaded entry: second-resolution timestamps alone
-  // cannot distinguish multiple saves in the same second.
   let baseline: JournalEntry;
   try {
     baseline = validateJournalEntry(value, year);
@@ -222,25 +190,13 @@ async function deleteUploadedObjects(env: Env, keys: string[]): Promise<void> {
   if (keys.length) await env.CONTENT.delete(keys);
 }
 
-async function validateRelatedTask(
-  env: Env,
-  value: unknown,
-  existing: JournalRelatedTask | null = null,
-): Promise<JournalRelatedTask | null> {
-  if (value === null || value === undefined) return null;
-  const record = asRecord(value, "Related Task is invalid.");
-  const id = requiredString(record.id, "Related Task id", 64);
-  if (!TASK_ID.test(id)) throw new HttpError(400, "Related Task is invalid.");
-  if (existing?.id === id) return existing;
-  const snapshot = await relatedTaskSnapshot(env, id);
-  if (!snapshot) throw new HttpError(400, "Related Task is no longer available.");
-  return snapshot;
-}
-
 export async function saveJournal(env: Env, payload: Record<string, unknown>) {
   const mode = payload.mode;
   if (mode !== "create" && mode !== "edit") throw new HttpError(400, "Journal save mode is invalid.");
   const rawEntry = asRecord(payload.entry, "Journal entry is invalid.");
+  if (!exactKeys(rawEntry, ["id", "publishedAt", "content", "images"])) {
+    throw new HttpError(400, "Journal entry uses an unsupported schema.");
+  }
   const id = validateId(rawEntry.id);
   const publishedAt = validatePublishedAt(rawEntry.publishedAt);
   if (!journalIdentityMatches(id, publishedAt)) {
@@ -250,17 +206,15 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
   const content = requiredString(rawEntry.content ?? "", "Journal content", 100_000, true);
   const expectedHead = await branchHead(env);
   const snapshotEnv = { ...env, GITHUB_BRANCH: expectedHead };
-  const relatedWriting = await validateRelatedWriting(snapshotEnv, rawEntry.relatedWriting);
   const years = await journalYears(snapshotEnv);
   const previous = await journalEntries(snapshotEnv, year, years.includes(year));
   const original = previous.find((entry) => entry.id === id) || null;
   if (mode === "create" && original) throw new HttpError(409, "Journal id already exists.");
   if (mode === "edit" && !original) throw new HttpError(404, "The Journal entry is no longer available.");
   if (original) assertJournalBaseline(payload.baseEntry, original, year);
-  if (original && original.publishedAt !== publishedAt) throw new HttpError(400, "The Journal publication time cannot be changed.");
-  const relatedTask = rawEntry.relatedTask === undefined
-    ? original?.relatedTask || null
-    : await validateRelatedTask(env, rawEntry.relatedTask, original?.relatedTask || null);
+  if (original && original.publishedAt !== publishedAt) {
+    throw new HttpError(400, "The Journal publication time cannot be changed.");
+  }
 
   if (!Array.isArray(payload.images)) throw new HttpError(400, "Journal images are invalid.");
   const uploads = parseUploads(payload.uploads);
@@ -274,30 +228,31 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
     const kind = spec.kind;
     const alt = requiredString(spec.alt ?? "", "Image alternative text", 5000, true);
     if (kind === "existing") {
+      if (!exactKeys(spec, ["kind", "src", "alt"])) {
+        throw new HttpError(400, "A Journal image descriptor is invalid.");
+      }
       const src = requiredString(spec.src, "Existing image source", 2000);
       if (!originals.has(src)) throw new HttpError(400, "An existing image is not part of this Journal entry.");
       images.push({ src, alt });
       continue;
     }
-    if (kind !== "new") throw new HttpError(400, "A Journal image descriptor is invalid.");
+    if (kind !== "new" || !exactKeys(spec, ["kind", "key", "alt"])) {
+      throw new HttpError(400, "A Journal image descriptor is invalid.");
+    }
     const key = requiredString(spec.key, "Image upload key", 200);
     const upload = uploads.get(key);
-    if (!upload || usedUploads.has(key)) throw new HttpError(400, "An uploaded image does not match its descriptor.");
+    if (!upload || usedUploads.has(key)) {
+      throw new HttpError(400, "An uploaded image does not match its descriptor.");
+    }
     usedUploads.add(key);
-    // Public media is cached as immutable for a year, so a URL must never be
-    // reused for different bytes. A per-upload random suffix also isolates
-    // cleanup when concurrent edits race to commit the same Journal entry.
     const name = `${id}-${randomHex(12)}.${upload.extension}`;
     const objectKey = `published/journals/${year}/${name}`;
     pendingUploads.push({ objectKey, upload });
     images.push({ src: `${env.MEDIA_ORIGIN}/journals/${year}/${name}`, alt });
   }
-  if (usedUploads.size !== uploads.size) {
-    throw new HttpError(400, "The request contains an unused image upload.");
-  }
-  if (!content && images.length === 0) {
-    throw new HttpError(400, "Add content or at least one image.");
-  }
+  if (usedUploads.size !== uploads.size) throw new HttpError(400, "The request contains an unused image upload.");
+  if (!content && images.length === 0) throw new HttpError(400, "Add content or at least one image.");
+
   try {
     for (const { objectKey, upload } of pendingUploads) {
       const created = await env.CONTENT.put(objectKey, upload.bytes, {
@@ -312,15 +267,18 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
     throw error;
   }
 
-  const candidate: JournalEntry = { id, publishedAt, content, images, relatedWriting, relatedTask };
+  const candidate: JournalEntry = { id, publishedAt, content, images };
   if (original && JSON.stringify(withoutUpdatedAt(original)) === JSON.stringify(candidate)) {
     if (await branchHead(env) !== expectedHead) {
       throw new HttpError(409, "The Journal changed while this edit was open. Reload and try again.");
     }
     await deleteUploadedObjects(env, newKeys);
     return {
-      year, years, entries: previous, status: "unchanged",
-      sync: sync(env, "unchanged", "No remote update was needed.", await pendingWriting(env)),
+      year,
+      years,
+      entries: previous,
+      status: "unchanged",
+      sync: sync(env, "unchanged", "No remote update was needed."),
     };
   }
   if (original) candidate.updatedAt = singaporeTimestamp();
@@ -331,17 +289,19 @@ export async function saveJournal(env: Env, payload: Record<string, unknown>) {
     { path: `journals/${year}.js`, content: moduleSource(entries) },
     { path: "journals/catalog.js", content: moduleSource({ years: nextYears.map(Number) }) },
   ];
-  // GitHub may have accepted the ref update before its response was lost.
-  // Retain immutable media on an uncertain commit outcome; deleting it here
-  // can break an already-published entry. Upload failures above remain safe
-  // to clean up because no GitHub commit has been attempted at that point.
-  await commitFiles(env, `${original ? "Journal: update" : "Journal: publish"} ${id}`, changes, env.GITHUB_BRANCH, expectedHead);
+  await commitFiles(
+    env,
+    `${original ? "Journal: update" : "Journal: publish"} ${id}`,
+    changes,
+    env.GITHUB_BRANCH,
+    expectedHead,
+  );
   return {
     year,
     years: nextYears,
     entries,
     status: original ? "updated" : "created",
-    sync: sync(env, "synced", "Published to GitHub; Pages deployment has started.", await pendingWriting(env)),
+    sync: sync(env, "synced", "Published to GitHub; Pages deployment has started."),
   };
 }
 
@@ -364,7 +324,10 @@ export async function deleteJournal(env: Env, payload: Record<string, unknown>) 
   ];
   await commitFiles(env, `Journal: delete ${id}`, changes, env.GITHUB_BRANCH, expectedHead);
   return {
-    year, years: nextYears, entries, status: "deleted",
-    sync: sync(env, "synced", "Deleted from GitHub; Pages deployment has started.", await pendingWriting(env)),
+    year,
+    years: nextYears,
+    entries,
+    status: "deleted",
+    sync: sync(env, "synced", "Deleted from GitHub; Pages deployment has started."),
   };
 }

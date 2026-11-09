@@ -95,10 +95,6 @@ export function singaporeTimestamp(date = new Date()): string {
   return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}:${part("second")}+08:00`;
 }
 
-export function writingIdNow(date = new Date()): string {
-  return singaporeTimestamp(date).slice(0, 19).replace(/[-:]/g, "").replace("T", "-");
-}
-
 export function randomHex(bytes: number): string {
   const value = new Uint8Array(bytes);
   crypto.getRandomValues(value);

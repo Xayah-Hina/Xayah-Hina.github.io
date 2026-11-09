@@ -1,10 +1,7 @@
+import crypto from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { build as esbuild } from "esbuild";
-import { parseWritingSource, referencedAssets, writingSourceHash } from "./writing-frontmatter.mjs";
-import { renderMarkdown } from "./writing-markdown.mjs";
 import { safeBuildOutput } from "./build-output.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -16,23 +13,9 @@ const journalSourceRoot = process.env.XAYAH_JOURNALS_ROOT
   : path.join(root, "journals");
 const output = await safeBuildOutput(root, requestedOutput, journalSourceRoot);
 const mediaOrigin = "https://media.xayah.me";
-const siteOrigin = "https://xayah.me";
-
-const escapeHtml = (value) => String(value)
-  .replaceAll("&", "&amp;")
-  .replaceAll("<", "&lt;")
-  .replaceAll(">", "&gt;")
-  .replaceAll('"', "&quot;");
 
 const moduleSource = (value) => `export default ${JSON.stringify(value, null, 2)};\n`;
 const hash = (value) => crypto.createHash("sha256").update(value).digest("hex").slice(0, 12);
-
-async function copyFile(relative) {
-  const source = path.join(root, relative);
-  const destination = path.join(output, relative);
-  await fs.mkdir(path.dirname(destination), { recursive: true });
-  await fs.copyFile(source, destination);
-}
 
 function exactKeys(value, required, optional = []) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
@@ -64,76 +47,57 @@ function timestamp(value, label) {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\+08:00$/.exec(value || "");
   if (!match) throw new Error(`${label} must be a Singapore timestamp.`);
   const parts = match.slice(1).map(Number);
-  const utc = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]));
-  const normalized = [utc.getUTCFullYear(), utc.getUTCMonth() + 1, utc.getUTCDate(), utc.getUTCHours(), utc.getUTCMinutes(), utc.getUTCSeconds()];
+  const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]));
+  const normalized = [
+    date.getUTCFullYear(),
+    date.getUTCMonth() + 1,
+    date.getUTCDate(),
+    date.getUTCHours(),
+    date.getUTCMinutes(),
+    date.getUTCSeconds(),
+  ];
   if (parts.some((part, index) => part !== normalized[index])) throw new Error(`${label} is not a valid date.`);
   return `${match[1]}${match[2]}${match[3]}-${match[4]}${match[5]}${match[6]}`;
 }
 
-function validWritingId(value) {
-  const match = /^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})$/.exec(value || "");
-  if (!match) return false;
-  const parts = match.slice(1).map(Number);
-  const utc = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]));
-  return parts.every((part, index) => part === [
-    utc.getUTCFullYear(), utc.getUTCMonth() + 1, utc.getUTCDate(),
-    utc.getUTCHours(), utc.getUTCMinutes(), utc.getUTCSeconds(),
-  ][index]);
-}
-
-function validateImage(value, { year, owner }) {
-  if (!exactKeys(value, ["src", "alt"]) || typeof value.src !== "string" || value.src.length > 2000
+function validateImage(value, year, entryId) {
+  if (!exactKeys(value, ["src", "alt"])
+    || typeof value.src !== "string" || value.src.length > 2000
     || typeof value.alt !== "string" || value.alt.length > 5000) {
-    throw new Error(`${owner} contains an invalid image.`);
+    throw new Error(`Journal ${entryId} contains an invalid image.`);
   }
   let url;
   try {
     url = new URL(value.src);
   } catch {
-    throw new Error(`${owner} contains an unsafe image URL.`);
+    throw new Error(`Journal ${entryId} contains an unsafe image URL.`);
   }
   const extension = "(?:jpe?g|png|webp|gif|avif)";
-  const pathPattern = new RegExp(`^/journals/${year}/${owner}-(?:\\d{2}|[a-f0-9]{24})\\.${extension}$`);
+  const pathPattern = new RegExp(`^/journals/${year}/${entryId}-(?:\\d{2}|[a-f0-9]{24})\\.${extension}$`);
   if (url.origin !== mediaOrigin || url.protocol !== "https:" || url.username || url.password
     || url.search || url.hash || value.src !== url.href || !pathPattern.test(url.pathname)) {
-    throw new Error(`${owner} contains an unsafe image URL.`);
+    throw new Error(`Journal ${entryId} contains an unsafe image URL.`);
   }
   return value.src;
 }
 
-function validateJournalCatalog(value) {
+function validateCatalog(value) {
   if (!exactKeys(value, ["years"]) || !Array.isArray(value.years)) {
     throw new Error("journals/catalog.js must contain only a years array.");
   }
-  const years = value.years;
-  if (years.some((year) => !Number.isInteger(year) || !/^\d{4}$/.test(String(year)))
-    || new Set(years).size !== years.length
-    || years.some((year, index) => index > 0 && year >= years[index - 1])) {
+  if (value.years.some((year) => !Number.isInteger(year) || !/^\d{4}$/.test(String(year)))
+    || new Set(value.years).size !== value.years.length
+    || value.years.some((year, index) => index > 0 && year >= value.years[index - 1])) {
     throw new Error("journals/catalog.js years must be unique four-digit integers in descending order.");
   }
-  return years.map(String);
+  return value.years.map(String);
 }
 
-function validateRelatedTask(value, entryId) {
-  if (value === null) return;
-  if (!exactKeys(value, ["id", "code", "title", "project"])
-    || typeof value.id !== "string" || !/^task-[a-f0-9]{24}$/.test(value.id)
-    || typeof value.code !== "string" || !/^[A-Z][A-Z0-9]{1,7}-\d{4}-\d{4}$/.test(value.code)
-    || typeof value.title !== "string" || !value.title.trim() || value.title.length > 180
-    || !exactKeys(value.project, ["id", "key", "title", "color"])
-    || typeof value.project.id !== "string" || !/^project-[a-f0-9]{24}$/.test(value.project.id)
-    || typeof value.project.key !== "string" || !/^[A-Z][A-Z0-9]{1,7}$/.test(value.project.key)
-    || typeof value.project.title !== "string" || !value.project.title.trim() || value.project.title.length > 120
-    || typeof value.project.color !== "string" || !/^#[0-9a-f]{6}$/i.test(value.project.color)) {
-    throw new Error(`Journal ${entryId} has invalid related Task data.`);
-  }
-}
-
-function validateJournalEntries(value, year, ids, imageSources) {
+function validateEntries(value, year, ids, imageSources) {
   if (!Array.isArray(value)) throw new Error(`journals/${year}.js must export an array.`);
   let previous = null;
   for (const entry of value) {
-    if (!exactKeys(entry, ["id", "publishedAt", "content", "images", "relatedWriting", "relatedTask"], ["updatedAt"])
+    if (!exactKeys(entry, ["id", "publishedAt", "content", "images"], ["updatedAt"])
       || typeof entry.content !== "string" || entry.content.length > 100_000 || !Array.isArray(entry.images)) {
       throw new Error(`journals/${year}.js contains an invalid entry.`);
     }
@@ -149,154 +113,44 @@ function validateJournalEntries(value, year, ids, imageSources) {
     if (!entry.content.trim() && entry.images.length === 0) throw new Error(`Journal ${entry.id} must contain text or an image.`);
     if (entry.updatedAt !== undefined) {
       timestamp(entry.updatedAt, `Journal ${entry.id} updatedAt`);
-      if (Date.parse(entry.updatedAt) < Date.parse(entry.publishedAt)) throw new Error(`Journal ${entry.id} updatedAt precedes publishedAt.`);
+      if (Date.parse(entry.updatedAt) < Date.parse(entry.publishedAt)) {
+        throw new Error(`Journal ${entry.id} updatedAt precedes publishedAt.`);
+      }
     }
-    if (entry.relatedWriting !== null && (!exactKeys(entry.relatedWriting, ["id", "title"])
-      || !validWritingId(entry.relatedWriting.id)
-      || typeof entry.relatedWriting.title !== "string" || !entry.relatedWriting.title.trim()
-      || entry.relatedWriting.title.length > 200)) {
-      throw new Error(`Journal ${entry.id} has invalid related Writing data.`);
-    }
-    validateRelatedTask(entry.relatedTask, entry.id);
     for (const image of entry.images) {
-      const src = validateImage(image, { year, owner: entry.id });
-      if (imageSources.has(src)) throw new Error(`Journal data contains duplicate image URL ${src}.`);
-      imageSources.add(src);
+      const source = validateImage(image, year, entry.id);
+      if (imageSources.has(source)) throw new Error(`Journal data contains duplicate image URL ${source}.`);
+      imageSources.add(source);
     }
   }
 }
 
 async function readJournalModules() {
-  const catalog = parseJsonModule(await fs.readFile(path.join(journalSourceRoot, "catalog.js"), "utf8"), "journals/catalog.js");
-  const years = validateJournalCatalog(catalog);
+  const catalog = parseJsonModule(
+    await fs.readFile(path.join(journalSourceRoot, "catalog.js"), "utf8"),
+    "journals/catalog.js",
+  );
+  const years = validateCatalog(catalog);
   const ids = new Set();
   const imageSources = new Set();
   const modules = [{ relative: "journals/catalog.js", value: catalog }];
   for (const year of years) {
-    const entryRelative = `journals/${year}.js`;
-    const entries = parseJsonModule(await fs.readFile(path.join(journalSourceRoot, `${year}.js`), "utf8"), entryRelative);
-    validateJournalEntries(entries, year, ids, imageSources);
-    modules.push({ relative: entryRelative, value: entries });
+    const relative = `journals/${year}.js`;
+    const entries = parseJsonModule(
+      await fs.readFile(path.join(journalSourceRoot, `${year}.js`), "utf8"),
+      relative,
+    );
+    validateEntries(entries, year, ids, imageSources);
+    modules.push({ relative, value: entries });
   }
   return modules;
 }
 
-function formatDate(value) {
-  return new Intl.DateTimeFormat("en", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    timeZone: "Asia/Singapore",
-  }).format(new Date(value));
-}
-
-function tocMarkup(headings) {
-  return `<ol class="toc-list">${headings.map((heading) => (
-    `<li class="toc-level-${heading.level}"><a data-toc-link href="#${encodeURIComponent(heading.id)}">${escapeHtml(heading.text)}</a></li>`
-  )).join("")}</ol>`;
-}
-
-function articleHtml(entry, rendered, assets) {
-  const { metadata, sourceHash } = entry;
-  const url = `${siteOrigin}/writing/${metadata.id}/`;
-  const hasToc = rendered.headings.filter((heading) => heading.level === 2).length >= 3;
-  const toc = hasToc ? tocMarkup(rendered.headings) : "";
-  const status = metadata.status === "incomplete"
-    ? '<span class="writing-status">Incomplete</span>'
-    : "";
-  const title = `${metadata.title} - Xayah Hina`;
-  const jsonLd = JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: metadata.title,
-    description: metadata.summary,
-    author: { "@type": "Person", name: "Xayah Hina", url: siteOrigin },
-    datePublished: metadata.createdAt,
-    dateModified: metadata.updatedAt,
-    mainEntityOfPage: url,
-    ...(assets.length ? { image: assets.map((name) => `${mediaOrigin}/writing/${metadata.id}/${name}`) } : {}),
-  }).replaceAll("<", "\\u003c");
-  return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <title>${escapeHtml(title)}</title>
-  <meta name="description" content="${escapeHtml(metadata.summary)}">
-  <meta name="x-writing-revision" content="${sourceHash}">
-  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
-  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#090c10">
-  <meta property="og:type" content="article">
-  <meta property="og:title" content="${escapeHtml(metadata.title)}">
-  <meta property="og:description" content="${escapeHtml(metadata.summary)}">
-  <meta property="og:url" content="${url}">
-  <meta property="article:published_time" content="${metadata.createdAt}">
-  <meta property="article:modified_time" content="${metadata.updatedAt}">
-  <meta name="twitter:card" content="summary">
-  <link rel="canonical" href="${url}">
-  <link rel="icon" href="https://raw.githubusercontent.com/Xayah-Graphics/imagebed/7772e40fee3de8f8ca11134d04ef5f5816b8ef60/Hatsune.Miku.full.1961310.JPG">
-  <link rel="stylesheet" href="/assets/generated/${assetsManifest.typographyCss}">
-  <link rel="stylesheet" href="/assets/generated/${assetsManifest.shellCss}">
-  <link rel="stylesheet" href="/assets/generated/${assetsManifest.katexCss}">
-  <link rel="stylesheet" href="/assets/generated/${assetsManifest.readerCss}">
-  <script type="application/ld+json">${jsonLd}</script>
-</head>
-<body>
-  <a class="skip-link" href="#article">Skip to article</a>
-  <nav class="site-nav" aria-label="Site navigation">
-    <a class="site-name" href="/">Xayah Hina</a>
-    <div class="section-switch" role="group" aria-label="Choose a section">
-      <a class="section-switch-button" href="/#writing/${metadata.id.slice(0, 4)}" aria-current="page">Writing</a>
-      <a class="section-switch-button" href="/#journal/${metadata.id.slice(0, 4)}">Journal</a>
-      <a class="section-switch-button" href="/#task">Task</a>
-    </div>
-  </nav>
-  <main id="article" class="article-container">
-    <div class="writing-layout">
-      <header class="writing-header">
-        <div class="writing-kicker"><a href="/#writing/${metadata.id.slice(0, 4)}">Writing</a>${status}<button class="writing-edit-button" type="button" data-edit-writing="${metadata.id}" hidden>Edit</button></div>
-        <h1 class="writing-title">${escapeHtml(metadata.title)}</h1>
-        <p class="writing-summary">${escapeHtml(metadata.summary)}</p>
-        <div class="writing-meta">
-          <span>Xayah Hina</span><span aria-hidden="true">·</span>
-          <time datetime="${metadata.createdAt}">${escapeHtml(formatDate(metadata.createdAt))}</time>
-          ${metadata.updatedAt !== metadata.createdAt ? `<span aria-hidden="true">·</span><span>Updated <time datetime="${metadata.updatedAt}">${escapeHtml(formatDate(metadata.updatedAt))}</time></span>` : ""}
-        </div>
-      </header>
-      ${hasToc ? `<noscript><style>.toc-fab{display:none!important}</style><nav class="toc-noscript" aria-label="Table of contents"><p class="toc-title">Contents</p>${toc}</nav></noscript>` : ""}
-      <article class="writing-body">${rendered.html}</article>
-      ${hasToc ? `<aside class="toc-rail" aria-label="Table of contents"><div class="toc-rail-inner"><p class="toc-title">Contents</p>${toc}</div></aside>` : ""}
-    </div>
-  </main>
-  ${hasToc ? `<button class="toc-fab" type="button" data-toc-open aria-haspopup="dialog" aria-controls="writing-contents"><b aria-hidden="true">☰</b><span>Contents</span></button>
-  <dialog id="writing-contents" class="toc-dialog" data-toc-dialog aria-labelledby="writing-contents-title">
-    <div class="toc-dialog-header"><strong id="writing-contents-title">Contents</strong><button class="toc-close" type="button" data-toc-close aria-label="Close contents">×</button></div>
-    ${toc}
-  </dialog>` : ""}
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <blockquote class="footer-quote"><p>In solitude, where we are least alone.</p></blockquote>
-      <div class="footer-meta-group">
-        <p class="footer-meta">© ${new Date().getFullYear()} Xayah Hina. All rights reserved.</p>
-        <a class="footer-auth-link" data-auth-link href="/api/session">Log in</a>
-      </div>
-    </div>
-  </footer>
-  ${hasToc ? `<script type="module" src="/assets/generated/${assetsManifest.readerJs}"></script>` : ""}
-  <script type="module" src="/assets/generated/${assetsManifest.articleAuthoringJs}"></script>
-  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"f670dcb518704a2d893ab5685a09cdf8"}'></script>
-</body>
-</html>
-`;
-}
-
 const journalModules = await readJournalModules();
-
 await fs.rm(output, { recursive: true, force: true });
 await fs.mkdir(output, { recursive: true });
+await fs.copyFile(path.join(root, "CNAME"), path.join(output, "CNAME"));
 
-await copyFile("CNAME");
 for (const { relative, value } of journalModules) {
   const destination = path.join(output, relative);
   await fs.mkdir(path.dirname(destination), { recursive: true });
@@ -304,177 +158,56 @@ for (const { relative, value } of journalModules) {
 }
 
 const generatedAssets = path.join(output, "assets", "generated");
-await fs.mkdir(generatedAssets, { recursive: true });
+const generatedFonts = path.join(generatedAssets, "fonts");
+await fs.mkdir(generatedFonts, { recursive: true });
 const fontPackages = [
   { name: "geist", styles: ["index.css", "wght-italic.css"] },
-  { name: "geist-mono", styles: ["index.css", "wght-italic.css"] },
   { name: "noto-sans-sc", styles: ["index.css"] },
-  { name: "noto-serif-sc", styles: ["index.css"] },
 ];
-const typographyCssSource = Buffer.from((await Promise.all(fontPackages.flatMap(({ name, styles }) => (
+const typographyCss = Buffer.from((await Promise.all(fontPackages.flatMap(({ name, styles }) => (
   styles.map(async (style) => {
     const source = await fs.readFile(path.join(root, "node_modules", "@fontsource-variable", name, style), "utf8");
     return source.replaceAll("./files/", "./fonts/");
   })
 )))).join("\n"));
-const shellCssSource = await fs.readFile(path.join(root, "site", "site-shell.css"));
-const readerCssSource = await fs.readFile(path.join(root, "site", "writing-reader.css"));
-const readerJsSource = await fs.readFile(path.join(root, "site", "writing-reader.js"));
-const articleAuthoringJsSource = await fs.readFile(path.join(root, "site", "writing-article-authoring.js"));
-const katexCssSource = await fs.readFile(path.join(root, "node_modules", "katex", "dist", "katex.min.css"));
-const authoringJsBundle = await esbuild({
-  entryPoints: [path.join(root, "site", "writing-authoring-editor.mjs")],
-  bundle: true,
-  format: "esm",
-  platform: "browser",
-  minify: true,
-  write: false,
-});
-const authoringCssBundle = await esbuild({
-  entryPoints: [path.join(root, "site", "writing-authoring.css")],
-  bundle: true,
-  minify: true,
-  write: false,
-});
-const tasksJsBundle = await esbuild({
-  entryPoints: [path.join(root, "site", "tasks.js")],
-  bundle: true,
-  format: "esm",
-  platform: "browser",
-  minify: true,
-  write: false,
-});
-const tasksCssBundle = await esbuild({
-  entryPoints: [path.join(root, "site", "tasks.css")],
-  bundle: true,
-  minify: true,
-  write: false,
-});
-const authoringJsSource = authoringJsBundle.outputFiles[0]?.contents;
-const authoringCssSource = authoringCssBundle.outputFiles[0]?.contents;
-const tasksJsSource = tasksJsBundle.outputFiles[0]?.contents;
-const tasksCssSource = tasksCssBundle.outputFiles[0]?.contents;
-const legalCssSource = await fs.readFile(path.join(root, "site", "legal.css"));
-if (!authoringJsSource || !authoringCssSource || !tasksJsSource || !tasksCssSource) {
-  throw new Error("Site interactive assets could not be bundled.");
-}
-const assetsManifest = {
-  typographyCss: `typography.${hash(typographyCssSource)}.css`,
-  shellCss: `site-shell.${hash(shellCssSource)}.css`,
-  readerCss: `writing-reader.${hash(readerCssSource)}.css`,
-  readerJs: `writing-reader.${hash(readerJsSource)}.js`,
-  articleAuthoringJs: `writing-article-authoring.${hash(articleAuthoringJsSource)}.js`,
-  authoringJs: `writing-authoring.${hash(authoringJsSource)}.js`,
-  authoringCss: `writing-authoring.${hash(authoringCssSource)}.css`,
-  tasksJs: `tasks.${hash(tasksJsSource)}.js`,
-  tasksCss: `tasks.${hash(tasksCssSource)}.css`,
-  legalCss: `legal.${hash(legalCssSource)}.css`,
-  katexCss: `katex.${hash(katexCssSource)}.css`,
+const shellCss = await fs.readFile(path.join(root, "site", "site-shell.css"));
+const journalCss = await fs.readFile(path.join(root, "site", "journal.css"));
+const journalJs = await fs.readFile(path.join(root, "site", "journal.js"));
+const assets = {
+  typographyCss: `typography.${hash(typographyCss)}.css`,
+  shellCss: `site-shell.${hash(shellCss)}.css`,
+  journalCss: `journal.${hash(journalCss)}.css`,
+  journalJs: `journal.${hash(journalJs)}.js`,
 };
 await Promise.all([
-  fs.writeFile(path.join(generatedAssets, assetsManifest.typographyCss), typographyCssSource),
-  fs.writeFile(path.join(generatedAssets, assetsManifest.shellCss), shellCssSource),
-  fs.writeFile(path.join(generatedAssets, assetsManifest.readerCss), readerCssSource),
-  fs.writeFile(path.join(generatedAssets, assetsManifest.readerJs), readerJsSource),
-  fs.writeFile(path.join(generatedAssets, assetsManifest.articleAuthoringJs), articleAuthoringJsSource),
-  fs.writeFile(path.join(generatedAssets, assetsManifest.authoringJs), authoringJsSource),
-  fs.writeFile(path.join(generatedAssets, assetsManifest.authoringCss), authoringCssSource),
-  fs.writeFile(path.join(generatedAssets, assetsManifest.tasksJs), tasksJsSource),
-  fs.writeFile(path.join(generatedAssets, assetsManifest.tasksCss), tasksCssSource),
-  fs.writeFile(path.join(generatedAssets, assetsManifest.legalCss), legalCssSource),
-  fs.writeFile(path.join(generatedAssets, assetsManifest.katexCss), katexCssSource),
+  fs.writeFile(path.join(generatedAssets, assets.typographyCss), typographyCss),
+  fs.writeFile(path.join(generatedAssets, assets.shellCss), shellCss),
+  fs.writeFile(path.join(generatedAssets, assets.journalCss), journalCss),
+  fs.writeFile(path.join(generatedAssets, assets.journalJs), journalJs),
 ]);
-const shellPlaceholder = "__SITE_SHELL_CSS__";
-const typographyPlaceholder = "__TYPOGRAPHY_CSS__";
-const katexPlaceholder = "__KATEX_CSS__";
-const authoringCssPlaceholder = "__WRITING_AUTHORING_CSS__";
-const authoringJsPlaceholder = "__WRITING_AUTHORING_JS__";
-const tasksJsPlaceholder = "__TASKS_JS__";
-const tasksCssPlaceholder = "__TASKS_CSS__";
-const legalCssPlaceholder = "__LEGAL_CSS__";
-const htmlReplacements = new Map([
-  ["index.html", [
-    [typographyPlaceholder, assetsManifest.typographyCss],
-    [shellPlaceholder, assetsManifest.shellCss],
-    [katexPlaceholder, assetsManifest.katexCss],
-    [authoringCssPlaceholder, assetsManifest.authoringCss],
-    [authoringJsPlaceholder, assetsManifest.authoringJs],
-    [tasksJsPlaceholder, assetsManifest.tasksJs],
-    [tasksCssPlaceholder, assetsManifest.tasksCss],
-  ]],
-  ["privacy.html", [
-    [typographyPlaceholder, assetsManifest.typographyCss],
-    [shellPlaceholder, assetsManifest.shellCss],
-    [legalCssPlaceholder, assetsManifest.legalCss],
-  ]],
-  ["terms.html", [
-    [typographyPlaceholder, assetsManifest.typographyCss],
-    [shellPlaceholder, assetsManifest.shellCss],
-    [legalCssPlaceholder, assetsManifest.legalCss],
-  ]],
-]);
-for (const [relative, replacements] of htmlReplacements) {
-  const source = await fs.readFile(path.join(root, relative), "utf8");
-  let rendered = source;
-  for (const [placeholder, value] of replacements) {
-    if (rendered.split(placeholder).length !== 2) {
-      throw new Error(`${relative} must contain exactly one ${placeholder} placeholder.`);
-    }
-    rendered = rendered.replace(placeholder, value);
-  }
-  await fs.writeFile(path.join(output, relative), rendered);
-}
-const katexFontsSource = path.join(root, "node_modules", "katex", "dist", "fonts");
-const katexFontsDestination = path.join(generatedAssets, "fonts");
-await fs.cp(katexFontsSource, katexFontsDestination, { recursive: true });
+
 for (const { name } of fontPackages) {
   const packageRoot = path.join(root, "node_modules", "@fontsource-variable", name);
   for (const file of await fs.readdir(path.join(packageRoot, "files"))) {
-    await fs.copyFile(path.join(packageRoot, "files", file), path.join(katexFontsDestination, file));
+    await fs.copyFile(path.join(packageRoot, "files", file), path.join(generatedFonts, file));
   }
-  await fs.copyFile(path.join(packageRoot, "LICENSE"), path.join(katexFontsDestination, `LICENSE-${name}.txt`));
+  await fs.copyFile(path.join(packageRoot, "LICENSE"), path.join(generatedFonts, `LICENSE-${name}.txt`));
 }
 
-const writingRoot = path.join(root, "writing");
-const entries = [];
-for (const directory of await fs.readdir(writingRoot, { withFileTypes: true })) {
-  if (!directory.isDirectory() || !/^\d{8}-\d{6}$/.test(directory.name)) continue;
-  const sourcePath = path.join(writingRoot, directory.name, `${directory.name}.md`);
-  const parsed = parseWritingSource(await fs.readFile(sourcePath, "utf8"), directory.name);
-  const sourceHash = writingSourceHash(parsed.source);
-  const assetNames = referencedAssets(parsed.body);
-  const rendered = renderMarkdown(parsed.body, {
-    assetBase: `${mediaOrigin}/writing/${directory.name}`,
-  });
-  const entry = {
-    ...parsed,
-    sourceHash,
-  };
-  entries.push(entry);
-  const destination = path.join(output, "writing", directory.name, "index.html");
-  await fs.mkdir(path.dirname(destination), { recursive: true });
-  await fs.writeFile(destination, articleHtml(entry, rendered, assetNames));
+const replacements = [
+  ["__TYPOGRAPHY_CSS__", assets.typographyCss],
+  ["__SITE_SHELL_CSS__", assets.shellCss],
+  ["__JOURNAL_CSS__", assets.journalCss],
+  ["__JOURNAL_JS__", assets.journalJs],
+];
+let html = await fs.readFile(path.join(root, "index.html"), "utf8");
+for (const [placeholder, value] of replacements) {
+  if (html.split(placeholder).length !== 2) {
+    throw new Error(`index.html must contain exactly one ${placeholder} placeholder.`);
+  }
+  html = html.replace(placeholder, value);
 }
+await fs.writeFile(path.join(output, "index.html"), html);
 
-entries.sort((left, right) => right.metadata.id.localeCompare(left.metadata.id));
-const byYear = new Map();
-for (const entry of entries) {
-  const year = entry.metadata.id.slice(0, 4);
-  const list = byYear.get(year) || [];
-  list.push({
-    ...entry.metadata,
-    article: {
-      url: `${siteOrigin}/writing/${entry.metadata.id}/`,
-      sourceHash: entry.sourceHash,
-    },
-  });
-  byYear.set(year, list);
-}
-const years = [...byYear.keys()].sort((left, right) => right.localeCompare(left));
-await fs.mkdir(path.join(output, "writing"), { recursive: true });
-await fs.writeFile(path.join(output, "writing", "catalog.js"), moduleSource({ years: years.map(Number) }));
-for (const year of years) {
-  await fs.writeFile(path.join(output, "writing", `${year}.js`), moduleSource(byYear.get(year)));
-}
-
-console.log(`Built ${entries.length} Writing article(s) into ${path.relative(root, output)}.`);
+const entryCount = journalModules.slice(1).reduce((total, module) => total + module.value.length, 0);
+console.log(`Built ${entryCount} Journal entries into ${path.relative(root, output)}.`);

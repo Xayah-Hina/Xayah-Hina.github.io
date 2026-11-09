@@ -29,14 +29,6 @@ interface GitHubTree {
   truncated: boolean;
 }
 
-interface GitHubWorkflowRuns {
-  workflow_runs: Array<{
-    head_sha: string;
-    status: string;
-    conclusion: string | null;
-  }>;
-}
-
 const API_VERSION = "2022-11-28";
 
 function repoPath(env: Env): string {
@@ -170,18 +162,6 @@ export async function commitFiles(
   return commitTree(env, message, tree.sha, parent.sha, branch);
 }
 
-// A deletion of an unpublished Writing must still advance the branch. Its
-// unchanged-tree commit fences publishers that already read the private draft
-// against an older head, including requests resumed after a deletion lease.
-export async function commitBranchFence(env: Env, message: string, expectedHead: string): Promise<string> {
-  const head = await branchHead(env);
-  if (head !== expectedHead) {
-    throw new HttpError(409, "The repository changed while this edit was open. Reload and try again.");
-  }
-  const parent = await currentCommit(env, head);
-  return commitTree(env, message, parent.tree.sha, parent.sha, env.GITHUB_BRANCH);
-}
-
 async function commitTree(env: Env, message: string, tree: string, parent: string, branch: string): Promise<string> {
   const commit = await githubRequest<{ sha: string }>(env, `${repoPath(env)}/git/commits`, {
     method: "POST",
@@ -201,22 +181,4 @@ async function commitTree(env: Env, message: string, tree: string, parent: strin
     throw error;
   }
   return commit.sha;
-}
-
-export async function workflowRunState(
-  env: Env,
-  workflow: string,
-  headSha: string,
-): Promise<"queued" | "deploying" | "failed"> {
-  const query = new URLSearchParams({ head_sha: headSha, per_page: "10" });
-  const runs = await githubRequest<GitHubWorkflowRuns>(
-    env,
-    `${repoPath(env)}/actions/workflows/${encodeURIComponent(workflow)}/runs?${query}`,
-  );
-  const run = runs.workflow_runs.find((candidate) => candidate.head_sha === headSha);
-  if (!run) return "queued";
-  if (run.status !== "completed") {
-    return ["queued", "requested", "waiting", "pending"].includes(run.status) ? "queued" : "deploying";
-  }
-  return run.conclusion === "success" ? "deploying" : "failed";
 }

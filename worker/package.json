@@ -8,11 +8,7 @@
     "dev": "wrangler dev"
   },
   "dependencies": {
-    "jose": "^6.2.8",
-    "katex": "0.18.4",
-    "markdown-it": "15.0.3",
-    "markdown-it-footnote": "4.0.0",
-    "markdown-it-texmath": "1.0.0"
+    "jose": "^6.2.8"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260813.1",
