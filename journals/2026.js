@@ -1,5 +1,11 @@
 export default [
   {
+    "id": "20261127-070832-f162",
+    "publishedAt": "2026-11-27T07:08:32+08:00",
+    "content": "Ignorance is bliss.",
+    "images": []
+  },
+  {
     "id": "20261126-082217-efea",
     "publishedAt": "2026-11-26T08:22:17+08:00",
     "content": "重新出发。",
