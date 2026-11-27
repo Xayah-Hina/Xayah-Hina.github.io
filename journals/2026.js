@@ -1,5 +1,11 @@
 export default [
   {
+    "id": "20261128-064423-2053",
+    "publishedAt": "2026-11-28T06:44:23+08:00",
+    "content": "Peer pressure太大了QAQ",
+    "images": []
+  },
+  {
     "id": "20261127-070832-f162",
     "publishedAt": "2026-11-27T07:08:32+08:00",
     "content": "Ignorance is bliss.",
